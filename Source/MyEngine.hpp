@@ -5,12 +5,6 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
-enum class RenderingAPI
-{
-    DirectX12,
-    Vulkan
-};
-
 struct VertexBuffer;
 struct Entity;
 
@@ -36,7 +30,7 @@ namespace Engine
     // This is the entry point for the engine and is where all initialization
     // takes place. This should be the first function that gets called by
     // the client application.
-    void Start(const char* name, RenderingAPI api);
+    void Start(const char* name);
 
     // This will terminate the engine by freeing all resources by the client and
     // the engine then shutting down all subsystems. This should be the final engine

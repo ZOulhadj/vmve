@@ -3,7 +3,7 @@
 
 int main()
 {
-    Engine::Start("Solar System Simulator", RenderingAPI::Vulkan);
+    Engine::Start("Solar System Simulator");
 
     const VertexBuffer* icosphere = Engine::LoadModel("assets/icosphere.obj");
 

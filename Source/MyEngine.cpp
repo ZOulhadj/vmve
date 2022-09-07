@@ -1812,7 +1812,7 @@ void UpdateCamera()
 #pragma endregion
 
 
-void Engine::Start(const char* name, RenderingAPI api)
+void Engine::Start(const char* name)
 {
     CreateWindow(name, 1920, 1080);
     CreateRendererContext(VK_API_VERSION_1_3);
