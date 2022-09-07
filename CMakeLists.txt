@@ -44,6 +44,5 @@ target_link_directories(${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIR}/../Lib)
 target_link_libraries(${PROJECT_NAME}
         glfw
         glm::glm
-        d3d12
         Vulkan::Vulkan
         shaderc_shared)

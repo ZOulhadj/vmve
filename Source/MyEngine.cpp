@@ -34,8 +34,6 @@
 #include <vector>
 #include <algorithm>
 
-#include <d3d12.h>
-
 #include <vulkan/vulkan.h>
 
 #define VMA_IMPLEMENTATION
