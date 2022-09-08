@@ -883,7 +883,8 @@ static void DestroyImage(ImageBuffer* image)
     vmaDestroyImage(g_rc->allocator, image->handle, image->allocation);
 }
 
-static Buffer CreateBuffer(int32_t size, VkBufferUsageFlags type)
+// Creates an empty buffer. This is useful if you do not have
+static Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type)
 {
     Buffer buffer{};
 
@@ -905,18 +906,31 @@ static Buffer CreateBuffer(int32_t size, VkBufferUsageFlags type)
     return buffer;
 }
 
+// Maps/Fills an existing buffer with data.
+static void SetBufferData(Buffer* buffer, void* data, uint32_t size)
+{
+    void* allocation{};
+    VkCheck(vmaMapMemory(g_rc->allocator, buffer->allocation, &allocation));
+    std::memcpy(allocation, data, size);
+    vmaUnmapMemory(g_rc->allocator, buffer->allocation);
+}
+
+// Creates and fills a buffer.
+static Buffer CreateBuffer(void* data, uint32_t size, VkBufferUsageFlags type)
+{
+    Buffer buffer = CreateBuffer(size, type);
+    SetBufferData(&buffer, data, size);
+
+    return buffer;
+}
+
+// Deallocates a buffer.
 static void DestroyBuffer(Buffer* buffer)
 {
     vmaDestroyBuffer(g_rc->allocator, buffer->buffer, buffer->allocation);
 }
 
-static void FillBuffer(Buffer* buffer, void* data, uint32_t size)
-{
-    void* buffer_allocation{};
-    VkCheck(vmaMapMemory(g_rc->allocator, buffer->allocation, &buffer_allocation));
-    std::memcpy(buffer_allocation, data, size);
-    vmaUnmapMemory(g_rc->allocator, buffer->allocation);
-}
+
 
 // Creates a swapchain which is a collection of images that will be used for
 // rendering. When called, you must specify the number of images you would
@@ -1817,6 +1831,7 @@ void Engine::Start(const char* name)
 
     CreateSwapchain(swapchain_frame_count, swapchain_present_mode);
 
+
 #if 0
     RenderPassInfo defaultRenderPassInfo{};
     AddAttachment(defaultRenderPassInfo, g_swapchain.images[0].format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -1999,15 +2014,11 @@ bool Engine::IsMouseButtonDown(int buttoncode)
 
 VertexBuffer* Engine::CreateVertexBuffer(void* v, int vs, void* i, int is)
 {
-    VertexBuffer* r = new VertexBuffer();
+    auto* r = new VertexBuffer();
 
-    r->vertex_buffer = CreateBuffer(vs, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    r->index_buffer  = CreateBuffer(is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    r->index_count   = is / sizeof(unsigned int); // todo: Maybe be unsafe for a hard coded type.
-
-    FillBuffer(&r->vertex_buffer, v, vs);
-    FillBuffer(&r->index_buffer, i, is);
-
+    r->vertex_buffer = CreateBuffer(v, vs, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    r->index_buffer  = CreateBuffer(i, is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    r->index_count   = is / sizeof(uint32_t); // todo: Maybe be unsafe for a hard coded type.
 
     g_renderables.push_back(r);
 
@@ -2095,7 +2106,7 @@ void Engine::BeginRender()
     UpdateCamera();
 
     // copy data into uniform buffer
-    FillBuffer(&g_uniform_buffers[frame_index], &g_camera.proj, sizeof(glm::mat4));
+    SetBufferData(&g_uniform_buffers[frame_index], &g_camera.proj, sizeof(glm::mat4));
 
     BeginFrame();
 }
