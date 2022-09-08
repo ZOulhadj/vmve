@@ -332,7 +332,7 @@ static std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
 
 static VkDescriptorPool g_gui_descriptor_pool;
 
-static std::vector<VertexBuffer*> g_renderables;
+static std::vector<VertexBuffer*> g_vertex_buffers;
 
 
 
@@ -1951,13 +1951,13 @@ void Engine::Exit()
     vkDestroyDescriptorPool(g_rc->device, descriptor_pool, nullptr);
 
     // Free all renderable resources that may have been allocated by the client
-    for (auto& r : g_renderables) {
+    for (auto& r : g_vertex_buffers) {
         DestroyBuffer(&r->index_buffer);
         DestroyBuffer(&r->vertex_buffer);
 
         delete r;
     }
-    g_renderables.clear();
+    g_vertex_buffers.clear();
 
     for (auto& buffer : g_uniform_buffers) {
         DestroyBuffer(&buffer);
@@ -2020,7 +2020,7 @@ VertexBuffer* Engine::CreateVertexBuffer(void* v, int vs, void* i, int is)
     r->index_buffer  = CreateBuffer(i, is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     r->index_count   = is / sizeof(uint32_t); // todo: Maybe be unsafe for a hard coded type.
 
-    g_renderables.push_back(r);
+    g_vertex_buffers.push_back(r);
 
 
     return r;
