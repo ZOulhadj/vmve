@@ -2158,7 +2158,19 @@ void RotateEntity(Entity* e, float deg, float x, float y, float z)
 
 void ScaleEntity(Entity* e, float scale)
 {
-    e->model = glm::scale(e->model, glm::dvec3(scale));
+    e->model = glm::scale(e->model, { scale, scale, scale });
+}
+
+void ScaleEntity(Entity* e, float x, float y, float z)
+{
+    e->model = glm::scale(e->model, { x, y, z });
+}
+
+glm::vec3 GetEntityPosition(const Entity* e)
+{
+    // The position of an entity is encoded into the last column of the model
+    // matrix so simply return that last column of x, y and z.
+    return e->model[3];
 }
 
 

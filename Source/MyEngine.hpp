@@ -96,7 +96,10 @@ namespace Engine
 void TranslateEntity(Entity* e, float x, float y, float z);
 void RotateEntity(Entity* e, float deg, float x, float y, float z);
 void ScaleEntity(Entity* e, float scale);
+void ScaleEntity(Entity* e, float x, float y, float z);
 
+
+glm::vec3 GetEntityPosition(const Entity* e);
 
 
 

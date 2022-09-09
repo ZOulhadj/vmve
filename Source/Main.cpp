@@ -28,7 +28,6 @@ int main()
         TranslateEntity(&earth, 0.0f, 0.0f, -700.0f);
         ScaleEntity(&earth, 100.0f);
 
-
         Engine::BeginRender();
         {
             // scene render pass
