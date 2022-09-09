@@ -256,6 +256,13 @@ struct Vertex
     glm::vec3 normal;
 };
 
+struct Entity
+{
+    glm::dmat4 model;
+
+    const VertexBuffer* vertexBuffer;
+};
+
 struct FreeCamera
 {
     glm::vec3 position;
@@ -333,7 +340,7 @@ static std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
 static VkDescriptorPool g_gui_descriptor_pool;
 
 static std::vector<VertexBuffer*> g_vertex_buffers;
-
+static std::vector<Entity*> g_entities;
 
 
 const std::string vs_code = R"(
@@ -1807,7 +1814,7 @@ void UpdateCamera()
     const glm::quat roll  = glm::angleAxis(glm::radians(g_camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // Update the camera orientation based on pitch, yaw and roll
-    // g_camera.orientation = (pitch * yaw * roll) * g_camera.orientation;
+    //g_camera.orientation = (pitch * yaw * roll) * g_camera.orientation;
 
     // Create the view and projection matrices
     g_camera.view = glm::mat4_cast(glm::dquat(g_camera.orientation)) * glm::translate(glm::dmat4(1.0f), -glm::dvec3(g_camera.position));
@@ -2075,6 +2082,17 @@ VertexBuffer* Engine::LoadModel(const char* path)
     return CreateVertexBuffer(vertices.data(), sizeof(Vertex) * vertices.size(), indices.data(), sizeof(unsigned int) * indices.size());
 }
 
+Entity* Engine::CreateEntity(const VertexBuffer* vertexBuffer)
+{
+    Entity* entity = new Entity();
+    entity->model = glm::mat4(1.0f);
+    entity->vertexBuffer = vertexBuffer;
+
+    g_entities.push_back(entity);
+
+    return entity;
+}
+
 void Engine::MoveCamera(CameraDirections direction)
 {
     const float speed      = g_camera.speed * g_delta_time;
@@ -2129,14 +2147,18 @@ void Engine::BindPipeline()
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, basic_pipeline.layout, 0, 1, &descriptor_sets[frame_index], 0, nullptr);
 }
 
-void Engine::Render(const VertexBuffer* r, const Entity* e)
+void Engine::Render(Entity* e)
 {
     const VkCommandBuffer& cmd_buffer = g_frames[frame_index].cmd_buffer;
 
     const glm::mat4 mtw = g_camera.proj * g_camera.view * e->model;
 
     vkCmdPushConstants(cmd_buffer, basic_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtw);
-    vkCmdDrawIndexed(cmd_buffer, r->index_count, 1, 0, 0, 0);
+    vkCmdDrawIndexed(cmd_buffer, e->vertexBuffer->index_count, 1, 0, 0, 0);
+
+
+    // Reset the entity transform matrix after being rendered.
+    e->model = glm::dmat4(1.0f);
 }
 
 void Engine::EndRender()
@@ -2146,31 +2168,33 @@ void Engine::EndRender()
     UpdateWindow();
 }
 
-void TranslateEntity(Entity* e, float x, float y, float z)
+void Engine::TranslateEntity(Entity* e, float x, float y, float z)
 {
     e->model = glm::translate(e->model, { x, y, z });
 }
 
-void RotateEntity(Entity* e, float deg, float x, float y, float z)
+void Engine::RotateEntity(Entity* e, float deg, float x, float y, float z)
 {
     e->model = glm::rotate(e->model, glm::radians<double>(deg), { x, y, z });
 }
 
-void ScaleEntity(Entity* e, float scale)
+void Engine::ScaleEntity(Entity* e, float scale)
 {
     e->model = glm::scale(e->model, { scale, scale, scale });
 }
 
-void ScaleEntity(Entity* e, float x, float y, float z)
+void Engine::ScaleEntity(Entity* e, float x, float y, float z)
 {
     e->model = glm::scale(e->model, { x, y, z });
 }
 
-glm::vec3 GetEntityPosition(const Entity* e)
+glm::vec3 Engine::GetEntityPosition(const Entity* e)
 {
     // The position of an entity is encoded into the last column of the model
-    // matrix so simply return that last column of x, y and z.
+    // matrix so simply return that last column to get x, y and z.
     return e->model[3];
 }
+
+
 
 

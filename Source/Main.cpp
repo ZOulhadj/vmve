@@ -5,11 +5,18 @@ int main()
 {
     Engine::Start("Solar System Simulator");
 
+    // Create assets
     const VertexBuffer* icosphere = Engine::LoadModel("assets/icosphere.obj");
+
+    // Create entities
+    Entity* sunEntity = Engine::CreateEntity(icosphere);
+    Entity* earthEntity = Engine::CreateEntity(icosphere);
 
     while (Engine::Running()) {
         if (Engine::IsKeyDown(256)) Engine::Stop();
 
+
+        // Camera movement
         if (Engine::IsKeyDown(87))  Engine::MoveCamera(camera_forward);
         if (Engine::IsKeyDown(83))  Engine::MoveCamera(camera_backwards);
         if (Engine::IsKeyDown(65))  Engine::MoveCamera(camera_left);
@@ -19,15 +26,17 @@ int main()
         if (Engine::IsKeyDown(81))  Engine::MoveCamera(camera_roll_left);
         if (Engine::IsKeyDown(69))  Engine::MoveCamera(camera_roll_right);
 
-        Entity skysphere, sun, earth;
 
-        TranslateEntity(&sun, 0.0f, 0.0f, 0.0f);
-        RotateEntity(&sun, Engine::Uptime() * 10.0f, 0.0f, 1.0f, 0.0f);
-        ScaleEntity(&sun, 1.0f);
+        // Update entities
+        Engine::TranslateEntity(sunEntity, 0.0f, 0.0f, 0.0f);
+        Engine::RotateEntity(sunEntity, Engine::Uptime() * 10.0f, 0.0f, 1.0f, 0.0f);
+        Engine::ScaleEntity(sunEntity, 1.0f);
 
-        TranslateEntity(&earth, 0.0f, 0.0f, -700.0f);
-        ScaleEntity(&earth, 100.0f);
+        Engine::TranslateEntity(earthEntity, 0.0f, 0.0f, -700.0f);
+        Engine::ScaleEntity(earthEntity, 100.0f);
 
+
+        // Rendering
         Engine::BeginRender();
         {
             // scene render pass
@@ -40,12 +49,10 @@ int main()
             Engine::BindBuffer(icosphere);
 
             Engine::BindPipeline();
-            Engine::Render(icosphere, &skysphere);
-
 
             Engine::BindPipeline();
-            Engine::Render(icosphere, &sun);
-            Engine::Render(icosphere, &earth);
+            Engine::Render(sunEntity);
+            Engine::Render(earthEntity);
         }
         Engine::EndRender();
     }

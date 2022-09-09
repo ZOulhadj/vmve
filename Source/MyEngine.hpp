@@ -1,17 +1,14 @@
 #pragma once
 
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_LEFT_HANDED
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
+#include "glm/vec3.hpp"
 
 struct VertexBuffer;
 struct Entity;
 
-struct Entity
-{
-    glm::dmat4 model = glm::dmat4(1.0f);
-};
 
 enum CameraDirections
 {
@@ -72,6 +69,13 @@ namespace Engine
     // buffer which is returned to the client.
     VertexBuffer* LoadModel(const char* path);
 
+    // Creates an entity which is an object that is rendered onto the screen.
+    // Each entity has a pointer to a vertex buffer that describes the
+    // object that is being represented. A model matrix is also part of
+    // an entity that describes the full transformation including position,
+    // rotation and scale in the world.
+    Entity* CreateEntity(const VertexBuffer* vertexBuffer);
+
     // Moves the default camera in the specified direction
     void MoveCamera(CameraDirections direction);
 
@@ -85,21 +89,25 @@ namespace Engine
 
     // This function submits work to the GPU to execute. In other words, rendering
     // an object onto the screen.
-    void Render(const VertexBuffer* b, const Entity* e);
+    void Render(Entity* e);
 
     // Once all rendering commands have been completed, this function can be called
     // which will submit all commands to the GPU to be rendered and displayed onto
     // the screen.
     void EndRender();
+
+
+
+    void TranslateEntity(Entity* e, float x, float y, float z);
+    void RotateEntity(Entity* e, float deg, float x, float y, float z);
+    void ScaleEntity(Entity* e, float scale);
+    void ScaleEntity(Entity* e, float x, float y, float z);
+
+
+    glm::vec3 GetEntityPosition(const Entity* e);
+
 }
 
-void TranslateEntity(Entity* e, float x, float y, float z);
-void RotateEntity(Entity* e, float deg, float x, float y, float z);
-void ScaleEntity(Entity* e, float scale);
-void ScaleEntity(Entity* e, float x, float y, float z);
-
-
-glm::vec3 GetEntityPosition(const Entity* e);
 
 
 
