@@ -83,6 +83,10 @@ namespace Engine
     // first before any other rendering related function call.
     void BeginRender();
 
+
+    void BeginRenderPass();
+    void EndRenderPass();
+
     void BindBuffer(const VertexBuffer* buffer);
 
     void BindPipeline();

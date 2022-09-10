@@ -40,15 +40,22 @@ int main()
         Engine::BeginRender();
         {
             // scene render pass
+            Engine::BeginRenderPass();
+
+            Engine::EndRenderPass();
 
             // lighting pass
+            Engine::BeginRenderPass();
 
+            Engine::EndRenderPass();
 
             // debug ui pass
+            Engine::BeginRenderPass();
+
+            Engine::EndRenderPass();
+
 
             Engine::BindBuffer(icosphere);
-
-            Engine::BindPipeline();
 
             Engine::BindPipeline();
             Engine::Render(sunEntity);
