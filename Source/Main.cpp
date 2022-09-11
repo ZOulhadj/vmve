@@ -7,6 +7,9 @@ int main()
 
     // Create assets
     const VertexBuffer* icosphere = Engine::LoadModel("assets/icosphere.obj");
+    const TextureBuffer* skyphere = Engine::LoadTexture("assets/textures/skysphere.jpg");
+
+
 
     // Create entities
     Entity* sunEntity = Engine::CreateEntity(icosphere);
@@ -39,27 +42,15 @@ int main()
         // Rendering
         Engine::BeginRender();
         {
-            // scene render pass
             Engine::BeginRenderPass();
+            {
+                Engine::BindBuffer(icosphere);
 
+                Engine::BindPipeline();
+                Engine::Render(sunEntity);
+                Engine::Render(earthEntity);
+            }
             Engine::EndRenderPass();
-
-            // lighting pass
-            Engine::BeginRenderPass();
-
-            Engine::EndRenderPass();
-
-            // debug ui pass
-            Engine::BeginRenderPass();
-
-            Engine::EndRenderPass();
-
-
-            Engine::BindBuffer(icosphere);
-
-            Engine::BindPipeline();
-            Engine::Render(sunEntity);
-            Engine::Render(earthEntity);
         }
         Engine::EndRender();
     }

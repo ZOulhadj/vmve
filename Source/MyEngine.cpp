@@ -1,6 +1,6 @@
 #include "MyEngine.hpp"
 
-// todo: Implement multiple render passes
+// todo: Implement multiple render passes (50%)
 // todo: Render debug ui into separate render pass
 // todo: Implement texture loading/rendering
 // todo: Add a default skybox
@@ -9,7 +9,7 @@
 // todo: Add performance monitoring (QueryPool)
 // todo: Add deferred rendering
 // todo: Add support gltf file format
-// todo: Add support for DirectX12 (Why is a Windows-only API used?)
+// todo: Add support for DirectX12 (Xbox)
 // todo: Add pipeline cache
 // todo: Combine shaders into single program
 // todo: Implement event system
@@ -268,10 +268,16 @@ struct ShaderCompiler
 
 struct VertexBuffer
 {
-    Buffer vertex_buffer;
-    Buffer index_buffer;
-    uint32_t        index_count;
+    Buffer   vertex_buffer;
+    Buffer   index_buffer;
+    uint32_t index_count;
 };
+
+struct TextureBuffer
+{
+
+};
+
 
 struct Vertex
 {
@@ -1046,6 +1052,7 @@ static void DestroySwapchain(Swapchain& swapchain)
     for (auto& image : swapchain.images) {
         vkDestroyImageView(gRc->device, image.view, nullptr);
     }
+    swapchain.images.clear();
 
     vkDestroySwapchainKHR(gRc->device, swapchain.handle, nullptr);
 }
@@ -1212,20 +1219,20 @@ static void DestroyRenderPass(VkRenderPass render_pass)
 
 static void CreateFramebuffers()
 {
-    g_framebuffers.resize(g_swapchain.images.size());
+    g_framebuffers.resize(gSwapchain.images.size());
 
     for (std::size_t i = 0; i < g_framebuffers.size(); ++i) {
         const VkImageView views[2] = {
-                g_swapchain.images[i].view,
-                g_swapchain.depth_image.view
+                gSwapchain.images[i].view,
+                gSwapchain.depth_image.view
         };
 
         VkFramebufferCreateInfo framebuffer_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         framebuffer_info.renderPass = g_scene_renderpass;
         framebuffer_info.attachmentCount = 2;
         framebuffer_info.pAttachments = views;
-        framebuffer_info.width = g_swapchain.images[i].extent.width;
-        framebuffer_info.height = g_swapchain.images[i].extent.height;
+        framebuffer_info.width = gSwapchain.images[i].extent.width;
+        framebuffer_info.height = gSwapchain.images[i].extent.height;
         framebuffer_info.layers = 1;
 
         VkCheck(vkCreateFramebuffer(gRc->device, &framebuffer_info, nullptr, &g_framebuffers[i]));
@@ -1237,6 +1244,7 @@ static void DestroyFramebuffers()
     for (auto& framebuffer : g_framebuffers) {
         vkDestroyFramebuffer(gRc->device, framebuffer, nullptr);
     }
+    g_framebuffers.clear();
 }
 
 static void RebuildSwapchain(Swapchain& swapchain)
@@ -1248,7 +1256,7 @@ static void RebuildSwapchain(Swapchain& swapchain)
     DestroyFramebuffers();
     DestroySwapchain(swapchain);
 
-    CreateSwapchain(swapchain.bufferMode, swapchain.vsyncMode);
+    gSwapchain = CreateSwapchain(swapchain.bufferMode, swapchain.vsyncMode);
     CreateFramebuffers();
 }
 
@@ -1263,36 +1271,36 @@ static void CreateFrames()
 
     VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
-    gFrames.resize(g_swapchain.images.size());
-    for (int i = 0; i < gFrames.size(); ++i) {
+    gFrames.resize(gSwapchain.images.size());
+    for (auto& gFrame : gFrames) {
         // create rendering command pool and buffers
-        VkCheck(vkCreateCommandPool(gRc->device, &pool_info, nullptr, &gFrames[i].cmd_pool));
+        VkCheck(vkCreateCommandPool(gRc->device, &pool_info, nullptr, &gFrame.cmd_pool));
 
         VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
-        allocate_info.commandPool        = gFrames[i].cmd_pool;
+        allocate_info.commandPool        = gFrame.cmd_pool;
         allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocate_info.commandBufferCount = 1;
-        VkCheck(vkAllocateCommandBuffers(gRc->device, &allocate_info, &gFrames[i].cmd_buffer));
+        VkCheck(vkAllocateCommandBuffers(gRc->device, &allocate_info, &gFrame.cmd_buffer));
 
 
         // create sync objects
-        VkCheck(vkCreateFence(gRc->device, &fence_info, nullptr, &gFrames[i].submit_fence));
-        VkCheck(vkCreateSemaphore(gRc->device, &semaphore_info, nullptr, &gFrames[i].acquired_semaphore));
-        VkCheck(vkCreateSemaphore(gRc->device, &semaphore_info, nullptr, &gFrames[i].released_semaphore));
+        VkCheck(vkCreateFence(gRc->device, &fence_info, nullptr, &gFrame.submit_fence));
+        VkCheck(vkCreateSemaphore(gRc->device, &semaphore_info, nullptr, &gFrame.acquired_semaphore));
+        VkCheck(vkCreateSemaphore(gRc->device, &semaphore_info, nullptr, &gFrame.released_semaphore));
     }
 }
 
 static void DestroyFrames()
 {
-    for (int i = 0; i < gFrames.size(); ++i) {
-        vkDestroySemaphore(gRc->device, gFrames[i].released_semaphore, nullptr);
-        vkDestroySemaphore(gRc->device, gFrames[i].acquired_semaphore, nullptr);
-        vkDestroyFence(gRc->device, gFrames[i].submit_fence, nullptr);
+    for (auto& gFrame : gFrames) {
+        vkDestroySemaphore(gRc->device, gFrame.released_semaphore, nullptr);
+        vkDestroySemaphore(gRc->device, gFrame.acquired_semaphore, nullptr);
+        vkDestroyFence(gRc->device, gFrame.submit_fence, nullptr);
 
         //vmaDestroyBuffer(gRc->allocator, frame.uniform_buffer.buffer, frame.uniform_buffer.allocation);
 
-        vkFreeCommandBuffers(gRc->device, gFrames[i].cmd_pool, 1, &gFrames[i].cmd_buffer);
-        vkDestroyCommandPool(gRc->device, gFrames[i].cmd_pool, nullptr);
+        vkFreeCommandBuffers(gRc->device, gFrame.cmd_pool, 1, &gFrame.cmd_buffer);
+        vkDestroyCommandPool(gRc->device, gFrame.cmd_pool, nullptr);
     }
 }
 
@@ -1727,45 +1735,29 @@ static void BeginFrame(Swapchain& swapchain, const Frame& frame)
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    const VkClearValue clear_color = { {{ 0.1f, 0.1f, 0.1f, 1.0f }} };
-    const VkClearValue clear_depth = { 0.0f, 0 };
-    const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
+    VkCheck(vkResetCommandBuffer(frame.cmd_buffer, 0));
+    VkCheck(vkBeginCommandBuffer(frame.cmd_buffer, &begin_info));
 
-    VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    renderPassInfo.renderPass = g_scene_renderpass;
-    renderPassInfo.framebuffer = g_framebuffers[swapchain.currentImage];
-    renderPassInfo.renderArea = {{0, 0}, swapchain.images[0].extent }; // todo
-    renderPassInfo.clearValueCount = 2;
-    renderPassInfo.pClearValues = clear_buffers;
+    const VkExtent2D extent = { swapchain.images[0].extent };
 
     VkViewport viewport{};
     viewport.x        = 0.0f;
     viewport.y        = 0.0f;
-    viewport.width    = renderPassInfo.renderArea.extent.width;
-    viewport.height   = renderPassInfo.renderArea.extent.height;
+    viewport.width    = static_cast<float>(extent.width);
+    viewport.height   = static_cast<float>(extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = { 0, 0 };
-    scissor.extent = renderPassInfo.renderArea.extent;
+    scissor.extent = extent;
 
-    VkCheck(vkResetCommandBuffer(frame.cmd_buffer, 0));
-    VkCheck(vkBeginCommandBuffer(frame.cmd_buffer, &begin_info));
-
-    // todo: For render passes we might have to return the command buffer so that we can have all
-    // render passes in between the begin/end command buffer calls
-
-    vkCmdBeginRenderPass(frame.cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    // Set the dynamic viewport and scissor
     vkCmdSetViewport(frame.cmd_buffer, 0, 1, &viewport);
     vkCmdSetScissor(frame.cmd_buffer, 0, 1, &scissor);
 }
 
 static void EndFrame(Swapchain& swapchain, const Frame& frame)
 {
-    vkCmdEndRenderPass(frame.cmd_buffer);
     VkCheck(vkEndCommandBuffer(frame.cmd_buffer));
 
     SubmitImage(frame);
@@ -1834,8 +1826,8 @@ void Engine::Start(const char* name)
 
 
     RenderPassInfo defaultRenderPassInfo{};
-    AddColorAttachment(defaultRenderPassInfo, g_swapchain.images[0].format, 1);
-    AddDepthAttachment(defaultRenderPassInfo, g_swapchain.depth_image.format, 1);
+    AddColorAttachment(defaultRenderPassInfo, gSwapchain.images[0].format, 1);
+    AddDepthAttachment(defaultRenderPassInfo, gSwapchain.depth_image.format, 1);
 
     //RenderPassInfo uiRenderPassInfo{};
     //AddColorAttachment(uiRenderPassInfo, g_swapchain.images[0].format, 1);
@@ -2078,6 +2070,22 @@ VertexBuffer* Engine::LoadModel(const char* path)
     return CreateVertexBuffer(vertices.data(), sizeof(Vertex) * vertices.size(), indices.data(), sizeof(unsigned int) * indices.size());
 }
 
+TextureBuffer* Engine::LoadTexture(const char* path)
+{
+    int width, height, channels;
+    unsigned char* texture = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
+
+    // todo: create a texture buffer with the data copied into it. Once the data has been
+    // todo: copied then we no longer need it on the CPU and thus we can call
+    // todo: stbi_image_free()
+
+
+    stbi_image_free(texture);
+
+    return nullptr;
+}
+
+
 Entity* Engine::CreateEntity(const VertexBuffer* vertexBuffer)
 {
     Entity* entity = new Entity();
@@ -2127,12 +2135,23 @@ void Engine::BeginRender()
 
 void Engine::BeginRenderPass()
 {
+    const VkClearValue clear_color = { {{ 0.1f, 0.1f, 0.1f, 1.0f }} };
+    const VkClearValue clear_depth = { 0.0f, 0 };
+    const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
 
+    VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+    renderPassInfo.renderPass = g_scene_renderpass;
+    renderPassInfo.framebuffer = g_framebuffers[gSwapchain.currentImage];
+    renderPassInfo.renderArea = {{ 0, 0 }, gSwapchain.images[0].extent }; // todo
+    renderPassInfo.clearValueCount = 2;
+    renderPassInfo.pClearValues = clear_buffers;
+
+    vkCmdBeginRenderPass(gFrames[currentFrame].cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void Engine::EndRenderPass()
 {
-
+    vkCmdEndRenderPass(gFrames[currentFrame].cmd_buffer);
 }
 
 void Engine::BindBuffer(const VertexBuffer* buffer)
@@ -2200,6 +2219,7 @@ glm::vec3 Engine::GetEntityPosition(const Entity* e)
     // matrix so simply return that last column to get x, y and z.
     return e->model[3];
 }
+
 
 
 

@@ -7,6 +7,7 @@
 #include "glm/vec3.hpp"
 
 struct VertexBuffer;
+struct TextureBuffer;
 struct Entity;
 
 
@@ -68,6 +69,10 @@ namespace Engine
     // Loads a model file from the filesystem and internally creates a render
     // buffer which is returned to the client.
     VertexBuffer* LoadModel(const char* path);
+
+    // Loads a texture file from the filesystem and returns a pointer to that
+    // texture image.
+    TextureBuffer* LoadTexture(const char* path);
 
     // Creates an entity which is an object that is rendered onto the screen.
     // Each entity has a pointer to a vertex buffer that describes the
