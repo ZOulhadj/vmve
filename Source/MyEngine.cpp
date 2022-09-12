@@ -2340,39 +2340,6 @@ void Engine::Render(Entity* e)
     e->model = glm::dmat4(1.0f);
 }
 
-void Engine::EndRender()
-{
-    EndFrame(gSwapchain, gFrames[currentFrame]);
-
-    UpdateWindow();
-}
-
-void Engine::TranslateEntity(Entity* e, float x, float y, float z)
-{
-    e->model = glm::translate(e->model, { x, y, z });
-}
-
-void Engine::RotateEntity(Entity* e, float deg, float x, float y, float z)
-{
-    e->model = glm::rotate(e->model, glm::radians<double>(deg), { x, y, z });
-}
-
-void Engine::ScaleEntity(Entity* e, float scale)
-{
-    e->model = glm::scale(e->model, { scale, scale, scale });
-}
-
-void Engine::ScaleEntity(Entity* e, float x, float y, float z)
-{
-    e->model = glm::scale(e->model, { x, y, z });
-}
-
-glm::vec3 Engine::GetEntityPosition(const Entity* e)
-{
-    // The position of an entity is encoded into the last column of the model
-    // matrix so simply return that last column to get x, y and z.
-    return e->model[3];
-}
 
 void Engine::RenderDebugUI()
 {
@@ -2452,86 +2419,36 @@ void Engine::RenderDebugUI()
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), gFrames[currentFrame].cmd_buffer);
 }
 
+void Engine::EndRender()
+{
+    EndFrame(gSwapchain, gFrames[currentFrame]);
 
-
-
-
-
-// todo(zak): Must be moved
-/*
-ImGui_ImplVulkan_NewFrame();
-ImGui_ImplGlfw_NewFrame();
-ImGui::NewFrame();
-
-
-static bool renderer_options = false;
-static bool renderer_stats   = false;
-
-static bool demo_window      = false;
-
-if (ImGui::BeginMainMenuBar()) {
-if (ImGui::BeginMenu("Engine")) {
-if (ImGui::MenuItem("Exit"))
-g_running = false;
-
-ImGui::EndMenu();
-}
-if (ImGui::BeginMenu("Rendering")) {
-ImGui::MenuItem("Stats", "", &renderer_stats);
-ImGui::MenuItem("Options", "", &renderer_options);
-ImGui::EndMenu();
+    UpdateWindow();
 }
 
-if (ImGui::BeginMenu("Misc")) {
-ImGui::MenuItem("Show demo window", "", &demo_window);
-
-
-ImGui::EndMenu();
+void Engine::TranslateEntity(Entity* e, float x, float y, float z)
+{
+    e->model = glm::translate(e->model, { x, y, z });
 }
 
-ImGui::EndMainMenuBar();
+void Engine::RotateEntity(Entity* e, float deg, float x, float y, float z)
+{
+    e->model = glm::rotate(e->model, glm::radians<double>(deg), { x, y, z });
 }
 
-if (renderer_stats) {
-ImGui::Begin("Rendering Stats", &renderer_stats);
-
-
-ImGui::End();
+void Engine::ScaleEntity(Entity* e, float scale)
+{
+    e->model = glm::scale(e->model, { scale, scale, scale });
 }
 
-if (renderer_options) {
-static bool vsync = true;
-static int image_count = 3;
-static int fif         = 2;
-static bool wireframe = false;
-static const char* winding_orders[] = { "Clockwise (Default)", "Counter clockwise" };
-static int winding_order_index = 0;
-static const char* culling_list[] = { "Backface (Default)", "Frontface" };
-static int culling_order_index = 0;
-
-ImGui::Begin("Rendering Options", &renderer_options);
-
-ImGui::Checkbox("VSync", &vsync);
-ImGui::SliderInt("Swapchain images", &image_count, 1, 3);
-ImGui::SliderInt("Frames in flight", &fif, 1, 3);
-ImGui::Checkbox("Wireframe", &wireframe);
-ImGui::ListBox("Winding order", &winding_order_index, winding_orders, 2);
-ImGui::ListBox("Culling", &culling_order_index, culling_list, 2);
-
-ImGui::Separator();
-
-ImGui::Button("Apply");
-
-ImGui::End();
+void Engine::ScaleEntity(Entity* e, float x, float y, float z)
+{
+    e->model = glm::scale(e->model, { x, y, z });
 }
 
-
-if (demo_window)
-ImGui::ShowDemoWindow(&demo_window);
-
-
-ImGui::Render();
-
-ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), frame.cmd_buffer);
-*/
-
+glm::vec3 Engine::GetEntityPosition(const Entity* e)
+{
+    // The position of an entity is encoded into the last column of the model
+    // matrix so simply return that last column to get x, y and z.
+    return e->model[3];
+}

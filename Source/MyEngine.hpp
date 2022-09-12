@@ -25,8 +25,6 @@ enum CameraDirections
 
 namespace Engine
 {
-    void RenderDebugUI();
-
     // This is the entry point for the engine and is where all initialization
     // takes place. This should be the first function that gets called by
     // the client application.
@@ -90,7 +88,8 @@ namespace Engine
     // first before any other rendering related function call.
     void BeginRender();
 
-
+    // todo: Most likely will be moved internally as the client should not need to
+    // todo: be aware of the different render passes.
     void BeginRenderPass();
     void EndRenderPass();
 
@@ -101,6 +100,9 @@ namespace Engine
     // This function submits work to the GPU to execute. In other words, rendering
     // an object onto the screen.
     void Render(Entity* e);
+
+    //
+    void RenderDebugUI();
 
     // Once all rendering commands have been completed, this function can be called
     // which will submit all commands to the GPU to be rendered and displayed onto
