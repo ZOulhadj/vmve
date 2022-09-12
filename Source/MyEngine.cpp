@@ -1482,32 +1482,10 @@ static void CreateDebugUI()
 
     ImGui_ImplVulkan_Init(&init_info, g_scene_renderpass);
 
-
     SubmitToGPU([]
     {
         ImGui_ImplVulkan_CreateFontsTexture(gSubmitContext->CmdBuffer);
     });
-
-
-
-    // upload fonts to GPU memory
-   /* VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    VkSubmitInfo end_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    end_info.commandBufferCount = 1;
-    end_info.pCommandBuffers = &gFrames[currentFrame].cmd_buffer;
-
-    VkCheck(vkResetCommandPool(gRc->device, gFrames[currentFrame].cmd_pool, 0));
-    VkCheck(vkBeginCommandBuffer(gFrames[currentFrame].cmd_buffer, &begin_info));
-
-    ImGui_ImplVulkan_CreateFontsTexture(gFrames[currentFrame].cmd_buffer);
-
-    VkCheck(vkEndCommandBuffer(gFrames[currentFrame].cmd_buffer));
-    VkCheck(vkQueueSubmit(gRc->graphics_queue.handle, 1, &end_info, nullptr));
-
-    VkCheck(vkDeviceWaitIdle(gRc->device));
-*/
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
