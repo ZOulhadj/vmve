@@ -883,12 +883,10 @@ static SubmitContext* CreateSubmitContext()
     SubmitContext* context = new SubmitContext();
 
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-    //fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
     pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     pool_info.queueFamilyIndex = gRc->graphics_queue.index;
-
 
     // Create the resources required to upload data to GPU-only memory.
     VkCheck(vkCreateFence(gRc->device, &fence_info, nullptr, &context->Fence));
@@ -901,12 +899,12 @@ static SubmitContext* CreateSubmitContext()
 
     VkCheck(vkAllocateCommandBuffers(gRc->device, &allocate_info, &context->CmdBuffer));
 
-
     return context;
 }
 
 static void DestroySubmitContext(SubmitContext* context)
 {
+    vkFreeCommandBuffers(gRc->device, context->CmdPool, 1, &context->CmdBuffer);
     vkDestroyCommandPool(gRc->device, context->CmdPool, nullptr);
     vkDestroyFence(gRc->device, context->Fence, nullptr);
 
