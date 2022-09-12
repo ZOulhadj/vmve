@@ -73,10 +73,7 @@
 // +---------------------------------------+
 #pragma region global_options
 
-constexpr int swapchain_frame_count   = 3;
 constexpr int frames_in_flight        = 2;
-constexpr auto swapchain_present_mode = VK_PRESENT_MODE_FIFO_KHR;
-constexpr bool vsync                  = true;
 
 #pragma endregion
 
@@ -143,6 +140,12 @@ struct RendererContext
     VmaAllocator allocator;
 };
 
+struct SubmitContext
+{
+    VkFence         Fence;
+    VkCommandPool   CmdPool;
+    VkCommandBuffer CmdBuffer;
+};
 
 struct ImageBuffer
 {
@@ -275,7 +278,7 @@ struct VertexBuffer
 
 struct TextureBuffer
 {
-
+    ImageBuffer image;
 };
 
 
@@ -320,6 +323,7 @@ struct FreeCamera
 
 static Window* gWindow       = nullptr;
 static RendererContext* gRc  = nullptr;
+static SubmitContext* gSubmitContext = nullptr;
 
 static Swapchain gSwapchain{};
 
@@ -371,7 +375,9 @@ static std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
 static VkDescriptorPool g_gui_descriptor_pool;
 
 static std::vector<VertexBuffer*> g_vertex_buffers;
+static std::vector<TextureBuffer*> g_textures;
 static std::vector<Entity*> g_entities;
+
 
 
 const std::string vs_code = R"(
@@ -517,7 +523,6 @@ static bool CompareExtensions(const std::vector<const char*>& requested,
 
     return true;
 }
-
 
 
 // A helper function that returns the size in bytes of a particular format
@@ -873,6 +878,71 @@ static void DestroyRendererContext(RendererContext* rc)
     delete rc;
 }
 
+static SubmitContext* CreateSubmitContext()
+{
+    SubmitContext* context = new SubmitContext();
+
+    VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+    //fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+    pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    pool_info.queueFamilyIndex = gRc->graphics_queue.index;
+
+
+    // Create the resources required to upload data to GPU-only memory.
+    VkCheck(vkCreateFence(gRc->device, &fence_info, nullptr, &context->Fence));
+    VkCheck(vkCreateCommandPool(gRc->device, &pool_info, nullptr, &context->CmdPool));
+
+    VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+    allocate_info.commandPool        = context->CmdPool;
+    allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocate_info.commandBufferCount = 1;
+
+    VkCheck(vkAllocateCommandBuffers(gRc->device, &allocate_info, &context->CmdBuffer));
+
+
+    return context;
+}
+
+static void DestroySubmitContext(SubmitContext* context)
+{
+    vkDestroyCommandPool(gRc->device, context->CmdPool, nullptr);
+    vkDestroyFence(gRc->device, context->Fence, nullptr);
+
+    delete context;
+}
+
+// A function that executes a command directly on the GPU. This is most often
+// used for copying data from staging buffers into GPU local buffers.
+static void SubmitToGPU(const std::function<void()>& SubmitFunction)
+{
+    VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    // Record command that needs to be executed on the GPU. Since this is a
+    // single submit command this will often be copying data into device local
+    // memory
+    VkCheck(vkBeginCommandBuffer(gSubmitContext->CmdBuffer, &begin_info));
+    {
+        SubmitFunction();
+    }
+    VkCheck(vkEndCommandBuffer((gSubmitContext->CmdBuffer)));
+
+    VkSubmitInfo end_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    end_info.commandBufferCount = 1;
+    end_info.pCommandBuffers = &gSubmitContext->CmdBuffer;
+
+    // Tell the GPU to now execute the previously recorded command
+    VkCheck(vkQueueSubmit(gRc->graphics_queue.handle, 1, &end_info, gSubmitContext->Fence));
+
+    VkCheck(vkWaitForFences(gRc->device, 1, &gSubmitContext->Fence, true, UINT64_MAX));
+    VkCheck(vkResetFences(gRc->device, 1, &gSubmitContext->Fence));
+
+    // Reset the command buffers inside the command pool
+    VkCheck(vkResetCommandPool(gRc->device, gSubmitContext->CmdPool, 0));
+}
+
 static VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect)
 {
     VkImageView view{};
@@ -925,7 +995,15 @@ static void DestroyImage(ImageBuffer* image)
     vmaDestroyImage(gRc->allocator, image->handle, image->allocation);
 }
 
-// Creates an empty buffer. This is useful if you do not have
+// Maps/Fills an existing buffer with data.
+static void SetBufferData(Buffer* buffer, void* data, uint32_t size)
+{
+    void* allocation{};
+    VkCheck(vmaMapMemory(gRc->allocator, buffer->allocation, &allocation));
+    std::memcpy(allocation, data, size);
+    vmaUnmapMemory(gRc->allocator, buffer->allocation);
+}
+
 static Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type)
 {
     Buffer buffer{};
@@ -948,20 +1026,54 @@ static Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type)
     return buffer;
 }
 
-// Maps/Fills an existing buffer with data.
-static void SetBufferData(Buffer* buffer, void* data, uint32_t size)
+// Creates and fills a buffer that is CPU accessible. A staging
+// buffer is most often used as a temporary buffer when copying
+// data from the CPU to the GPU.
+static Buffer CreateStagingBuffer(void* data, uint32_t size)
 {
-    void* allocation{};
-    VkCheck(vmaMapMemory(gRc->allocator, buffer->allocation, &allocation));
-    std::memcpy(allocation, data, size);
-    vmaUnmapMemory(gRc->allocator, buffer->allocation);
+    Buffer buffer{};
+
+    VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+    buffer_info.size  = size;
+    buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VmaAllocationCreateInfo alloc_info{};
+    alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
+    alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                       VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    VkCheck(vmaCreateBuffer(gRc->allocator,
+                            &buffer_info,
+                            &alloc_info,
+                            &buffer.buffer,
+                            &buffer.allocation,
+                            nullptr));
+
+    SetBufferData(&buffer, data, size);
+
+    return buffer;
 }
 
-// Creates and fills a buffer.
-static Buffer CreateBuffer(void* data, uint32_t size, VkBufferUsageFlags type)
+// Creates an empty buffer on the GPU that will need to be filled by
+// calling SubmitToGPU.
+static Buffer CreateGPUBuffer(uint32_t size, VkBufferUsageFlags type)
 {
-    Buffer buffer = CreateBuffer(size, type);
-    SetBufferData(&buffer, data, size);
+    Buffer buffer{};
+
+    VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+    buffer_info.size  = size;
+    buffer_info.usage = type | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+    VmaAllocationCreateInfo alloc_info{};
+    alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
+    alloc_info.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+
+    VkCheck(vmaCreateBuffer(gRc->allocator,
+                            &buffer_info,
+                            &alloc_info,
+                            &buffer.buffer,
+                            &buffer.allocation,
+                            nullptr));
 
     return buffer;
 }
@@ -1264,7 +1376,7 @@ static void CreateFrames()
 {
     VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
     pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    pool_info.queueFamilyIndex = 0;
+    pool_info.queueFamilyIndex = gRc->graphics_queue.index;
 
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
@@ -1370,8 +1482,16 @@ static void CreateDebugUI()
 
     ImGui_ImplVulkan_Init(&init_info, g_scene_renderpass);
 
+
+    SubmitToGPU([]
+    {
+        ImGui_ImplVulkan_CreateFontsTexture(gSubmitContext->CmdBuffer);
+    });
+
+
+
     // upload fonts to GPU memory
-    VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+   /* VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     VkSubmitInfo end_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
@@ -1387,6 +1507,7 @@ static void CreateDebugUI()
     VkCheck(vkQueueSubmit(gRc->graphics_queue.handle, 1, &end_info, nullptr));
 
     VkCheck(vkDeviceWaitIdle(gRc->device));
+*/
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
@@ -1821,8 +1942,12 @@ void Engine::Start(const char* name)
 {
     gWindow = CreateWindow(name, 800, 600);
     gRc     = CreateRendererContext(VK_API_VERSION_1_3);
+    gSubmitContext = CreateSubmitContext();
 
-    gSwapchain = CreateSwapchain(BufferMode::Triple, VSyncMode::Enabled);
+
+
+
+    gSwapchain = CreateSwapchain(BufferMode::Triple, VSyncMode::Disabled);
 
 
     RenderPassInfo defaultRenderPassInfo{};
@@ -1886,7 +2011,7 @@ void Engine::Start(const char* name)
         uniform_buffer = CreateBuffer(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     }
 
-    // temp descriptor pool stuff
+    // RenderDebugUI descriptor pool stuff
 
     VkDescriptorPoolSize pool_size{};
     pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1943,6 +2068,15 @@ void Engine::Exit()
     for (auto& entity : g_entities) {
         delete entity;
     }
+    g_entities.clear();
+
+    // Free all textures load from the client
+    for (auto& texture : g_textures) {
+        DestroyImage(&texture->image);
+
+        delete texture;
+    }
+    g_textures.clear();
 
     // Free all renderable resources that may have been allocated by the client
     for (auto& r : g_vertex_buffers) {
@@ -1956,6 +2090,7 @@ void Engine::Exit()
     for (auto& buffer : g_uniform_buffers) {
         DestroyBuffer(&buffer);
     }
+    g_uniform_buffers.clear();
 
     //destroy_pipeline(&sky_sphere);
     DestroyGraphicsPipeline(&basic_pipeline);
@@ -1972,6 +2107,8 @@ void Engine::Exit()
     DestroyRenderPass(g_scene_renderpass);
 
     DestroySwapchain(gSwapchain);
+
+    DestroySubmitContext(gSubmitContext);
     DestroyRendererContext(gRc);
 
     DestroyWindow(gWindow);
@@ -2011,12 +2148,32 @@ VertexBuffer* Engine::CreateVertexBuffer(void* v, int vs, void* i, int is)
 {
     auto* r = new VertexBuffer();
 
-    r->vertex_buffer = CreateBuffer(v, vs, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    r->index_buffer  = CreateBuffer(i, is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    // Create a temporary "staging" buffer that will be used to copy the data
+    // from CPU memory over to GPU memory.
+    Buffer vertexStagingBuffer = CreateStagingBuffer(v, vs);
+    Buffer indexStagingBuffer  = CreateStagingBuffer(i, is);
+
+    r->vertex_buffer = CreateGPUBuffer(vs, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    r->index_buffer  = CreateGPUBuffer(is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     r->index_count   = is / sizeof(uint32_t); // todo: Maybe be unsafe for a hard coded type.
 
-    g_vertex_buffers.push_back(r);
+    // Upload data to the GPU
+    SubmitToGPU([&]
+    {
+        VkBufferCopy vertex_copy_info{}, index_copy_info{};
+        vertex_copy_info.size = vs;
+        index_copy_info.size  = is;
 
+        vkCmdCopyBuffer(gSubmitContext->CmdBuffer, vertexStagingBuffer.buffer, r->vertex_buffer.buffer, 1, &vertex_copy_info);
+        vkCmdCopyBuffer(gSubmitContext->CmdBuffer, indexStagingBuffer.buffer, r->index_buffer.buffer, 1, &index_copy_info);
+    });
+
+
+    // We can now free the staging buffer memory as it is no longer required
+    DestroyBuffer(&indexStagingBuffer);
+    DestroyBuffer(&vertexStagingBuffer);
+
+    g_vertex_buffers.push_back(r);
 
     return r;
 }
@@ -2038,28 +2195,19 @@ VertexBuffer* Engine::LoadModel(const char* path)
 
     for (const auto& shape : shapes) {
         for (const auto& index : shape.mesh.indices) {
-            Vertex v;
-            v.position = {
-                    attrib.vertices[3 * index.vertex_index + 0],
-                    attrib.vertices[3 * index.vertex_index + 1],
-                    attrib.vertices[3 * index.vertex_index + 2]
-            };
+            Vertex v{};
+            v.position[0] = attrib.vertices[3 * index.vertex_index + 0];
+            v.position[1] = attrib.vertices[3 * index.vertex_index + 1];
+            v.position[2] = attrib.vertices[3 * index.vertex_index + 2];
 
-            /* v.color = {
-                 attrib.colors[3 * index.vertex_index + 0],
-                 attrib.colors[3 * index.vertex_index + 1],
-                 attrib.colors[3 * index.vertex_index + 2],
-             };*/
+            v.normal[0] = attrib.normals[3 * index.normal_index + 0];
+            v.normal[1] = attrib.normals[3 * index.normal_index + 1];
+            v.normal[2] = attrib.normals[3 * index.normal_index + 2];
+
             //v.texture_coord = {
             //    attrib.texcoords[2 * index.texcoord_index + 0],
             //    attrib.texcoords[2 * index.texcoord_index + 1],
             //};
-
-            v.normal = {
-                    attrib.normals[3 * index.normal_index + 0],
-                    attrib.normals[3 * index.normal_index + 1],
-                    attrib.normals[3 * index.normal_index + 2]
-            };
 
             vertices.push_back(v);
             indices.push_back(static_cast<uint32_t>(indices.size()));
@@ -2067,29 +2215,36 @@ VertexBuffer* Engine::LoadModel(const char* path)
 
     }
 
-    return CreateVertexBuffer(vertices.data(), sizeof(Vertex) * vertices.size(), indices.data(), sizeof(unsigned int) * indices.size());
+    return CreateVertexBuffer(vertices.data(), sizeof(Vertex) * vertices.size(),
+                              indices.data(), sizeof(unsigned int) * indices.size());
 }
 
 TextureBuffer* Engine::LoadTexture(const char* path)
 {
+    TextureBuffer* buffer = new TextureBuffer();
+
     int width, height, channels;
     unsigned char* texture = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
+    if (!texture) {
+        printf("Failed to load texture at path: %s\n", path);
+        return nullptr;
+    }
 
-    // todo: create a texture buffer with the data copied into it. Once the data has been
-    // todo: copied then we no longer need it on the CPU and thus we can call
-    // todo: stbi_image_free()
-
+    const VkExtent2D extent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+    buffer->image = CreateImage(VK_FORMAT_R8G8B8A8_SRGB, extent, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
     stbi_image_free(texture);
 
-    return nullptr;
+    g_textures.push_back(buffer);
+
+    return buffer;
 }
 
 
 Entity* Engine::CreateEntity(const VertexBuffer* vertexBuffer)
 {
-    Entity* entity = new Entity();
-    entity->model = glm::mat4(1.0f);
+    Entity* entity       = new Entity();
+    entity->model        = glm::mat4(1.0f);
     entity->vertexBuffer = vertexBuffer;
 
     g_entities.push_back(entity);
@@ -2161,7 +2316,6 @@ void Engine::BindBuffer(const VertexBuffer* buffer)
     const VkDeviceSize offset{ 0 };
     vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &buffer->vertex_buffer.buffer, &offset);
     vkCmdBindIndexBuffer(cmd_buffer, buffer->index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
-
 }
 
 void Engine::BindPipeline()
@@ -2218,6 +2372,84 @@ glm::vec3 Engine::GetEntityPosition(const Entity* e)
     // The position of an entity is encoded into the last column of the model
     // matrix so simply return that last column to get x, y and z.
     return e->model[3];
+}
+
+void Engine::RenderDebugUI()
+{
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+
+    static bool renderer_options = false;
+    static bool renderer_stats   = false;
+
+    static bool demo_window      = false;
+
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("Engine")) {
+            if (ImGui::MenuItem("Exit"))
+                g_running = false;
+
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Rendering")) {
+            ImGui::MenuItem("Stats", "", &renderer_stats);
+            ImGui::MenuItem("Options", "", &renderer_options);
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Misc")) {
+            ImGui::MenuItem("Show demo window", "", &demo_window);
+
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
+
+    if (renderer_stats) {
+        ImGui::Begin("Rendering Stats", &renderer_stats);
+
+
+        ImGui::End();
+    }
+
+    if (renderer_options) {
+        static bool vsync = true;
+        static int image_count = 3;
+        static int fif         = 2;
+        static bool wireframe = false;
+        static const char* winding_orders[] = { "Clockwise (Default)", "Counter clockwise" };
+        static int winding_order_index = 0;
+        static const char* culling_list[] = { "Backface (Default)", "Frontface" };
+        static int culling_order_index = 0;
+
+        ImGui::Begin("Rendering Options", &renderer_options);
+
+        ImGui::Checkbox("VSync", &vsync);
+        ImGui::SliderInt("Swapchain images", &image_count, 1, 3);
+        ImGui::SliderInt("Frames in flight", &fif, 1, 3);
+        ImGui::Checkbox("Wireframe", &wireframe);
+        ImGui::ListBox("Winding order", &winding_order_index, winding_orders, 2);
+        ImGui::ListBox("Culling", &culling_order_index, culling_list, 2);
+
+        ImGui::Separator();
+
+        ImGui::Button("Apply");
+
+        ImGui::End();
+    }
+
+
+    if (demo_window)
+        ImGui::ShowDemoWindow(&demo_window);
+
+
+    ImGui::Render();
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), gFrames[currentFrame].cmd_buffer);
 }
 
 

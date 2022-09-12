@@ -25,6 +25,8 @@ enum CameraDirections
 
 namespace Engine
 {
+    void RenderDebugUI();
+
     // This is the entry point for the engine and is where all initialization
     // takes place. This should be the first function that gets called by
     // the client application.

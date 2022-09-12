@@ -5,7 +5,7 @@ project(MyEngine)
 #       Compiler Options      #
 ###############################
 set(CMAKE_CXX_STANDARD 23)
-#set(CMAKE_EXE_LINKER_FLAGS "-static")
+set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 ###############################
 #     3rd Party Libraries     #
