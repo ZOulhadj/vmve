@@ -1,6 +1,5 @@
 #include "MyEngine.hpp"
 
-
 int main()
 {
     Engine::Start("Solar System Simulator");
@@ -18,7 +17,6 @@ int main()
     while (Engine::Running()) {
         if (Engine::IsKeyDown(256)) Engine::Stop();
 
-
         // Camera movement
         if (Engine::IsKeyDown(87))  Engine::MoveCamera(camera_forward);
         if (Engine::IsKeyDown(83))  Engine::MoveCamera(camera_backwards);
@@ -29,15 +27,14 @@ int main()
         if (Engine::IsKeyDown(81))  Engine::MoveCamera(camera_roll_left);
         if (Engine::IsKeyDown(69))  Engine::MoveCamera(camera_roll_right);
 
-
         // Update entities
         Engine::TranslateEntity(sunEntity, 0.0f, 0.0f, 0.0f);
         Engine::RotateEntity(sunEntity, Engine::Uptime() * 10.0f, 0.0f, 1.0f, 0.0f);
         Engine::ScaleEntity(sunEntity, 1.0f);
 
+
         Engine::TranslateEntity(earthEntity, 0.0f, 0.0f, -700.0f);
         Engine::ScaleEntity(earthEntity, 100.0f);
-
 
         // Rendering
         Engine::BeginRender();

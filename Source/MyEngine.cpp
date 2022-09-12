@@ -2424,9 +2424,11 @@ void Engine::ScaleEntity(Entity* e, float x, float y, float z)
     e->model = glm::scale(e->model, { x, y, z });
 }
 
-glm::vec3 Engine::GetEntityPosition(const Entity* e)
+void Engine::GetEntityPosition(const Entity* e, float* x, float* y, float* z)
 {
     // The position of an entity is encoded into the last column of the model
     // matrix so simply return that last column to get x, y and z.
-    return e->model[3];
+    *x = e->model[3].x;
+    *y = e->model[3].y;
+    *z = e->model[3].z;
 }

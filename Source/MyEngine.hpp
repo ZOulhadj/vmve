@@ -1,11 +1,5 @@
 #pragma once
 
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_LEFT_HANDED
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include "glm/vec3.hpp"
-
 struct VertexBuffer;
 struct TextureBuffer;
 struct Entity;
@@ -109,16 +103,12 @@ namespace Engine
     // the screen.
     void EndRender();
 
-
-
     void TranslateEntity(Entity* e, float x, float y, float z);
     void RotateEntity(Entity* e, float deg, float x, float y, float z);
     void ScaleEntity(Entity* e, float scale);
     void ScaleEntity(Entity* e, float x, float y, float z);
 
-
-    glm::vec3 GetEntityPosition(const Entity* e);
-
+    void GetEntityPosition(const Entity* e, float* x, float* y, float* z);
 }
 
 
