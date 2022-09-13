@@ -1546,12 +1546,12 @@ static void EndFrame(Swapchain& swapchain, const Frame& frame)
 
 
 
-void CreateRenderer()
+void CreateRenderer(BufferMode bufferMode, VSyncMode vsyncMode)
 {
     gRc     = CreateRendererContext(VK_API_VERSION_1_3);
     gSubmitContext = CreateSubmitContext();
 
-    gSwapchain = CreateSwapchain(BufferMode::Triple, VSyncMode::Disabled);
+    gSwapchain = CreateSwapchain(bufferMode, vsyncMode);
 
 
     RenderPassInfo defaultRenderPassInfo{};
@@ -1740,5 +1740,41 @@ VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is)
     DestroyBuffer(&vertexStagingBuffer);
 
     g_vertex_buffers.push_back(r);
+}
+
+void BindVertexBuffer(const VertexBuffer* buffer)
+{
+    const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
+
+    const VkDeviceSize offset{ 0 };
+    vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &buffer->vertex_buffer.buffer, &offset);
+    vkCmdBindIndexBuffer(cmd_buffer, buffer->index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
+}
+
+void BeginFrame()
+{
+    // copy data into uniform buffer
+    SetBufferData(&g_uniform_buffers[currentFrame], &g_camera.proj, sizeof(glm::mat4));
+
+    BeginFrame(gSwapchain, gFrames[currentFrame]);
+}
+
+void EndFrame()
+{
+    EndFrame(gSwapchain, gFrames[currentFrame]);
+}
+
+void RenderEntity(Entity* e)
+{
+    const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
+
+    const glm::mat4 mtw = g_camera.proj * g_camera.view * e->model;
+
+    vkCmdPushConstants(cmd_buffer, basic_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtw);
+    vkCmdDrawIndexed(cmd_buffer, e->vertexBuffer->index_count, 1, 0, 0, 0);
+
+
+    // Reset the entity transform matrix after being rendered.
+    e->model = glm::dmat4(1.0f);
 }
 

@@ -15,9 +15,15 @@ enum class VSyncMode
 
 struct VertexBuffer;
 
-void CreateRenderer();
+void CreateRenderer(BufferMode bufferMode, VSyncMode vsyncMode);
 void DestroyRenderer();
 
 VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is);
+void BindVertexBuffer(const VertexBuffer* buffer);
+
+void BeginFrame();
+void EndFrame();
+
+void RenderEntity(Entity* e);
 
 #endif

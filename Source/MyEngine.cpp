@@ -184,7 +184,7 @@ static void EngineCallback(const Event& e)
 void Engine::Start(const char* name)
 {
     gWindow = CreateWindow(name, 800, 600);
-    CreateRenderer();
+    CreateRenderer(BufferMode::Triple, VSyncMode::Disabled);
 
 
     g_camera = CreateCamera({ 0.0f, 0.0f, -5.0f }, 45.0f, 2.0f);
@@ -237,12 +237,12 @@ bool Engine::IsMouseButtonDown(int buttoncode)
     return buttons[buttoncode];
 }
 
-VertexBuffer* Engine::CreateVertexBuffer(void* v, int vs, void* i, int is)
+VertexBuffer* Engine::CreateRenderBuffer(void* v, int vs, void* i, int is)
 {
-    return ::CreateVertexBuffer(v, vs, i, is);
+    return CreateVertexBuffer(v, vs, i, is);
 }
 
-VertexBuffer* Engine::LoadModel(const char* path)
+VertexBuffer* Engine::CreateRenderBuffer(const char* path)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -344,12 +344,9 @@ void Engine::BeginRender()
 
 
     // update the camera
-    UpdateCamera();
+    UpdateCamera(g_camera);
 
-    // copy data into uniform buffer
-    SetBufferData(&g_uniform_buffers[currentFrame], &g_camera.proj, sizeof(glm::mat4));
-
-    BeginFrame(gSwapchain, gFrames[currentFrame]);
+    BeginFrame();
 }
 
 void Engine::BeginRenderPass()
@@ -373,13 +370,9 @@ void Engine::EndRenderPass()
     vkCmdEndRenderPass(gFrames[currentFrame].cmd_buffer);
 }
 
-void Engine::BindBuffer(const VertexBuffer* buffer)
+void Engine::BindRenderBuffer(const VertexBuffer* buffer)
 {
-    const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
-
-    const VkDeviceSize offset{ 0 };
-    vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &buffer->vertex_buffer.buffer, &offset);
-    vkCmdBindIndexBuffer(cmd_buffer, buffer->index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
+    BindVertexBuffer(buffer);
 }
 
 void Engine::BindPipeline()
@@ -392,18 +385,10 @@ void Engine::BindPipeline()
 
 void Engine::Render(Entity* e)
 {
-    const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
-
-    const glm::mat4 mtw = g_camera.proj * g_camera.view * e->model;
-
-    vkCmdPushConstants(cmd_buffer, basic_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtw);
-    vkCmdDrawIndexed(cmd_buffer, e->vertexBuffer->index_count, 1, 0, 0, 0);
-
-
-    // Reset the entity transform matrix after being rendered.
-    e->model = glm::dmat4(1.0f);
+    RenderEntity(e);
 }
 
+/*
 
 void Engine::RenderDebugUI()
 {
@@ -482,10 +467,11 @@ void Engine::RenderDebugUI()
 
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), gFrames[currentFrame].cmd_buffer);
 }
+*/
 
 void Engine::EndRender()
 {
-    EndFrame(gSwapchain, gFrames[currentFrame]);
+    EndFrame();
 
     UpdateWindow();
 }

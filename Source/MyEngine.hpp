@@ -54,15 +54,13 @@ namespace Engine
     // is pressed down.
     bool IsMouseButtonDown(int buttoncode);
 
-//    vec2 mouse_position();
-
     // Creates a region of memory stored on the GPU. The object returns
     // a pointer to a vertex and index buffer which can be used for rendering.
-    VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is);
+    VertexBuffer* CreateRenderBuffer(void* v, int vs, void* i, int is);
 
     // Loads a model file from the filesystem and internally creates a render
     // buffer which is returned to the client.
-    VertexBuffer* LoadModel(const char* path);
+    VertexBuffer* CreateRenderBuffer(const char* path);
 
     // Loads a texture file from the filesystem and returns a pointer to that
     // texture image.
@@ -82,14 +80,7 @@ namespace Engine
     // first before any other rendering related function call.
     void BeginRender();
 
-    // todo: Most likely will be moved internally as the client should not need to
-    // todo: be aware of the different render passes.
-    void BeginRenderPass();
-    void EndRenderPass();
-
-    void BindBuffer(const VertexBuffer* buffer);
-
-    void BindPipeline();
+    void BindRenderBuffer(const VertexBuffer* buffer);
 
     // This function submits work to the GPU to execute. In other words, rendering
     // an object onto the screen.
