@@ -33,7 +33,10 @@ add_executable(${PROJECT_NAME}
         ${IMGUI_SRC}
 
         Source/MyEngine.cpp
-        Source/Main.cpp)
+        Source/Main.cpp
+
+        Source/Window.cpp
+        Source/Renderer.cpp Source/Camera.cpp Source/Camera.hpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         Vendor/stb
