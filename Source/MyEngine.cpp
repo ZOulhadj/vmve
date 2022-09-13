@@ -54,6 +54,11 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
+
+
 
 
 #pragma endregion
@@ -105,13 +110,6 @@ struct Event
 };
 
 
-struct Entity
-{
-    glm::dmat4 model;
-
-    const VertexBuffer* vertexBuffer;
-};
-
 
 #pragma endregion
 
@@ -135,7 +133,7 @@ static float scroll_offset = 0.0;
 
 static bool g_running = false;
 
-static std::vector<Entity*> g_entities;
+
 
 
 
@@ -166,6 +164,8 @@ static std::string LoadTextFile(const char* path)
 static void EngineCallback(const Event& e)
 {
     switch (e.type) {
+        case unknown_event:
+            break;
         case window_closed_event: {
             g_running = false;
         } break;
@@ -174,6 +174,36 @@ static void EngineCallback(const Event& e)
 //            gWindow->width  = (example)e.value;
 //            gWindow->height = e.value.y;
         } break;
+        case window_moved_event:
+            break;
+        case window_focused_event:
+            break;
+        case window_lost_focus_event:
+            break;
+        case window_maximized_event:
+            break;
+        case window_minimized_event:
+            break;
+        case key_pressed_event:
+            break;
+        case key_released_event:
+            break;
+        case mouse_moved_event:
+            break;
+        case mouse_button_pressed_event:
+            break;
+        case mouse_button_released_event:
+            break;
+        case mouse_scrolled_forward_event:
+            break;
+        case mouse_scrolled_backwards_event:
+            break;
+        case mouse_entered_event:
+            break;
+        case mouse_left_event:
+            break;
+        case character_input_event:
+            break;
     }
 }
 
@@ -184,7 +214,7 @@ static void EngineCallback(const Event& e)
 void Engine::Start(const char* name)
 {
     gWindow = CreateWindow(name, 800, 600);
-    CreateRenderer(BufferMode::Triple, VSyncMode::Disabled);
+    CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Disabled);
 
 
     g_camera = CreateCamera({ 0.0f, 0.0f, -5.0f }, 45.0f, 2.0f);
@@ -195,12 +225,6 @@ void Engine::Start(const char* name)
 
 void Engine::Exit()
 {
-
-    // Free all entities created by the client
-    for (auto& entity : g_entities) {
-        delete entity;
-    }
-    g_entities.clear();
 
 
     DestroyRenderer();
@@ -242,7 +266,7 @@ VertexBuffer* Engine::CreateRenderBuffer(void* v, int vs, void* i, int is)
     return CreateVertexBuffer(v, vs, i, is);
 }
 
-VertexBuffer* Engine::CreateRenderBuffer(const char* path)
+VertexBuffer* Engine::LoadModel(const char* path)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -285,21 +309,19 @@ VertexBuffer* Engine::CreateRenderBuffer(const char* path)
 
 TextureBuffer* Engine::LoadTexture(const char* path)
 {
-    TextureBuffer* buffer = new TextureBuffer();
-
     int width, height, channels;
     unsigned char* texture = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
         printf("Failed to load texture at path: %s\n", path);
+
+        stbi_image_free(texture);
+
         return nullptr;
     }
 
-    const VkExtent2D extent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
-    buffer->image = CreateImage(VK_FORMAT_R8G8B8A8_SRGB, extent, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+    TextureBuffer* buffer = CreateTextureBuffer(texture, width, height);
 
     stbi_image_free(texture);
-
-    g_textures.push_back(buffer);
 
     return buffer;
 }
@@ -307,13 +329,7 @@ TextureBuffer* Engine::LoadTexture(const char* path)
 
 Entity* Engine::CreateEntity(const VertexBuffer* vertexBuffer)
 {
-    Entity* entity       = new Entity();
-    entity->model        = glm::mat4(1.0f);
-    entity->vertexBuffer = vertexBuffer;
-
-    g_entities.push_back(entity);
-
-    return entity;
+    return ::CreateEntity(vertexBuffer);
 }
 
 void Engine::MoveCamera(CameraDirections direction)
@@ -346,41 +362,27 @@ void Engine::BeginRender()
     // update the camera
     UpdateCamera(g_camera);
 
-    BeginFrame();
-}
-
-void Engine::BeginRenderPass()
-{
-    const VkClearValue clear_color = { {{ 0.1f, 0.1f, 0.1f, 1.0f }} };
-    const VkClearValue clear_depth = { 0.0f, 0 };
-    const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
-
-    VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    renderPassInfo.renderPass = g_scene_renderpass;
-    renderPassInfo.framebuffer = g_framebuffers[gSwapchain.currentImage];
-    renderPassInfo.renderArea = {{ 0, 0 }, gSwapchain.images[0].extent }; // todo
-    renderPassInfo.clearValueCount = 2;
-    renderPassInfo.pClearValues = clear_buffers;
-
-    vkCmdBeginRenderPass(gFrames[currentFrame].cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
-
-void Engine::EndRenderPass()
-{
-    vkCmdEndRenderPass(gFrames[currentFrame].cmd_buffer);
-}
-
-void Engine::BindRenderBuffer(const VertexBuffer* buffer)
-{
-    BindVertexBuffer(buffer);
+    BeginFrame(g_camera);
 }
 
 void Engine::BindPipeline()
 {
-    const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
+    ::BindPipeline();
+}
 
-    vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, basic_pipeline.pipeline);
-    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, basic_pipeline.layout, 0, 1, &descriptor_sets[currentFrame], 0, nullptr);
+void Engine::BeginRenderPass()
+{
+    ::BeginRenderPass();
+}
+
+void Engine::EndRenderPass()
+{
+    ::EndRenderPass();
+}
+
+void Engine::BindVertexBuffer(const VertexBuffer* buffer)
+{
+    ::BindVertexBuffer(buffer);
 }
 
 void Engine::Render(Entity* e)
@@ -388,7 +390,6 @@ void Engine::Render(Entity* e)
     RenderEntity(e);
 }
 
-/*
 
 void Engine::RenderDebugUI()
 {
@@ -465,9 +466,9 @@ void Engine::RenderDebugUI()
 
     ImGui::Render();
 
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), gFrames[currentFrame].cmd_buffer);
+    ::RenderDebugUI();
 }
-*/
+
 
 void Engine::EndRender()
 {
@@ -483,7 +484,7 @@ void Engine::TranslateEntity(Entity* e, float x, float y, float z)
 
 void Engine::RotateEntity(Entity* e, float deg, float x, float y, float z)
 {
-    e->model = glm::rotate(e->model, glm::radians<double>(deg), { x, y, z });
+    e->model = glm::rotate(e->model, glm::radians(deg), { x, y, z });
 }
 
 void Engine::ScaleEntity(Entity* e, float scale)

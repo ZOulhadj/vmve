@@ -23,14 +23,18 @@ struct QuaternionCamera
     float roll_speed;
     float fov;
 
-    glm::dmat4 view;
-    glm::dmat4 proj;
+    float near;
+    float far;
+
+    glm::mat4 view;
+    glm::mat4 proj;
 };
 
 
 QuaternionCamera CreateCamera(const glm::vec3& position, float fov, float speed);
 void UpdateCamera(QuaternionCamera& camera);
 
+void UpdateCameraProjection(uint32_t width, uint32_t height);
 
 
 #endif

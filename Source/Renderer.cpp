@@ -1,180 +1,13 @@
 #include "Renderer.hpp"
 
 
-#include <vulkan/vulkan.h>
-
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
-
-#include <shaderc/shaderc.h>
-
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
-
-
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_LEFT_HANDED
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-
-
-struct Queue
-{
-    VkQueue handle;
-    uint32_t index;
-};
-
-struct RendererContext
-{
-    VkInstance instance;
-    VkSurfaceKHR surface;
-    VkPhysicalDevice physical_device;
-    Queue graphics_queue;
-    VkDevice device;
-    VmaAllocator allocator;
-};
-
-struct SubmitContext
-{
-    VkFence         Fence;
-    VkCommandPool   CmdPool;
-    VkCommandBuffer CmdBuffer;
-};
-
-struct ImageBuffer
-{
-    VkImage       handle;
-    VkImageView   view;
-    VmaAllocation allocation;
-    VkExtent2D    extent;
-    VkFormat      format;
-};
-
-struct Buffer
-{
-    VkBuffer buffer;
-    VmaAllocation allocation;
-};
-
-
-
-struct Swapchain
-{
-    BufferMode bufferMode;
-    VSyncMode  vsyncMode;
-
-    VkSwapchainKHR handle;
-
-    std::vector<ImageBuffer> images;
-    ImageBuffer depth_image;
-
-    uint32_t currentImage;
-};
-
-struct RenderPassAttachment
-{
-    uint32_t           Index;
-    VkFormat           Format;
-    VkSampleCountFlags Samples;
-    VkImageLayout      Layout;
-
-
-    VkAttachmentLoadOp LoadOp;
-    VkAttachmentStoreOp StoreOp;
-    VkAttachmentLoadOp StencilLoadOp;
-    VkAttachmentStoreOp StencilStoreOp;
-    VkImageLayout InitialLayout;
-    VkImageLayout FinalLayout;
-};
-
-struct RenderPassInfo
-{
-    std::vector<RenderPassAttachment> ColorAttachments;
-
-    RenderPassAttachment DepthAttachment;
-};
-
-struct Shader
-{
-    VkShaderStageFlagBits type;
-    VkShaderModule        handle;
-};
-
-struct BindingAttribute
-{
-    VkFormat Format;
-    uint32_t Size;
-    uint32_t Offset;
-};
-
-struct BindingLayout
-{
-    uint32_t          Size;
-    VkVertexInputRate InputRate;
-
-    std::vector<BindingAttribute> Attributes;
-};
-
-struct PipelineInfo
-{
-    std::vector<BindingLayout>                     VertexInputDescription;
-
-    std::vector<VkDescriptorSetLayoutBinding>      descriptor_bindings;
-    uint32_t                                       push_constant_size;
-
-    std::vector<Shader>                      shaders;
-    VkPolygonMode                                  polygon_mode;
-    VkCullModeFlagBits                             cull_mode;
-};
-
-struct Pipeline
-{
-    VkDescriptorSetLayout descriptor_set_layout;
-    VkPipelineLayout      layout;
-    VkPipeline            pipeline;
-};
-
-struct Frame
-{
-    VkCommandPool cmd_pool;
-    VkCommandBuffer cmd_buffer;
-
-    // CPU -> GPU sync
-    VkFence submit_fence;
-
-    // Frame -> Frame sync (GPU)
-    VkSemaphore acquired_semaphore;
-    VkSemaphore released_semaphore;
-};
-
-struct ShaderCompiler
-{
-    shaderc_compiler_t compiler;
-    shaderc_compile_options_t options;
-};
-
-struct VertexBuffer
-{
-    Buffer   vertex_buffer;
-    Buffer   index_buffer;
-    uint32_t index_count;
-};
-
-struct TextureBuffer
-{
-    ImageBuffer image;
-};
-
-struct Vertex
-{
-    glm::vec3 position;
-    glm::vec3 color;
-    glm::vec3 normal;
-};
 
 
 static RendererContext* gRc  = nullptr;
@@ -230,7 +63,7 @@ layout(push_constant) uniform constant
 } obj;
 
 void main() {
-    gl_Position = obj.model * vec4(position, 1.0);
+    gl_Position = mvp.proj * obj.model * vec4(position, 1.0);
     pixel_color = normal;
 }
 )";
@@ -286,7 +119,7 @@ const std::string skybox_fs_code = R"(
 
 static std::vector<VertexBuffer*> g_vertex_buffers;
 static std::vector<TextureBuffer*> g_textures;
-
+static std::vector<Entity*> g_entities;
 
 // This is a helper function used for all Vulkan related function calls that
 // return a VkResult value.
@@ -409,9 +242,11 @@ static bool HasRequiredFeatures(VkPhysicalDevice physical_device, VkPhysicalDevi
 
 // Creates the base renderer context. This context is the core of the renderer
 // and handles all creation/destruction of Vulkan resources.
-static RendererContext* CreateRendererContext(uint32_t version)
+static RendererContext* CreateRendererContext(uint32_t version, const Window* window)
 {
     auto rc = new RendererContext();
+
+    rc->window = window;
 
     const std::vector<const char*> requested_layers {
             "VK_LAYER_KHRONOS_validation",
@@ -459,7 +294,7 @@ static RendererContext* CreateRendererContext(uint32_t version)
 
     // create surface
     VkCheck(glfwCreateWindowSurface(rc->instance,
-                                    gWindow->handle,
+                                    rc->window->handle,
                                     nullptr,
                                     &rc->surface));
 
@@ -1144,7 +979,7 @@ static void CreateDebugUI()
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplGlfw_InitForVulkan(gWindow->handle, true);
+    ImGui_ImplGlfw_InitForVulkan(gRc->window->handle, true);
     ImGui_ImplVulkan_InitInfo init_info{};
     init_info.Instance = gRc->instance;
     init_info.PhysicalDevice = gRc->physical_device;
@@ -1546,9 +1381,9 @@ static void EndFrame(Swapchain& swapchain, const Frame& frame)
 
 
 
-void CreateRenderer(BufferMode bufferMode, VSyncMode vsyncMode)
+void CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsyncMode)
 {
-    gRc     = CreateRendererContext(VK_API_VERSION_1_3);
+    gRc     = CreateRendererContext(VK_API_VERSION_1_3, window);
     gSubmitContext = CreateSubmitContext();
 
     gSwapchain = CreateSwapchain(bufferMode, vsyncMode);
@@ -1664,6 +1499,13 @@ void DestroyRenderer()
     vkDestroyDescriptorPool(gRc->device, descriptor_pool, nullptr);
 
 
+    // Free all entities created by the client
+    for (auto& entity : g_entities) {
+        delete entity;
+    }
+    g_entities.clear();
+
+
     // Free all textures load from the client
     for (auto& texture : g_textures) {
         DestroyImage(&texture->image);
@@ -1740,7 +1582,33 @@ VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is)
     DestroyBuffer(&vertexStagingBuffer);
 
     g_vertex_buffers.push_back(r);
+
+
+    return r;
 }
+
+TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height)
+{
+    auto buffer = new TextureBuffer();
+
+    buffer->image = CreateImage(VK_FORMAT_R8G8B8A8_SRGB, { width, height }, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+    g_textures.push_back(buffer);
+
+    return buffer;
+}
+
+Entity* CreateEntity(const VertexBuffer* vertexBuffer)
+{
+    auto entity       = new Entity();
+    entity->model        = glm::mat4(1.0f);
+    entity->vertexBuffer = vertexBuffer;
+
+    g_entities.push_back(entity);
+
+    return entity;
+}
+
 
 void BindVertexBuffer(const VertexBuffer* buffer)
 {
@@ -1751,10 +1619,11 @@ void BindVertexBuffer(const VertexBuffer* buffer)
     vkCmdBindIndexBuffer(cmd_buffer, buffer->index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
 }
 
-void BeginFrame()
+void BeginFrame(QuaternionCamera& camera)
 {
     // copy data into uniform buffer
-    SetBufferData(&g_uniform_buffers[currentFrame], &g_camera.proj, sizeof(glm::mat4));
+    glm::mat4 vp = camera.proj * camera.view;
+    SetBufferData(&g_uniform_buffers[currentFrame], &vp, sizeof(glm::mat4));
 
     BeginFrame(gSwapchain, gFrames[currentFrame]);
 }
@@ -1768,13 +1637,47 @@ void RenderEntity(Entity* e)
 {
     const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
 
-    const glm::mat4 mtw = g_camera.proj * g_camera.view * e->model;
-
-    vkCmdPushConstants(cmd_buffer, basic_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &mtw);
+    vkCmdPushConstants(cmd_buffer, basic_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &e->model);
     vkCmdDrawIndexed(cmd_buffer, e->vertexBuffer->index_count, 1, 0, 0, 0);
 
 
     // Reset the entity transform matrix after being rendered.
-    e->model = glm::dmat4(1.0f);
+    e->model = glm::mat4(1.0f);
 }
+
+void RenderDebugUI()
+{
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), gFrames[currentFrame].cmd_buffer);
+}
+
+
+void BeginRenderPass()
+{
+    const VkClearValue clear_color = { {{ 0.1f, 0.1f, 0.1f, 1.0f }} };
+    const VkClearValue clear_depth = { 0.0f, 0 };
+    const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
+
+    VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+    renderPassInfo.renderPass = g_scene_renderpass;
+    renderPassInfo.framebuffer = g_framebuffers[gSwapchain.currentImage];
+    renderPassInfo.renderArea = {{ 0, 0 }, gSwapchain.images[0].extent }; // todo
+    renderPassInfo.clearValueCount = 2;
+    renderPassInfo.pClearValues = clear_buffers;
+
+    vkCmdBeginRenderPass(gFrames[currentFrame].cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void EndRenderPass()
+{
+    vkCmdEndRenderPass(gFrames[currentFrame].cmd_buffer);
+}
+
+void BindPipeline()
+{
+    const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
+
+    vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, basic_pipeline.pipeline);
+    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, basic_pipeline.layout, 0, 1, &descriptor_sets[currentFrame], 0, nullptr);
+}
+
 

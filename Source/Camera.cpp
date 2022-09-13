@@ -11,12 +11,23 @@ QuaternionCamera CreateCamera(const glm::vec3& position, float fov, float speed)
     camera.roll_speed  = 90.0f;
     camera.roll        = 0.0f;
     camera.fov         = fov;
+    camera.near        = 0.1f;
+    camera.far         = 1000.0f;
+
+    camera.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
+    camera.proj = glm::perspective(camera.fov, 800.0f / 600.0f, camera.far, camera.near);
+
+    // Required if using Vulkan (left-handed coordinate-system)
+    camera.proj[1][1] *= -1.0;
 
     return camera;
 }
 
 void UpdateCamera(QuaternionCamera& camera)
 {
+    float cursor_x = 0.0f;
+    float cursor_y = 0.0f;
+
     // todo(zak): Need to fix unwanted roll when rotating
     // Get the mouse offsets
     static float last_x = 0.0f;
@@ -40,16 +51,24 @@ void UpdateCamera(QuaternionCamera& camera)
     const glm::quat roll  = glm::angleAxis(glm::radians(camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // Update the camera orientation based on pitch, yaw and roll
-    //g_camera.orientation = (pitch * yaw * roll) * g_camera.orientation;
+    //camera.orientation = (pitch * yaw * roll) * camera.orientation;
 
     // Create the view and projection matrices
-    camera.view = glm::mat4_cast(glm::dquat(camera.orientation)) * glm::translate(glm::dmat4(1.0f), -glm::dvec3(camera.position));
-    //cam.proj = glm::infinitePerspective(glm::radians<double>(cam.fov), (double)gWindow->width / gWindow->height, 0.1);
-    camera.proj       = glm::perspective(glm::radians<double>(camera.fov), (double)gWindow->width / gWindow->height, 1000.0, 0.1);
-    // Required if using Vulkan (left-handed coordinate-system)
-    camera.proj[1][1] *= -1.0;
+    camera.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
 
     // Build final camera transform matrix
     //cam.view = proj * view;
     camera.roll      = 0.0f;
+
+    //printf("%s\n", glm::to_string(camera.front_vector).c_str());
+}
+
+void UpdateCameraProjection(QuaternionCamera& camera, uint32_t width, uint32_t height)
+{
+    //cam.proj = glm::infinitePerspective(glm::radians<double>(cam.fov), (double)gWindow->width / gWindow->height, 0.1);
+
+    camera.proj = glm::perspective(camera.fov, (float)width / (float)height, camera.far, camera.near);
+
+    // Required if using Vulkan (left-handed coordinate-system)
+    camera.proj[1][1] *= -1.0;
 }

@@ -5,7 +5,7 @@ int main()
     Engine::Start("Solar System Simulator");
 
     // Load models
-    const VertexBuffer* icosphere = Engine::CreateRenderBuffer("assets/icosphere.obj");
+    const VertexBuffer* icosphere = Engine::LoadModel("assets/icosphere.obj");
 
     // Load textures
     const TextureBuffer* skyphere = Engine::LoadTexture("assets/textures/skysphere.jpg");
@@ -37,13 +37,14 @@ int main()
         Engine::ScaleEntity(earthEntity, 100.0f);
 
         // Rendering
+
         Engine::BeginRender();
         {
             Engine::BeginRenderPass();
             {
                 Engine::BindPipeline();
 
-                Engine::BindRenderBuffer(icosphere);
+                Engine::BindVertexBuffer(icosphere);
                 Engine::Render(sunEntity);
                 Engine::Render(earthEntity);
 

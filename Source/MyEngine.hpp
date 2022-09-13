@@ -60,7 +60,7 @@ namespace Engine
 
     // Loads a model file from the filesystem and internally creates a render
     // buffer which is returned to the client.
-    VertexBuffer* CreateRenderBuffer(const char* path);
+    VertexBuffer* LoadModel(const char* path);
 
     // Loads a texture file from the filesystem and returns a pointer to that
     // texture image.
@@ -80,7 +80,12 @@ namespace Engine
     // first before any other rendering related function call.
     void BeginRender();
 
-    void BindRenderBuffer(const VertexBuffer* buffer);
+    void BindPipeline();
+
+    void BeginRenderPass();
+    void EndRenderPass();
+
+    void BindVertexBuffer(const VertexBuffer* buffer);
 
     // This function submits work to the GPU to execute. In other words, rendering
     // an object onto the screen.
