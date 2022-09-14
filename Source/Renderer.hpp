@@ -86,115 +86,6 @@ struct Swapchain
 
     uint32_t currentImage;
 };
-/*
-struct RenderPassAttachment
-{
-    uint32_t           Index;
-    VkFormat           Format;
-    VkSampleCountFlags Samples;
-    VkImageLayout      Layout;
-
-
-    VkAttachmentLoadOp LoadOp;
-    VkAttachmentStoreOp StoreOp;
-    VkAttachmentLoadOp StencilLoadOp;
-    VkAttachmentStoreOp StencilStoreOp;
-    VkImageLayout InitialLayout;
-    VkImageLayout FinalLayout;
-};*/
-/*
-
-struct RenderPassInfo
-{
-    std::vector<RenderPassAttachment> ColorAttachments;
-
-    RenderPassAttachment DepthAttachment;
-};
-
-struct RenderPass
-{
-    VkRenderPass Handle;
-    std::vector<VkFramebuffer> Framebuffers;
-};
-*/
-
-struct Shader
-{
-    VkShaderStageFlagBits type;
-    VkShaderModule        handle;
-};
-
-struct BindingAttribute
-{
-    VkFormat Format;
-    uint32_t Size;
-    uint32_t Offset;
-};
-
-struct BindingLayout
-{
-    uint32_t          Size;
-    VkVertexInputRate InputRate;
-
-    std::vector<BindingAttribute> Attributes;
-};
-
-/*
-struct PipelineInfo
-{
-    std::vector<BindingLayout>                     VertexInputDescription;
-
-    std::vector<VkDescriptorSetLayoutBinding>      descriptor_bindings;
-    uint32_t                                       push_constant_size;
-
-    std::vector<Shader>                      shaders;
-    VkPolygonMode                                  polygon_mode;
-    VkCullModeFlagBits                             cull_mode;
-
-    RenderPass* renderPass;
-};
-
-struct Pipeline
-{
-    VkDescriptorSetLayout descriptor_set_layout;
-    VkPipelineLayout      layout;
-    VkPipeline            pipeline;
-};
-*/
-
-struct RenderStateShader
-{
-    VkShaderStageFlagBits Type;
-    std::string Code;
-};
-
-
-
-struct RenderStateInfo
-{
-    uint32_t ColorAttachmentCount;
-    VkFormat ColorAttachmentFormat;
-    VkExtent2D ColorAttachmentSize;
-    VkSampleCountFlagBits ColorAttachmentSamples;
-
-    uint32_t BindingLayoutSize;
-    std::vector<VkFormat> BindingAttributeFormats;
-    uint32_t PushConstantSize;
-    std::vector<RenderStateShader> PipelineShaders;
-};
-
-
-struct RenderState
-{
-    VkRenderPass RenderPass;
-    std::vector<VkFramebuffer> Framebuffers;
-
-    VkDescriptorSetLayout DescriptorLayout;
-    VkPipelineLayout PipelineLayout;
-    VkPipeline Pipeline;
-};
-
-
 
 
 struct Frame
@@ -215,6 +106,42 @@ struct ShaderCompiler
     shaderc_compiler_t compiler;
     shaderc_compile_options_t options;
 };
+
+struct Shader
+{
+    VkShaderStageFlagBits type;
+    VkShaderModule        handle;
+};
+
+struct RenderStateShader
+{
+    VkShaderStageFlagBits Type;
+    std::string Code;
+};
+
+struct RenderStateInfo
+{
+    uint32_t ColorAttachmentCount;
+    VkFormat ColorAttachmentFormat;
+    VkExtent2D ColorAttachmentExtent;
+    VkSampleCountFlagBits MSAASamples;
+
+    uint32_t BindingLayoutSize;
+    std::vector<VkFormat> BindingAttributeFormats;
+    uint32_t PushConstantSize;
+    std::vector<RenderStateShader> PipelineShaders;
+};
+
+struct RenderState
+{
+    VkRenderPass RenderPass;
+    std::vector<VkFramebuffer> Framebuffers;
+
+    VkDescriptorSetLayout DescriptorLayout;
+    VkPipelineLayout PipelineLayout;
+    VkPipeline Pipeline;
+};
+
 
 struct VertexBuffer
 {

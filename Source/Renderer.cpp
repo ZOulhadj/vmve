@@ -14,11 +14,8 @@ static RendererContext* gRc  = nullptr;
 static SubmitContext* gSubmitContext = nullptr;
 
 static Swapchain gSwapchain{};
-
-static ShaderCompiler g_shader_compiler{};
-
 static std::vector<Frame> gFrames;
-
+static ShaderCompiler g_shader_compiler{};
 constexpr int frames_in_flight        = 2;
 
 // The frame and image index variables are NOT the same thing.
@@ -882,7 +879,7 @@ static RenderState CreateRenderState(RenderStateInfo& info)
     for (std::size_t i = 0; i < info.ColorAttachmentCount; ++i) {
         VkAttachmentDescription attachment{};
         attachment.format         = info.ColorAttachmentFormat;
-        attachment.samples        = info.ColorAttachmentSamples;
+        attachment.samples        = info.MSAASamples;
         attachment.loadOp         = Attachment.LoadOp;
         attachment.storeOp        = Attachment.StoreOp;
         attachment.stencilLoadOp  = Attachment.StencilLoadOp;
@@ -955,8 +952,8 @@ static RenderState CreateRenderState(RenderStateInfo& info)
         framebuffer_info.renderPass = renderState.RenderPass;
         framebuffer_info.attachmentCount = 2;
         framebuffer_info.pAttachments = views;
-        framebuffer_info.width = info.ColorAttachmentSize.width;
-        framebuffer_info.height = info.ColorAttachmentSize.height;
+        framebuffer_info.width = info.ColorAttachmentExtent.width;
+        framebuffer_info.height = info.ColorAttachmentExtent.height;
         framebuffer_info.layers = 1;
 
         VkCheck(vkCreateFramebuffer(gRc->device, &framebuffer_info, nullptr, &renderState.Framebuffers[i]));
@@ -1283,7 +1280,40 @@ void CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsync
 
     CreateShaderCompiler();
 
+    // 1 render pass to many pipelines
+    // render pass is like a blueprint
 
+    // For example
+    // 1 color attachment
+    // 1 depth attachment
+
+    // we can use that render pass for any pipeline that
+    // matches those attachments
+
+    // geometry renderpass
+        // 1 scene rendering pipeline
+        // 1 skysphere pipeline
+
+    // lighting renderpass
+        // 1 lighting pipeline
+
+    // ui renderpass
+        // 1 ui pipeline
+
+    /*
+     * BeginRenderPass(geometry)
+     *
+     * BindPipeline(scene);
+     * Render(e1);
+     * Render(e1);
+     *
+     * BindPipeline(skysphere);
+     * Render(e3);
+     *
+     * EndRenderPass(geometry);
+     *
+     *
+     */
 
     const std::vector<RenderStateShader> shaderList {
         { VK_SHADER_STAGE_VERTEX_BIT, vs_code },
@@ -1299,8 +1329,9 @@ void CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsync
     RenderStateInfo geometryStateInfo{};
     geometryStateInfo.ColorAttachmentCount    = 1;
     geometryStateInfo.ColorAttachmentFormat   = VK_FORMAT_B8G8R8A8_SRGB;
-    geometryStateInfo.ColorAttachmentSize     = { gSwapchain.images[0].extent };
-    geometryStateInfo.ColorAttachmentSamples  = VK_SAMPLE_COUNT_1_BIT;
+    geometryStateInfo.ColorAttachmentExtent   = {gSwapchain.images[0].extent };
+    geometryStateInfo.MSAASamples             = VK_SAMPLE_COUNT_1_BIT;
+
     geometryStateInfo.BindingLayoutSize       = sizeof(Vertex);
     geometryStateInfo.BindingAttributeFormats = bindingAttributeFormats;
     geometryStateInfo.PushConstantSize        = sizeof(glm::mat4);
