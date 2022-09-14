@@ -74,8 +74,6 @@ struct Buffer
     VmaAllocation allocation;
 };
 
-
-
 struct Swapchain
 {
     BufferMode bufferMode;
@@ -88,7 +86,7 @@ struct Swapchain
 
     uint32_t currentImage;
 };
-
+/*
 struct RenderPassAttachment
 {
     uint32_t           Index;
@@ -103,7 +101,8 @@ struct RenderPassAttachment
     VkAttachmentStoreOp StencilStoreOp;
     VkImageLayout InitialLayout;
     VkImageLayout FinalLayout;
-};
+};*/
+/*
 
 struct RenderPassInfo
 {
@@ -111,6 +110,13 @@ struct RenderPassInfo
 
     RenderPassAttachment DepthAttachment;
 };
+
+struct RenderPass
+{
+    VkRenderPass Handle;
+    std::vector<VkFramebuffer> Framebuffers;
+};
+*/
 
 struct Shader
 {
@@ -133,6 +139,7 @@ struct BindingLayout
     std::vector<BindingAttribute> Attributes;
 };
 
+/*
 struct PipelineInfo
 {
     std::vector<BindingLayout>                     VertexInputDescription;
@@ -143,6 +150,8 @@ struct PipelineInfo
     std::vector<Shader>                      shaders;
     VkPolygonMode                                  polygon_mode;
     VkCullModeFlagBits                             cull_mode;
+
+    RenderPass* renderPass;
 };
 
 struct Pipeline
@@ -151,6 +160,42 @@ struct Pipeline
     VkPipelineLayout      layout;
     VkPipeline            pipeline;
 };
+*/
+
+struct RenderStateShader
+{
+    VkShaderStageFlagBits Type;
+    std::string Code;
+};
+
+
+
+struct RenderStateInfo
+{
+    uint32_t ColorAttachmentCount;
+    VkFormat ColorAttachmentFormat;
+    VkExtent2D ColorAttachmentSize;
+    VkSampleCountFlagBits ColorAttachmentSamples;
+
+    uint32_t BindingLayoutSize;
+    std::vector<VkFormat> BindingAttributeFormats;
+    uint32_t PushConstantSize;
+    std::vector<RenderStateShader> PipelineShaders;
+};
+
+
+struct RenderState
+{
+    VkRenderPass RenderPass;
+    std::vector<VkFramebuffer> Framebuffers;
+
+    VkDescriptorSetLayout DescriptorLayout;
+    VkPipelineLayout PipelineLayout;
+    VkPipeline Pipeline;
+};
+
+
+
 
 struct Frame
 {
@@ -209,10 +254,11 @@ void BindVertexBuffer(const VertexBuffer* buffer);
 void BeginFrame(QuaternionCamera& camera);
 void EndFrame();
 
-void BeginRenderPass();
-void EndRenderPass();
-void BindPipeline();
+
+// BeginRenderState()
+// EndRenderState()
+
+
 void RenderEntity(Entity* e);
-void RenderDebugUI();
 
 #endif

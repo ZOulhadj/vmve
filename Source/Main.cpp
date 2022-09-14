@@ -37,23 +37,11 @@ int main()
         Engine::ScaleEntity(earthEntity, 100.0f);
 
         // Rendering
+        Engine::Render(sunEntity);
+        Engine::Render(earthEntity);
 
-        Engine::BeginRender();
-        {
-            Engine::BeginRenderPass();
-            {
-                Engine::BindPipeline();
+        Engine::Render();
 
-                Engine::BindVertexBuffer(icosphere);
-                Engine::Render(sunEntity);
-                Engine::Render(earthEntity);
-
-
-                Engine::RenderDebugUI();
-            }
-            Engine::EndRenderPass();
-        }
-        Engine::EndRender();
     }
 
     Engine::Exit();

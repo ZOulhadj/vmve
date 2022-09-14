@@ -134,7 +134,7 @@ static float scroll_offset = 0.0;
 static bool g_running = false;
 
 
-
+std::vector<Entity*> entitiesToRender;
 
 
 
@@ -225,8 +225,6 @@ void Engine::Start(const char* name)
 
 void Engine::Exit()
 {
-
-
     DestroyRenderer();
     DestroyWindow(gWindow);
 }
@@ -347,7 +345,7 @@ void Engine::MoveCamera(CameraDirections direction)
     if (direction == camera_roll_right) g_camera.roll     += roll_speed;
 }
 
-void Engine::BeginRender()
+void Engine::Render()
 {
     // Calculate the delta time between previous and current frame. This
     // allows for frame dependent systems such as movement and translation
@@ -363,118 +361,118 @@ void Engine::BeginRender()
     UpdateCamera(g_camera);
 
     BeginFrame(g_camera);
-}
 
-void Engine::BindPipeline()
-{
-    ::BindPipeline();
-}
+/*    VkCommandBuffer geometryPass = BeginRenderPass(GetSceneRenderPass());
+    {
+        BindPipeline(GetDefaultPipeline());
 
-void Engine::BeginRenderPass()
-{
-    ::BeginRenderPass();
-}
+        for (auto& entity : entitiesToRender) {
+            BindVertexBuffer(entity->vertexBuffer);
+            RenderEntity(entity);
+        }
+    }
+    EndRenderPass(geometryPass);*/
 
-void Engine::EndRenderPass()
-{
-    ::EndRenderPass();
-}
+   /* VkCommandBuffer lightingPass = BeginRenderPass();
+    {
 
-void Engine::BindVertexBuffer(const VertexBuffer* buffer)
-{
-    ::BindVertexBuffer(buffer);
+    }
+    EndRenderPass(lightingPass);
+*/
+/*    VkCommandBuffer debugUIPass = BeginRenderPass(GetUIRenderPass());
+    {
+        //BindPipeline();
+
+
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+
+        static bool renderer_options = false;
+        static bool renderer_stats   = false;
+
+        static bool demo_window      = false;
+
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("Engine")) {
+                if (ImGui::MenuItem("Exit"))
+                    g_running = false;
+
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Rendering")) {
+                ImGui::MenuItem("Stats", "", &renderer_stats);
+                ImGui::MenuItem("Options", "", &renderer_options);
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Misc")) {
+                ImGui::MenuItem("Show demo window", "", &demo_window);
+
+
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMainMenuBar();
+        }
+
+        if (renderer_stats) {
+            ImGui::Begin("Rendering Stats", &renderer_stats);
+
+
+            ImGui::End();
+        }
+
+        if (renderer_options) {
+            static bool vsync = true;
+            static int image_count = 3;
+            static int fif         = 2;
+            static bool wireframe = false;
+            static const char* winding_orders[] = { "Clockwise (Default)", "Counter clockwise" };
+            static int winding_order_index = 0;
+            static const char* culling_list[] = { "Backface (Default)", "Frontface" };
+            static int culling_order_index = 0;
+
+            ImGui::Begin("Rendering Options", &renderer_options);
+
+            ImGui::Checkbox("VSync", &vsync);
+            ImGui::SliderInt("Swapchain images", &image_count, 1, 3);
+            ImGui::SliderInt("Frames in flight", &fif, 1, 3);
+            ImGui::Checkbox("Wireframe", &wireframe);
+            ImGui::ListBox("Winding order", &winding_order_index, winding_orders, 2);
+            ImGui::ListBox("Culling", &culling_order_index, culling_list, 2);
+
+            ImGui::Separator();
+
+            ImGui::Button("Apply");
+
+            ImGui::End();
+        }
+
+
+        if (demo_window)
+            ImGui::ShowDemoWindow(&demo_window);
+
+
+        ImGui::Render();
+
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), debugUIPass);
+    }
+    EndRenderPass(debugUIPass);*/
+
+
+
+    entitiesToRender.clear();
+
+    EndFrame();
+
+    UpdateWindow();
 }
 
 void Engine::Render(Entity* e)
 {
-    RenderEntity(e);
-}
-
-
-void Engine::RenderDebugUI()
-{
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-
-    static bool renderer_options = false;
-    static bool renderer_stats   = false;
-
-    static bool demo_window      = false;
-
-    if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("Engine")) {
-            if (ImGui::MenuItem("Exit"))
-                g_running = false;
-
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Rendering")) {
-            ImGui::MenuItem("Stats", "", &renderer_stats);
-            ImGui::MenuItem("Options", "", &renderer_options);
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Misc")) {
-            ImGui::MenuItem("Show demo window", "", &demo_window);
-
-
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMainMenuBar();
-    }
-
-    if (renderer_stats) {
-        ImGui::Begin("Rendering Stats", &renderer_stats);
-
-
-        ImGui::End();
-    }
-
-    if (renderer_options) {
-        static bool vsync = true;
-        static int image_count = 3;
-        static int fif         = 2;
-        static bool wireframe = false;
-        static const char* winding_orders[] = { "Clockwise (Default)", "Counter clockwise" };
-        static int winding_order_index = 0;
-        static const char* culling_list[] = { "Backface (Default)", "Frontface" };
-        static int culling_order_index = 0;
-
-        ImGui::Begin("Rendering Options", &renderer_options);
-
-        ImGui::Checkbox("VSync", &vsync);
-        ImGui::SliderInt("Swapchain images", &image_count, 1, 3);
-        ImGui::SliderInt("Frames in flight", &fif, 1, 3);
-        ImGui::Checkbox("Wireframe", &wireframe);
-        ImGui::ListBox("Winding order", &winding_order_index, winding_orders, 2);
-        ImGui::ListBox("Culling", &culling_order_index, culling_list, 2);
-
-        ImGui::Separator();
-
-        ImGui::Button("Apply");
-
-        ImGui::End();
-    }
-
-
-    if (demo_window)
-        ImGui::ShowDemoWindow(&demo_window);
-
-
-    ImGui::Render();
-
-    ::RenderDebugUI();
-}
-
-
-void Engine::EndRender()
-{
-    EndFrame();
-
-    UpdateWindow();
+    entitiesToRender.push_back(e);
 }
 
 void Engine::TranslateEntity(Entity* e, float x, float y, float z)

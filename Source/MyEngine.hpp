@@ -76,28 +76,11 @@ namespace Engine
     // Moves the default camera in the specified direction
     void MoveCamera(CameraDirections direction);
 
-    // This function performs all the required work per frame and must be called
-    // first before any other rendering related function call.
-    void BeginRender();
-
-    void BindPipeline();
-
-    void BeginRenderPass();
-    void EndRenderPass();
-
-    void BindVertexBuffer(const VertexBuffer* buffer);
+    void Render();
 
     // This function submits work to the GPU to execute. In other words, rendering
     // an object onto the screen.
     void Render(Entity* e);
-
-    //
-    void RenderDebugUI();
-
-    // Once all rendering commands have been completed, this function can be called
-    // which will submit all commands to the GPU to be rendered and displayed onto
-    // the screen.
-    void EndRender();
 
     void TranslateEntity(Entity* e, float x, float y, float z);
     void RotateEntity(Entity* e, float deg, float x, float y, float z);
