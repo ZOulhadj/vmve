@@ -26,11 +26,6 @@ constexpr int frames_in_flight        = 2;
 static uint32_t currentFrame = 0;
 
 
-static RenderState geometryState{};
-
-
-
-
 static VkQueryPool g_query_pool = nullptr;
 
 static VkDescriptorPool descriptor_pool;
@@ -752,7 +747,7 @@ static void DestroyQuery()
 }
 
 
-static void CreateDebugUI()
+static void CreateDebugUI(RenderPass& renderPass)
 {
     const VkDescriptorPoolSize pool_sizes[] = {
             { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
@@ -801,7 +796,7 @@ static void CreateDebugUI()
     init_info.Allocator = nullptr;
     init_info.CheckVkResultFn = VkCheck;
 
-    //ImGui_ImplVulkan_Init(&init_info, g_ui_renderpass.Handle);
+    ImGui_ImplVulkan_Init(&init_info, renderPass.handle);
 
     SubmitToGPU([]
                 {
@@ -868,96 +863,123 @@ static Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
     return shader_module;
 }
 
-static RenderState CreateRenderState(RenderStateInfo& info)
+static RenderPass CreateRenderPass(const RenderPassInfo& info)
 {
-    RenderState renderState{};
+    RenderPass renderPass{};
 
     // Create renderpass
     std::vector<VkAttachmentDescription> attachments;
     std::vector<VkAttachmentReference> references;
+    VkAttachmentReference* depthReference = nullptr;
 
     for (std::size_t i = 0; i < info.ColorAttachmentCount; ++i) {
         VkAttachmentDescription attachment{};
-        attachment.format         = info.ColorAttachmentFormat;
+        attachment.format         = info.AttachmentFormat;
         attachment.samples        = info.MSAASamples;
-        attachment.loadOp         = Attachment.LoadOp;
-        attachment.storeOp        = Attachment.StoreOp;
-        attachment.stencilLoadOp  = Attachment.StencilLoadOp;
-        attachment.stencilStoreOp = Attachment.StencilStoreOp;
-        attachment.initialLayout  = Attachment.InitialLayout;
-        attachment.finalLayout    = Attachment.FinalLayout;
+        attachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+        attachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 
         VkAttachmentReference attachmentReference{};
         attachmentReference.attachment = U32(i);
-        attachmentReference.layout     = Attachment.Layout;
+        attachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-
+        attachments.push_back(attachment);
+        references.push_back(attachmentReference);
     }
 
-    VkAttachmentDescription depthAttach{};
-    depthAttach.format         = depthAttachment.Format;
-    depthAttach.samples        = static_cast<VkSampleCountFlagBits>(depthAttachment.Samples); // todo:
-    depthAttach.loadOp         = depthAttachment.LoadOp;
-    depthAttach.storeOp        = depthAttachment.StoreOp;
-    depthAttach.stencilLoadOp  = depthAttachment.StencilLoadOp;
-    depthAttach.stencilStoreOp = depthAttachment.StencilStoreOp;
-    depthAttach.initialLayout  = depthAttachment.InitialLayout;
-    depthAttach.finalLayout    = depthAttachment.FinalLayout;
+    std::vector<VkSubpassDependency> dependencies;
+    VkAttachmentReference depthRef{};
 
+    if (info.HasDepthAttachment) {
+        VkAttachmentDescription depthAttach{};
+        depthAttach.format         = info.DepthFormat;
+        depthAttach.samples        = info.MSAASamples; // todo:
+        depthAttach.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depthAttach.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttach.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        depthAttach.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttach.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+        depthAttach.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkAttachmentReference depthReference{};
-    depthReference.attachment = depthAttachment.Index;
-    depthReference.layout     = depthAttachment.Layout;
+        depthRef.attachment = U32(attachments.size());
+        depthRef.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    attachments.push_back(depthAttach);
+        attachments.push_back(depthAttach);
+        depthReference = &depthRef;
+
+        VkSubpassDependency dependency{};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+        dependencies.push_back(dependency);
+    }
+
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = references.size();
     subpass.pColorAttachments = references.data();
-    subpass.pDepthStencilAttachment = &depthReference;
-
-
-    VkSubpassDependency dependency{};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.srcAccessMask = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    subpass.pDepthStencilAttachment = depthReference;
 
     VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
     render_pass_info.attachmentCount = U32(attachments.size());
     render_pass_info.pAttachments = attachments.data();
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
-    render_pass_info.dependencyCount = 1;
-    render_pass_info.pDependencies = &dependency;
+    render_pass_info.dependencyCount = U32(dependencies.size());
+    render_pass_info.pDependencies = dependencies.data();
 
-    VkCheck(vkCreateRenderPass(gRc->device, &render_pass_info, nullptr, &renderState.RenderPass));
+    VkCheck(vkCreateRenderPass(gRc->device, &render_pass_info, nullptr, &renderPass.handle));
 
 
+    // Create framebuffers
+    renderPass.framebuffers.resize(gSwapchain.images.size());
 
-    // Create framebuffers for the current renderpass
-    renderState.Framebuffers.resize(gSwapchain.images.size());
-
-    for (std::size_t i = 0; i < renderState.Framebuffers.size(); ++i) {
-        const VkImageView views[2] = {
-                gSwapchain.images[i].view,
-                gSwapchain.depth_image.view
+    for (std::size_t i = 0; i < renderPass.framebuffers.size(); ++i) {
+        std::vector<VkImageView> views {
+            gSwapchain.images[i].view
         };
 
+        if (info.HasDepthAttachment)
+            views.push_back(gSwapchain.depth_image.view);
+
         VkFramebufferCreateInfo framebuffer_info{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
-        framebuffer_info.renderPass = renderState.RenderPass;
-        framebuffer_info.attachmentCount = 2;
-        framebuffer_info.pAttachments = views;
-        framebuffer_info.width = info.ColorAttachmentExtent.width;
-        framebuffer_info.height = info.ColorAttachmentExtent.height;
+        framebuffer_info.renderPass = renderPass.handle;
+        framebuffer_info.attachmentCount = U32(views.size());
+        framebuffer_info.pAttachments = views.data();
+        framebuffer_info.width = info.AttachmentExtent.width;
+        framebuffer_info.height = info.AttachmentExtent.height;
         framebuffer_info.layers = 1;
 
-        VkCheck(vkCreateFramebuffer(gRc->device, &framebuffer_info, nullptr, &renderState.Framebuffers[i]));
+        VkCheck(vkCreateFramebuffer(gRc->device, &framebuffer_info, nullptr, &renderPass.framebuffers[i]));
     }
+
+    return renderPass;
+}
+
+static void DestroyRenderPass(RenderPass& renderPass)
+{
+    for (auto& framebuffer : renderPass.framebuffers) {
+        vkDestroyFramebuffer(gRc->device, framebuffer, nullptr);
+    }
+    renderPass.framebuffers.clear();
+
+    vkDestroyRenderPass(gRc->device, renderPass.handle, nullptr);
+}
+
+static Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass)
+{
+    Pipeline pipeline{};
+
 
     // create descriptor set layout
     VkDescriptorSetLayoutBinding layoutBinding{};
@@ -970,22 +992,22 @@ static RenderState CreateRenderState(RenderStateInfo& info)
     descriptor_layout_info.bindingCount = 1;
     descriptor_layout_info.pBindings    = &layoutBinding;
 
-    VkCheck(vkCreateDescriptorSetLayout(gRc->device, &descriptor_layout_info, nullptr, &renderState.DescriptorLayout));
+    VkCheck(vkCreateDescriptorSetLayout(gRc->device, &descriptor_layout_info, nullptr, &pipeline.DescriptorLayout));
 
     // push constant
     VkPushConstantRange push_constant{};
     push_constant.offset     = 0;
-    push_constant.size       = info.PushConstantSize;
+    push_constant.size       = pipelineInfo.PushConstantSize;
     push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     // create pipeline layout
     VkPipelineLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     layout_info.setLayoutCount = 1;
-    layout_info.pSetLayouts    = &renderState.DescriptorLayout;
+    layout_info.pSetLayouts    = &pipeline.DescriptorLayout;
     layout_info.pushConstantRangeCount = 1;
     layout_info.pPushConstantRanges    = &push_constant;
 
-    VkCheck(vkCreatePipelineLayout(gRc->device, &layout_info, nullptr, &renderState.PipelineLayout));
+    VkCheck(vkCreatePipelineLayout(gRc->device, &layout_info, nullptr, &pipeline.layout));
 
 
     // create pipeline
@@ -995,17 +1017,17 @@ static RenderState CreateRenderState(RenderStateInfo& info)
     for (std::size_t i = 0; i < 1; ++i) {
         VkVertexInputBindingDescription binding{};
         binding.binding   = U32(i);
-        binding.stride    = info.BindingLayoutSize;
+        binding.stride    = pipelineInfo.BindingLayoutSize;
         binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
         bindings.push_back(binding);
 
         uint32_t offset = 0;
-        for (std::size_t j = 0; j < info.BindingAttributeFormats.size(); ++j) {
+        for (std::size_t j = 0; j < pipelineInfo.BindingAttributeFormats.size(); ++j) {
             VkVertexInputAttributeDescription attribute{};
             attribute.location = U32(j);
             attribute.binding  = binding.binding;
-            attribute.format   = info.BindingAttributeFormats[i];
+            attribute.format   = pipelineInfo.BindingAttributeFormats[i];
             attribute.offset   = offset;
 
             offset += FormatToSize(attribute.format);
@@ -1023,7 +1045,7 @@ static RenderState CreateRenderState(RenderStateInfo& info)
     std::vector<VkPipelineShaderStageCreateInfo> shader_infos;
     std::vector<VkShaderModule> shaderModules;
 
-    for (auto& shader : info.PipelineShaders) {
+    for (auto& shader : pipelineInfo.PipelineShaders) {
         // Compile shader
         VkShaderModule shaderHandle = CreateShader(shader.Type, shader.Code).handle;
 
@@ -1118,8 +1140,8 @@ static RenderState CreateRenderState(RenderStateInfo& info)
     graphics_pipeline_info.pDepthStencilState  = &depth_stencil_state_info;
     graphics_pipeline_info.pColorBlendState    = &color_blend_state_info;
     graphics_pipeline_info.pDynamicState       = &dynamic_state_info;
-    graphics_pipeline_info.layout              = renderState.PipelineLayout;
-    graphics_pipeline_info.renderPass          = renderState.RenderPass;
+    graphics_pipeline_info.layout              = pipeline.layout;
+    graphics_pipeline_info.renderPass          = renderPass.handle;
     graphics_pipeline_info.subpass             = 0;
 
     VkCheck(vkCreateGraphicsPipelines(gRc->device,
@@ -1127,7 +1149,7 @@ static RenderState CreateRenderState(RenderStateInfo& info)
                                       1,
                                       &graphics_pipeline_info,
                                       nullptr,
-                                      &renderState.Pipeline));
+                                      &pipeline.handle));
 
 
 
@@ -1135,22 +1157,14 @@ static RenderState CreateRenderState(RenderStateInfo& info)
     for (auto& shader : shaderModules)
         vkDestroyShaderModule(gRc->device, shader, nullptr);
 
-
-    return renderState;
+    return pipeline;
 }
 
-static void DestroyRenderState(RenderState& renderState)
+static void DestroyPipeline(Pipeline& pipeline)
 {
-    vkDestroyPipeline(gRc->device, renderState.Pipeline, nullptr);
-    vkDestroyPipelineLayout(gRc->device, renderState.PipelineLayout, nullptr);
-    vkDestroyDescriptorSetLayout(gRc->device, renderState.DescriptorLayout, nullptr);
-
-    for (auto& framebuffer : renderState.Framebuffers) {
-        vkDestroyFramebuffer(gRc->device, framebuffer, nullptr);
-    }
-    renderState.Framebuffers.clear();
-
-    vkDestroyRenderPass(gRc->device, renderState.RenderPass, nullptr);
+    vkDestroyPipeline(gRc->device, pipeline.handle, nullptr);
+    vkDestroyPipelineLayout(gRc->device, pipeline.layout, nullptr);
+    vkDestroyDescriptorSetLayout(gRc->device, pipeline.DescriptorLayout, nullptr);
 }
 
 
@@ -1269,78 +1283,60 @@ static void EndFrame(Swapchain& swapchain, const Frame& frame)
 
 
 
-void CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsyncMode)
+Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsyncMode)
 {
-    gRc     = CreateRendererContext(VK_API_VERSION_1_3, window);
-    gSubmitContext = CreateSubmitContext();
+    Renderer renderer{};
 
-    gSwapchain = CreateSwapchain(bufferMode, vsyncMode);
+    gRc            = CreateRendererContext(VK_API_VERSION_1_3, window);
+    gSubmitContext = CreateSubmitContext();
+    gSwapchain     = CreateSwapchain(bufferMode, vsyncMode);
 
     CreateFrames();
 
     CreateShaderCompiler();
 
-    // 1 render pass to many pipelines
-    // render pass is like a blueprint
 
-    // For example
-    // 1 color attachment
-    // 1 depth attachment
+    RenderPassInfo renderPassInfo{};
+    renderPassInfo.ColorAttachmentCount  = 1;
+    renderPassInfo.AttachmentFormat      = VK_FORMAT_B8G8R8A8_SRGB;
+    renderPassInfo.AttachmentExtent      = { gSwapchain.images[0].extent };
+    renderPassInfo.MSAASamples           = VK_SAMPLE_COUNT_1_BIT;
+    renderPassInfo.HasDepthAttachment    = true;
+    renderPassInfo.DepthFormat           = VK_FORMAT_D32_SFLOAT;
 
-    // we can use that render pass for any pipeline that
-    // matches those attachments
+    renderer.geometryRenderPass = CreateRenderPass(renderPassInfo);
 
-    // geometry renderpass
-        // 1 scene rendering pipeline
-        // 1 skysphere pipeline
+    RenderPassInfo debugUIRenderPassInfo{};
+    debugUIRenderPassInfo.ColorAttachmentCount = 1;
+    debugUIRenderPassInfo.AttachmentFormat     = VK_FORMAT_B8G8R8A8_SRGB;
+    debugUIRenderPassInfo.AttachmentExtent     = { gSwapchain.images[0].extent };
+    debugUIRenderPassInfo.MSAASamples          = VK_SAMPLE_COUNT_1_BIT;
+    debugUIRenderPassInfo.HasDepthAttachment   = false;
 
-    // lighting renderpass
-        // 1 lighting pipeline
+    renderer.uiRenderPass = CreateRenderPass(debugUIRenderPassInfo);
 
-    // ui renderpass
-        // 1 ui pipeline
-
-    /*
-     * BeginRenderPass(geometry)
-     *
-     * BindPipeline(scene);
-     * Render(e1);
-     * Render(e1);
-     *
-     * BindPipeline(skysphere);
-     * Render(e3);
-     *
-     * EndRenderPass(geometry);
-     *
-     *
-     */
-
-    const std::vector<RenderStateShader> shaderList {
-        { VK_SHADER_STAGE_VERTEX_BIT, vs_code },
-        { VK_SHADER_STAGE_FRAGMENT_BIT, fs_code }
+    const std::vector<ShaderInfo> shaderList {
+            { VK_SHADER_STAGE_VERTEX_BIT, vs_code },
+            { VK_SHADER_STAGE_FRAGMENT_BIT, fs_code }
     };
 
     const std::vector<VkFormat> bindingAttributeFormats {
-        VK_FORMAT_R32G32B32_SFLOAT, // Position
-        VK_FORMAT_R32G32B32_SFLOAT, // Color
-        VK_FORMAT_R32G32B32_SFLOAT  // Normal
+            VK_FORMAT_R32G32B32_SFLOAT, // Position
+            VK_FORMAT_R32G32B32_SFLOAT, // Color
+            VK_FORMAT_R32G32B32_SFLOAT  // Normal
     };
 
-    RenderStateInfo geometryStateInfo{};
-    geometryStateInfo.ColorAttachmentCount    = 1;
-    geometryStateInfo.ColorAttachmentFormat   = VK_FORMAT_B8G8R8A8_SRGB;
-    geometryStateInfo.ColorAttachmentExtent   = {gSwapchain.images[0].extent };
-    geometryStateInfo.MSAASamples             = VK_SAMPLE_COUNT_1_BIT;
+    PipelineInfo basePipelineInfo{};
+    basePipelineInfo.BindingLayoutSize       = sizeof(Vertex);
+    basePipelineInfo.BindingAttributeFormats = bindingAttributeFormats;
+    basePipelineInfo.PushConstantSize        = sizeof(glm::mat4);
+    basePipelineInfo.PipelineShaders         = shaderList;
 
-    geometryStateInfo.BindingLayoutSize       = sizeof(Vertex);
-    geometryStateInfo.BindingAttributeFormats = bindingAttributeFormats;
-    geometryStateInfo.PushConstantSize        = sizeof(glm::mat4);
-    geometryStateInfo.PipelineShaders         = shaderList;
-
-    geometryState = CreateRenderState(geometryStateInfo);
+    renderer.basePipeline = CreatePipeline(basePipelineInfo, renderer.geometryRenderPass);
 
 
-    CreateDebugUI();
+    CreateDebugUI(renderer.uiRenderPass);
+
 #if 1
     // create a uniform buffers (one for each frame in flight)
     for (auto& uniform_buffer : g_uniform_buffers) {
@@ -1360,7 +1356,7 @@ void CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsync
 
     VkCheck(vkCreateDescriptorPool(gRc->device, &pool_info, nullptr, &descriptor_pool));
 
-    std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, basic_pipeline.descriptor_set_layout);
+    std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, renderer.basePipeline.DescriptorLayout);
     VkDescriptorSetAllocateInfo allocate_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
     allocate_info.descriptorPool     = descriptor_pool;
     allocate_info.descriptorSetCount = U32(frames_in_flight);
@@ -1387,9 +1383,11 @@ void CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsync
     }
 #endif
 
+
+    return renderer;
 }
 
-void DestroyRenderer()
+void DestroyRenderer(Renderer& renderer)
 {
     VkCheck(vkDeviceWaitIdle(gRc->device));
 
@@ -1430,9 +1428,10 @@ void DestroyRenderer()
     g_uniform_buffers.clear();
 
 
+    DestroyPipeline(renderer.basePipeline);
 
-    DestroyRenderState(geometryState);
-
+    DestroyRenderPass(renderer.uiRenderPass);
+    DestroyRenderPass(renderer.geometryRenderPass);
 
     DestroyShaderCompiler();
 
@@ -1529,18 +1528,6 @@ void EndFrame()
     EndFrame(gSwapchain, gFrames[currentFrame]);
 }
 
-void RenderEntity(Entity* e)
-{
-    const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
-
-    vkCmdPushConstants(cmd_buffer, basic_pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &e->model);
-    vkCmdDrawIndexed(cmd_buffer, e->vertexBuffer->index_count, 1, 0, 0, 0);
-
-
-    // Reset the entity transform matrix after being rendered.
-    e->model = glm::mat4(1.0f);
-}
-
 VkCommandBuffer BeginRenderPass(RenderPass& renderPass)
 {
     const VkClearValue clear_color = { {{ 0.1f, 0.1f, 0.1f, 1.0f }} };
@@ -1548,8 +1535,8 @@ VkCommandBuffer BeginRenderPass(RenderPass& renderPass)
     const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
 
     VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    renderPassInfo.renderPass = renderPass.Handle;
-    renderPassInfo.framebuffer = renderPass.Framebuffers[gSwapchain.currentImage];
+    renderPassInfo.renderPass = renderPass.handle;
+    renderPassInfo.framebuffer = renderPass.framebuffers[gSwapchain.currentImage];
     renderPassInfo.renderArea = {{ 0, 0 }, gSwapchain.images[0].extent }; // todo
     renderPassInfo.clearValueCount = 2;
     renderPassInfo.pClearValues = clear_buffers;
@@ -1568,8 +1555,18 @@ void BindPipeline(Pipeline& pipeline)
 {
     const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
 
-    vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
+    vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptor_sets[currentFrame], 0, nullptr);
 }
 
+void RenderEntity(Entity* e, Pipeline& pipeline)
+{
+    const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
 
+    vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &e->model);
+    vkCmdDrawIndexed(cmd_buffer, e->vertexBuffer->index_count, 1, 0, 0, 0);
+
+
+    // Reset the entity transform matrix after being rendered.
+    e->model = glm::mat4(1.0f);
+}

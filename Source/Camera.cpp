@@ -12,7 +12,7 @@ QuaternionCamera CreateCamera(const glm::vec3& position, float fov, float speed)
     camera.roll        = 0.0f;
     camera.fov         = fov;
     camera.near        = 0.1f;
-    camera.far         = 1000.0f;
+    camera.far         = 10000.0f;
 
     camera.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
     camera.proj = glm::perspective(camera.fov, 800.0f / 600.0f, camera.far, camera.near);

@@ -13,6 +13,8 @@ int main()
     // Create entities
     Entity* sunEntity   = Engine::CreateEntity(icosphere);
     Entity* earthEntity = Engine::CreateEntity(icosphere);
+    Entity* venusEntity = Engine::CreateEntity(icosphere);
+
 
     while (Engine::Running()) {
         if (Engine::IsKeyDown(256)) Engine::Stop();
@@ -32,13 +34,16 @@ int main()
         Engine::RotateEntity(sunEntity, Engine::Uptime() * 10.0f, 0.0f, 1.0f, 0.0f);
         Engine::ScaleEntity(sunEntity, 1.0f);
 
-
-        Engine::TranslateEntity(earthEntity, 0.0f, 0.0f, -700.0f);
+        Engine::TranslateEntity(earthEntity, 200.0f, 0.0f, 700.0f);
         Engine::ScaleEntity(earthEntity, 100.0f);
+
+        Engine::TranslateEntity(venusEntity, -400.0f, 0.0f, 1200.0f);
+        Engine::ScaleEntity(venusEntity, 80.0f);
 
         // Rendering
         Engine::Render(sunEntity);
         Engine::Render(earthEntity);
+        Engine::Render(venusEntity);
 
         Engine::Render();
 

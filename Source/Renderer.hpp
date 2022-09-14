@@ -113,33 +113,44 @@ struct Shader
     VkShaderModule        handle;
 };
 
-struct RenderStateShader
+struct RenderPassInfo
+{
+    uint32_t ColorAttachmentCount;
+    VkFormat AttachmentFormat;
+    VkExtent2D AttachmentExtent;
+    VkSampleCountFlagBits MSAASamples;
+
+    bool HasDepthAttachment;
+    VkFormat DepthFormat;
+};
+
+struct RenderPass
+{
+    VkRenderPass handle;
+    std::vector<VkFramebuffer> framebuffers;
+};
+
+
+struct ShaderInfo
 {
     VkShaderStageFlagBits Type;
     std::string Code;
 };
 
-struct RenderStateInfo
-{
-    uint32_t ColorAttachmentCount;
-    VkFormat ColorAttachmentFormat;
-    VkExtent2D ColorAttachmentExtent;
-    VkSampleCountFlagBits MSAASamples;
 
+struct PipelineInfo
+{
     uint32_t BindingLayoutSize;
     std::vector<VkFormat> BindingAttributeFormats;
     uint32_t PushConstantSize;
-    std::vector<RenderStateShader> PipelineShaders;
+    std::vector<ShaderInfo> PipelineShaders;
 };
 
-struct RenderState
+struct Pipeline
 {
-    VkRenderPass RenderPass;
-    std::vector<VkFramebuffer> Framebuffers;
-
     VkDescriptorSetLayout DescriptorLayout;
-    VkPipelineLayout PipelineLayout;
-    VkPipeline Pipeline;
+    VkPipelineLayout layout;
+    VkPipeline handle;
 };
 
 
@@ -169,8 +180,21 @@ struct Vertex
     glm::vec3 normal;
 };
 
-void CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsyncMode);
-void DestroyRenderer();
+
+struct Renderer
+{
+    RenderPass geometryRenderPass;
+    RenderPass lightingRenderPass;
+    RenderPass uiRenderPass;
+
+    Pipeline basePipeline;
+    Pipeline skyspherePipeline;
+};
+
+
+
+Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsyncMode);
+void DestroyRenderer(Renderer& renderer);
 
 VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is);
 TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height);
@@ -181,11 +205,11 @@ void BindVertexBuffer(const VertexBuffer* buffer);
 void BeginFrame(QuaternionCamera& camera);
 void EndFrame();
 
+VkCommandBuffer BeginRenderPass(RenderPass& renderPass);
+void EndRenderPass(VkCommandBuffer commandBuffer);
 
-// BeginRenderState()
-// EndRenderState()
+void BindPipeline(Pipeline& pipeline);
 
-
-void RenderEntity(Entity* e);
+void RenderEntity(Entity* e, Pipeline& pipeline);
 
 #endif
