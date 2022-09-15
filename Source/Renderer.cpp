@@ -234,7 +234,8 @@ static bool HasRequiredFeatures(VkPhysicalDevice physical_device, VkPhysicalDevi
 }
 
 // Creates the base renderer context. This context is the core of the renderer
-// and handles all creation/destruction of Vulkan resources.
+// and handles all creation/destruction of Vulkan resources. This function must
+// be the first renderer function to be called.
 static RendererContext* CreateRendererContext(uint32_t version, const Window* window)
 {
     auto rc = new RendererContext();
@@ -242,8 +243,8 @@ static RendererContext* CreateRendererContext(uint32_t version, const Window* wi
     rc->window = window;
 
     const std::vector<const char*> requested_layers {
-            "VK_LAYER_KHRONOS_validation",
-            "VK_LAYER_LUNARG_monitor"
+        "VK_LAYER_KHRONOS_validation",
+        "VK_LAYER_LUNARG_monitor"
     };
 
     VkPhysicalDeviceFeatures requested_gpu_features{};
@@ -253,12 +254,12 @@ static RendererContext* CreateRendererContext(uint32_t version, const Window* wi
     requested_gpu_features.wideLines          = true;
 
     const char* const device_extensions[1] {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
     // create vulkan instance
     VkApplicationInfo app_info { VK_STRUCTURE_TYPE_APPLICATION_INFO };
-    app_info.pApplicationName   = "";
+    app_info.pApplicationName   = window->name;
     app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
     app_info.pEngineName        = "";
     app_info.engineVersion      = VK_MAKE_API_VERSION(0, 1, 0, 0);
@@ -390,7 +391,7 @@ static void DestroyRendererContext(RendererContext* rc)
 
 static SubmitContext* CreateSubmitContext()
 {
-    SubmitContext* context = new SubmitContext();
+    auto context = new SubmitContext();
 
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
 
@@ -866,6 +867,40 @@ static Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
     return shader_module;
 }
 
+static std::vector<VkFramebuffer> CreateFramebuffers(VkRenderPass renderPass, VkExtent2D extent, bool hasDepth)
+{
+    std::vector<VkFramebuffer> framebuffers(gSwapchain.images.size());
+
+    for (std::size_t i = 0; i < framebuffers.size(); ++i) {
+        std::vector<VkImageView> views {
+                gSwapchain.images[i].view
+        };
+
+        if (hasDepth)
+            views.push_back(gSwapchain.depth_image.view);
+
+        VkFramebufferCreateInfo framebuffer_info{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+        framebuffer_info.renderPass = renderPass;
+        framebuffer_info.attachmentCount = U32(views.size());
+        framebuffer_info.pAttachments = views.data();
+        framebuffer_info.width = extent.width;
+        framebuffer_info.height = extent.height;
+        framebuffer_info.layers = 1;
+
+        VkCheck(vkCreateFramebuffer(gRc->device, &framebuffer_info, nullptr, &framebuffers[i]));
+    }
+
+    return framebuffers;
+};
+
+static void DestroyFramebuffers(std::vector<VkFramebuffer>& framebuffers)
+{
+    for (auto& framebuffer : framebuffers) {
+        vkDestroyFramebuffer(gRc->device, framebuffer, nullptr);
+    }
+    framebuffers.clear();
+}
+
 static RenderPass CreateRenderPass(const RenderPassInfo& info)
 {
     RenderPass renderPass{};
@@ -945,36 +980,14 @@ static RenderPass CreateRenderPass(const RenderPassInfo& info)
 
 
     // Create framebuffers
-    renderPass.framebuffers.resize(gSwapchain.images.size());
-
-    for (std::size_t i = 0; i < renderPass.framebuffers.size(); ++i) {
-        std::vector<VkImageView> views {
-            gSwapchain.images[i].view
-        };
-
-        if (info.HasDepthAttachment)
-            views.push_back(gSwapchain.depth_image.view);
-
-        VkFramebufferCreateInfo framebuffer_info{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
-        framebuffer_info.renderPass = renderPass.handle;
-        framebuffer_info.attachmentCount = U32(views.size());
-        framebuffer_info.pAttachments = views.data();
-        framebuffer_info.width = info.AttachmentExtent.width;
-        framebuffer_info.height = info.AttachmentExtent.height;
-        framebuffer_info.layers = 1;
-
-        VkCheck(vkCreateFramebuffer(gRc->device, &framebuffer_info, nullptr, &renderPass.framebuffers[i]));
-    }
+    renderPass.framebuffers = CreateFramebuffers(renderPass.handle, gSwapchain.images[0].extent, info.HasDepthAttachment);
 
     return renderPass;
 }
 
 static void DestroyRenderPass(RenderPass& renderPass)
 {
-    for (auto& framebuffer : renderPass.framebuffers) {
-        vkDestroyFramebuffer(gRc->device, framebuffer, nullptr);
-    }
-    renderPass.framebuffers.clear();
+    DestroyFramebuffers(renderPass.framebuffers);
 
     vkDestroyRenderPass(gRc->device, renderPass.handle, nullptr);
 }
@@ -1329,7 +1342,6 @@ Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode v
     };
 
 
-
     const std::vector<VkFormat> bindingAttributeFormats {
             VK_FORMAT_R32G32B32_SFLOAT, // Position
             VK_FORMAT_R32G32B32_SFLOAT, // Color
@@ -1462,6 +1474,25 @@ void DestroyRenderer(Renderer& renderer)
     DestroySubmitContext(gSubmitContext);
     DestroyRendererContext(gRc);
 }
+
+void UpdateRendererSize(Renderer& renderer, uint32_t width, uint32_t height)
+{
+    VkCheck(vkDeviceWaitIdle(gRc->device));
+
+    DestroySwapchain(gSwapchain);
+    gSwapchain = CreateSwapchain(BufferMode::Triple, VSyncMode::Enabled);
+
+    DestroyFramebuffers(renderer.uiRenderPass.framebuffers);
+    DestroyFramebuffers(renderer.geometryRenderPass.framebuffers);
+
+    renderer.geometryRenderPass.framebuffers = CreateFramebuffers(renderer.geometryRenderPass.handle,
+                                                                  { width, height },
+                                                                  true);
+    renderer.uiRenderPass.framebuffers = CreateFramebuffers(renderer.uiRenderPass.handle,
+                                                            { width, height },
+                                                            false);
+}
+
 
 VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is)
 {

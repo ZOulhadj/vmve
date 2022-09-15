@@ -1,6 +1,8 @@
 #ifndef MYENGINE_EVENT_HPP
 #define MYENGINE_EVENT_HPP
 
+#include <functional>
+
 enum class EventType
 {
     None = 0,
@@ -11,10 +13,10 @@ enum class EventType
     WindowClosedEvent,
     WindowResizedEvent,
 
-    CursorMovedEvent,
+    MouseMovedEvent,
 
-    ScrolledForwardEvent,
-    ScrolledBackwardEvent
+    ScrolledUpEvent,
+    ScrolledDownEvent
 };
 
 
@@ -28,6 +30,9 @@ public:
     virtual EventType GetType() const = 0;
     virtual const char* GetName() const = 0;
 };
+
+
+using EventFunc = std::function<void(Event&)>;
 
 
 #endif

@@ -57,6 +57,9 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
         if (action == GLFW_PRESS) {
             KeyPressedEvent e(key);
             ptr->EventCallback(e);
+        }  else if (action == GLFW_REPEAT) {
+            KeyPressedEvent e(key);
+            ptr->EventCallback(e);
         } else if (action == GLFW_RELEASE) {
             KeyReleasedEvent e(key);
             ptr->EventCallback(e);
@@ -73,11 +76,11 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
     glfwSetScrollCallback(window->handle, [](GLFWwindow* window, double xoffset, double yoffset) {
         const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
-        if (yoffset == -1.0) {
-            ScrolledForwardEvent e;
+        if (yoffset == 1.0) {
+            MouseScrolledUpEvent e;
             ptr->EventCallback(e);
-        } else if (yoffset == 1.0) {
-            ScrolledBackwardEvent e;
+        } else if (yoffset == -1.0) {
+            MouseScrolledDownEvent e;
             ptr->EventCallback(e);
         }
     });

@@ -3,12 +3,12 @@
 
 #include "Event.hpp"
 
-#include <functional>
+#define BIND_EVENT(func) std::bind(func, std::placeholders::_1)
 
 class EventDispatcher
 {
 public:
-    explicit EventDispatcher(Event& e)
+    EventDispatcher(Event& e)
         : m_Event(e)
     {}
 

@@ -185,6 +185,8 @@ struct Renderer
 Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsyncMode);
 void DestroyRenderer(Renderer& renderer);
 
+void UpdateRendererSize(Renderer& renderer, uint32_t width, uint32_t height);
+
 VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is);
 TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height);
 Entity* CreateEntityRenderer(const VertexBuffer* vertexBuffer);

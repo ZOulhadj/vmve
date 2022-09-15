@@ -16,22 +16,25 @@ public:
         : m_XPos(x), m_YPos(y)
     {}
 
-    EVENT_CLASS_TYPE(CursorMovedEvent);
+    double GetX() const { return m_XPos; }
+    double GetY() const { return m_YPos; }
+
+    EVENT_CLASS_TYPE(MouseMovedEvent);
 private:
     double m_XPos;
     double m_YPos;
 };
 
-class ScrolledForwardEvent : public MouseEvent
+class MouseScrolledUpEvent : public MouseEvent
 {
 public:
-    EVENT_CLASS_TYPE(ScrolledForwardEvent);
+    EVENT_CLASS_TYPE(ScrolledUpEvent);
 };
 
-class ScrolledBackwardEvent : public MouseEvent
+class MouseScrolledDownEvent : public MouseEvent
 {
 public:
-    EVENT_CLASS_TYPE(ScrolledBackwardEvent);
+    EVENT_CLASS_TYPE(ScrolledDownEvent);
 };
 
 #endif

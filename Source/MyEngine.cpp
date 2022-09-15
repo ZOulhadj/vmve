@@ -117,30 +117,38 @@ static void WindowCloseEvent(WindowClosedEvent& e)
 {
     g_running = false;
 }
+
+static void WindowResized(WindowResizedEvent& e)
+{
+    UpdateCameraProjection(g_camera, e.GetWidth(), e.GetHeight());
+    UpdateRendererSize(gRenderer, e.GetWidth(), e.GetHeight());
+}
+
 static void KeyPressEvent(KeyPressedEvent& e)
 {
+    if (e.GetKeyCode() == GLFW_KEY_W)
+        Engine::MoveForward();
 }
 
-static void ScrolledForwardsEvent(ScrolledForwardEvent& e)
-{
-    IncreaseFov(g_camera);
-}
-
-static void ScrolledBackEvent(ScrolledBackwardEvent& e)
+static void ScrolledForwardsEvent(MouseScrolledUpEvent& e)
 {
     DecreaseFov(g_camera);
 }
 
-#define BIND_EVENT(func) std::bind(func, std::placeholders::_1)
+static void ScrolledBackEvent(MouseScrolledDownEvent& e)
+{
+    IncreaseFov(g_camera);
+}
 
 static void EngineEventCallback(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<WindowClosedEvent>(BIND_EVENT(WindowCloseEvent));
+    dispatcher.Dispatch<WindowResizedEvent>(BIND_EVENT(WindowResized));
     dispatcher.Dispatch<KeyPressedEvent>(BIND_EVENT(KeyPressEvent));
     //dispatcher.Dispatch<MouseMovedEvent>(BIND_EVENT());
-    dispatcher.Dispatch<ScrolledForwardEvent>(BIND_EVENT(ScrolledForwardsEvent));
-    dispatcher.Dispatch<ScrolledBackwardEvent>(BIND_EVENT(ScrolledBackEvent));
+    dispatcher.Dispatch<MouseScrolledUpEvent>(BIND_EVENT(ScrolledForwardsEvent));
+    dispatcher.Dispatch<MouseScrolledDownEvent>(BIND_EVENT(ScrolledBackEvent));
 }
 
 
@@ -151,9 +159,9 @@ void Engine::Start(const char* name)
     gWindow->EventCallback = BIND_EVENT(EngineEventCallback);
 
 
-    gRenderer = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Disabled);
+    gRenderer = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Enabled);
 
-    g_camera = CreateCamera({ 0.0f, 0.0f, -5.0f }, 45.0f, 2.0f);
+    g_camera = CreateCamera({ 0.0f, 0.0f, -5.0f }, 45.0f, 50.0f);
 
 
 

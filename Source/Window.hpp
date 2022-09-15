@@ -6,8 +6,6 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#include <functional>
-
 struct Window
 {
     GLFWwindow* handle;
@@ -15,7 +13,7 @@ struct Window
     uint32_t width;
     uint32_t height;
 
-    std::function<void(Event&)> EventCallback;
+    EventFunc EventCallback;
 };
 
 // Initialized the GLFW library and creates a window. Window callbacks send
