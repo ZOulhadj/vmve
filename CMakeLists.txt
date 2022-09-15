@@ -32,11 +32,16 @@ set(IMGUI_SRC
 add_executable(${PROJECT_NAME}
         ${IMGUI_SRC}
 
-        Source/MyEngine.cpp
-        Source/Main.cpp
+        # Engine test file
+        MyEngineTest/Main.cpp
 
+        # Engine source
         Source/Window.cpp
-        Source/Renderer.cpp Source/Camera.cpp Source/Camera.hpp)
+        Source/Renderer.cpp
+        Source/Camera.cpp
+        Source/Entity.cpp
+        Source/MyEngine.cpp)
+
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         Vendor/stb

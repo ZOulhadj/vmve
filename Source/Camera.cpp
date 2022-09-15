@@ -1,11 +1,11 @@
 #include "Camera.hpp"
 
-
 QuaternionCamera CreateCamera(const glm::vec3& position, float fov, float speed)
 {
     QuaternionCamera camera{};
     camera.position    = position;
     camera.orientation = glm::quat(1, 0, 0, 0);
+    camera.aspect_ratio = 800.0f / 600.0f;
     camera.speed       = speed;
     camera.view_speed  = 0.1f;
     camera.roll_speed  = 90.0f;
@@ -15,7 +15,7 @@ QuaternionCamera CreateCamera(const glm::vec3& position, float fov, float speed)
     camera.far         = 10000.0f;
 
     camera.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
-    camera.proj = glm::perspective(camera.fov, 800.0f / 600.0f, camera.far, camera.near);
+    camera.proj = glm::perspective(glm::radians(camera.fov), camera.aspect_ratio, camera.far, camera.near);
 
     // Required if using Vulkan (left-handed coordinate-system)
     camera.proj[1][1] *= -1.0;
@@ -63,12 +63,32 @@ void UpdateCamera(QuaternionCamera& camera)
     //printf("%s\n", glm::to_string(camera.front_vector).c_str());
 }
 
+static void UpdateProjection(QuaternionCamera& camera)
+{
+    camera.proj = glm::perspective(glm::radians(camera.fov), camera.aspect_ratio, camera.far, camera.near);
+    // Required if using Vulkan (left-handed coordinate-system)
+    camera.proj[1][1] *= -1.0;
+}
+
+void IncreaseFov(QuaternionCamera& camera)
+{
+    camera.fov += 5.0f;
+
+    UpdateProjection(camera);
+}
+
+void DecreaseFov(QuaternionCamera& camera)
+{
+    camera.fov -= 5.0f;
+
+    UpdateProjection(camera);
+}
+
+
 void UpdateCameraProjection(QuaternionCamera& camera, uint32_t width, uint32_t height)
 {
     //cam.proj = glm::infinitePerspective(glm::radians<double>(cam.fov), (double)gWindow->width / gWindow->height, 0.1);
+    camera.aspect_ratio = (float)width / (float)height;
 
-    camera.proj = glm::perspective(camera.fov, (float)width / (float)height, camera.far, camera.near);
-
-    // Required if using Vulkan (left-handed coordinate-system)
-    camera.proj[1][1] *= -1.0;
+    UpdateProjection(camera);
 }

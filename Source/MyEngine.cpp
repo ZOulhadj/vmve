@@ -38,15 +38,14 @@
 #include "Renderer.hpp"
 #include "Window.hpp"
 #include "Camera.hpp"
+#include "Entity.hpp"
 
+#include "Events/Event.hpp"
+#include "Events/EventDispatcher.hpp"
+#include "Events/WindowEvent.hpp"
+#include "Events/KeyEvent.hpp"
+#include "Events/MouseEvent.hpp"
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_LEFT_HANDED
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtx/string_cast.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -59,56 +58,6 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-
-
-
-#pragma endregion
-
-// +---------------------------------------+
-// |            GLOBAL OPTIONS             |
-// +---------------------------------------+
-#pragma region global_options
-
-#pragma endregion
-
-// +---------------------------------------+
-// |             DECLERATIONS              |
-// +---------------------------------------+
-#pragma region declerations
-
-
-enum EventType
-{
-    unknown_event,
-
-    window_closed_event,
-    window_resized_event,
-    window_moved_event,
-    window_focused_event,
-    window_lost_focus_event,
-    window_maximized_event,
-    window_minimized_event,
-
-    key_pressed_event,
-    key_released_event,
-
-    mouse_moved_event,
-    mouse_button_pressed_event,
-    mouse_button_released_event,
-    mouse_scrolled_forward_event,
-    mouse_scrolled_backwards_event,
-    mouse_entered_event,
-    mouse_left_event,
-
-    character_input_event
-};
-
-
-struct Event
-{
-    EventType type;
-    void* value;
-};
 
 
 
@@ -137,6 +86,10 @@ static float scroll_offset = 0.0;
 
 static bool g_running = false;
 
+// Internal buffers and entities
+VertexBuffer* icosphere = nullptr;
+Entity* skysphereEntity = nullptr;
+
 
 std::vector<Entity*> entitiesToRender;
 
@@ -160,68 +113,53 @@ static std::string LoadTextFile(std::string_view path)
 
 #pragma endregion
 
-// +---------------------------------------+
-// |              FUNCTIONS                |
-// +---------------------------------------+
-#pragma region functions
-
-static void EngineCallback(const Event& e)
+static void WindowCloseEvent(WindowClosedEvent& e)
 {
-    switch (e.type) {
-        case unknown_event:
-            break;
-        case window_closed_event: {
-            g_running = false;
-        } break;
-        case window_resized_event: {
-
-//            gWindow->width  = (example)e.value;
-//            gWindow->height = e.value.y;
-        } break;
-        case window_moved_event:
-            break;
-        case window_focused_event:
-            break;
-        case window_lost_focus_event:
-            break;
-        case window_maximized_event:
-            break;
-        case window_minimized_event:
-            break;
-        case key_pressed_event:
-            break;
-        case key_released_event:
-            break;
-        case mouse_moved_event:
-            break;
-        case mouse_button_pressed_event:
-            break;
-        case mouse_button_released_event:
-            break;
-        case mouse_scrolled_forward_event:
-            break;
-        case mouse_scrolled_backwards_event:
-            break;
-        case mouse_entered_event:
-            break;
-        case mouse_left_event:
-            break;
-        case character_input_event:
-            break;
-    }
+    g_running = false;
+}
+static void KeyPressEvent(KeyPressedEvent& e)
+{
 }
 
+static void ScrolledForwardsEvent(ScrolledForwardEvent& e)
+{
+    IncreaseFov(g_camera);
+}
 
-#pragma endregion
+static void ScrolledBackEvent(ScrolledBackwardEvent& e)
+{
+    DecreaseFov(g_camera);
+}
+
+#define BIND_EVENT(func) std::bind(func, std::placeholders::_1)
+
+static void EngineEventCallback(Event& e)
+{
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<WindowClosedEvent>(BIND_EVENT(WindowCloseEvent));
+    dispatcher.Dispatch<KeyPressedEvent>(BIND_EVENT(KeyPressEvent));
+    //dispatcher.Dispatch<MouseMovedEvent>(BIND_EVENT());
+    dispatcher.Dispatch<ScrolledForwardEvent>(BIND_EVENT(ScrolledForwardsEvent));
+    dispatcher.Dispatch<ScrolledBackwardEvent>(BIND_EVENT(ScrolledBackEvent));
+}
+
 
 
 void Engine::Start(const char* name)
 {
     gWindow = CreateWindow(name, 800, 600);
+    gWindow->EventCallback = BIND_EVENT(EngineEventCallback);
+
+
     gRenderer = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Disabled);
 
-
     g_camera = CreateCamera({ 0.0f, 0.0f, -5.0f }, 45.0f, 2.0f);
+
+
+
+    icosphere = LoadModel("assets/icosphere.obj");
+    skysphereEntity = CreateEntity(icosphere);
+
 
     g_running    = true;
     gStartTime = 0.0f;
@@ -331,23 +269,57 @@ TextureBuffer* Engine::LoadTexture(const char* path)
 
 Entity* Engine::CreateEntity(const VertexBuffer* vertexBuffer)
 {
-    return ::CreateEntity(vertexBuffer);
+    return CreateEntityRenderer(vertexBuffer);
 }
 
-void Engine::MoveCamera(CameraDirections direction)
+void Engine::MoveForward()
 {
-    const float speed      = g_camera.speed * gDeltaTime;
-    const float roll_speed = g_camera.roll_speed * gDeltaTime;
-
-    if (direction == camera_forward)    g_camera.position += g_camera.front_vector * speed;
-    if (direction == camera_backwards)  g_camera.position -= g_camera.front_vector * speed;
-    if (direction == camera_left)       g_camera.position -= g_camera.right_vector * speed;
-    if (direction == camera_right)      g_camera.position += g_camera.right_vector * speed;
-    if (direction == camera_up)         g_camera.position += g_camera.up_vector    * speed;
-    if (direction == camera_down)       g_camera.position -= g_camera.up_vector    * speed;
-    if (direction == camera_roll_left)  g_camera.roll     -= roll_speed;
-    if (direction == camera_roll_right) g_camera.roll     += roll_speed;
+    const float speed  = g_camera.speed * gDeltaTime;
+    g_camera.position += g_camera.front_vector * speed;
 }
+
+void Engine::MoveBackwards()
+{
+    const float speed  = g_camera.speed * gDeltaTime;
+    g_camera.position -= g_camera.front_vector * speed;
+}
+
+void Engine::MoveLeft()
+{
+    const float speed  = g_camera.speed * gDeltaTime;
+    g_camera.position -= g_camera.right_vector * speed;
+}
+
+void Engine::MoveRight()
+{
+    const float speed  = g_camera.speed * gDeltaTime;
+    g_camera.position += g_camera.right_vector * speed;
+}
+
+void Engine::MoveUp()
+{
+    const float speed  = g_camera.speed * gDeltaTime;
+    g_camera.position += g_camera.up_vector * speed;
+}
+
+void Engine::MoveDown()
+{
+    const float speed  = g_camera.speed * gDeltaTime;
+    g_camera.position -= g_camera.up_vector * speed;
+}
+
+void Engine::RollLeft()
+{
+    const float roll_speed = g_camera.roll_speed * gDeltaTime;
+    g_camera.roll         -= roll_speed;
+}
+
+void Engine::RollRight()
+{
+    const float roll_speed = g_camera.roll_speed * gDeltaTime;
+    g_camera.roll         += roll_speed;
+}
+
 
 void Engine::Render()
 {
@@ -360,7 +332,7 @@ void Engine::Render()
     gDeltaTime = static_cast<float>(current_time - last_time) / CLOCKS_PER_SEC;
     last_time  = current_time;
 
-    gUptime   += gDeltaTime;
+    gUptime += gDeltaTime;
     ++gFramesElapsed;
 
     UpdateCamera(g_camera);
@@ -369,8 +341,13 @@ void Engine::Render()
     {
         if (VkCommandBuffer cmdBuffer = BeginRenderPass(gRenderer.geometryRenderPass))
         {
-            BindPipeline(gRenderer.basePipeline);
+            BindPipeline(gRenderer.skyspherePipeline);
+            BindVertexBuffer(icosphere);
+            RenderEntity(skysphereEntity, gRenderer.skyspherePipeline);
 
+
+
+            BindPipeline(gRenderer.basePipeline);
             for (auto& entity : entitiesToRender) {
                 BindVertexBuffer(entity->vertexBuffer);
                 RenderEntity(entity, gRenderer.basePipeline);
@@ -386,7 +363,7 @@ void Engine::Render()
     }
     EndRenderPass(lightingPass);*/
 
-
+#if 0
         if (VkCommandBuffer cmdBuffer = BeginRenderPass(gRenderer.uiRenderPass))
         {
             ImGui_ImplVulkan_NewFrame();
@@ -409,6 +386,12 @@ void Engine::Render()
                 if (ImGui::BeginMenu("Rendering")) {
                     ImGui::MenuItem("Stats", "", &renderer_stats);
                     ImGui::MenuItem("Options", "", &renderer_options);
+                    ImGui::EndMenu();
+                }
+
+                if (ImGui::BeginMenu("Playback")) {
+                    ImGui::MenuItem("Timeline");
+
                     ImGui::EndMenu();
                 }
 
@@ -468,7 +451,7 @@ void Engine::Render()
 
             EndRenderPass(cmdBuffer);
         }
-
+#endif
 
     }
     EndFrame();

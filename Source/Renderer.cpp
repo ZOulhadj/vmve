@@ -9,6 +9,8 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
+#include "Entity.hpp"
+
 
 static RendererContext* gRc  = nullptr;
 static SubmitContext* gSubmitContext = nullptr;
@@ -72,7 +74,7 @@ const std::string fs_code = R"(
     )";
 
 
-const std::string skybox_vs_code = R"(
+const std::string skysphere_vs_code = R"(
         #version 450
 
         layout(location = 0) in vec3 position;
@@ -88,7 +90,7 @@ const std::string skybox_vs_code = R"(
         }
     )";
 
-const std::string skybox_fs_code = R"(
+const std::string skysphere_fs_code = R"(
         #version 450
 
         layout(location = 0) out vec4 final_color;
@@ -97,9 +99,10 @@ const std::string skybox_fs_code = R"(
 
 
         void main() {
-            vec2 uv = gl_FragCoord.xy / vec2(1280, 720);
+            vec2 uv = gl_FragCoord.xy / vec2(800, 600);
 
-            vec3 low_atmo = vec3(0.78, 0.89, 0.98);
+            //vec3 low_atmo = vec3(0.78, 0.89, 0.98);
+            vec3 low_atmo = vec3(gl_FragCoord.x / 100, 0.89, 0.98);
             vec3 high_atmo = vec3(0.01, 0.18, 0.47);
 
             final_color = vec4(mix(high_atmo, low_atmo, uv.y), 1.0);
@@ -1320,6 +1323,13 @@ Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode v
             { VK_SHADER_STAGE_FRAGMENT_BIT, fs_code }
     };
 
+    const std::vector<ShaderInfo> skysphereShaders {
+            { VK_SHADER_STAGE_VERTEX_BIT, skysphere_vs_code },
+            { VK_SHADER_STAGE_FRAGMENT_BIT, skysphere_fs_code }
+    };
+
+
+
     const std::vector<VkFormat> bindingAttributeFormats {
             VK_FORMAT_R32G32B32_SFLOAT, // Position
             VK_FORMAT_R32G32B32_SFLOAT, // Color
@@ -1331,9 +1341,14 @@ Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode v
     basePipelineInfo.BindingAttributeFormats = bindingAttributeFormats;
     basePipelineInfo.PushConstantSize        = sizeof(glm::mat4);
     basePipelineInfo.PipelineShaders         = shaderList;
-
     renderer.basePipeline = CreatePipeline(basePipelineInfo, renderer.geometryRenderPass);
 
+    PipelineInfo skyspherePipelineInfo{};
+    skyspherePipelineInfo.BindingLayoutSize       = sizeof(Vertex);
+    skyspherePipelineInfo.BindingAttributeFormats = bindingAttributeFormats;
+    skyspherePipelineInfo.PushConstantSize        = sizeof(glm::mat4);
+    skyspherePipelineInfo.PipelineShaders         = skysphereShaders;
+    renderer.skyspherePipeline = CreatePipeline(skyspherePipelineInfo, renderer.geometryRenderPass);
 
     CreateDebugUI(renderer.uiRenderPass);
 
@@ -1428,6 +1443,7 @@ void DestroyRenderer(Renderer& renderer)
     g_uniform_buffers.clear();
 
 
+    DestroyPipeline(renderer.skyspherePipeline);
     DestroyPipeline(renderer.basePipeline);
 
     DestroyRenderPass(renderer.uiRenderPass);
@@ -1493,7 +1509,7 @@ TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint3
     return buffer;
 }
 
-Entity* CreateEntity(const VertexBuffer* vertexBuffer)
+Entity* CreateEntityRenderer(const VertexBuffer* vertexBuffer)
 {
     auto entity       = new Entity();
     entity->model        = glm::mat4(1.0f);

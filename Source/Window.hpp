@@ -1,8 +1,12 @@
 #ifndef MYENGINE_WINDOW_HPP
 #define MYENGINE_WINDOW_HPP
 
+#include "Events/Event.hpp"
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+
+#include <functional>
 
 struct Window
 {
@@ -10,6 +14,8 @@ struct Window
     const char* name;
     uint32_t width;
     uint32_t height;
+
+    std::function<void(Event&)> EventCallback;
 };
 
 // Initialized the GLFW library and creates a window. Window callbacks send

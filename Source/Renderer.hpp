@@ -2,25 +2,20 @@
 #define MYENGINE_RENDERER_HPP
 
 #include <cstdint>
-
 #include <vector>
 
 #include <vulkan/vulkan.h>
-
-
 
 #include <vk_mem_alloc.h>
 
 #include <shaderc/shaderc.h>
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_LEFT_HANDED
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-
 #include "Window.hpp"
 #include "Camera.hpp"
 
+
+
+struct Entity;
 
 enum class BufferMode
 {
@@ -166,12 +161,6 @@ struct TextureBuffer
     ImageBuffer image;
 };
 
-struct Entity
-{
-    glm::mat4 model;
-
-    const VertexBuffer* vertexBuffer;
-};
 
 struct Vertex
 {
@@ -198,7 +187,7 @@ void DestroyRenderer(Renderer& renderer);
 
 VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is);
 TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height);
-Entity* CreateEntity(const VertexBuffer* vertexBuffer);
+Entity* CreateEntityRenderer(const VertexBuffer* vertexBuffer);
 
 void BindVertexBuffer(const VertexBuffer* buffer);
 

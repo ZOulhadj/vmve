@@ -1,4 +1,4 @@
-#include "MyEngine.hpp"
+#include "../Source/MyEngine.hpp"
 
 int main()
 {
@@ -20,14 +20,14 @@ int main()
         if (Engine::IsKeyDown(256)) Engine::Stop();
 
         // Camera movement
-        if (Engine::IsKeyDown(87))  Engine::MoveCamera(camera_forward);
-        if (Engine::IsKeyDown(83))  Engine::MoveCamera(camera_backwards);
-        if (Engine::IsKeyDown(65))  Engine::MoveCamera(camera_left);
-        if (Engine::IsKeyDown(68))  Engine::MoveCamera(camera_right);
-        if (Engine::IsKeyDown(32))  Engine::MoveCamera(camera_up);
-        if (Engine::IsKeyDown(341)) Engine::MoveCamera(camera_down);
-        if (Engine::IsKeyDown(81))  Engine::MoveCamera(camera_roll_left);
-        if (Engine::IsKeyDown(69))  Engine::MoveCamera(camera_roll_right);
+        if (Engine::IsKeyDown(87))  Engine::MoveForward();
+        if (Engine::IsKeyDown(83))  Engine::MoveBackwards();
+        if (Engine::IsKeyDown(65))  Engine::MoveLeft();
+        if (Engine::IsKeyDown(68))  Engine::MoveRight();
+        if (Engine::IsKeyDown(32))  Engine::MoveUp();
+        if (Engine::IsKeyDown(341)) Engine::MoveDown();
+        if (Engine::IsKeyDown(81))  Engine::RollLeft();
+        if (Engine::IsKeyDown(69))  Engine::RollRight();
 
         // Update entities
         Engine::TranslateEntity(sunEntity, 0.0f, 0.0f, 0.0f);

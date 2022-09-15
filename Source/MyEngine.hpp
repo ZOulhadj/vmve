@@ -4,19 +4,6 @@ struct VertexBuffer;
 struct TextureBuffer;
 struct Entity;
 
-
-enum CameraDirections
-{
-    camera_forward,
-    camera_backwards,
-    camera_left,
-    camera_right,
-    camera_up,
-    camera_down,
-    camera_roll_left,
-    camera_roll_right
-};
-
 namespace Engine
 {
     // This is the entry point for the engine and is where all initialization
@@ -74,7 +61,14 @@ namespace Engine
     Entity* CreateEntity(const VertexBuffer* vertexBuffer);
 
     // Moves the default camera in the specified direction
-    void MoveCamera(CameraDirections direction);
+    void MoveForward();
+    void MoveBackwards();
+    void MoveLeft();
+    void MoveRight();
+    void MoveUp();
+    void MoveDown();
+    void RollLeft();
+    void RollRight();
 
     void Render();
 

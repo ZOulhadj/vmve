@@ -1,5 +1,10 @@
 #include "Window.hpp"
 
+#include "Events/WindowEvent.hpp"
+#include "Events/KeyEvent.hpp"
+#include "Events/MouseEvent.hpp"
+
+
 #include <cstdio>
 
 // Initialized the GLFW library and creates a window. Window callbacks send
@@ -31,70 +36,50 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
     // window callbacks
     glfwSetWindowUserPointer(window->handle, window);
     glfwSetWindowCloseCallback(window->handle, [](GLFWwindow* window) {
-        //Event e{};
-        //e.type = window_closed_event;
+        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
-        //EngineCallback(e);
+        WindowClosedEvent e;
+        ptr->EventCallback(e);
     });
 
     glfwSetWindowSizeCallback(window->handle, [](GLFWwindow* window, int width, int height) {
-        //Event e{};
-        //e.type = window_resized_event;
+        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        ptr->width = width;
+        ptr->height = height;
 
-        //EngineCallback(e);
-
-        auto window_ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-        window_ptr->width = width;
-        window_ptr->height = height;
+        WindowResizedEvent e(width, height);
+        ptr->EventCallback(e);
     });
 
     glfwSetKeyCallback(window->handle, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-        // todo(zak): error check for if a keycode is -1 (invalid)
+        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
-/*        if (action == GLFW_PRESS) {
-          *//*  Event pressed_event{};
-            pressed_event.type = key_pressed_event;
-
-            EngineCallback(pressed_event);*//*
+        if (action == GLFW_PRESS) {
+            KeyPressedEvent e(key);
+            ptr->EventCallback(e);
         } else if (action == GLFW_RELEASE) {
-            *//*Event released_event{};
-            released_event.type = key_released_event;
-
-            EngineCallback(released_event);*//*
-        }*/
-
-
-        /*if (action == GLFW_PRESS || action == GLFW_REPEAT)
-            //keys[key] = true;
-        else if (action == GLFW_RELEASE)
-            //keys[key] = false;*/
+            KeyReleasedEvent e(key);
+            ptr->EventCallback(e);
+        }
     });
 
     glfwSetCursorPosCallback(window->handle, [](GLFWwindow* window, double xpos, double ypos) {
-        /*Event e{};
+        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
-        EngineCallback(e);
-
-        cursor_x = static_cast<float>(xpos);
-        cursor_y = static_cast<float>(ypos);*/
+        MouseMovedEvent e(xpos, ypos);
+        ptr->EventCallback(e);
     });
 
     glfwSetScrollCallback(window->handle, [](GLFWwindow* window, double xoffset, double yoffset) {
-/*        if (yoffset == -1.0) {
-            Event scrolled_forward{};
-            scrolled_forward.type = mouse_scrolled_forward_event;
+        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
-            EngineCallback(scrolled_forward);
+        if (yoffset == -1.0) {
+            ScrolledForwardEvent e;
+            ptr->EventCallback(e);
         } else if (yoffset == 1.0) {
-            Event scrolled_backward{};
-            scrolled_backward.type = mouse_scrolled_backwards_event;
-
-            EngineCallback(scrolled_backward);
+            ScrolledBackwardEvent e;
+            ptr->EventCallback(e);
         }
-
-
-        scroll_offset = yoffset;*/
     });
 
     return window;
@@ -115,3 +100,4 @@ void UpdateWindow()
 {
     glfwPollEvents();
 }
+
