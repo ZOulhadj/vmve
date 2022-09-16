@@ -276,9 +276,9 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
     app_info.apiVersion         = version;
 
     uint32_t layer_count = 0;
-    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+    vk_check(vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
     std::vector<VkLayerProperties> instance_layers(layer_count);
-    vkEnumerateInstanceLayerProperties(&layer_count, instance_layers.data());
+    vk_check(vkEnumerateInstanceLayerProperties(&layer_count, instance_layers.data()));
 
     if (!compare_layers(requested_layers, instance_layers)) {
         return nullptr;
@@ -364,6 +364,11 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
     queue_info.queueFamilyIndex = rc->graphics_queue.index;
     queue_info.queueCount       = 1;
     queue_info.pQueuePriorities = &queue_priority;
+
+
+
+    //vk_check(vkEnumerateDeviceExtensionProperties(rc->physical_device, ));
+
 
     VkDeviceCreateInfo device_info { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
     device_info.queueCreateInfoCount    = 1;
