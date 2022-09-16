@@ -1,7 +1,7 @@
 #ifndef MYENGINE_WINDOW_HPP
 #define MYENGINE_WINDOW_HPP
 
-#include "Events/event.hpp"
+#include "events/event.hpp"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -13,7 +13,7 @@ struct Window
     uint32_t width;
     uint32_t height;
 
-    EventFunc EventCallback;
+    event_func event_callback;
 };
 
 // Initialized the GLFW library and creates a window. Window callbacks send

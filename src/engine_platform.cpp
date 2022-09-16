@@ -40,16 +40,14 @@
 #include "quaternion_camera.hpp"
 #include "entity.hpp"
 
-#include "Events/event.hpp"
-#include "Events/event_dispatcher.hpp"
-#include "Events/window_event.hpp"
-#include "Events/key_event.hpp"
-#include "Events/mouse_event.hpp"
-
+#include "events/event.hpp"
+#include "events/event_dispatcher.hpp"
+#include "events/window_event.hpp"
+#include "events/key_event.hpp"
+#include "events/mouse_event.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
@@ -95,7 +93,7 @@ std::vector<entity*> entitiesToRender;
 // +---------------------------------------+
 #pragma region helper_functions
 
-static std::string LoadTextFile(std::string_view path)
+static std::string load_text_file(std::string_view path)
 {
     std::ifstream file(path.data());
     std::stringstream buffer;
@@ -151,7 +149,7 @@ static void engine_event_callback(Event& e)
 void engine::start(const char* name)
 {
     gWindow = create_window(name, 800, 600);
-    gWindow->EventCallback = BIND_EVENT(engine_event_callback);
+    gWindow->event_callback = BIND_EVENT(engine_event_callback);
 
     gRenderer = create_renderer(gWindow, buffer_mode::Triple, vsync_mode::Enabled);
 
@@ -167,23 +165,23 @@ void engine::start(const char* name)
     gStartTime = 0.0f;
 }
 
-void engine::Exit()
+void engine::exit()
 {
     DestroyRenderer(gRenderer);
     destroy_window(gWindow);
 }
 
-void engine::Stop()
+void engine::stop()
 {
     g_running = false;
 }
 
-bool engine::Running()
+bool engine::running()
 {
     return g_running;
 }
 
-float engine::Uptime()
+float engine::uptime()
 {
     return gUptime;
 }

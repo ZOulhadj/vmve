@@ -36,7 +36,7 @@ public:
 };
 
 
-using EventFunc = std::function<void(Event&)>;
+using event_func = std::function<void(Event&)>;
 
 
 #endif

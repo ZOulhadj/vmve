@@ -16,8 +16,8 @@ int main()
     entity* venusEntity = engine::create_entity(icosphere);
 
 
-    while (engine::Running()) {
-        if (engine::is_key_down(256)) engine::Stop();
+    while (engine::running()) {
+        if (engine::is_key_down(256)) engine::stop();
 
         // Camera movement
         if (engine::is_key_down(87))  engine::MoveForward();
@@ -31,7 +31,7 @@ int main()
 
         // Update entities
         engine::TranslateEntity(sunEntity, 0.0f, 0.0f, 0.0f);
-        engine::RotateEntity(sunEntity, engine::Uptime() * 10.0f, 0.0f, 1.0f, 0.0f);
+        engine::RotateEntity(sunEntity, engine::uptime() * 10.0f, 0.0f, 1.0f, 0.0f);
         engine::ScaleEntity(sunEntity, 1.0f);
 
         engine::TranslateEntity(earthEntity, 200.0f, 0.0f, 700.0f);
@@ -49,7 +49,7 @@ int main()
 
     }
 
-    engine::Exit();
+    engine::exit();
 
     return 0;
 }

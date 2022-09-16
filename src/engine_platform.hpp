@@ -14,20 +14,20 @@ namespace engine
     // This will terminate the engine by freeing all resources by the client and
     // the engine then shutting down all subsystems. This should be the final engine
     // function call within the client application.
-    void Exit();
+    void exit();
 
     // This function simply sets the running status of the engine to false which
     // in turn will exit the main rendering loop once running() is called.
-    void Stop();
+    void stop();
 
     // Returns the running status of the engine. Once the engine has been
     // initialized then this is set to true. The client can use this for the
     // main update loop.
-    bool Running();
+    bool running();
 
     // The uptime returns the number of seconds since the engine
     // was initialized.
-    float Uptime();
+    float uptime();
 
     // The delta time will return the time difference in milliseconds
     // between the current and previous frame.

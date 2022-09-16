@@ -1,8 +1,8 @@
 #include "window.hpp"
 
-#include "Events/window_event.hpp"
-#include "Events/key_event.hpp"
-#include "Events/mouse_event.hpp"
+#include "events/window_event.hpp"
+#include "events/key_event.hpp"
+#include "events/mouse_event.hpp"
 
 
 #include <cstdio>
@@ -21,7 +21,12 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, true);
 
-    window->handle = glfwCreateWindow(width, height, name, nullptr, nullptr);
+    window->handle = glfwCreateWindow(
+            static_cast<int>(width),
+            static_cast<int>(height),
+            name,
+            nullptr,
+            nullptr);
     window->name   = name;
     window->width  = width;
     window->height = height;
@@ -39,7 +44,7 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
         const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
         window_closed_event e;
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     });
 
     glfwSetWindowSizeCallback(window->handle, [](GLFWwindow* window, int width, int height) {
@@ -48,7 +53,7 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
         ptr->height = height;
 
         window_resized_event e(width, height);
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     });
 
     glfwSetKeyCallback(window->handle, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -56,13 +61,13 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
 
         if (action == GLFW_PRESS) {
             key_pressed_event e(key);
-            ptr->EventCallback(e);
+            ptr->event_callback(e);
         }  else if (action == GLFW_REPEAT) {
             key_pressed_event e(key);
-            ptr->EventCallback(e);
+            ptr->event_callback(e);
         } else if (action == GLFW_RELEASE) {
             key_released_event e(key);
-            ptr->EventCallback(e);
+            ptr->event_callback(e);
         }
     });
 
@@ -71,13 +76,13 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
 
         if (action == GLFW_PRESS) {
             mouse_button_pressed_event e(button);
-            ptr->EventCallback(e);
+            ptr->event_callback(e);
         } else if (action == GLFW_REPEAT) {
             mouse_button_pressed_event e(button);
-            ptr->EventCallback(e);
+            ptr->event_callback(e);
         } else if (action == GLFW_RELEASE) {
             mouse_button_released_event e(button);
-            ptr->EventCallback(e);
+            ptr->event_callback(e);
         }
 
     });
@@ -86,7 +91,7 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
         const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
         mouse_moved_event e(xpos, ypos);
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     });
 
     glfwSetCursorEnterCallback(window->handle, [](GLFWwindow* window, int entered) {
@@ -94,10 +99,10 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
 
         if (entered) {
             mouse_entered_event e;
-            ptr->EventCallback(e);
+            ptr->event_callback(e);
         } else {
             mouse_left_event e;
-            ptr->EventCallback(e);
+            ptr->event_callback(e);
         }
     });
 
@@ -106,10 +111,10 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
 
         if (yoffset == 1.0) {
             mouse_scrolled_up_event e;
-            ptr->EventCallback(e);
+            ptr->event_callback(e);
         } else if (yoffset == -1.0) {
             mouse_scrolled_down_event e;
-            ptr->EventCallback(e);
+            ptr->event_callback(e);
         }
     });
 
