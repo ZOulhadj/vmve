@@ -1,15 +1,15 @@
 #pragma once
 
-struct VertexBuffer;
-struct TextureBuffer;
-struct Entity;
+struct vertex_buffer;
+struct texture_buffer;
+struct entity;
 
-namespace Engine
+namespace engine
 {
     // This is the entry point for the engine and is where all initialization
     // takes place. This should be the first function that gets called by
     // the client application.
-    void Start(const char* name);
+    void start(const char* name);
 
     // This will terminate the engine by freeing all resources by the client and
     // the engine then shutting down all subsystems. This should be the final engine
@@ -31,34 +31,34 @@ namespace Engine
 
     // The delta time will return the time difference in milliseconds
     // between the current and previous frame.
-    float DeltaTime();
+    float get_delta_time();
 
     // Returns a boolean value based on if the given key is currently
     // pressed down.
-    bool IsKeyDown(int keycode);
+    bool is_key_down(int keycode);
 
     // Returns a boolean value based on if the given mouse button
     // is pressed down.
-    bool IsMouseButtonDown(int buttoncode);
+    bool is_mouse_button_down(int buttoncode);
 
     // Creates a region of memory stored on the GPU. The object returns
     // a pointer to a vertex and index buffer which can be used for rendering.
-    VertexBuffer* CreateRenderBuffer(void* v, int vs, void* i, int is);
+    vertex_buffer* create_render_buffer(void* v, int vs, void* i, int is);
 
     // Loads a model file from the filesystem and internally creates a render
     // buffer which is returned to the client.
-    VertexBuffer* LoadModel(const char* path);
+    vertex_buffer* load_model(const char* path);
 
     // Loads a texture file from the filesystem and returns a pointer to that
     // texture image.
-    TextureBuffer* LoadTexture(const char* path);
+    texture_buffer* load_texture(const char* path);
 
     // Creates an entity which is an object that is rendered onto the screen.
     // Each entity has a pointer to a vertex buffer that describes the
     // object that is being represented. A model matrix is also part of
     // an entity that describes the full transformation including position,
     // rotation and scale in the world.
-    Entity* CreateEntity(const VertexBuffer* vertexBuffer);
+    entity* create_entity(const vertex_buffer* vertexBuffer);
 
     // Moves the default camera in the specified direction
     void MoveForward();
@@ -70,18 +70,18 @@ namespace Engine
     void RollLeft();
     void RollRight();
 
-    void Render();
+    void render();
 
     // This function submits work to the GPU to execute. In other words, rendering
     // an object onto the screen.
-    void Render(Entity* e);
+    void Render(entity* e);
 
-    void TranslateEntity(Entity* e, float x, float y, float z);
-    void RotateEntity(Entity* e, float deg, float x, float y, float z);
-    void ScaleEntity(Entity* e, float scale);
-    void ScaleEntity(Entity* e, float x, float y, float z);
+    void TranslateEntity(entity* e, float x, float y, float z);
+    void RotateEntity(entity* e, float deg, float x, float y, float z);
+    void ScaleEntity(entity* e, float scale);
+    void ScaleEntity(entity* e, float x, float y, float z);
 
-    void GetEntityPosition(const Entity* e, float* x, float* y, float* z);
+    void GetEntityPosition(const entity* e, float* x, float* y, float* z);
 }
 
 

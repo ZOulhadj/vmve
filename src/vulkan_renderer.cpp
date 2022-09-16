@@ -1,4 +1,4 @@
-#include "Renderer.hpp"
+#include "vulkan_renderer.hpp"
 
 
 #define VMA_IMPLEMENTATION
@@ -9,11 +9,11 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 
-#include "Entity.hpp"
+#include "entity.hpp"
 
 
-static RendererContext* gRc  = nullptr;
-static SubmitContext* gSubmitContext = nullptr;
+static renderer_context* gRc  = nullptr;
+static renderer_submit_context* gSubmitContext = nullptr;
 
 static Swapchain gSwapchain{};
 static std::vector<Frame> gFrames;
@@ -110,13 +110,13 @@ const std::string skysphere_fs_code = R"(
     )";
 
 
-static std::vector<VertexBuffer*> g_vertex_buffers;
-static std::vector<TextureBuffer*> g_textures;
-static std::vector<Entity*> g_entities;
+static std::vector<vertex_buffer*> g_vertex_buffers;
+static std::vector<texture_buffer*> g_textures;
+static std::vector<entity*> g_entities;
 
 // This is a helper function used for all Vulkan related function calls that
 // return a VkResult value.
-static void VkCheck(VkResult result)
+static void vk_check(VkResult result)
 {
     // todo(zak): Should we return a bool, throw, exit(), or abort()?
     if (result != VK_SUCCESS) {
@@ -127,7 +127,7 @@ static void VkCheck(VkResult result)
 // Helper cast function often used for Vulkan create info structs
 // that accept a uint32_t.
 template <typename T>
-static uint32_t U32(T t)
+static uint32_t u32(T t)
 {
     // todo(zak): check if T is a numerical value
 
@@ -137,8 +137,8 @@ static uint32_t U32(T t)
 // Compares a list of requested instance layers against the layers available
 // on the system. If all the requested layers have been found then true is
 // returned.
-static bool CompareLayers(const std::vector<const char*>& requested,
-                          const std::vector<VkLayerProperties>& layers)
+static bool compare_layers(const std::vector<const char*>& requested,
+                           const std::vector<VkLayerProperties>& layers)
 {
     for (const auto& requested_name : requested) {
         const auto iter = std::find_if(layers.begin(), layers.end(), [=](const auto& layer) {
@@ -157,8 +157,8 @@ static bool CompareLayers(const std::vector<const char*>& requested,
 // Compares a list of requested extensions against the extensions available
 // on the system. If all the requested extensions have been found then true is
 // returned.
-static bool CompareExtensions(const std::vector<const char*>& requested,
-                              const std::vector<VkExtensionProperties>& extensions)
+static bool compare_extensions(const std::vector<const char*>& requested,
+                               const std::vector<VkExtensionProperties>& extensions)
 {
     for (const auto& requested_name : requested) {
         const auto iter = std::find_if(extensions.begin(), extensions.end(), [=](const auto& extension) {
@@ -178,7 +178,7 @@ static bool CompareExtensions(const std::vector<const char*>& requested,
 
 // A helper function that returns the size in bytes of a particular format
 // based on the number of components and data type.
-static uint32_t FormatToSize(VkFormat format)
+static uint32_t format_to_size(VkFormat format)
 {
     switch (format) {
         case VK_FORMAT_R32G32_SFLOAT:       return 2 * sizeof(float);
@@ -189,7 +189,7 @@ static uint32_t FormatToSize(VkFormat format)
     return 0;
 }
 
-static shaderc_shader_kind ConvertShaderType(VkShaderStageFlagBits type)
+static shaderc_shader_kind convert_shader_type(VkShaderStageFlagBits type)
 {
     switch (type) {
         case VK_SHADER_STAGE_VERTEX_BIT: return shaderc_vertex_shader;
@@ -208,7 +208,8 @@ static shaderc_shader_kind ConvertShaderType(VkShaderStageFlagBits type)
 // creating two arrays and filling them one with the requested features and the
 // other array with the features that is supported. Then we simply compare them
 // to see if all requested features are present.
-static bool HasRequiredFeatures(VkPhysicalDevice physical_device, VkPhysicalDeviceFeatures requested_features)
+static bool has_required_features(VkPhysicalDevice physical_device,
+                                  VkPhysicalDeviceFeatures requested_features)
 {
     VkPhysicalDeviceFeatures available_features{};
     vkGetPhysicalDeviceFeatures(physical_device, &available_features);
@@ -236,9 +237,9 @@ static bool HasRequiredFeatures(VkPhysicalDevice physical_device, VkPhysicalDevi
 // Creates the base renderer context. This context is the core of the renderer
 // and handles all creation/destruction of Vulkan resources. This function must
 // be the first renderer function to be called.
-static RendererContext* CreateRendererContext(uint32_t version, const Window* window)
+static renderer_context* create_renderer_context(uint32_t version, const Window* window)
 {
-    auto rc = new RendererContext();
+    auto rc = new renderer_context();
 
     rc->window = window;
 
@@ -270,7 +271,7 @@ static RendererContext* CreateRendererContext(uint32_t version, const Window* wi
     std::vector<VkLayerProperties> instance_layers(layer_count);
     vkEnumerateInstanceLayerProperties(&layer_count, instance_layers.data());
 
-    if (!CompareLayers(requested_layers, instance_layers)) {
+    if (!compare_layers(requested_layers, instance_layers)) {
         return nullptr;
     }
 
@@ -279,24 +280,24 @@ static RendererContext* CreateRendererContext(uint32_t version, const Window* wi
 
     VkInstanceCreateInfo instance_info { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
     instance_info.pApplicationInfo        = &app_info;
-    instance_info.enabledLayerCount       = U32(requested_layers.size());
+    instance_info.enabledLayerCount       = u32(requested_layers.size());
     instance_info.ppEnabledLayerNames     = requested_layers.data();
     instance_info.enabledExtensionCount   = extension_count;
     instance_info.ppEnabledExtensionNames = extensions;
 
-    VkCheck(vkCreateInstance(&instance_info, nullptr, &rc->instance));
+    vk_check(vkCreateInstance(&instance_info, nullptr, &rc->instance));
 
     // create surface
-    VkCheck(glfwCreateWindowSurface(rc->instance,
-                                    rc->window->handle,
-                                    nullptr,
-                                    &rc->surface));
+    vk_check(glfwCreateWindowSurface(rc->instance,
+                                     rc->window->handle,
+                                     nullptr,
+                                     &rc->surface));
 
     // query for physical device
     uint32_t gpu_count = 0;
-    VkCheck(vkEnumeratePhysicalDevices(rc->instance, &gpu_count, nullptr));
+    vk_check(vkEnumeratePhysicalDevices(rc->instance, &gpu_count, nullptr));
     std::vector<VkPhysicalDevice> gpus(gpu_count);
-    VkCheck(vkEnumeratePhysicalDevices(rc->instance, &gpu_count, gpus.data()));
+    vk_check(vkEnumeratePhysicalDevices(rc->instance, &gpu_count, gpus.data()));
 
     if (gpus.empty()) {
         printf("Failed to find any GPU that supports Vulkan.\n");
@@ -311,7 +312,7 @@ static RendererContext* CreateRendererContext(uint32_t version, const Window* wi
     assert(gpu_count < 2 && "todo: All checks assume we have a single GPU");
 
     for (std::size_t i = 0; i < gpu_count; ++i) {
-        gpu_features_supported = HasRequiredFeatures(gpus[i], requested_gpu_features);
+        gpu_features_supported = has_required_features(gpus[i], requested_gpu_features);
 
         // Queue families are a group of queues that together perform specific
         // tasks on a physical GPU. For instance, all rendering related tasks will
@@ -333,7 +334,7 @@ static RendererContext* CreateRendererContext(uint32_t version, const Window* wi
                 graphics_queue_index = i;
 
             // Check if the current queue can support our newly created surface.
-            VkCheck(vkGetPhysicalDeviceSurfaceSupportKHR(gpus[i], j, rc->surface, &surface_supported));
+            vk_check(vkGetPhysicalDeviceSurfaceSupportKHR(gpus[i], j, rc->surface, &surface_supported));
 
         }
 
@@ -362,7 +363,7 @@ static RendererContext* CreateRendererContext(uint32_t version, const Window* wi
     device_info.ppEnabledExtensionNames = device_extensions;
     device_info.pEnabledFeatures        = &requested_gpu_features;
 
-    VkCheck(vkCreateDevice(rc->physical_device, &device_info, nullptr, &rc->device));
+    vk_check(vkCreateDevice(rc->physical_device, &device_info, nullptr, &rc->device));
 
     vkGetDeviceQueue(rc->device, 0, rc->graphics_queue.index, &rc->graphics_queue.handle);
 
@@ -373,13 +374,13 @@ static RendererContext* CreateRendererContext(uint32_t version, const Window* wi
     allocator_info.physicalDevice   = rc->physical_device;
     allocator_info.device           = rc->device;
 
-    VkCheck(vmaCreateAllocator(&allocator_info, &rc->allocator));
+    vk_check(vmaCreateAllocator(&allocator_info, &rc->allocator));
 
     return rc;
 }
 
 // Deallocates/frees memory allocated by the renderer context.
-static void DestroyRendererContext(RendererContext* rc)
+static void destroy_renderer_context(renderer_context* rc)
 {
     vmaDestroyAllocator(rc->allocator);
     vkDestroyDevice(rc->device, nullptr);
@@ -389,9 +390,9 @@ static void DestroyRendererContext(RendererContext* rc)
     delete rc;
 }
 
-static SubmitContext* CreateSubmitContext()
+static renderer_submit_context* create_submit_context()
 {
-    auto context = new SubmitContext();
+    auto context = new renderer_submit_context();
 
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
 
@@ -400,20 +401,20 @@ static SubmitContext* CreateSubmitContext()
     pool_info.queueFamilyIndex = gRc->graphics_queue.index;
 
     // Create the resources required to upload data to GPU-only memory.
-    VkCheck(vkCreateFence(gRc->device, &fence_info, nullptr, &context->Fence));
-    VkCheck(vkCreateCommandPool(gRc->device, &pool_info, nullptr, &context->CmdPool));
+    vk_check(vkCreateFence(gRc->device, &fence_info, nullptr, &context->Fence));
+    vk_check(vkCreateCommandPool(gRc->device, &pool_info, nullptr, &context->CmdPool));
 
     VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
     allocate_info.commandPool        = context->CmdPool;
     allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocate_info.commandBufferCount = 1;
 
-    VkCheck(vkAllocateCommandBuffers(gRc->device, &allocate_info, &context->CmdBuffer));
+    vk_check(vkAllocateCommandBuffers(gRc->device, &allocate_info, &context->CmdBuffer));
 
     return context;
 }
 
-static void DestroySubmitContext(SubmitContext* context)
+static void destroy_submit_context(renderer_submit_context* context)
 {
     vkFreeCommandBuffers(gRc->device, context->CmdPool, 1, &context->CmdBuffer);
     vkDestroyCommandPool(gRc->device, context->CmdPool, nullptr);
@@ -424,7 +425,7 @@ static void DestroySubmitContext(SubmitContext* context)
 
 // A function that executes a command directly on the GPU. This is most often
 // used for copying data from staging buffers into GPU local buffers.
-static void SubmitToGPU(const std::function<void()>& SubmitFunction)
+static void submit_to_gpu(const std::function<void()>& SubmitFunction)
 {
     VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -432,27 +433,27 @@ static void SubmitToGPU(const std::function<void()>& SubmitFunction)
     // Record command that needs to be executed on the GPU. Since this is a
     // single submit command this will often be copying data into device local
     // memory
-    VkCheck(vkBeginCommandBuffer(gSubmitContext->CmdBuffer, &begin_info));
+    vk_check(vkBeginCommandBuffer(gSubmitContext->CmdBuffer, &begin_info));
     {
         SubmitFunction();
     }
-    VkCheck(vkEndCommandBuffer((gSubmitContext->CmdBuffer)));
+    vk_check(vkEndCommandBuffer((gSubmitContext->CmdBuffer)));
 
     VkSubmitInfo end_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
     end_info.commandBufferCount = 1;
     end_info.pCommandBuffers = &gSubmitContext->CmdBuffer;
 
     // Tell the GPU to now execute the previously recorded command
-    VkCheck(vkQueueSubmit(gRc->graphics_queue.handle, 1, &end_info, gSubmitContext->Fence));
+    vk_check(vkQueueSubmit(gRc->graphics_queue.handle, 1, &end_info, gSubmitContext->Fence));
 
-    VkCheck(vkWaitForFences(gRc->device, 1, &gSubmitContext->Fence, true, UINT64_MAX));
-    VkCheck(vkResetFences(gRc->device, 1, &gSubmitContext->Fence));
+    vk_check(vkWaitForFences(gRc->device, 1, &gSubmitContext->Fence, true, UINT64_MAX));
+    vk_check(vkResetFences(gRc->device, 1, &gSubmitContext->Fence));
 
     // Reset the command buffers inside the command pool
-    VkCheck(vkResetCommandPool(gRc->device, gSubmitContext->CmdPool, 0));
+    vk_check(vkResetCommandPool(gRc->device, gSubmitContext->CmdPool, 0));
 }
 
-static VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect)
+static VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect)
 {
     VkImageView view{};
 
@@ -466,12 +467,15 @@ static VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspect
     imageViewInfo.subresourceRange.baseArrayLayer = 0;
     imageViewInfo.subresourceRange.layerCount = 1;
 
-    VkCheck(vkCreateImageView(gRc->device, &imageViewInfo, nullptr, &view));
+    vk_check(vkCreateImageView(gRc->device, &imageViewInfo, nullptr, &view));
 
     return view;
 }
 
-static ImageBuffer CreateImage(VkFormat format, VkExtent2D extent, VkImageUsageFlags usage, VkImageAspectFlags aspect)
+static ImageBuffer create_image(VkFormat format,
+                                VkExtent2D extent,
+                                VkImageUsageFlags usage,
+                                VkImageAspectFlags aspect)
 {
     ImageBuffer image{};
 
@@ -489,31 +493,31 @@ static ImageBuffer CreateImage(VkFormat format, VkExtent2D extent, VkImageUsageF
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     allocInfo.requiredFlags = VkMemoryAllocateFlagBits(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    VkCheck(vmaCreateImage(gRc->allocator, &imageInfo, &allocInfo, &image.handle, &image.allocation, nullptr));
+    vk_check(vmaCreateImage(gRc->allocator, &imageInfo, &allocInfo, &image.handle, &image.allocation, nullptr));
 
-    image.view   = CreateImageView(image.handle, format, aspect);
+    image.view   = create_image_view(image.handle, format, aspect);
     image.format = format;
     image.extent = extent;
 
     return image;
 }
 
-static void DestroyImage(ImageBuffer* image)
+static void destroy_image(ImageBuffer* image)
 {
     vkDestroyImageView(gRc->device, image->view, nullptr);
     vmaDestroyImage(gRc->allocator, image->handle, image->allocation);
 }
 
 // Maps/Fills an existing buffer with data.
-static void SetBufferData(Buffer* buffer, void* data, uint32_t size)
+static void set_buffer_data(Buffer* buffer, void* data, uint32_t size)
 {
     void* allocation{};
-    VkCheck(vmaMapMemory(gRc->allocator, buffer->allocation, &allocation));
+    vk_check(vmaMapMemory(gRc->allocator, buffer->allocation, &allocation));
     std::memcpy(allocation, data, size);
     vmaUnmapMemory(gRc->allocator, buffer->allocation);
 }
 
-static Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type)
+static Buffer create_buffer(uint32_t size, VkBufferUsageFlags type)
 {
     Buffer buffer{};
 
@@ -525,12 +529,12 @@ static Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type)
     alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
     alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
-    VkCheck(vmaCreateBuffer(gRc->allocator,
-                            &buffer_info,
-                            &alloc_info,
-                            &buffer.buffer,
-                            &buffer.allocation,
-                            nullptr));
+    vk_check(vmaCreateBuffer(gRc->allocator,
+                             &buffer_info,
+                             &alloc_info,
+                             &buffer.buffer,
+                             &buffer.allocation,
+                             nullptr));
 
     return buffer;
 }
@@ -538,7 +542,7 @@ static Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type)
 // Creates and fills a buffer that is CPU accessible. A staging
 // buffer is most often used as a temporary buffer when copying
 // data from the CPU to the GPU.
-static Buffer CreateStagingBuffer(void* data, uint32_t size)
+static Buffer create_staging_buffer(void* data, uint32_t size)
 {
     Buffer buffer{};
 
@@ -551,21 +555,21 @@ static Buffer CreateStagingBuffer(void* data, uint32_t size)
     alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                        VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-    VkCheck(vmaCreateBuffer(gRc->allocator,
-                            &buffer_info,
-                            &alloc_info,
-                            &buffer.buffer,
-                            &buffer.allocation,
-                            nullptr));
+    vk_check(vmaCreateBuffer(gRc->allocator,
+                             &buffer_info,
+                             &alloc_info,
+                             &buffer.buffer,
+                             &buffer.allocation,
+                             nullptr));
 
-    SetBufferData(&buffer, data, size);
+    set_buffer_data(&buffer, data, size);
 
     return buffer;
 }
 
 // Creates an empty buffer on the GPU that will need to be filled by
 // calling SubmitToGPU.
-static Buffer CreateGPUBuffer(uint32_t size, VkBufferUsageFlags type)
+static Buffer create_gpu_buffer(uint32_t size, VkBufferUsageFlags type)
 {
     Buffer buffer{};
 
@@ -577,18 +581,18 @@ static Buffer CreateGPUBuffer(uint32_t size, VkBufferUsageFlags type)
     alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
     alloc_info.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
-    VkCheck(vmaCreateBuffer(gRc->allocator,
-                            &buffer_info,
-                            &alloc_info,
-                            &buffer.buffer,
-                            &buffer.allocation,
-                            nullptr));
+    vk_check(vmaCreateBuffer(gRc->allocator,
+                             &buffer_info,
+                             &alloc_info,
+                             &buffer.buffer,
+                             &buffer.allocation,
+                             nullptr));
 
     return buffer;
 }
 
 // Deallocates a buffer.
-static void DestroyBuffer(Buffer* buffer)
+static void destroy_buffer(Buffer* buffer)
 {
     vmaDestroyBuffer(gRc->allocator, buffer->buffer, buffer->allocation);
 }
@@ -600,13 +604,13 @@ static void DestroyBuffer(Buffer* buffer)
 // like to be created. It's important to remember that this is a request
 // and not guaranteed as the hardware may not support that number
 // of images.
-static Swapchain CreateSwapchain(BufferMode bufferMode, VSyncMode vsyncMode)
+static Swapchain create_swapchain(buffer_mode bufferMode, vsync_mode vsyncMode)
 {
     Swapchain swapchain{};
 
     // get surface properties
     VkSurfaceCapabilitiesKHR surface_properties {};
-    VkCheck(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gRc->physical_device, gRc->surface, &surface_properties));
+    vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gRc->physical_device, gRc->surface, &surface_properties));
 
     // todo: fix resolution for high density displays
 
@@ -626,7 +630,7 @@ static Swapchain CreateSwapchain(BufferMode bufferMode, VSyncMode vsyncMode)
     swapchain_info.queueFamilyIndexCount = 0;
     swapchain_info.pQueueFamilyIndices   = nullptr;
 
-    VkCheck(vkCreateSwapchainKHR(gRc->device, &swapchain_info, nullptr, &swapchain.handle));
+    vk_check(vkCreateSwapchainKHR(gRc->device, &swapchain_info, nullptr, &swapchain.handle));
 
     swapchain.bufferMode = bufferMode;
     swapchain.vsyncMode  = vsyncMode;
@@ -635,9 +639,9 @@ static Swapchain CreateSwapchain(BufferMode bufferMode, VSyncMode vsyncMode)
     // images that we get is guaranteed to be at least the minimum image count
     // specified.
     uint32_t img_count = 0;
-    VkCheck(vkGetSwapchainImagesKHR(gRc->device, swapchain.handle, &img_count, nullptr));
+    vk_check(vkGetSwapchainImagesKHR(gRc->device, swapchain.handle, &img_count, nullptr));
     std::vector<VkImage> color_images(img_count);
-    VkCheck(vkGetSwapchainImagesKHR(gRc->device, swapchain.handle, &img_count, color_images.data()));
+    vk_check(vkGetSwapchainImagesKHR(gRc->device, swapchain.handle, &img_count, color_images.data()));
 
 
     // create swapchain image views
@@ -652,23 +656,23 @@ static Swapchain CreateSwapchain(BufferMode bufferMode, VSyncMode vsyncMode)
         ImageBuffer& image = swapchain.images[i];
 
         image.handle = color_images[i];
-        image.view   = CreateImageView(image.handle, swapchain_info.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+        image.view   = create_image_view(image.handle, swapchain_info.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
         image.format = swapchain_info.imageFormat;
         image.extent = swapchain_info.imageExtent;
     }
 
     // create depth buffer image
-    swapchain.depth_image = CreateImage(VK_FORMAT_D32_SFLOAT,
-                                        swapchain_info.imageExtent,
-                                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                        VK_IMAGE_ASPECT_DEPTH_BIT);
+    swapchain.depth_image = create_image(VK_FORMAT_D32_SFLOAT,
+                                         swapchain_info.imageExtent,
+                                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                         VK_IMAGE_ASPECT_DEPTH_BIT);
 
     return swapchain;
 }
 
-static void DestroySwapchain(Swapchain& swapchain)
+static void destroy_swapchain(Swapchain& swapchain)
 {
-    DestroyImage(&swapchain.depth_image);
+    destroy_image(&swapchain.depth_image);
 
     for (auto& image : swapchain.images) {
         vkDestroyImageView(gRc->device, image.view, nullptr);
@@ -678,6 +682,7 @@ static void DestroySwapchain(Swapchain& swapchain)
     vkDestroySwapchainKHR(gRc->device, swapchain.handle, nullptr);
 }
 
+/*
 
 static void RebuildSwapchain(Swapchain& swapchain)
 {
@@ -686,13 +691,14 @@ static void RebuildSwapchain(Swapchain& swapchain)
     // todo(zak): minimizing
 
     // DestroyFramebuffers();
-    DestroySwapchain(swapchain);
+    destroy_swapchain(swapchain);
 
-    gSwapchain = CreateSwapchain(swapchain.bufferMode, swapchain.vsyncMode);
+    gSwapchain = create_swapchain(swapchain.bufferMode, swapchain.vsyncMode);
     //CreateFramebuffers();
 }
+*/
 
-static void CreateFrames()
+static void create_frames()
 {
     VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
     pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -706,23 +712,23 @@ static void CreateFrames()
     gFrames.resize(gSwapchain.images.size());
     for (auto& gFrame : gFrames) {
         // create rendering command pool and buffers
-        VkCheck(vkCreateCommandPool(gRc->device, &pool_info, nullptr, &gFrame.cmd_pool));
+        vk_check(vkCreateCommandPool(gRc->device, &pool_info, nullptr, &gFrame.cmd_pool));
 
         VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
         allocate_info.commandPool        = gFrame.cmd_pool;
         allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocate_info.commandBufferCount = 1;
-        VkCheck(vkAllocateCommandBuffers(gRc->device, &allocate_info, &gFrame.cmd_buffer));
+        vk_check(vkAllocateCommandBuffers(gRc->device, &allocate_info, &gFrame.cmd_buffer));
 
 
         // create sync objects
-        VkCheck(vkCreateFence(gRc->device, &fence_info, nullptr, &gFrame.submit_fence));
-        VkCheck(vkCreateSemaphore(gRc->device, &semaphore_info, nullptr, &gFrame.acquired_semaphore));
-        VkCheck(vkCreateSemaphore(gRc->device, &semaphore_info, nullptr, &gFrame.released_semaphore));
+        vk_check(vkCreateFence(gRc->device, &fence_info, nullptr, &gFrame.submit_fence));
+        vk_check(vkCreateSemaphore(gRc->device, &semaphore_info, nullptr, &gFrame.acquired_semaphore));
+        vk_check(vkCreateSemaphore(gRc->device, &semaphore_info, nullptr, &gFrame.released_semaphore));
     }
 }
 
-static void DestroyFrames()
+static void destroy_frames()
 {
     for (auto& gFrame : gFrames) {
         vkDestroySemaphore(gRc->device, gFrame.released_semaphore, nullptr);
@@ -736,22 +742,22 @@ static void DestroyFrames()
     }
 }
 
-static void CreateQuery()
+static void create_query()
 {
     VkQueryPoolCreateInfo query_info { VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
     query_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_info.queryCount = 2;
 
-    VkCheck(vkCreateQueryPool(gRc->device, &query_info, nullptr, &g_query_pool));
+    vk_check(vkCreateQueryPool(gRc->device, &query_info, nullptr, &g_query_pool));
 }
 
-static void DestroyQuery()
+static void destroy_query()
 {
     vkDestroyQueryPool(gRc->device, g_query_pool, nullptr);
 }
 
 
-static void CreateDebugUI(RenderPass& renderPass)
+static void create_debug_ui(RenderPass& renderPass)
 {
     const VkDescriptorPoolSize pool_sizes[] = {
             { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
@@ -770,9 +776,9 @@ static void CreateDebugUI(RenderPass& renderPass)
     VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
     pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
-    pool_info.poolSizeCount = U32(IM_ARRAYSIZE(pool_sizes));
+    pool_info.poolSizeCount = u32(IM_ARRAYSIZE(pool_sizes));
     pool_info.pPoolSizes = pool_sizes;
-    VkCheck(vkCreateDescriptorPool(gRc->device, &pool_info, nullptr, &g_gui_descriptor_pool));
+    vk_check(vkCreateDescriptorPool(gRc->device, &pool_info, nullptr, &g_gui_descriptor_pool));
 
 
 
@@ -780,7 +786,10 @@ static void CreateDebugUI(RenderPass& renderPass)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
 
-    io.Fonts->AddFontFromFileTTF("Assets/fonts/Karla-Regular.ttf", 16);
+    if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
+        printf("Failed to load required font for ImGui.\n");
+        return;
+    }
 
     ImGui::StyleColorsDark();
 
@@ -798,19 +807,18 @@ static void CreateDebugUI(RenderPass& renderPass)
     init_info.ImageCount = gFrames.size();
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator = nullptr;
-    init_info.CheckVkResultFn = VkCheck;
+    init_info.CheckVkResultFn = vk_check;
 
     ImGui_ImplVulkan_Init(&init_info, renderPass.handle);
 
-    SubmitToGPU([]
-                {
-                    ImGui_ImplVulkan_CreateFontsTexture(gSubmitContext->CmdBuffer);
-                });
+    submit_to_gpu([] {
+        ImGui_ImplVulkan_CreateFontsTexture(gSubmitContext->CmdBuffer);
+    });
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
-static void DestroyDebugUI()
+static void destroy_debug_ui()
 {
     vkDestroyDescriptorPool(gRc->device, g_gui_descriptor_pool, nullptr);
 
@@ -820,7 +828,7 @@ static void DestroyDebugUI()
     ImGui::DestroyContext();
 }
 
-static void CreateShaderCompiler()
+static void create_shader_compiler()
 {
     // todo(zak): Check for potential initialization errors.
     g_shader_compiler.compiler = shaderc_compiler_initialize();
@@ -829,13 +837,13 @@ static void CreateShaderCompiler()
     shaderc_compile_options_set_optimization_level(g_shader_compiler.options, shaderc_optimization_level_performance);
 }
 
-static void DestroyShaderCompiler()
+static void destroy_shader_compiler()
 {
     shaderc_compile_options_release(g_shader_compiler.options);
     shaderc_compiler_release(g_shader_compiler.compiler);
 }
 
-static Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
+static Shader create_shader(VkShaderStageFlagBits type, const std::string& code)
 {
     Shader shader_module{};
 
@@ -845,7 +853,7 @@ static Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
     result = shaderc_compile_into_spv(g_shader_compiler.compiler,
                                       code.data(),
                                       code.size(),
-                                      ConvertShaderType(type),
+                                      convert_shader_type(type),
                                       "",
                                       "main",
                                       g_shader_compiler.options);
@@ -858,16 +866,16 @@ static Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
 
     // create shader module
     VkShaderModuleCreateInfo module_info { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
-    module_info.codeSize = U32(shaderc_result_get_length(result));
+    module_info.codeSize = u32(shaderc_result_get_length(result));
     module_info.pCode    = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(result));
 
-    VkCheck(vkCreateShaderModule(gRc->device, &module_info, nullptr, &shader_module.handle));
+    vk_check(vkCreateShaderModule(gRc->device, &module_info, nullptr, &shader_module.handle));
     shader_module.type = type;
 
     return shader_module;
 }
 
-static std::vector<VkFramebuffer> CreateFramebuffers(VkRenderPass renderPass, VkExtent2D extent, bool hasDepth)
+static std::vector<VkFramebuffer> create_framebuffers(VkRenderPass renderPass, VkExtent2D extent, bool hasDepth)
 {
     std::vector<VkFramebuffer> framebuffers(gSwapchain.images.size());
 
@@ -881,19 +889,19 @@ static std::vector<VkFramebuffer> CreateFramebuffers(VkRenderPass renderPass, Vk
 
         VkFramebufferCreateInfo framebuffer_info{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
         framebuffer_info.renderPass = renderPass;
-        framebuffer_info.attachmentCount = U32(views.size());
+        framebuffer_info.attachmentCount = u32(views.size());
         framebuffer_info.pAttachments = views.data();
         framebuffer_info.width = extent.width;
         framebuffer_info.height = extent.height;
         framebuffer_info.layers = 1;
 
-        VkCheck(vkCreateFramebuffer(gRc->device, &framebuffer_info, nullptr, &framebuffers[i]));
+        vk_check(vkCreateFramebuffer(gRc->device, &framebuffer_info, nullptr, &framebuffers[i]));
     }
 
     return framebuffers;
 };
 
-static void DestroyFramebuffers(std::vector<VkFramebuffer>& framebuffers)
+static void destroy_framebuffers(std::vector<VkFramebuffer>& framebuffers)
 {
     for (auto& framebuffer : framebuffers) {
         vkDestroyFramebuffer(gRc->device, framebuffer, nullptr);
@@ -901,7 +909,7 @@ static void DestroyFramebuffers(std::vector<VkFramebuffer>& framebuffers)
     framebuffers.clear();
 }
 
-static RenderPass CreateRenderPass(const RenderPassInfo& info)
+static RenderPass create_render_pass(const RenderPassInfo& info)
 {
     RenderPass renderPass{};
 
@@ -923,7 +931,7 @@ static RenderPass CreateRenderPass(const RenderPassInfo& info)
 
 
         VkAttachmentReference attachmentReference{};
-        attachmentReference.attachment = U32(i);
+        attachmentReference.attachment = u32(i);
         attachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         attachments.push_back(attachment);
@@ -944,7 +952,7 @@ static RenderPass CreateRenderPass(const RenderPassInfo& info)
         depthAttach.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
         depthAttach.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-        depthRef.attachment = U32(attachments.size());
+        depthRef.attachment = u32(attachments.size());
         depthRef.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         attachments.push_back(depthAttach);
@@ -969,30 +977,31 @@ static RenderPass CreateRenderPass(const RenderPassInfo& info)
     subpass.pDepthStencilAttachment = depthReference;
 
     VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
-    render_pass_info.attachmentCount = U32(attachments.size());
+    render_pass_info.attachmentCount = u32(attachments.size());
     render_pass_info.pAttachments = attachments.data();
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
-    render_pass_info.dependencyCount = U32(dependencies.size());
+    render_pass_info.dependencyCount = u32(dependencies.size());
     render_pass_info.pDependencies = dependencies.data();
 
-    VkCheck(vkCreateRenderPass(gRc->device, &render_pass_info, nullptr, &renderPass.handle));
+    vk_check(vkCreateRenderPass(gRc->device, &render_pass_info, nullptr, &renderPass.handle));
 
 
     // Create framebuffers
-    renderPass.framebuffers = CreateFramebuffers(renderPass.handle, gSwapchain.images[0].extent, info.HasDepthAttachment);
+    renderPass.framebuffers = create_framebuffers(renderPass.handle, gSwapchain.images[0].extent,
+                                                  info.HasDepthAttachment);
 
     return renderPass;
 }
 
-static void DestroyRenderPass(RenderPass& renderPass)
+static void destroy_render_pass(RenderPass& renderPass)
 {
-    DestroyFramebuffers(renderPass.framebuffers);
+    destroy_framebuffers(renderPass.framebuffers);
 
     vkDestroyRenderPass(gRc->device, renderPass.handle, nullptr);
 }
 
-static Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass)
+static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass)
 {
     Pipeline pipeline{};
 
@@ -1008,7 +1017,7 @@ static Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& ren
     descriptor_layout_info.bindingCount = 1;
     descriptor_layout_info.pBindings    = &layoutBinding;
 
-    VkCheck(vkCreateDescriptorSetLayout(gRc->device, &descriptor_layout_info, nullptr, &pipeline.DescriptorLayout));
+    vk_check(vkCreateDescriptorSetLayout(gRc->device, &descriptor_layout_info, nullptr, &pipeline.DescriptorLayout));
 
     // push constant
     VkPushConstantRange push_constant{};
@@ -1023,7 +1032,7 @@ static Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& ren
     layout_info.pushConstantRangeCount = 1;
     layout_info.pPushConstantRanges    = &push_constant;
 
-    VkCheck(vkCreatePipelineLayout(gRc->device, &layout_info, nullptr, &pipeline.layout));
+    vk_check(vkCreatePipelineLayout(gRc->device, &layout_info, nullptr, &pipeline.layout));
 
 
     // create pipeline
@@ -1032,7 +1041,7 @@ static Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& ren
 
     for (std::size_t i = 0; i < 1; ++i) {
         VkVertexInputBindingDescription binding{};
-        binding.binding   = U32(i);
+        binding.binding   = u32(i);
         binding.stride    = pipelineInfo.BindingLayoutSize;
         binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
@@ -1041,21 +1050,21 @@ static Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& ren
         uint32_t offset = 0;
         for (std::size_t j = 0; j < pipelineInfo.BindingAttributeFormats.size(); ++j) {
             VkVertexInputAttributeDescription attribute{};
-            attribute.location = U32(j);
+            attribute.location = u32(j);
             attribute.binding  = binding.binding;
             attribute.format   = pipelineInfo.BindingAttributeFormats[i];
             attribute.offset   = offset;
 
-            offset += FormatToSize(attribute.format);
+            offset += format_to_size(attribute.format);
 
             attributes.push_back(attribute);
         }
     }
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-    vertex_input_info.vertexBindingDescriptionCount   = U32(bindings.size());
+    vertex_input_info.vertexBindingDescriptionCount   = u32(bindings.size());
     vertex_input_info.pVertexBindingDescriptions      = bindings.data();
-    vertex_input_info.vertexAttributeDescriptionCount = U32(attributes.size());
+    vertex_input_info.vertexAttributeDescriptionCount = u32(attributes.size());
     vertex_input_info.pVertexAttributeDescriptions    = attributes.data();
 
     std::vector<VkPipelineShaderStageCreateInfo> shader_infos;
@@ -1063,7 +1072,7 @@ static Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& ren
 
     for (auto& shader : pipelineInfo.PipelineShaders) {
         // Compile shader
-        VkShaderModule shaderHandle = CreateShader(shader.Type, shader.Code).handle;
+        VkShaderModule shaderHandle = create_shader(shader.Type, shader.Code).handle;
 
         // Create shader module
         VkPipelineShaderStageCreateInfo shader_info{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
@@ -1145,7 +1154,7 @@ static Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& ren
     dynamic_state_info.pDynamicStates    = dynamic_states;
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_info {VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
-    graphics_pipeline_info.stageCount          = U32(shader_infos.size());
+    graphics_pipeline_info.stageCount          = u32(shader_infos.size());
     graphics_pipeline_info.pStages             = shader_infos.data();
     graphics_pipeline_info.pVertexInputState   = &vertex_input_info;
     graphics_pipeline_info.pInputAssemblyState = &input_assembly_info;
@@ -1160,12 +1169,12 @@ static Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& ren
     graphics_pipeline_info.renderPass          = renderPass.handle;
     graphics_pipeline_info.subpass             = 0;
 
-    VkCheck(vkCreateGraphicsPipelines(gRc->device,
-                                      nullptr,
-                                      1,
-                                      &graphics_pipeline_info,
-                                      nullptr,
-                                      &pipeline.handle));
+    vk_check(vkCreateGraphicsPipelines(gRc->device,
+                                       nullptr,
+                                       1,
+                                       &graphics_pipeline_info,
+                                       nullptr,
+                                       &pipeline.handle));
 
 
 
@@ -1176,7 +1185,7 @@ static Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& ren
     return pipeline;
 }
 
-static void DestroyPipeline(Pipeline& pipeline)
+static void destroy_pipeline(Pipeline& pipeline)
 {
     vkDestroyPipeline(gRc->device, pipeline.handle, nullptr);
     vkDestroyPipelineLayout(gRc->device, pipeline.layout, nullptr);
@@ -1190,10 +1199,10 @@ static void DestroyPipeline(Pipeline& pipeline)
 
 
 
-static void GetNextImage(Swapchain& swapchain)
+static void get_next_swapchain_image(Swapchain& swapchain)
 {
     // Wait for the GPU to finish all work before getting the next image
-    VkCheck(vkWaitForFences(gRc->device, 1, &gFrames[currentFrame].submit_fence, true, UINT64_MAX));
+    vk_check(vkWaitForFences(gRc->device, 1, &gFrames[currentFrame].submit_fence, true, UINT64_MAX));
 
     // Keep attempting to acquire the next frame.
     VkResult result = vkAcquireNextImageKHR(gRc->device,
@@ -1203,7 +1212,7 @@ static void GetNextImage(Swapchain& swapchain)
                                             nullptr,
                                             &swapchain.currentImage);
     while (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        RebuildSwapchain(swapchain);
+        //RebuildSwapchain(swapchain);
 
         result = vkAcquireNextImageKHR(gRc->device,
                                        swapchain.handle,
@@ -1215,12 +1224,12 @@ static void GetNextImage(Swapchain& swapchain)
     }
 
     // reset fence when about to submit work to the GPU
-    VkCheck(vkResetFences(gRc->device, 1, &gFrames[currentFrame].submit_fence));
+    vk_check(vkResetFences(gRc->device, 1, &gFrames[currentFrame].submit_fence));
 }
 
 // Submits a request to the GPU to start performing the actual computation needed
 // to render an image.
-static void SubmitImage(const Frame& frame)
+static void submit_image(const Frame& frame)
 {
     const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
@@ -1233,11 +1242,11 @@ static void SubmitImage(const Frame& frame)
     submit_info.pSignalSemaphores    = &frame.released_semaphore;
 
 
-    VkCheck(vkQueueSubmit(gRc->graphics_queue.handle, 1, &submit_info, frame.submit_fence));
+    vk_check(vkQueueSubmit(gRc->graphics_queue.handle, 1, &submit_info, frame.submit_fence));
 }
 
 // Displays the newly finished rendered swapchain image onto the window
-static void PresentImage(Swapchain& swapchain)
+static void present_swapchain_image(Swapchain& swapchain)
 {
     VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     present_info.waitSemaphoreCount = 1;
@@ -1251,7 +1260,7 @@ static void PresentImage(Swapchain& swapchain)
     const VkResult result = vkQueuePresentKHR(gRc->graphics_queue.handle, &present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        RebuildSwapchain(swapchain);
+        //RebuildSwapchain(swapchain);
         return;
     }
 
@@ -1260,15 +1269,15 @@ static void PresentImage(Swapchain& swapchain)
     currentFrame = (currentFrame + 1) % frames_in_flight;
 }
 
-static void BeginFrame(Swapchain& swapchain, const Frame& frame)
+static void begin_frame(Swapchain& swapchain, const Frame& frame)
 {
-    GetNextImage(swapchain);
+    get_next_swapchain_image(swapchain);
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    VkCheck(vkResetCommandBuffer(frame.cmd_buffer, 0));
-    VkCheck(vkBeginCommandBuffer(frame.cmd_buffer, &begin_info));
+    vk_check(vkResetCommandBuffer(frame.cmd_buffer, 0));
+    vk_check(vkBeginCommandBuffer(frame.cmd_buffer, &begin_info));
 
     const VkExtent2D extent = { swapchain.images[0].extent };
 
@@ -1288,28 +1297,28 @@ static void BeginFrame(Swapchain& swapchain, const Frame& frame)
     vkCmdSetScissor(frame.cmd_buffer, 0, 1, &scissor);
 }
 
-static void EndFrame(Swapchain& swapchain, const Frame& frame)
+static void end_frame(Swapchain& swapchain, const Frame& frame)
 {
-    VkCheck(vkEndCommandBuffer(frame.cmd_buffer));
+    vk_check(vkEndCommandBuffer(frame.cmd_buffer));
 
-    SubmitImage(frame);
-    PresentImage(swapchain);
+    submit_image(frame);
+    present_swapchain_image(swapchain);
 }
 
 
 
 
-Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsyncMode)
+Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mode vsyncMode)
 {
     Renderer renderer{};
 
-    gRc            = CreateRendererContext(VK_API_VERSION_1_3, window);
-    gSubmitContext = CreateSubmitContext();
-    gSwapchain     = CreateSwapchain(bufferMode, vsyncMode);
+    gRc            = create_renderer_context(VK_API_VERSION_1_3, window);
+    gSubmitContext = create_submit_context();
+    gSwapchain     = create_swapchain(bufferMode, vsyncMode);
 
-    CreateFrames();
+    create_frames();
 
-    CreateShaderCompiler();
+    create_shader_compiler();
 
 
     RenderPassInfo renderPassInfo{};
@@ -1320,7 +1329,7 @@ Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode v
     renderPassInfo.HasDepthAttachment    = true;
     renderPassInfo.DepthFormat           = VK_FORMAT_D32_SFLOAT;
 
-    renderer.geometryRenderPass = CreateRenderPass(renderPassInfo);
+    renderer.geometryRenderPass = create_render_pass(renderPassInfo);
 
     RenderPassInfo debugUIRenderPassInfo{};
     debugUIRenderPassInfo.ColorAttachmentCount = 1;
@@ -1329,7 +1338,7 @@ Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode v
     debugUIRenderPassInfo.MSAASamples          = VK_SAMPLE_COUNT_1_BIT;
     debugUIRenderPassInfo.HasDepthAttachment   = false;
 
-    renderer.uiRenderPass = CreateRenderPass(debugUIRenderPassInfo);
+    renderer.uiRenderPass = create_render_pass(debugUIRenderPassInfo);
 
     const std::vector<ShaderInfo> shaderList {
             { VK_SHADER_STAGE_VERTEX_BIT, vs_code },
@@ -1349,47 +1358,47 @@ Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode v
     };
 
     PipelineInfo basePipelineInfo{};
-    basePipelineInfo.BindingLayoutSize       = sizeof(Vertex);
+    basePipelineInfo.BindingLayoutSize       = sizeof(vertex);
     basePipelineInfo.BindingAttributeFormats = bindingAttributeFormats;
     basePipelineInfo.PushConstantSize        = sizeof(glm::mat4);
     basePipelineInfo.PipelineShaders         = shaderList;
-    renderer.basePipeline = CreatePipeline(basePipelineInfo, renderer.geometryRenderPass);
+    renderer.basePipeline = create_pipeline(basePipelineInfo, renderer.geometryRenderPass);
 
     PipelineInfo skyspherePipelineInfo{};
-    skyspherePipelineInfo.BindingLayoutSize       = sizeof(Vertex);
+    skyspherePipelineInfo.BindingLayoutSize       = sizeof(vertex);
     skyspherePipelineInfo.BindingAttributeFormats = bindingAttributeFormats;
     skyspherePipelineInfo.PushConstantSize        = sizeof(glm::mat4);
     skyspherePipelineInfo.PipelineShaders         = skysphereShaders;
-    renderer.skyspherePipeline = CreatePipeline(skyspherePipelineInfo, renderer.geometryRenderPass);
+    renderer.skyspherePipeline = create_pipeline(skyspherePipelineInfo, renderer.geometryRenderPass);
 
-    CreateDebugUI(renderer.uiRenderPass);
+    create_debug_ui(renderer.uiRenderPass);
 
 #if 1
     // create a uniform buffers (one for each frame in flight)
     for (auto& uniform_buffer : g_uniform_buffers) {
-        uniform_buffer = CreateBuffer(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        uniform_buffer = create_buffer(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     }
 
     // RenderDebugUI descriptor pool stuff
 
     VkDescriptorPoolSize pool_size{};
     pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    pool_size.descriptorCount = U32(frames_in_flight);
+    pool_size.descriptorCount = u32(frames_in_flight);
 
     VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
     pool_info.poolSizeCount = 1;
     pool_info.pPoolSizes    = &pool_size;
-    pool_info.maxSets       = U32(frames_in_flight);
+    pool_info.maxSets       = u32(frames_in_flight);
 
-    VkCheck(vkCreateDescriptorPool(gRc->device, &pool_info, nullptr, &descriptor_pool));
+    vk_check(vkCreateDescriptorPool(gRc->device, &pool_info, nullptr, &descriptor_pool));
 
     std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, renderer.basePipeline.DescriptorLayout);
     VkDescriptorSetAllocateInfo allocate_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
     allocate_info.descriptorPool     = descriptor_pool;
-    allocate_info.descriptorSetCount = U32(frames_in_flight);
+    allocate_info.descriptorSetCount = u32(frames_in_flight);
     allocate_info.pSetLayouts        = layouts.data();
 
-    VkCheck(vkAllocateDescriptorSets(gRc->device, &allocate_info, descriptor_sets.data()));
+    vk_check(vkAllocateDescriptorSets(gRc->device, &allocate_info, descriptor_sets.data()));
 
     for (std::size_t i = 0; i < descriptor_sets.size(); ++i) {
         VkDescriptorBufferInfo buffer_info{};
@@ -1416,7 +1425,7 @@ Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode v
 
 void DestroyRenderer(Renderer& renderer)
 {
-    VkCheck(vkDeviceWaitIdle(gRc->device));
+    vk_check(vkDeviceWaitIdle(gRc->device));
 
     vkDestroyDescriptorPool(gRc->device, descriptor_pool, nullptr);
 
@@ -1430,7 +1439,7 @@ void DestroyRenderer(Renderer& renderer)
 
     // Free all textures load from the client
     for (auto& texture : g_textures) {
-        DestroyImage(&texture->image);
+        destroy_image(&texture->image);
 
         delete texture;
     }
@@ -1438,8 +1447,8 @@ void DestroyRenderer(Renderer& renderer)
 
     // Free all renderable resources that may have been allocated by the client
     for (auto& r : g_vertex_buffers) {
-        DestroyBuffer(&r->index_buffer);
-        DestroyBuffer(&r->vertex_buffer);
+        destroy_buffer(&r->index_buffer);
+        destroy_buffer(&r->vertex_buffer);
 
         delete r;
     }
@@ -1450,78 +1459,79 @@ void DestroyRenderer(Renderer& renderer)
 
 
     for (auto& buffer : g_uniform_buffers) {
-        DestroyBuffer(&buffer);
+        destroy_buffer(&buffer);
     }
     g_uniform_buffers.clear();
 
 
-    DestroyPipeline(renderer.skyspherePipeline);
-    DestroyPipeline(renderer.basePipeline);
+    destroy_pipeline(renderer.skyspherePipeline);
+    destroy_pipeline(renderer.basePipeline);
 
-    DestroyRenderPass(renderer.uiRenderPass);
-    DestroyRenderPass(renderer.geometryRenderPass);
+    destroy_render_pass(renderer.uiRenderPass);
+    destroy_render_pass(renderer.geometryRenderPass);
 
-    DestroyShaderCompiler();
+    destroy_shader_compiler();
 
-    DestroyDebugUI();
+    destroy_debug_ui();
 
     //destroy_renderer_query();
 
-    DestroyFrames();
+    destroy_frames();
 
-    DestroySwapchain(gSwapchain);
+    destroy_swapchain(gSwapchain);
 
-    DestroySubmitContext(gSubmitContext);
-    DestroyRendererContext(gRc);
+    destroy_submit_context(gSubmitContext);
+    destroy_renderer_context(gRc);
 }
 
-void UpdateRendererSize(Renderer& renderer, uint32_t width, uint32_t height)
+void update_renderer_size(Renderer& renderer, uint32_t width, uint32_t height)
 {
-    VkCheck(vkDeviceWaitIdle(gRc->device));
+    vk_check(vkDeviceWaitIdle(gRc->device));
 
-    DestroySwapchain(gSwapchain);
-    gSwapchain = CreateSwapchain(BufferMode::Triple, VSyncMode::Enabled);
+    destroy_swapchain(gSwapchain);
+    gSwapchain = create_swapchain(buffer_mode::Triple, vsync_mode::Enabled);
 
-    DestroyFramebuffers(renderer.uiRenderPass.framebuffers);
-    DestroyFramebuffers(renderer.geometryRenderPass.framebuffers);
+    destroy_framebuffers(renderer.uiRenderPass.framebuffers);
+    destroy_framebuffers(renderer.geometryRenderPass.framebuffers);
 
-    renderer.geometryRenderPass.framebuffers = CreateFramebuffers(renderer.geometryRenderPass.handle,
-                                                                  { width, height },
-                                                                  true);
-    renderer.uiRenderPass.framebuffers = CreateFramebuffers(renderer.uiRenderPass.handle,
-                                                            { width, height },
-                                                            false);
+    renderer.geometryRenderPass.framebuffers = create_framebuffers(renderer.geometryRenderPass.handle,
+                                                                   {width, height},
+                                                                   true);
+    renderer.uiRenderPass.framebuffers = create_framebuffers(renderer.uiRenderPass.handle,
+                                                             {width, height},
+                                                             false);
 }
 
 
-VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is)
+vertex_buffer* create_vertex_buffer(void* v, int vs, void* i, int is)
 {
-    auto* r = new VertexBuffer();
+    auto* r = new vertex_buffer();
 
     // Create a temporary "staging" buffer that will be used to copy the data
     // from CPU memory over to GPU memory.
-    Buffer vertexStagingBuffer = CreateStagingBuffer(v, vs);
-    Buffer indexStagingBuffer  = CreateStagingBuffer(i, is);
+    Buffer vertexStagingBuffer = create_staging_buffer(v, vs);
+    Buffer indexStagingBuffer  = create_staging_buffer(i, is);
 
-    r->vertex_buffer = CreateGPUBuffer(vs, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    r->index_buffer  = CreateGPUBuffer(is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    r->vertex_buffer = create_gpu_buffer(vs, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    r->index_buffer  = create_gpu_buffer(is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     r->index_count   = is / sizeof(uint32_t); // todo: Maybe be unsafe for a hard coded type.
 
     // Upload data to the GPU
-    SubmitToGPU([&]
-    {
+    submit_to_gpu([&] {
         VkBufferCopy vertex_copy_info{}, index_copy_info{};
         vertex_copy_info.size = vs;
-        index_copy_info.size  = is;
+        index_copy_info.size = is;
 
-        vkCmdCopyBuffer(gSubmitContext->CmdBuffer, vertexStagingBuffer.buffer, r->vertex_buffer.buffer, 1, &vertex_copy_info);
-        vkCmdCopyBuffer(gSubmitContext->CmdBuffer, indexStagingBuffer.buffer, r->index_buffer.buffer, 1, &index_copy_info);
+        vkCmdCopyBuffer(gSubmitContext->CmdBuffer, vertexStagingBuffer.buffer, r->vertex_buffer.buffer, 1,
+                        &vertex_copy_info);
+        vkCmdCopyBuffer(gSubmitContext->CmdBuffer, indexStagingBuffer.buffer, r->index_buffer.buffer, 1,
+                        &index_copy_info);
     });
 
 
     // We can now free the staging buffer memory as it is no longer required
-    DestroyBuffer(&indexStagingBuffer);
-    DestroyBuffer(&vertexStagingBuffer);
+    destroy_buffer(&indexStagingBuffer);
+    destroy_buffer(&vertexStagingBuffer);
 
     g_vertex_buffers.push_back(r);
 
@@ -1529,30 +1539,31 @@ VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is)
     return r;
 }
 
-TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height)
+texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height)
 {
-    auto buffer = new TextureBuffer();
+    auto buffer = new texture_buffer();
 
-    buffer->image = CreateImage(VK_FORMAT_R8G8B8A8_SRGB, { width, height }, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+    buffer->image = create_image(VK_FORMAT_R8G8B8A8_SRGB, {width, height}, VK_IMAGE_USAGE_SAMPLED_BIT,
+                                 VK_IMAGE_ASPECT_COLOR_BIT);
 
     g_textures.push_back(buffer);
 
     return buffer;
 }
 
-Entity* CreateEntityRenderer(const VertexBuffer* vertexBuffer)
+entity* create_entity_renderer(const vertex_buffer* vertexBuffer)
 {
-    auto entity       = new Entity();
-    entity->model        = glm::mat4(1.0f);
-    entity->vertexBuffer = vertexBuffer;
+    auto e = new entity();
+    e->model        = glm::mat4(1.0f);
+    e->vertexBuffer = vertexBuffer;
 
-    g_entities.push_back(entity);
+    g_entities.push_back(e);
 
-    return entity;
+    return e;
 }
 
 
-void BindVertexBuffer(const VertexBuffer* buffer)
+void bind_vertex_buffer(const vertex_buffer* buffer)
 {
     const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
 
@@ -1561,21 +1572,21 @@ void BindVertexBuffer(const VertexBuffer* buffer)
     vkCmdBindIndexBuffer(cmd_buffer, buffer->index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
 }
 
-void BeginFrame(QuaternionCamera& camera)
+void begin_renderer_frame(quaternion_camera& camera)
 {
     // copy data into uniform buffer
     glm::mat4 vp = camera.proj * camera.view;
-    SetBufferData(&g_uniform_buffers[currentFrame], &vp, sizeof(glm::mat4));
+    set_buffer_data(&g_uniform_buffers[currentFrame], &vp, sizeof(glm::mat4));
 
-    BeginFrame(gSwapchain, gFrames[currentFrame]);
+    begin_frame(gSwapchain, gFrames[currentFrame]);
 }
 
-void EndFrame()
+void end_renderer_frame()
 {
-    EndFrame(gSwapchain, gFrames[currentFrame]);
+    end_frame(gSwapchain, gFrames[currentFrame]);
 }
 
-VkCommandBuffer BeginRenderPass(RenderPass& renderPass)
+VkCommandBuffer begin_render_pass(RenderPass& renderPass)
 {
     const VkClearValue clear_color = { {{ 0.1f, 0.1f, 0.1f, 1.0f }} };
     const VkClearValue clear_depth = { 0.0f, 0 };
@@ -1593,12 +1604,12 @@ VkCommandBuffer BeginRenderPass(RenderPass& renderPass)
     return gFrames[currentFrame].cmd_buffer;
 }
 
-void EndRenderPass(VkCommandBuffer commandBuffer)
+void end_render_pass(VkCommandBuffer commandBuffer)
 {
     vkCmdEndRenderPass(commandBuffer);
 }
 
-void BindPipeline(Pipeline& pipeline)
+void bind_pipeline(Pipeline& pipeline)
 {
     const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
 
@@ -1606,7 +1617,7 @@ void BindPipeline(Pipeline& pipeline)
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptor_sets[currentFrame], 0, nullptr);
 }
 
-void RenderEntity(Entity* e, Pipeline& pipeline)
+void render_entity(entity* e, Pipeline& pipeline)
 {
     const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
 

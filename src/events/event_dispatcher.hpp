@@ -1,19 +1,19 @@
 #ifndef MYENGINE_EVENTDISPATCHER_HPP
 #define MYENGINE_EVENTDISPATCHER_HPP
 
-#include "Event.hpp"
+#include "event.hpp"
 
 #define BIND_EVENT(func) std::bind(func, std::placeholders::_1)
 
-class EventDispatcher
+class event_dispatcher
 {
 public:
-    EventDispatcher(Event& e)
+    event_dispatcher(Event& e)
         : m_Event(e)
     {}
 
     template <typename T>
-    void Dispatch(std::function<void(T&)> func)
+    void dispatch(std::function<void(T&)> func)
     {
         if (m_Event.GetType() != T::GetStaticType())
             return;

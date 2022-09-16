@@ -1,11 +1,14 @@
-cmake_minimum_required(VERSION 3.23)
-project(MyEngine)
+cmake_minimum_required(VERSION 3.23 FATAL_ERROR)
+project(my_engine
+        VERSION 0.0.1
+        DESCRIPTION "My custom rendering engine"
+        LANGUAGES CXX)
 
 ###############################
 #       Compiler Options      #
 ###############################
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_EXE_LINKER_FLAGS "-static")
+#set(CMAKE_CXX_STANDARD 20)
+#set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 ###############################
 #     3rd Party Libraries     #
@@ -17,37 +20,37 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-add_subdirectory(Vendor/glfw)
-add_subdirectory(Vendor/glm)
+add_subdirectory(vendor/glfw)
+add_subdirectory(vendor/glm)
 
 set(IMGUI_SRC
-        Vendor/imgui/imgui.cpp
-        Vendor/imgui/imgui_demo.cpp
-        Vendor/imgui/imgui_draw.cpp
-        Vendor/imgui/imgui_impl_glfw.cpp
-        Vendor/imgui/imgui_impl_vulkan.cpp
-        Vendor/imgui/imgui_tables.cpp
-        Vendor/imgui/imgui_widgets.cpp)
+        vendor/imgui/imgui.cpp
+        vendor/imgui/imgui_demo.cpp
+        vendor/imgui/imgui_draw.cpp
+        vendor/imgui/imgui_impl_glfw.cpp
+        vendor/imgui/imgui_impl_vulkan.cpp
+        vendor/imgui/imgui_tables.cpp
+        vendor/imgui/imgui_widgets.cpp)
 
 add_executable(${PROJECT_NAME}
         ${IMGUI_SRC}
 
-        # Engine test file
-        MyEngineTest/Main.cpp
+        # engine test file
+        my_engine_test/main.cpp
 
-        # Engine source
-        Source/Window.cpp
-        Source/Renderer.cpp
-        Source/Camera.cpp
-        Source/Entity.cpp
-        Source/MyEngine.cpp)
+        # engine source
+        src/window.cpp
+        src/vulkan_renderer.cpp
+        src/quaternion_camera.cpp
+        src/entity.cpp
+        src/engine_platform.cpp)
 
-
+#target_precompile_headers(${PROJECT_NAME} PUBLIC src/pch.hpp PRIVATE [[<iostream>]])
 target_include_directories(${PROJECT_NAME} PRIVATE
-        Vendor/stb
-        Vendor/tol
-        Vendor/imgui
-        Vendor/vma)
+        vendor/stb
+        vendor/tol
+        vendor/imgui
+        vendor/vma)
 target_link_directories(${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIR}/../Lib)
 target_link_libraries(${PROJECT_NAME}
         glfw

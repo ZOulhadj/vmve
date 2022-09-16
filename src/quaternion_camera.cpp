@@ -1,8 +1,10 @@
-#include "Camera.hpp"
+#include "quaternion_camera.hpp"
 
-QuaternionCamera CreateCamera(const glm::vec3& position, float fov, float speed)
+#include <glm/gtc/matrix_transform.hpp>
+
+quaternion_camera create_camera(const glm::vec3& position, float fov, float speed)
 {
-    QuaternionCamera camera{};
+    quaternion_camera camera{};
     camera.position    = position;
     camera.orientation = glm::quat(1, 0, 0, 0);
     camera.aspect_ratio = 800.0f / 600.0f;
@@ -23,7 +25,7 @@ QuaternionCamera CreateCamera(const glm::vec3& position, float fov, float speed)
     return camera;
 }
 
-void UpdateCamera(QuaternionCamera& camera)
+void update_camera(quaternion_camera& camera)
 {
     float cursor_x = 0.0f;
     float cursor_y = 0.0f;
@@ -51,7 +53,7 @@ void UpdateCamera(QuaternionCamera& camera)
     const glm::quat roll  = glm::angleAxis(glm::radians(camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // Update the camera orientation based on pitch, yaw and roll
-    //camera.orientation = (pitch * yaw * roll) * camera.orientation;
+    camera.orientation = (pitch * yaw * roll) * camera.orientation;
 
     // Create the view and projection matrices
     camera.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
@@ -59,36 +61,19 @@ void UpdateCamera(QuaternionCamera& camera)
     // Build final camera transform matrix
     //cam.view = proj * view;
     camera.roll      = 0.0f;
-
-    //printf("%s\n", glm::to_string(camera.front_vector).c_str());
 }
 
-static void UpdateProjection(QuaternionCamera& camera)
+static void update_projection(quaternion_camera& camera)
 {
     camera.proj = glm::perspective(glm::radians(camera.fov), camera.aspect_ratio, camera.far, camera.near);
     // Required if using Vulkan (left-handed coordinate-system)
     camera.proj[1][1] *= -1.0;
 }
 
-void IncreaseFov(QuaternionCamera& camera)
-{
-    camera.fov += 5.0f;
-
-    UpdateProjection(camera);
-}
-
-void DecreaseFov(QuaternionCamera& camera)
-{
-    camera.fov -= 5.0f;
-
-    UpdateProjection(camera);
-}
-
-
-void UpdateCameraProjection(QuaternionCamera& camera, uint32_t width, uint32_t height)
+void update_camera_projection(quaternion_camera& camera, uint32_t width, uint32_t height)
 {
     //cam.proj = glm::infinitePerspective(glm::radians<double>(cam.fov), (double)gWindow->width / gWindow->height, 0.1);
     camera.aspect_ratio = (float)width / (float)height;
 
-    UpdateProjection(camera);
+    update_projection(camera);
 }

@@ -1,29 +1,29 @@
-#ifndef MYENGINE_RENDERER_HPP
-#define MYENGINE_RENDERER_HPP
+#ifndef MYENGINE_VULKAN_RENDERER_HPP
+#define MYENGINE_VULKAN_RENDERER_HPP
+
+// todo: we include vulkan before the window in order to expose GLFW vulkan
+// todo: related functions. Find out if its possible to get around this.
+#include <vulkan/vulkan.h>
+
+#include "window.hpp"
+#include "quaternion_camera.hpp"
+
+#include <vk_mem_alloc.h>
+#include <shaderc/shaderc.h>
 
 #include <cstdint>
 #include <vector>
+#include <string>
 
-#include <vulkan/vulkan.h>
+struct entity;
 
-#include <vk_mem_alloc.h>
-
-#include <shaderc/shaderc.h>
-
-#include "Window.hpp"
-#include "Camera.hpp"
-
-
-
-struct Entity;
-
-enum class BufferMode
+enum class buffer_mode
 {
     Double  = 2,
     Triple = 3
 };
 
-enum class VSyncMode
+enum class vsync_mode
 {
     Disabled = VK_PRESENT_MODE_IMMEDIATE_KHR,
     Enabled  = VK_PRESENT_MODE_FIFO_KHR
@@ -35,7 +35,7 @@ struct Queue
     uint32_t index;
 };
 
-struct RendererContext
+struct renderer_context
 {
     const Window* window;
 
@@ -47,7 +47,7 @@ struct RendererContext
     VmaAllocator allocator;
 };
 
-struct SubmitContext
+struct renderer_submit_context
 {
     VkFence         Fence;
     VkCommandPool   CmdPool;
@@ -71,8 +71,8 @@ struct Buffer
 
 struct Swapchain
 {
-    BufferMode bufferMode;
-    VSyncMode  vsyncMode;
+    buffer_mode bufferMode;
+    vsync_mode  vsyncMode;
 
     VkSwapchainKHR handle;
 
@@ -149,20 +149,20 @@ struct Pipeline
 };
 
 
-struct VertexBuffer
+struct vertex_buffer
 {
     Buffer   vertex_buffer;
     Buffer   index_buffer;
     uint32_t index_count;
 };
 
-struct TextureBuffer
+struct texture_buffer
 {
     ImageBuffer image;
 };
 
 
-struct Vertex
+struct vertex
 {
     glm::vec3 position;
     glm::vec3 color;
@@ -182,25 +182,25 @@ struct Renderer
 
 
 
-Renderer CreateRenderer(const Window* window, BufferMode bufferMode, VSyncMode vsyncMode);
+Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mode vsyncMode);
 void DestroyRenderer(Renderer& renderer);
 
-void UpdateRendererSize(Renderer& renderer, uint32_t width, uint32_t height);
+void update_renderer_size(Renderer& renderer, uint32_t width, uint32_t height);
 
-VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is);
-TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height);
-Entity* CreateEntityRenderer(const VertexBuffer* vertexBuffer);
+vertex_buffer* create_vertex_buffer(void* v, int vs, void* i, int is);
+texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height);
+entity* create_entity_renderer(const vertex_buffer* vertexBuffer);
 
-void BindVertexBuffer(const VertexBuffer* buffer);
+void bind_vertex_buffer(const vertex_buffer* buffer);
 
-void BeginFrame(QuaternionCamera& camera);
-void EndFrame();
+void begin_renderer_frame(quaternion_camera& camera);
+void end_renderer_frame();
 
-VkCommandBuffer BeginRenderPass(RenderPass& renderPass);
-void EndRenderPass(VkCommandBuffer commandBuffer);
+VkCommandBuffer begin_render_pass(RenderPass& renderPass);
+void end_render_pass(VkCommandBuffer commandBuffer);
 
-void BindPipeline(Pipeline& pipeline);
+void bind_pipeline(Pipeline& pipeline);
 
-void RenderEntity(Entity* e, Pipeline& pipeline);
+void render_entity(entity* e, Pipeline& pipeline);
 
 #endif

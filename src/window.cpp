@@ -1,15 +1,15 @@
-#include "Window.hpp"
+#include "window.hpp"
 
-#include "Events/WindowEvent.hpp"
-#include "Events/KeyEvent.hpp"
-#include "Events/MouseEvent.hpp"
+#include "Events/window_event.hpp"
+#include "Events/key_event.hpp"
+#include "Events/mouse_event.hpp"
 
 
 #include <cstdio>
 
 // Initialized the GLFW library and creates a window. Window callbacks send
 // events to the application callback.
-Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
+Window* create_window(const char* name, uint32_t width, uint32_t height)
 {
     auto window = new Window();
 
@@ -38,7 +38,7 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
     glfwSetWindowCloseCallback(window->handle, [](GLFWwindow* window) {
         const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
-        WindowClosedEvent e;
+        window_closed_event e;
         ptr->EventCallback(e);
     });
 
@@ -47,7 +47,7 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
         ptr->width = width;
         ptr->height = height;
 
-        WindowResizedEvent e(width, height);
+        window_resized_event e(width, height);
         ptr->EventCallback(e);
     });
 
@@ -55,32 +55,60 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
         const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
         if (action == GLFW_PRESS) {
-            KeyPressedEvent e(key);
+            key_pressed_event e(key);
             ptr->EventCallback(e);
         }  else if (action == GLFW_REPEAT) {
-            KeyPressedEvent e(key);
+            key_pressed_event e(key);
             ptr->EventCallback(e);
         } else if (action == GLFW_RELEASE) {
-            KeyReleasedEvent e(key);
+            key_released_event e(key);
             ptr->EventCallback(e);
         }
+    });
+
+    glfwSetMouseButtonCallback(window->handle, [](GLFWwindow* window, int button, int action, int mods) {
+        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
+        if (action == GLFW_PRESS) {
+            mouse_button_pressed_event e(button);
+            ptr->EventCallback(e);
+        } else if (action == GLFW_REPEAT) {
+            mouse_button_pressed_event e(button);
+            ptr->EventCallback(e);
+        } else if (action == GLFW_RELEASE) {
+            mouse_button_released_event e(button);
+            ptr->EventCallback(e);
+        }
+
     });
 
     glfwSetCursorPosCallback(window->handle, [](GLFWwindow* window, double xpos, double ypos) {
         const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
-        MouseMovedEvent e(xpos, ypos);
+        mouse_moved_event e(xpos, ypos);
         ptr->EventCallback(e);
+    });
+
+    glfwSetCursorEnterCallback(window->handle, [](GLFWwindow* window, int entered) {
+        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
+        if (entered) {
+            mouse_entered_event e;
+            ptr->EventCallback(e);
+        } else {
+            mouse_left_event e;
+            ptr->EventCallback(e);
+        }
     });
 
     glfwSetScrollCallback(window->handle, [](GLFWwindow* window, double xoffset, double yoffset) {
         const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
 
         if (yoffset == 1.0) {
-            MouseScrolledUpEvent e;
+            mouse_scrolled_up_event e;
             ptr->EventCallback(e);
         } else if (yoffset == -1.0) {
-            MouseScrolledDownEvent e;
+            mouse_scrolled_down_event e;
             ptr->EventCallback(e);
         }
     });
@@ -89,7 +117,7 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
 }
 
 // Destroys the window and terminates the GLFW library.
-void DestroyWindow(Window* window)
+void destroy_window(Window* window)
 {
     glfwDestroyWindow(window->handle);
     glfwTerminate();
@@ -99,7 +127,7 @@ void DestroyWindow(Window* window)
 
 // Updates a window by polling for any new events since the last window update
 // function call.
-void UpdateWindow()
+void update_window()
 {
     glfwPollEvents();
 }
