@@ -95,9 +95,6 @@ const std::string skysphere_fs_code = R"(
 
         layout(location = 0) out vec4 final_color;
 
-        layout(location = 0) in vec3 pixel_color;
-
-
         void main() {
             vec2 uv = gl_FragCoord.xy / vec2(800, 600);
 
@@ -245,17 +242,29 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
 
     const std::vector<const char*> requested_layers {
         "VK_LAYER_KHRONOS_validation",
+#if defined(_WIN32)
         "VK_LAYER_LUNARG_monitor"
+#endif
     };
 
     VkPhysicalDeviceFeatures requested_gpu_features{};
     requested_gpu_features.fillModeNonSolid   = true;
-    requested_gpu_features.geometryShader     = true;
-    requested_gpu_features.tessellationShader = true;
-    requested_gpu_features.wideLines          = true;
+    //requested_gpu_features.geometryShader     = true;
+    //requested_gpu_features.tessellationShader = true;
+    //requested_gpu_features.wideLines          = true;
 
-    const char* const device_extensions[1] {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    // todo: VK_KHR_portability_subset must be checked for instead of if
+    // todo: on __APPLE__ since this is a general extension that is returned
+    // todo: when an implementation is not fully spec compliant. For example,
+    // todo: on macOS we are actually using Metal internally and thus, does
+    // todo: not fully conform to the Vulkan spec, hence the portability
+    // todo: extension. We should find out which other platforms this
+    // todo: applies to.
+    const std::vector<const char*> device_extensions {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+#if defined(__APPLE__)
+        "VK_KHR_portability_subset"
+#endif
     };
 
     // create vulkan instance
@@ -359,8 +368,8 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
     VkDeviceCreateInfo device_info { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
     device_info.queueCreateInfoCount    = 1;
     device_info.pQueueCreateInfos       = &queue_info;
-    device_info.enabledExtensionCount   = 1;
-    device_info.ppEnabledExtensionNames = device_extensions;
+    device_info.enabledExtensionCount   = u32(device_extensions.size());
+    device_info.ppEnabledExtensionNames = device_extensions.data();
     device_info.pEnabledFeatures        = &requested_gpu_features;
 
     vk_check(vkCreateDevice(rc->physical_device, &device_info, nullptr, &rc->device));
@@ -1312,7 +1321,7 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
 {
     Renderer renderer{};
 
-    gRc            = create_renderer_context(VK_API_VERSION_1_3, window);
+    gRc            = create_renderer_context(VK_API_VERSION_1_2, window);
     gSubmitContext = create_submit_context();
     gSwapchain     = create_swapchain(bufferMode, vsyncMode);
 
