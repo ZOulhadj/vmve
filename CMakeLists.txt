@@ -45,7 +45,8 @@ add_executable(${PROJECT_NAME}
         src/entity.cpp
         src/engine_platform.cpp)
 
-#target_precompile_headers(${PROJECT_NAME} PUBLIC src/pch.hpp PRIVATE [[<iostream>]])
+
+#target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 target_include_directories(${PROJECT_NAME} PRIVATE
         vendor/stb
         vendor/tol
