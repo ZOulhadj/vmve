@@ -1,12 +1,6 @@
 #ifndef MYENGINE_QUATERNION_CAMERA_HPP
 #define MYENGINE_QUATERNION_CAMERA_HPP
 
-#define GLM_FORCE_LEFT_HANDED
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/vec3.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/quaternion.hpp>
-
 struct quaternion_camera
 {
     glm::vec3 position;

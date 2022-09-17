@@ -3,8 +3,6 @@
 
 #include "events/event.hpp"
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
 
 struct Window
 {
@@ -21,7 +19,7 @@ struct Window
 Window* create_window(const char* name, uint32_t width, uint32_t height);
 
 // Destroys the window and terminates the GLFW library.
-void destroy_window(Window* window);
+void destroy_window(const Window* window);
 
 // Updates a window by polling for any new events since the last window update
 // function call.

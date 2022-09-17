@@ -7,7 +7,7 @@ project(my_engine
 ###############################
 #       Compiler Options      #
 ###############################
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 #set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 ###############################
@@ -43,10 +43,10 @@ add_executable(${PROJECT_NAME}
         src/vulkan_renderer.cpp
         src/quaternion_camera.cpp
         src/entity.cpp
-        src/engine_platform.cpp)
+        src/engine_platform.cpp src/pch.cpp)
 
 
-#target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
+target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 target_include_directories(${PROJECT_NAME} PRIVATE
         vendor/stb
         vendor/tol

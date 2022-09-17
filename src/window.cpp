@@ -4,19 +4,18 @@
 #include "events/key_event.hpp"
 #include "events/mouse_event.hpp"
 
-
-#include <cstdio>
-
 // Initialized the GLFW library and creates a window. Window callbacks send
 // events to the application callback.
 Window* create_window(const char* name, uint32_t width, uint32_t height)
 {
     auto window = new Window();
 
-    if (!glfwInit()) {
-        printf("Failed to initialize GLFW.\n");
+    glfwSetErrorCallback([](int error_code, const char* description) {
+        printf("%s\n", description);
+    });
+
+    if (!glfwInit())
         return nullptr;
-    }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, true);
@@ -31,10 +30,8 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
     window->width  = width;
     window->height = height;
 
-    if (!window->handle) {
-        printf("Failed to create window.\n");
+    if (!window->handle)
         return nullptr;
-    }
 
     //glfwSetInputMode(gWindow->handle, GLFW_CURSOR, cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 
@@ -48,6 +45,12 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
     });
 
     glfwSetWindowSizeCallback(window->handle, [](GLFWwindow* window, int width, int height) {
+        // todo: window resizing is done within the framebuffer callback since that
+        // todo: returns the actual pixel count of the display. This ensures that
+        // todo: for monitors with a high DPI we return the real pixels.
+    });
+
+    glfwSetFramebufferSizeCallback(window->handle, [](GLFWwindow* window, int width, int height) {
         const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
         ptr->width = width;
         ptr->height = height;
@@ -122,7 +125,7 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
 }
 
 // Destroys the window and terminates the GLFW library.
-void destroy_window(Window* window)
+void destroy_window(const Window* window)
 {
     glfwDestroyWindow(window->handle);
     glfwTerminate();

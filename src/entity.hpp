@@ -1,10 +1,6 @@
 #ifndef MYENGINE_ENTITY_HPP
 #define MYENGINE_ENTITY_HPP
 
-#define GLM_FORCE_LEFT_HANDED
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/mat4x4.hpp>
-
 struct vertex_buffer;
 
 struct entity

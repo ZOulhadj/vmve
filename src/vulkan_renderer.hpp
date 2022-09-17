@@ -1,19 +1,9 @@
 #ifndef MYENGINE_VULKAN_RENDERER_HPP
 #define MYENGINE_VULKAN_RENDERER_HPP
 
-// todo: we include vulkan before the window in order to expose GLFW vulkan
-// todo: related functions. Find out if its possible to get around this.
-#include <vulkan/vulkan.h>
-
 #include "window.hpp"
 #include "quaternion_camera.hpp"
 
-#include <vk_mem_alloc.h>
-#include <shaderc/shaderc.h>
-
-#include <cstdint>
-#include <vector>
-#include <string>
 
 struct entity;
 
@@ -183,7 +173,7 @@ struct Renderer
 
 
 Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mode vsyncMode);
-void DestroyRenderer(Renderer& renderer);
+void destroy_renderer(Renderer& renderer);
 
 void update_renderer_size(Renderer& renderer, uint32_t width, uint32_t height);
 

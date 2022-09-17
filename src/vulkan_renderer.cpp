@@ -1,16 +1,6 @@
 #include "vulkan_renderer.hpp"
 
-
-#define VMA_IMPLEMENTATION
-#include <vk_mem_alloc.h>
-
-//#define IMGUI_UNLIMITED_FRAME_RATE
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
-
 #include "entity.hpp"
-
 
 static renderer_context* gRc  = nullptr;
 static renderer_submit_context* gSubmitContext = nullptr;
@@ -173,6 +163,16 @@ static bool compare_extensions(const std::vector<const char*>& requested,
 }
 
 
+static bool has_extension(std::string_view name, const std::vector<VkExtensionProperties>& extensions)
+{
+    const auto iter = std::find_if(extensions.begin(), extensions.end(), [=](const auto& extension) {
+        return std::strcmp(name.data(), extension.extensionName) == 0;
+    });
+
+    return iter != extensions.end();
+}
+
+
 // A helper function that returns the size in bytes of a particular format
 // based on the number of components and data type.
 static uint32_t format_to_size(VkFormat format)
@@ -253,18 +253,8 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
     //requested_gpu_features.tessellationShader = true;
     //requested_gpu_features.wideLines          = true;
 
-    // todo: VK_KHR_portability_subset must be checked for instead of if
-    // todo: on __APPLE__ since this is a general extension that is returned
-    // todo: when an implementation is not fully spec compliant. For example,
-    // todo: on macOS we are actually using Metal internally and thus, does
-    // todo: not fully conform to the Vulkan spec, hence the portability
-    // todo: extension. We should find out which other platforms this
-    // todo: applies to.
-    const std::vector<const char*> device_extensions {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-#if defined(__APPLE__)
-        "VK_KHR_portability_subset"
-#endif
+    std::vector<const char*> device_extensions {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
     // create vulkan instance
@@ -366,8 +356,17 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
     queue_info.pQueuePriorities = &queue_priority;
 
 
+    uint32_t property_count = 0;
+    vk_check(vkEnumerateDeviceExtensionProperties(rc->physical_device, nullptr, &property_count, nullptr));
+    std::vector<VkExtensionProperties> device_properties(property_count);
+    vk_check(vkEnumerateDeviceExtensionProperties(rc->physical_device, nullptr, &property_count, device_properties.data()));
 
-    //vk_check(vkEnumerateDeviceExtensionProperties(rc->physical_device, ));
+    // If a Vulkan implementation does not fully conform to the specification
+    // then the device extension "VK_KHR_portability_subset" must be returned
+    // when querying for device extensions. If found, we must ensure that this
+    // extension is enabled.
+    if (has_extension("VK_KHR_portability_subset", device_properties))
+        device_extensions.push_back("VK_KHR_portability_subset");
 
 
     VkDeviceCreateInfo device_info { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
@@ -1437,7 +1436,7 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
     return renderer;
 }
 
-void DestroyRenderer(Renderer& renderer)
+void destroy_renderer(Renderer& renderer)
 {
     vk_check(vkDeviceWaitIdle(gRc->device));
 

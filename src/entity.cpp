@@ -2,8 +2,6 @@
 
 #include "vulkan_renderer.hpp"
 
-#include <glm/gtc/matrix_transform.hpp>
-
 void translate_entity(entity* e, float x, float y, float z)
 {
     e->model = glm::translate(e->model, { x, y, z });

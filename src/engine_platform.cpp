@@ -15,25 +15,10 @@
 // todo: Implement event system
 // todo: Implement model tessellation
 
-
-
-// +---------------------------------------+
-// |               INCLUDES                |
-// +---------------------------------------+
-#pragma region includes
-
 #if defined(_MSC_VER)
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include <cstdio>
-#include <ctime>
-
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <algorithm>
-#include <string_view>
 
 #include "vulkan_renderer.hpp"
 #include "window.hpp"
@@ -46,34 +31,15 @@
 #include "events/key_event.hpp"
 #include "events/mouse_event.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
-
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
-
-
-
-
-#pragma endregion
-
-// +---------------------------------------+
-// |           GLOBAL VARIABLES            |
-// +---------------------------------------+
-#pragma region global_variables
-
-static Window* gWindow       = nullptr;
-static Renderer gRenderer{};
+static Window* g_window       = nullptr;
+static Renderer g_renderer{};
 static quaternion_camera g_camera{};
 
-static float gStartTime = 0.0f;
-static float gUptime    = 0.0f;
-static float gDeltaTime = 0.0f;
-static uint32_t gFramesElapsed = 0;
+// todo: uptime must be fixed as it is not working correctly
+static float g_uptime       = 0.0f;
+static float g_delta_time   = 0.0f;
+static int g_elapsed_frames = 0;
 
 static bool g_running = false;
 
@@ -85,14 +51,6 @@ entity* skysphereEntity = nullptr;
 std::vector<entity*> entitiesToRender;
 
 
-
-#pragma endregion
-
-// +---------------------------------------+
-// |           HELPER FUNCTIONS            |
-// +---------------------------------------+
-#pragma region helper_functions
-
 static std::string load_text_file(std::string_view path)
 {
     std::ifstream file(path.data());
@@ -102,8 +60,6 @@ static std::string load_text_file(std::string_view path)
     return buffer.str();
 }
 
-#pragma endregion
-
 static void WindowCloseEvent(window_closed_event& e)
 {
     g_running = false;
@@ -112,13 +68,13 @@ static void WindowCloseEvent(window_closed_event& e)
 static void WindowResized(window_resized_event& e)
 {
     update_camera_projection(g_camera, e.GetWidth(), e.GetHeight());
-    update_renderer_size(gRenderer, e.GetWidth(), e.GetHeight());
+    update_renderer_size(g_renderer, e.GetWidth(), e.GetHeight());
 }
 
 static void KeyPressEvent(key_pressed_event& e)
 {
     if (e.get_key_code() == GLFW_KEY_W)
-        engine::MoveForward();
+        engine_move_forwards();
 }
 
 static void ScrolledForwardsEvent(mouse_scrolled_up_event& e)
@@ -144,70 +100,73 @@ static void engine_event_callback(Event& e)
     dispatcher.dispatch<mouse_scrolled_down_event>(BIND_EVENT(ScrolledBackEvent));
 }
 
-
-
-void engine::start(const char* name)
+void engine_start(const char* name)
 {
-    gWindow = create_window(name, 800, 600);
-    gWindow->event_callback = BIND_EVENT(engine_event_callback);
+    g_window = create_window(name, 800, 600);
+    g_window->event_callback = BIND_EVENT(engine_event_callback);
 
-    gRenderer = create_renderer(gWindow, buffer_mode::Triple, vsync_mode::Enabled);
+    g_renderer = create_renderer(g_window, buffer_mode::Triple, vsync_mode::Enabled);
 
     g_camera  = create_camera({0.0f, 0.0f, -5.0f}, 45.0f, 50.0f);
 
+    g_running = true;
+    g_uptime  = 0.0f;
 
 
-    icosphere = load_model("assets/icosphere.obj");
-    skysphereEntity = create_entity(icosphere);
 
 
-    g_running    = true;
-    gStartTime = 0.0f;
+    // todo: temp for skybox related stuff
+    icosphere = engine_load_model("assets/icosphere.obj");
+    skysphereEntity = engine_create_entity(icosphere);
 }
 
-void engine::exit()
+void engine_exit()
 {
-    DestroyRenderer(gRenderer);
-    destroy_window(gWindow);
+    destroy_renderer(g_renderer);
+    destroy_window(g_window);
 }
 
-void engine::stop()
+void engine_stop()
 {
     g_running = false;
 }
 
-bool engine::running()
+bool engine_running()
 {
     return g_running;
 }
 
-float engine::uptime()
+float engine_uptime()
 {
-    return gUptime;
+    return g_uptime;
 }
 
-float engine::get_delta_time()
+float engine_get_delta_time()
 {
-    return gDeltaTime;
+    return g_delta_time;
 }
 
-bool engine::is_key_down(int keycode)
+bool engine_is_key_down(int keycode)
 {
     return false;
 }
 
-bool engine::is_mouse_button_down(int buttoncode)
+bool engine_is_mouse_button_down(int buttoncode)
 {
     return false;
 }
 
-vertex_buffer* engine::create_render_buffer(void* v, int vs, void* i, int is)
+vertex_buffer* engine_create_render_buffer(void* v, int vs, void* i, int is)
 {
+    assert(g_running);
+
     return create_vertex_buffer(v, vs, i, is);
 }
 
-vertex_buffer* engine::load_model(const char* path)
+vertex_buffer* engine_load_model(const char* path)
 {
+    assert(g_running);
+
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -247,8 +206,10 @@ vertex_buffer* engine::load_model(const char* path)
                                 indices.data(), sizeof(unsigned int) * indices.size());
 }
 
-texture_buffer* engine::load_texture(const char* path)
+texture_buffer* engine_load_texture(const char* path)
 {
+    assert(g_running);
+
     int width, height, channels;
     unsigned char* texture = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
@@ -267,89 +228,97 @@ texture_buffer* engine::load_texture(const char* path)
 }
 
 
-entity* engine::create_entity(const vertex_buffer* vertexBuffer)
+entity* engine_create_entity(const vertex_buffer* vertexBuffer)
 {
+    assert(g_running);
+
     return create_entity_renderer(vertexBuffer);
 }
 
-void engine::MoveForward()
+void engine_move_forwards()
 {
-    const float speed  = g_camera.speed * gDeltaTime;
+    const float speed  = g_camera.speed * g_delta_time;
     g_camera.position += g_camera.front_vector * speed;
 }
 
-void engine::MoveBackwards()
+void engine_move_backwards()
 {
-    const float speed  = g_camera.speed * gDeltaTime;
+    const float speed  = g_camera.speed * g_delta_time;
     g_camera.position -= g_camera.front_vector * speed;
 }
 
-void engine::MoveLeft()
+void engine_move_left()
 {
-    const float speed  = g_camera.speed * gDeltaTime;
+    const float speed  = g_camera.speed * g_delta_time;
     g_camera.position -= g_camera.right_vector * speed;
 }
 
-void engine::MoveRight()
+void engine_move_right()
 {
-    const float speed  = g_camera.speed * gDeltaTime;
+    const float speed  = g_camera.speed * g_delta_time;
     g_camera.position += g_camera.right_vector * speed;
 }
 
-void engine::MoveUp()
+void engine_move_up()
 {
-    const float speed  = g_camera.speed * gDeltaTime;
+    const float speed  = g_camera.speed * g_delta_time;
     g_camera.position += g_camera.up_vector * speed;
 }
 
-void engine::MoveDown()
+void engine_move_down()
 {
-    const float speed  = g_camera.speed * gDeltaTime;
+    const float speed  = g_camera.speed * g_delta_time;
     g_camera.position -= g_camera.up_vector * speed;
 }
 
-void engine::RollLeft()
+void engine_roll_left()
 {
-    const float roll_speed = g_camera.roll_speed * gDeltaTime;
+    const float roll_speed = g_camera.roll_speed * g_delta_time;
     g_camera.roll         -= roll_speed;
 }
 
-void engine::RollRight()
+void engine_roll_right()
 {
-    const float roll_speed = g_camera.roll_speed * gDeltaTime;
+    const float roll_speed = g_camera.roll_speed * g_delta_time;
     g_camera.roll         += roll_speed;
 }
 
 
-void engine::render()
+void engine_render()
 {
+    assert(g_running);
+
     // Calculate the delta time between previous and current frame. This
     // allows for frame dependent systems such as movement and translation
     // to run at the same speed no matter the time difference between two
     // frames.
     static clock_t last_time;
     const clock_t current_time = clock();
-    gDeltaTime = static_cast<float>(current_time - last_time) / CLOCKS_PER_SEC;
+    g_delta_time = static_cast<float>(current_time - last_time) / CLOCKS_PER_SEC;
     last_time  = current_time;
 
-    gUptime += gDeltaTime;
-    ++gFramesElapsed;
+    g_uptime += g_delta_time;
+
+    // todo: This may not be the most accurate way of calculating frames.
+    // todo: Maybe this value should be obtained by the GPU since it runs
+    // todo: separatly from the CPU.
+    ++g_elapsed_frames;
 
     update_camera(g_camera);
 
     begin_renderer_frame(g_camera);
     {
-        if (VkCommandBuffer cmdBuffer = begin_render_pass(gRenderer.geometryRenderPass))
+        if (VkCommandBuffer cmdBuffer = begin_render_pass(g_renderer.geometryRenderPass))
         {
-            bind_pipeline(gRenderer.skyspherePipeline);
+            bind_pipeline(g_renderer.skyspherePipeline);
             bind_vertex_buffer(icosphere);
-            render_entity(skysphereEntity, gRenderer.skyspherePipeline);
+            render_entity(skysphereEntity, g_renderer.skyspherePipeline);
 
 
-            bind_pipeline(gRenderer.basePipeline);
+            bind_pipeline(g_renderer.basePipeline);
             for (auto& entity : entitiesToRender) {
                 bind_vertex_buffer(entity->vertexBuffer);
-                render_entity(entity, gRenderer.basePipeline);
+                render_entity(entity, g_renderer.basePipeline);
             }
 
             end_render_pass(cmdBuffer);
@@ -362,8 +331,8 @@ void engine::render()
     }
     EndRenderPass(lightingPass);*/
 
-#if 0
-        if (VkCommandBuffer cmdBuffer = BeginRenderPass(gRenderer.uiRenderPass))
+#if 1
+        if (VkCommandBuffer cmdBuffer = begin_render_pass(g_renderer.uiRenderPass))
         {
             ImGui_ImplVulkan_NewFrame();
             ImGui_ImplGlfw_NewFrame();
@@ -376,7 +345,7 @@ void engine::render()
             static bool demo_window      = false;
 
             if (ImGui::BeginMainMenuBar()) {
-                if (ImGui::BeginMenu("engine")) {
+                if (ImGui::BeginMenu("Engine")) {
                     if (ImGui::MenuItem("Exit"))
                         g_running = false;
 
@@ -401,14 +370,16 @@ void engine::render()
                     ImGui::EndMenu();
                 }
 
+                ImGui::Text("%f", g_uptime);
+
                 ImGui::EndMainMenuBar();
             }
 
             if (renderer_stats) {
                 ImGui::Begin("Rendering Stats", &renderer_stats);
 
-                ImGui::Text("Elapsed Frames: %d", gFramesElapsed);
-                ImGui::Text("Delta Time: %f (ms)", gDeltaTime);
+                ImGui::Text("Elapsed Frames: %d", g_elapsed_frames);
+                ImGui::Text("Delta Time: %f (ms)", g_delta_time);
 
                 ImGui::End();
             }
@@ -448,7 +419,7 @@ void engine::render()
 
             ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuffer);
 
-            EndRenderPass(cmdBuffer);
+            end_render_pass(cmdBuffer);
         }
 #endif
 
@@ -460,32 +431,34 @@ void engine::render()
     update_window();
 }
 
-void engine::Render(entity* e)
+void engine_render(entity* e)
 {
+    assert(g_running);
+
     entitiesToRender.push_back(e);
 }
 
-void engine::TranslateEntity(entity* e, float x, float y, float z)
+void engine_translate_entity(entity* e, float x, float y, float z)
 {
     translate_entity(e, x, y, z);
 }
 
-void engine::RotateEntity(entity* e, float deg, float x, float y, float z)
+void engine_rotate_entity(entity* e, float deg, float x, float y, float z)
 {
     rotate_entity(e, deg, x, y, z);
 }
 
-void engine::ScaleEntity(entity* e, float scale)
+void engine_scale_entity(entity* e, float scale)
 {
     scale_entity(e, scale);
 }
 
-void engine::ScaleEntity(entity* e, float x, float y, float z)
+void engine_scale_entity(entity* e, float x, float y, float z)
 {
     scale_entity(e, x, y, z);
 }
 
-void engine::GetEntityPosition(const entity* e, float* x, float* y, float* z)
+void engine_get_entity_position(const entity* e, float* x, float* y, float* z)
 {
     get_entity_position(e, x, y, z);
 }

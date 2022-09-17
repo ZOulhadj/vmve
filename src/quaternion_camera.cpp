@@ -1,7 +1,5 @@
 #include "quaternion_camera.hpp"
 
-#include <glm/gtc/matrix_transform.hpp>
-
 quaternion_camera create_camera(const glm::vec3& position, float fov, float speed)
 {
     quaternion_camera camera{};

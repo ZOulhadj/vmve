@@ -1,8 +1,6 @@
 #ifndef MYENGINE_EVENT_HPP
 #define MYENGINE_EVENT_HPP
 
-#include <functional>
-
 enum class event_type
 {
     None = 0,
