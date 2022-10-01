@@ -1,4 +1,4 @@
-#include "engine_platform.hpp"
+#include "engine_platform.h"
 
 // todo: Implement multiple render passes (75%)
 // todo: Render debug ui into separate render pass
@@ -92,18 +92,20 @@ static void ScrolledBackEvent(mouse_scrolled_down_event& e)
 static void engine_event_callback(Event& e)
 {
     event_dispatcher dispatcher(e);
-    dispatcher.dispatch<window_closed_event>(BIND_EVENT(WindowCloseEvent));
-    dispatcher.dispatch<window_resized_event>(BIND_EVENT(WindowResized));
-    dispatcher.dispatch<key_pressed_event>(BIND_EVENT(KeyPressEvent));
+    dispatcher.dispatch<window_closed_event>(WindowCloseEvent);
+    dispatcher.dispatch<window_resized_event>(WindowResized);
+    dispatcher.dispatch<key_pressed_event>(KeyPressEvent);
     //dispatcher.Dispatch<MouseMovedEvent>(BIND_EVENT());
-    dispatcher.dispatch<mouse_scrolled_up_event>(BIND_EVENT(ScrolledForwardsEvent));
-    dispatcher.dispatch<mouse_scrolled_down_event>(BIND_EVENT(ScrolledBackEvent));
+    dispatcher.dispatch<mouse_scrolled_up_event>(ScrolledForwardsEvent);
+    dispatcher.dispatch<mouse_scrolled_down_event>(ScrolledBackEvent);
 }
 
 void engine_start(const char* name)
 {
+    assert(name != nullptr);
+
     g_window = create_window(name, 800, 600);
-    g_window->event_callback = BIND_EVENT(engine_event_callback);
+    g_window->event_callback = engine_event_callback;
 
     g_renderer = create_renderer(g_window, buffer_mode::Triple, vsync_mode::Enabled);
 

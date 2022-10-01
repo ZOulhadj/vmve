@@ -1,4 +1,4 @@
-#include "../src/engine_platform.hpp"
+#include "../src/engine_platform.h"
 
 int main()
 {

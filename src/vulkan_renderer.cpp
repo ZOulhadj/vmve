@@ -438,7 +438,7 @@ static void destroy_submit_context(renderer_submit_context* context)
 
 // A function that executes a command directly on the GPU. This is most often
 // used for copying data from staging buffers into GPU local buffers.
-static void submit_to_gpu(const std::function<void()>& SubmitFunction)
+static void submit_to_gpu(const std::function<void()>& submit_func)
 {
     VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -448,7 +448,7 @@ static void submit_to_gpu(const std::function<void()>& SubmitFunction)
     // memory
     vk_check(vkBeginCommandBuffer(gSubmitContext->CmdBuffer, &begin_info));
     {
-        SubmitFunction();
+        submit_func();
     }
     vk_check(vkEndCommandBuffer((gSubmitContext->CmdBuffer)));
 

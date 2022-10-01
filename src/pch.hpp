@@ -14,7 +14,6 @@
 #include <sstream>
 #include <functional>
 
-
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
 #include <shaderc/shaderc.h>

@@ -38,7 +38,7 @@ add_executable(${PROJECT_NAME}
         ${IMGUI_SRC}
 
         # engine test file
-        my_engine_test/main.cpp
+        sandbox/main.cpp
 
         # engine source
         src/window.cpp

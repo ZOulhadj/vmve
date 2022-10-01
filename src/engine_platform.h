@@ -2,7 +2,7 @@
 
 // Introduction:
 // This is the engine interface file. This is a C compatible header file
-// which provides all the necessery functionality to interact with the
+// which provides all the necessary functionality to interact with the
 // rendering engine.
 //
 //
@@ -12,7 +12,7 @@
 // application terminates.
 
 
-// forward declerations for pointer types
+// forward declarations for pointer types
 struct vertex_buffer;
 struct texture_buffer;
 struct entity;

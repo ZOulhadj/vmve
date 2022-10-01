@@ -3,8 +3,6 @@
 
 #include "event.hpp"
 
-#define BIND_EVENT(func) std::bind(func, std::placeholders::_1)
-
 class event_dispatcher
 {
 public:
@@ -13,7 +11,7 @@ public:
     {}
 
     template <typename T>
-    void dispatch(std::function<void(T&)> func)
+    void dispatch(void (*func)(T&))
     {
         if (m_Event.GetType() != T::GetStaticType())
             return;

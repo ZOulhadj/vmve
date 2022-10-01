@@ -34,7 +34,7 @@ public:
 };
 
 
-using event_func = std::function<void(Event&)>;
+using event_function = void (*)(Event&);
 
 
 #endif
