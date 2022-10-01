@@ -22,6 +22,8 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glm)
+add_subdirectory(vendor/vma)
+add_subdirectory(vendor/tiny_obj_loader)
 
 set(IMGUI_SRC
         vendor/imgui/imgui.cpp
@@ -43,18 +45,28 @@ add_executable(${PROJECT_NAME}
         src/vulkan_renderer.cpp
         src/quaternion_camera.cpp
         src/entity.cpp
-        src/engine_platform.cpp src/pch.cpp)
+        src/engine_platform.cpp
+
+        # precompiled header
+        # note: this is required to compile header only files such as STB
+        # note: this will be removed in the future.
+        src/pch.cpp)
 
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
+target_precompile_headers(${PROJECT_NAME} PRIVATE
+        src/pch.hpp)
+
 target_include_directories(${PROJECT_NAME} PRIVATE
         vendor/stb
-        vendor/tol
-        vendor/imgui
-        vendor/vma)
-target_link_directories(${PROJECT_NAME} PRIVATE ${Vulkan_INCLUDE_DIR}/../Lib)
+        vendor/imgui)
+
+target_link_directories(${PROJECT_NAME} PRIVATE
+        ${Vulkan_INCLUDE_DIR}/../Lib)
+
 target_link_libraries(${PROJECT_NAME}
         glfw
         glm::glm
         Vulkan::Vulkan
-        shaderc_shared)
+        shaderc_shared
+        VulkanMemoryAllocator
+        tinyobjloader)
