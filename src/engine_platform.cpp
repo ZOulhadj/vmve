@@ -73,8 +73,7 @@ static void WindowResized(window_resized_event& e)
 
 static void KeyPressEvent(key_pressed_event& e)
 {
-    if (e.get_key_code() == GLFW_KEY_W)
-        engine_move_forwards();
+
 }
 
 static void ScrolledForwardsEvent(mouse_scrolled_up_event& e)
@@ -109,7 +108,7 @@ void engine_start(const char* name)
 
     g_renderer = create_renderer(g_window, buffer_mode::Triple, vsync_mode::Enabled);
 
-    g_camera  = create_camera({0.0f, 0.0f, -5.0f}, 45.0f, 50.0f);
+    g_camera  = create_camera({0.0f, 0.0f, -20.0f}, 45.0f, 50.0f);
 
     g_running = true;
     g_uptime  = 0.0f;
@@ -150,7 +149,9 @@ float engine_get_delta_time()
 
 bool engine_is_key_down(int keycode)
 {
-    return false;
+    const int state = glfwGetKey(g_window->handle, keycode);
+
+    return state == GLFW_PRESS;
 }
 
 bool engine_is_mouse_button_down(int buttoncode)
@@ -288,8 +289,6 @@ void engine_roll_right()
 
 void engine_render()
 {
-    assert(g_running);
-
     // Calculate the delta time between previous and current frame. This
     // allows for frame dependent systems such as movement and translation
     // to run at the same speed no matter the time difference between two
@@ -333,7 +332,7 @@ void engine_render()
     }
     EndRenderPass(lightingPass);*/
 
-#if 1
+#if 0
         if (VkCommandBuffer cmdBuffer = begin_render_pass(g_renderer.uiRenderPass))
         {
             ImGui_ImplVulkan_NewFrame();
@@ -435,8 +434,6 @@ void engine_render()
 
 void engine_render(entity* e)
 {
-    assert(g_running);
-
     entitiesToRender.push_back(e);
 }
 
