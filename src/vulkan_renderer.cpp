@@ -1109,7 +1109,7 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
     VkPipelineRasterizationStateCreateInfo rasterizer_info { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
     rasterizer_info.depthClampEnable        = VK_FALSE;
     rasterizer_info.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer_info.polygonMode             = VK_POLYGON_MODE_LINE;
+    rasterizer_info.polygonMode             = VK_POLYGON_MODE_FILL;
     rasterizer_info.cullMode                = VK_CULL_MODE_BACK_BIT;
     rasterizer_info.frontFace               = VK_FRONT_FACE_CLOCKWISE;
     rasterizer_info.depthBiasEnable         = VK_FALSE;

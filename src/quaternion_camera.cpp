@@ -8,7 +8,7 @@ quaternion_camera create_camera(const glm::vec3& position, float fov, float spee
     camera.aspect_ratio = 800.0f / 600.0f;
     camera.speed       = speed;
     camera.view_speed  = 0.1f;
-    camera.roll_speed  = 90.0f;
+    camera.roll_speed  = 180.0f;
     camera.roll        = 0.0f;
     camera.fov         = fov;
     camera.near        = 0.1f;

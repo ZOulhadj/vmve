@@ -1,9 +1,27 @@
 #include "../src/engine_platform.h"
 
-glm::vec3 geographic_to_cartesian(float radius, float latitude, float longitude)
+// angular velocity of earth in degrees per second
+// radians 0.0000729211533f
+const float angular_velocity = 0.004178074321326839639f;
+const float earth_radius = 10.0f;
+
+
+glm::vec3 sphere_translation(float radius, float latitude, float longitude)
 {
     const float lat = glm::radians(latitude);
     const float lon = glm::radians(longitude);
+
+    const float x = radius * glm::cos(lat) * glm::cos(lon);
+    const float y = radius * glm::sin(lat);
+    const float z = radius * glm::cos(lat) * sin(lon);
+
+    return { x, y, z};
+}
+
+glm::vec3 geographic_to_cartesian(float radius, const glm::vec2& coordinates)
+{
+    const float lat = glm::radians(coordinates.x);
+    const float lon = glm::radians(coordinates.y);
 
     // If using WGS-84 coordinates
 #if 0
@@ -19,15 +37,15 @@ glm::vec3 geographic_to_cartesian(float radius, float latitude, float longitude)
     return { x, y, -z };
 }
 
-glm::vec2 cartesian_to_geographic(float radius, float x, float y, float z)
+glm::vec2 cartesian_to_geographic(float radius, const glm::vec3& position)
 {
     // If using WGS-84 coordinates
 #if 0
     const float latitude = glm::asin(z / radius);
     const float longitude = glm::atan(y, x);
 #else
-    const float latitude = glm::asin(y / radius);
-    const float longitude = glm::atan(z, x);
+    const float latitude = glm::asin(position.y / radius);
+    const float longitude = glm::atan(position.z, position.x);
 #endif
 
     return { glm::degrees(latitude), glm::degrees(longitude) };
@@ -39,23 +57,21 @@ int main()
 {
     engine_start("3D Earth Visualiser");
 
-    // Load models
-    const vertex_buffer* sphere = engine_load_model("assets/sphere.obj");
 
-    // Load textures
+    const vertex_buffer* sphere = engine_load_model("assets/sphere.obj");
+    const vertex_buffer* cube   = engine_load_model("assets/cube.obj");
+
     const texture_buffer* skyphere = engine_load_texture("assets/textures/skysphere.jpg");
 
-    // Create entities
     entity* earth_entity = engine_create_entity(sphere);
-    entity* test_entity = engine_create_entity(sphere);
+    entity* test_entity = engine_create_entity(cube);
 
 
-    const float earth_radius = 10.0f;
 
-    glm::vec3 london = geographic_to_cartesian(earth_radius, 45.0, 0.1276);
+    glm::vec3 london = geographic_to_cartesian(earth_radius, { 45.0, 0.1276 });
+    glm::vec2 london2 = cartesian_to_geographic(earth_radius, london);
+
     printf("%s\n", glm::to_string(london).c_str());
-
-    glm::vec2 london2 = cartesian_to_geographic(earth_radius, london.x, london.y, london.z);
     printf("%s\n", glm::to_string(london2).c_str());
 
 
@@ -73,11 +89,15 @@ int main()
         if (engine_is_key_down(69))  engine_roll_right();
 
         // Update entities
+        const float rotation = angular_velocity * engine_uptime() * 50000.0f;
+
         engine_translate_entity(earth_entity, 0.0f, 0.0f, 0.0f);
         engine_scale_entity(earth_entity, earth_radius);
+        engine_rotate_entity(earth_entity, rotation, 0.0f, 1.0f, 0.0f);
 
-        engine_translate_entity(test_entity, london.x, london.y, london.z);
-        engine_scale_entity(test_entity, 1.0f);
+        glm::vec3 s = sphere_translation(earth_radius, 20.0f, -rotation);
+        engine_translate_entity(test_entity, s.x, s.y, s.z);
+        engine_scale_entity(test_entity, 0.2f);
 
         // Rendering
         engine_render(earth_entity);
