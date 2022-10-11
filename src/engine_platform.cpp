@@ -76,6 +76,11 @@ static void KeyPressEvent(key_pressed_event& e)
 
 }
 
+static void mouse_move_event(mouse_moved_event& e)
+{
+    update_camera_view(g_camera, e.GetX(), e.GetY());
+}
+
 static void ScrolledForwardsEvent(mouse_scrolled_up_event& e)
 {
     g_camera.fov -= 2.0f;
@@ -94,7 +99,7 @@ static void engine_event_callback(Event& e)
     dispatcher.dispatch<window_closed_event>(WindowCloseEvent);
     dispatcher.dispatch<window_resized_event>(WindowResized);
     dispatcher.dispatch<key_pressed_event>(KeyPressEvent);
-    //dispatcher.Dispatch<MouseMovedEvent>(BIND_EVENT());
+    dispatcher.dispatch<mouse_moved_event>(mouse_move_event);
     dispatcher.dispatch<mouse_scrolled_up_event>(ScrolledForwardsEvent);
     dispatcher.dispatch<mouse_scrolled_down_event>(ScrolledBackEvent);
 }
@@ -103,7 +108,7 @@ void engine_start(const char* name)
 {
     assert(name != nullptr);
 
-    g_window = create_window(name, 800, 600);
+    g_window = create_window(name, 1280, 720);
     g_window->event_callback = engine_event_callback;
 
     g_renderer = create_renderer(g_window, buffer_mode::Triple, vsync_mode::Enabled);
@@ -311,9 +316,9 @@ void engine_render()
     {
         if (VkCommandBuffer cmdBuffer = begin_render_pass(g_renderer.geometryRenderPass))
         {
-            bind_pipeline(g_renderer.skyspherePipeline);
-            bind_vertex_buffer(icosphere);
-            render_entity(skysphereEntity, g_renderer.skyspherePipeline);
+            //bind_pipeline(g_renderer.skyspherePipeline);
+            //bind_vertex_buffer(icosphere);
+            //render_entity(skysphereEntity, g_renderer.skyspherePipeline);
 
 
             bind_pipeline(g_renderer.basePipeline);

@@ -1601,7 +1601,7 @@ void end_renderer_frame()
 
 VkCommandBuffer begin_render_pass(RenderPass& renderPass)
 {
-    const VkClearValue clear_color = { {{ 0.1f, 0.1f, 0.1f, 1.0f }} };
+    const VkClearValue clear_color = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
     const VkClearValue clear_depth = { 0.0f, 0 };
     const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
 

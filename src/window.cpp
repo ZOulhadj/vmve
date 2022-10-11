@@ -33,7 +33,7 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
     if (!window->handle)
         return nullptr;
 
-    //glfwSetInputMode(gWindow->handle, GLFW_CURSOR, cursor_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // window callbacks
     glfwSetWindowUserPointer(window->handle, window);

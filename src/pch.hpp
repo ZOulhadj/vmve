@@ -13,6 +13,7 @@
 #include <fstream>
 #include <sstream>
 #include <functional>
+#include <regex>
 
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>

@@ -5,7 +5,7 @@ quaternion_camera create_camera(const glm::vec3& position, float fov, float spee
     quaternion_camera camera{};
     camera.position    = position;
     camera.orientation = glm::quat(1, 0, 0, 0);
-    camera.aspect_ratio = 800.0f / 600.0f;
+    camera.aspect_ratio = 1280.0f / 720.0f;
     camera.speed       = speed;
     camera.view_speed  = 0.1f;
     camera.roll_speed  = 180.0f;
@@ -23,19 +23,22 @@ quaternion_camera create_camera(const glm::vec3& position, float fov, float spee
     return camera;
 }
 
+void update_camera_view(quaternion_camera& camera, float cursor_x, float cursor_y)
+{
+    camera.cursor_x = cursor_x;
+    camera.cursor_y = cursor_y;
+}
+
 void update_camera(quaternion_camera& camera)
 {
-    float cursor_x = 0.0f;
-    float cursor_y = 0.0f;
-
     // todo(zak): Need to fix unwanted roll when rotating
     // Get the mouse offsets
     static float last_x = 0.0f;
     static float last_y = 0.0f;
-    const float xoffset = (last_x - cursor_x) * camera.view_speed;
-    const float yoffset = (last_y - cursor_y) * camera.view_speed;
-    last_x = cursor_x;
-    last_y = cursor_y;
+    const float xoffset = (last_x - camera.cursor_x) * camera.view_speed;
+    const float yoffset = (last_y - camera.cursor_y) * camera.view_speed;
+    last_x = camera.cursor_x;
+    last_y = camera.cursor_y;
 
     // Get the camera current direction vectors based on orientation
     camera.front_vector = glm::conjugate(camera.orientation) * glm::vec3(0.0f, 0.0f, 1.0f);
