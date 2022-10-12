@@ -6,6 +6,9 @@ static renderer_context* gRc  = nullptr;
 static renderer_submit_context* gSubmitContext = nullptr;
 
 static Swapchain gSwapchain{};
+
+static VkSampler gSampler = nullptr;
+
 static std::vector<Frame> gFrames;
 static ShaderCompiler g_shader_compiler{};
 constexpr int frames_in_flight        = 2;
@@ -31,9 +34,10 @@ const std::string vs_code = R"(
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 color;
 layout(location = 2) in vec3 normal;
+layout(location = 3) in vec2 uv;
 
 layout(location = 0) out vec3 pixel_color;
-
+layout(location = 1) out vec2 texture_coord;
 
 layout(binding = 0) uniform model_view_projection {
     mat4 proj;
@@ -47,6 +51,7 @@ layout(push_constant) uniform constant
 void main() {
     gl_Position = mvp.proj * obj.model * vec4(position, 1.0);
     pixel_color = normal;
+    texture_coord = uv;
 }
 )";
 
@@ -56,10 +61,13 @@ const std::string fs_code = R"(
         layout(location = 0) out vec4 final_color;
 
         layout(location = 0) in vec3 pixel_color;
+        layout(location = 1) in vec2 texture_coord;
 
+        layout(binding = 1) uniform sampler2D tex;
 
         void main() {
-            final_color = vec4(pixel_color, 1.0);
+            vec3 color = texture(tex, texture_coord).xyz;
+            final_color = vec4(color, 1.0);
         }
     )";
 
@@ -248,10 +256,12 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
     };
 
     VkPhysicalDeviceFeatures requested_gpu_features{};
+    requested_gpu_features.samplerAnisotropy = true;
     requested_gpu_features.fillModeNonSolid   = true;
     //requested_gpu_features.geometryShader     = true;
     //requested_gpu_features.tessellationShader = true;
     //requested_gpu_features.wideLines          = true;
+
 
     std::vector<const char*> device_extensions {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -311,6 +321,11 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
     assert(gpu_count < 2 && "todo: All checks assume we have a single GPU");
 
     for (std::size_t i = 0; i < gpu_count; ++i) {
+
+        VkPhysicalDeviceProperties gpu_properties{};
+        vkGetPhysicalDeviceProperties(gpus[i], &gpu_properties);
+
+
         gpu_features_supported = has_required_features(gpus[i], requested_gpu_features);
 
         // Queue families are a group of queues that together perform specific
@@ -711,6 +726,41 @@ static void RebuildSwapchain(Swapchain& swapchain)
 }
 */
 
+
+static VkSampler create_sampler()
+{
+    VkSampler sampler{};
+
+    VkSamplerCreateInfo sampler_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+    sampler_info.magFilter = VK_FILTER_LINEAR;
+    sampler_info.minFilter = VK_FILTER_LINEAR;
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.anisotropyEnable = VK_TRUE;
+    sampler_info.maxAnisotropy = 16;
+    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_info.unnormalizedCoordinates = VK_FALSE;
+    sampler_info.compareEnable = VK_FALSE;
+    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_info.mipLodBias = 0.0f;
+    sampler_info.minLod = 0.0f;
+    sampler_info.maxLod = 0.0f;
+
+    vk_check(vkCreateSampler(gRc->device, &sampler_info, nullptr, &sampler));
+
+    return sampler;
+}
+
+static void destroy_sampler(VkSampler sampler)
+{
+    vkDestroySampler(gRc->device, sampler, nullptr);
+}
+
+
+
+
 static void create_frames()
 {
     VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
@@ -1020,15 +1070,23 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
 
 
     // create descriptor set layout
-    VkDescriptorSetLayoutBinding layoutBinding{};
-    layoutBinding.binding = 0;
-    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layoutBinding.descriptorCount = 1;
-    layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    VkDescriptorSetLayoutBinding uniformBinding{};
+    uniformBinding.binding = 0;
+    uniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uniformBinding.descriptorCount = 1;
+    uniformBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutBinding samplerBinding{};
+    samplerBinding.binding = 1;
+    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerBinding.descriptorCount = 1;
+    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutBinding descriptorBindings[2] { uniformBinding, samplerBinding };
 
     VkDescriptorSetLayoutCreateInfo descriptor_layout_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-    descriptor_layout_info.bindingCount = 1;
-    descriptor_layout_info.pBindings    = &layoutBinding;
+    descriptor_layout_info.bindingCount = 2;
+    descriptor_layout_info.pBindings    = descriptorBindings;
 
     vk_check(vkCreateDescriptorSetLayout(gRc->device, &descriptor_layout_info, nullptr, &pipeline.DescriptorLayout));
 
@@ -1318,8 +1376,7 @@ static void end_frame(Swapchain& swapchain, const Frame& frame)
     present_swapchain_image(swapchain);
 }
 
-
-
+texture_buffer* engine_load_texture(const char*);
 
 Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mode vsyncMode)
 {
@@ -1328,6 +1385,11 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
     gRc            = create_renderer_context(VK_API_VERSION_1_2, window);
     gSubmitContext = create_submit_context();
     gSwapchain     = create_swapchain(bufferMode, vsyncMode);
+
+
+
+    texture_buffer* b = engine_load_texture("assets/textures/earth.jpg");
+    gSampler       = create_sampler();
 
     create_frames();
 
@@ -1367,7 +1429,8 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
     const std::vector<VkFormat> bindingAttributeFormats {
             VK_FORMAT_R32G32B32_SFLOAT, // Position
             VK_FORMAT_R32G32B32_SFLOAT, // Color
-            VK_FORMAT_R32G32B32_SFLOAT  // Normal
+            VK_FORMAT_R32G32B32_SFLOAT, // Normal
+            VK_FORMAT_R32G32_SFLOAT     // UV
     };
 
     PipelineInfo basePipelineInfo{};
@@ -1377,12 +1440,14 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
     basePipelineInfo.PipelineShaders         = shaderList;
     renderer.basePipeline = create_pipeline(basePipelineInfo, renderer.geometryRenderPass);
 
+/*
     PipelineInfo skyspherePipelineInfo{};
     skyspherePipelineInfo.BindingLayoutSize       = sizeof(vertex);
     skyspherePipelineInfo.BindingAttributeFormats = bindingAttributeFormats;
     skyspherePipelineInfo.PushConstantSize        = sizeof(glm::mat4);
     skyspherePipelineInfo.PipelineShaders         = skysphereShaders;
     renderer.skyspherePipeline = create_pipeline(skyspherePipelineInfo, renderer.geometryRenderPass);
+*/
 
     create_debug_ui(renderer.uiRenderPass);
 
@@ -1392,15 +1457,15 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
         uniform_buffer = create_buffer(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     }
 
-    // RenderDebugUI descriptor pool stuff
 
-    VkDescriptorPoolSize pool_size{};
-    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    pool_size.descriptorCount = u32(frames_in_flight);
+    VkDescriptorPoolSize pool_sizes[2] {
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, u32(frames_in_flight) },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, u32(frames_in_flight) },
+    };
 
     VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-    pool_info.poolSizeCount = 1;
-    pool_info.pPoolSizes    = &pool_size;
+    pool_info.poolSizeCount = 2;
+    pool_info.pPoolSizes    = pool_sizes;
     pool_info.maxSets       = u32(frames_in_flight);
 
     vk_check(vkCreateDescriptorPool(gRc->device, &pool_info, nullptr, &descriptor_pool));
@@ -1419,16 +1484,29 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
         buffer_info.offset = 0;
         buffer_info.range  = VK_WHOLE_SIZE; // or sizeof(struct)
 
+        VkDescriptorImageInfo image_info{};
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image_info.imageView   = g_textures[0]->image.view; // todo:
+        image_info.sampler     = gSampler;
 
-        VkWriteDescriptorSet descriptor_write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-        descriptor_write.dstSet          = descriptor_sets[i];
-        descriptor_write.dstBinding      = 0;
-        descriptor_write.dstArrayElement = 0;
-        descriptor_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_write.descriptorCount = 1;
-        descriptor_write.pBufferInfo     = &buffer_info;
+        VkWriteDescriptorSet descriptor_writes[2] {};
+        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[0].dstSet          = descriptor_sets[i];
+        descriptor_writes[0].dstBinding      = 0;
+        descriptor_writes[0].dstArrayElement = 0;
+        descriptor_writes[0].descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].descriptorCount = 1;
+        descriptor_writes[0].pBufferInfo     = &buffer_info;
 
-        vkUpdateDescriptorSets(gRc->device, 1, &descriptor_write, 0, nullptr);
+        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[1].dstSet          = descriptor_sets[i];
+        descriptor_writes[1].dstBinding      = 1;
+        descriptor_writes[1].dstArrayElement = 0;
+        descriptor_writes[1].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_writes[1].descriptorCount = 1;
+        descriptor_writes[1].pImageInfo     = &image_info;
+
+        vkUpdateDescriptorSets(gRc->device, 2, descriptor_writes, 0, nullptr);
     }
 #endif
 
@@ -1477,7 +1555,7 @@ void destroy_renderer(Renderer& renderer)
     g_uniform_buffers.clear();
 
 
-    destroy_pipeline(renderer.skyspherePipeline);
+    //destroy_pipeline(renderer.skyspherePipeline);
     destroy_pipeline(renderer.basePipeline);
 
     destroy_render_pass(renderer.uiRenderPass);
@@ -1490,6 +1568,8 @@ void destroy_renderer(Renderer& renderer)
     //destroy_renderer_query();
 
     destroy_frames();
+
+    destroy_sampler(gSampler);
 
     destroy_swapchain(gSwapchain);
 
@@ -1556,8 +1636,75 @@ texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, ui
 {
     auto buffer = new texture_buffer();
 
-    buffer->image = create_image(VK_FORMAT_R8G8B8A8_SRGB, {width, height}, VK_IMAGE_USAGE_SAMPLED_BIT,
+    Buffer staging_buffer = create_staging_buffer(texture, width * height * 4);
+
+    buffer->image = create_image(VK_FORMAT_R8G8B8A8_SRGB,
+                                 {width, height},
+                                 VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                  VK_IMAGE_ASPECT_COLOR_BIT);
+
+
+    // Upload texture data into GPU memory by doing a layout transition
+    submit_to_gpu([&]() {
+        // todo: barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        // todo: barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        VkImageMemoryBarrier imageBarrier_toTransfer{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        imageBarrier_toTransfer.image = buffer->image.handle;
+        imageBarrier_toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBarrier_toTransfer.subresourceRange.baseMipLevel = 0;
+        imageBarrier_toTransfer.subresourceRange.levelCount = 1;
+        imageBarrier_toTransfer.subresourceRange.baseArrayLayer = 0;
+        imageBarrier_toTransfer.subresourceRange.layerCount = 1;
+        imageBarrier_toTransfer.srcAccessMask = 0;
+        imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        // barrier the image into the transfer-receive layout
+        vkCmdPipelineBarrier(gSubmitContext->CmdBuffer,
+                             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
+
+
+        // Prepare for the pixel data to be copied in
+        VkBufferImageCopy copyRegion = {};
+        copyRegion.bufferOffset = 0;
+        copyRegion.bufferRowLength = 0;
+        copyRegion.bufferImageHeight = 0;
+
+        copyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.imageSubresource.mipLevel = 0;
+        copyRegion.imageSubresource.baseArrayLayer = 0;
+        copyRegion.imageSubresource.layerCount = 1;
+        copyRegion.imageExtent = { width, height, 1 };
+
+        //copy the buffer into the image
+        vkCmdCopyBufferToImage(gSubmitContext->CmdBuffer,
+                               staging_buffer.buffer,
+                               buffer->image.handle,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+
+
+
+        // Make the texture shader readable
+        VkImageMemoryBarrier imageBarrier_toReadable = imageBarrier_toTransfer;
+        imageBarrier_toReadable.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        imageBarrier_toReadable.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageBarrier_toReadable.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        //barrier the image into the shader readable layout
+        vkCmdPipelineBarrier(gSubmitContext->CmdBuffer,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
+
+    });
+
+
+    destroy_buffer(&staging_buffer);
 
     g_textures.push_back(buffer);
 

@@ -79,14 +79,14 @@ int main()
     const vertex_buffer* sphere = engine_load_model("assets/sphere.obj");
     const vertex_buffer* cube   = engine_load_model("assets/iss.obj");
 
-    const texture_buffer* skyphere = engine_load_texture("assets/textures/skysphere.jpg");
+    //const texture_buffer* earth_texture = engine_load_texture("assets/textures/earth.jpg");
 
     entity* earth_entity = engine_create_entity(sphere);
     entity* test_entity = engine_create_entity(cube);
 
 
 
-    glm::vec3 london = cartesian(earth_radius, 51.5072, 0.1276, 20.0f);
+    glm::vec3 london = cartesian(earth_radius, 51.5072, 0.1276, 2.0f);
     glm::vec2 london2 = geographic(earth_radius, london);
 
     printf("%s\n", glm::to_string(london).c_str());
@@ -114,9 +114,8 @@ int main()
         engine_scale_entity(earth_entity, earth_radius);
         engine_rotate_entity(earth_entity, earth_speed, 0.0f, 1.0f, 0.0f);
 
-        glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 50.0f);
+        glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 2.0f);
         engine_translate_entity(test_entity, position.x, position.y, position.z);
-        engine_rotate_entity(test_entity, engine_uptime() * 10.0f, 0.0f, 1.0f, 1.0f);
         engine_scale_entity(test_entity, 0.02f);
 
         // Rendering

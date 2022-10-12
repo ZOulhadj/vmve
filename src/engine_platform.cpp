@@ -191,18 +191,16 @@ vertex_buffer* engine_load_model(const char* path)
     for (const auto& shape : shapes) {
         for (const auto& index : shape.mesh.indices) {
             vertex v{};
-            v.position[0] = attrib.vertices[3 * index.vertex_index + 0];
-            v.position[1] = attrib.vertices[3 * index.vertex_index + 1];
-            v.position[2] = attrib.vertices[3 * index.vertex_index + 2];
+            v.position.x = attrib.vertices[3 * index.vertex_index + 0];
+            v.position.y = attrib.vertices[3 * index.vertex_index + 1];
+            v.position.z = attrib.vertices[3 * index.vertex_index + 2];
 
-            v.normal[0] = attrib.normals[3 * index.normal_index + 0];
-            v.normal[1] = attrib.normals[3 * index.normal_index + 1];
-            v.normal[2] = attrib.normals[3 * index.normal_index + 2];
+            v.normal.x = attrib.normals[3 * index.normal_index + 0];
+            v.normal.y = attrib.normals[3 * index.normal_index + 1];
+            v.normal.z = attrib.normals[3 * index.normal_index + 2];
 
-            //v.texture_coord = {
-            //    attrib.texcoords[2 * index.texcoord_index + 0],
-            //    attrib.texcoords[2 * index.texcoord_index + 1],
-            //};
+            v.uv.x = attrib.texcoords[2 * index.texcoord_index + 0];
+            v.uv.y = attrib.texcoords[2 * index.texcoord_index + 1];
 
             vertices.push_back(v);
             indices.push_back(static_cast<uint32_t>(indices.size()));
@@ -216,8 +214,6 @@ vertex_buffer* engine_load_model(const char* path)
 
 texture_buffer* engine_load_texture(const char* path)
 {
-    assert(g_running);
-
     int width, height, channels;
     unsigned char* texture = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
