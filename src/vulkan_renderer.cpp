@@ -120,7 +120,7 @@ static void vk_check(VkResult result)
 }
 
 // Helper cast function often used for Vulkan create info structs
-// that accept a uint32_t.
+// that accept an uint32_t.
 template <typename T>
 static uint32_t u32(T t)
 {
@@ -261,7 +261,6 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
     //requested_gpu_features.geometryShader     = true;
     //requested_gpu_features.tessellationShader = true;
     //requested_gpu_features.wideLines          = true;
-
 
     std::vector<const char*> device_extensions {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -1386,9 +1385,6 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
     gSubmitContext = create_submit_context();
     gSwapchain     = create_swapchain(bufferMode, vsyncMode);
 
-
-
-    texture_buffer* b = engine_load_texture("assets/textures/earth.jpg");
     gSampler       = create_sampler();
 
     create_frames();
@@ -1478,6 +1474,7 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
 
     vk_check(vkAllocateDescriptorSets(gRc->device, &allocate_info, descriptor_sets.data()));
 
+    texture_buffer* b = engine_load_texture("assets/textures/earth.jpg");
     for (std::size_t i = 0; i < descriptor_sets.size(); ++i) {
         VkDescriptorBufferInfo buffer_info{};
         buffer_info.buffer = g_uniform_buffers[i].buffer;
