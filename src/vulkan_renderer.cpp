@@ -1381,7 +1381,7 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
 {
     Renderer renderer{};
 
-    gRc            = create_renderer_context(VK_API_VERSION_1_2, window);
+    gRc            = create_renderer_context(VK_API_VERSION_1_3, window);
     gSubmitContext = create_submit_context();
     gSwapchain     = create_swapchain(bufferMode, vsyncMode);
 

@@ -7,16 +7,17 @@
 const float scale_factor = 0.000005f;
 
 // This is the applications speed factor relative to real world speeds.
-// A value of 0.5f means that the simulation will run at 50% of real
+// A value of 10.0f means that the simulation will run 10% faster than
 // world speed.
-const float speed_factor = 1000.0f;
+const float speed_factor = 100.0f;
 
 // angular velocity of earth in degrees per second
 // radians 0.0000729211533f
 const float angular_velocity = 0.004178074321326839639f * speed_factor;
 
+const float sun_radius = 696'340'000.0f * scale_factor;
 const float earth_radius = 6'378'137.0f * scale_factor;
-
+const float moon_radius = 1'737'400.0f * scale_factor;
 const float iss_altitude = 408'000.0f * scale_factor;
 
 const float iss_speed    = 0.07725304476742584f * speed_factor;
@@ -81,7 +82,10 @@ int main()
 
     //const texture_buffer* earth_texture = engine_load_texture("assets/textures/earth.jpg");
 
+    entity* sun_entity = engine_create_entity(sphere);
     entity* earth_entity = engine_create_entity(sphere);
+    entity* moon_entity = engine_create_entity(sphere);
+
     entity* test_entity = engine_create_entity(cube);
 
 
@@ -102,7 +106,7 @@ int main()
         if (engine_is_key_down(65))  engine_move_left();
         if (engine_is_key_down(68))  engine_move_right();
         if (engine_is_key_down(32))  engine_move_up();
-        if (engine_is_key_down(345)) engine_move_down();
+        if (engine_is_key_down(341)) engine_move_down();
         if (engine_is_key_down(81))  engine_roll_left();
         if (engine_is_key_down(69))  engine_roll_right();
 
@@ -110,16 +114,25 @@ int main()
         const float time = engine_uptime();
         const float earth_speed = angular_velocity * time;
 
+        engine_translate_entity(sun_entity, -100.0f, 100.0f, 250.0f);
+
         engine_translate_entity(earth_entity, 0.0f, 0.0f, 0.0f);
         engine_scale_entity(earth_entity, earth_radius);
         engine_rotate_entity(earth_entity, earth_speed, 0.0f, 1.0f, 0.0f);
 
-        glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 2.0f);
+
+        engine_translate_entity(moon_entity, 50.0f, 10.0f, 30.0f);
+        engine_scale_entity(moon_entity, moon_radius);
+
+
+        glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 5.0f);
         engine_translate_entity(test_entity, position.x, position.y, position.z);
         engine_scale_entity(test_entity, 0.02f);
 
         // Rendering
+        engine_render(sun_entity);
         engine_render(earth_entity);
+        engine_render(moon_entity);
         engine_render(test_entity);
 
         engine_render();

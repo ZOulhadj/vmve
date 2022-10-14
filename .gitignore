@@ -1,5 +1,10 @@
 build/
+out/
+
 cmake-build-debug/
 cmake-build-release/
 .idea/
+.vs/
+
+CMakeSettings.json
 imgui.ini
