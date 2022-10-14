@@ -33,7 +33,7 @@
 
 
 static Window* g_window       = nullptr;
-static Renderer g_renderer{};
+static vulkan_renderer g_renderer{};
 static quaternion_camera g_camera{};
 
 // todo: uptime must be fixed as it is not working correctly
@@ -111,7 +111,7 @@ void engine_start(const char* name)
     g_window = create_window(name, 1280, 720);
     g_window->event_callback = engine_event_callback;
 
-    g_renderer = create_renderer(g_window, buffer_mode::Triple, vsync_mode::Enabled);
+    g_renderer = create_renderer(g_window, buffer_mode::tripple_buffering, vsync_mode::enabled);
 
     g_camera  = create_camera({0.0f, 0.0f, -20.0f}, 45.0f, 50.0f);
 
@@ -312,11 +312,6 @@ void engine_render()
     {
         if (VkCommandBuffer cmdBuffer = begin_render_pass(g_renderer.geometryRenderPass))
         {
-            //bind_pipeline(g_renderer.skyspherePipeline);
-            //bind_vertex_buffer(icosphere);
-            //render_entity(skysphereEntity, g_renderer.skyspherePipeline);
-
-
             bind_pipeline(g_renderer.basePipeline);
             for (auto& entity : entitiesToRender) {
                 bind_vertex_buffer(entity->vertexBuffer);

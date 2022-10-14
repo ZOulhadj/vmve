@@ -2,12 +2,12 @@
 
 #include "entity.hpp"
 
-static renderer_context* gRc  = nullptr;
-static renderer_submit_context* gSubmitContext = nullptr;
+static renderer_context* g_rc  = nullptr;
+static renderer_submit_context* g_sc = nullptr;
 
-static Swapchain gSwapchain{};
+static Swapchain g_swapchain{};
 
-static VkSampler gSampler = nullptr;
+static VkSampler g_sampler = nullptr;
 
 static std::vector<Frame> gFrames;
 static ShaderCompiler g_shader_compiler{};
@@ -70,40 +70,6 @@ const std::string fs_code = R"(
             final_color = vec4(color, 1.0);
         }
     )";
-
-
-const std::string skysphere_vs_code = R"(
-        #version 450
-
-        layout(location = 0) in vec3 position;
-
-
-
-        layout(binding = 0) uniform model_view_projection {
-            mat4 view_proj;
-        } mvp;
-
-        void main() {
-            gl_Position = mat4(mat3(mvp.view_proj)) * vec4(position, 1.0);
-        }
-    )";
-
-const std::string skysphere_fs_code = R"(
-        #version 450
-
-        layout(location = 0) out vec4 final_color;
-
-        void main() {
-            vec2 uv = gl_FragCoord.xy / vec2(800, 600);
-
-            //vec3 low_atmo = vec3(0.78, 0.89, 0.98);
-            vec3 low_atmo = vec3(gl_FragCoord.x / 100, 0.89, 0.98);
-            vec3 high_atmo = vec3(0.01, 0.18, 0.47);
-
-            final_color = vec4(mix(high_atmo, low_atmo, uv.y), 1.0);
-        }
-    )";
-
 
 static std::vector<vertex_buffer*> g_vertex_buffers;
 static std::vector<texture_buffer*> g_textures;
@@ -239,93 +205,98 @@ static bool has_required_features(VkPhysicalDevice physical_device,
     return true;
 }
 
-// Creates the base renderer context. This context is the core of the renderer
-// and handles all creation/destruction of Vulkan resources. This function must
-// be the first renderer function to be called.
-static renderer_context* create_renderer_context(uint32_t version, const Window* window)
+// create_instance
+//
+// version: 
+// app_name: 
+// layers: 
+//
+static VkInstance create_instance(uint32_t version, const char* app_name, const std::vector<const char*>& layers)
 {
-    auto rc = new renderer_context();
-
-    rc->window = window;
-
-    const std::vector<const char*> requested_layers {
-        "VK_LAYER_KHRONOS_validation",
-#if defined(_WIN32)
-        "VK_LAYER_LUNARG_monitor"
-#endif
-    };
-
-    VkPhysicalDeviceFeatures requested_gpu_features{};
-    requested_gpu_features.samplerAnisotropy = true;
-    requested_gpu_features.fillModeNonSolid   = true;
-    //requested_gpu_features.geometryShader     = true;
-    //requested_gpu_features.tessellationShader = true;
-    //requested_gpu_features.wideLines          = true;
-
-    std::vector<const char*> device_extensions {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
+    VkInstance instance{};
 
     // create vulkan instance
-    VkApplicationInfo app_info { VK_STRUCTURE_TYPE_APPLICATION_INFO };
-    app_info.pApplicationName   = window->name;
+    VkApplicationInfo app_info{ VK_STRUCTURE_TYPE_APPLICATION_INFO };
+    app_info.pApplicationName = app_name;
     app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-    app_info.pEngineName        = "";
-    app_info.engineVersion      = VK_MAKE_API_VERSION(0, 1, 0, 0);
-    app_info.apiVersion         = version;
+    app_info.pEngineName = "";
+    app_info.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+    app_info.apiVersion = version;
 
+    // get instance layers
     uint32_t layer_count = 0;
     vk_check(vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
     std::vector<VkLayerProperties> instance_layers(layer_count);
     vk_check(vkEnumerateInstanceLayerProperties(&layer_count, instance_layers.data()));
 
-    if (!compare_layers(requested_layers, instance_layers)) {
+    // check if the vulkan instance supports our requested instance layers
+    if (!compare_layers(layers, instance_layers))
         return nullptr;
-    }
 
+    // get instance extensions
     uint32_t extension_count = 0;
     const char* const* extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
-    VkInstanceCreateInfo instance_info { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
-    instance_info.pApplicationInfo        = &app_info;
-    instance_info.enabledLayerCount       = u32(requested_layers.size());
-    instance_info.ppEnabledLayerNames     = requested_layers.data();
-    instance_info.enabledExtensionCount   = extension_count;
+    VkInstanceCreateInfo instance_info{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+    instance_info.pApplicationInfo = &app_info;
+    instance_info.enabledLayerCount = u32(layers.size());
+    instance_info.ppEnabledLayerNames = layers.data();
+    instance_info.enabledExtensionCount = extension_count;
     instance_info.ppEnabledExtensionNames = extensions;
 
-    vk_check(vkCreateInstance(&instance_info, nullptr, &rc->instance));
+    vk_check(vkCreateInstance(&instance_info, nullptr, &instance));
 
-    // create surface
-    vk_check(glfwCreateWindowSurface(rc->instance,
-                                     rc->window->handle,
-                                     nullptr,
-                                     &rc->surface));
+    return instance;
+}
+
+static VkSurfaceKHR create_surface(VkInstance instance, GLFWwindow* window)
+{
+    VkSurfaceKHR surface{};
+
+    vk_check(glfwCreateWindowSurface(instance, window, nullptr, &surface));
+
+    return surface;
+}
+
+static device_context create_device(VkInstance instance, 
+                              VkSurfaceKHR surface,
+                              VkPhysicalDeviceFeatures features, 
+                              const std::vector<const char*>& extensions)
+{
+    struct gpu_info {
+        VkPhysicalDevice gpu;
+        uint32_t graphics_index, present_index;
+    };
+
+    device_context device{};
 
     // query for physical device
     uint32_t gpu_count = 0;
-    vk_check(vkEnumeratePhysicalDevices(rc->instance, &gpu_count, nullptr));
+    vk_check(vkEnumeratePhysicalDevices(instance, &gpu_count, nullptr));
     std::vector<VkPhysicalDevice> gpus(gpu_count);
-    vk_check(vkEnumeratePhysicalDevices(rc->instance, &gpu_count, gpus.data()));
+    vk_check(vkEnumeratePhysicalDevices(instance, &gpu_count, gpus.data()));
 
+    // Check if there are any GPU's on the system that even support Vulkan
     if (gpus.empty()) {
         printf("Failed to find any GPU that supports Vulkan.\n");
-        return nullptr;
+        return {};
     }
 
-    // Base gpu requirements
-    bool gpu_features_supported   = false;
-    uint32_t graphics_queue_index = -1;
-    VkBool32 surface_supported    = false;
 
-    assert(gpu_count < 2 && "todo: All checks assume we have a single GPU");
+    std::vector<gpu_info> suitable_gpus;
 
-    for (std::size_t i = 0; i < gpu_count; ++i) {
+    for (std::size_t i = 0; i < gpus.size(); ++i) {
+        // Base gpu requirements
+        bool features_supported = false;
+        VkBool32 surface_supported = false;
+        std::optional<uint32_t> graphics_queue_index;
+        std::optional<uint32_t> present_queue_index;
 
         VkPhysicalDeviceProperties gpu_properties{};
         vkGetPhysicalDeviceProperties(gpus[i], &gpu_properties);
 
 
-        gpu_features_supported = has_required_features(gpus[i], requested_gpu_features);
+        features_supported = has_required_features(gpus[i], features);
 
         // Queue families are a group of queues that together perform specific
         // tasks on a physical GPU. For instance, all rendering related tasks will
@@ -342,38 +313,75 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
         vkGetPhysicalDeviceQueueFamilyProperties(gpus[i], &queue_count, queue_families.data());
 
         for (std::size_t j = 0; j < queue_count; ++j) {
-            // What the current queue is based on index.
+            // Set queue index based on what queue is currently being looped over.
             if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
                 graphics_queue_index = i;
 
             // Check if the current queue can support our newly created surface.
-            vk_check(vkGetPhysicalDeviceSurfaceSupportKHR(gpus[i], j, rc->surface, &surface_supported));
+            vk_check(vkGetPhysicalDeviceSurfaceSupportKHR(gpus[i], j, surface, &surface_supported));
+
+            if (surface_supported)
+                present_queue_index = i;
 
         }
 
+        // Check if all requirements are met for the physical device.
+        if (features_supported && surface_supported &&
+            graphics_queue_index.has_value() && present_queue_index.has_value()) {
+
+            gpu_info info{};
+            info.gpu = gpus[i];
+            info.graphics_index = graphics_queue_index.value();
+            info.present_index = present_queue_index.value();
+
+            suitable_gpus.push_back(info);
+        }
     }
 
-    // Check if all requirements are met for the physical device.
-    if (!gpu_features_supported || graphics_queue_index == -1 || !surface_supported) {
-        printf("GPU found does not support required features/properties\n");
-        return nullptr;
+    if (suitable_gpus.empty()) {
+        printf("Failed to find GPU that supports requested features.\n");
+        return {};
     }
 
-    rc->physical_device      = gpus[0];
-    rc->graphics_queue.index = graphics_queue_index;
+    // If we only have a single suitable GPU then there is no need to do further filtering
+    // and thus, we can simply return that one GPU we do have.
+    if (suitable_gpus.size() == 1) {
+        const gpu_info& info = suitable_gpus[0];
 
-    // create logical device
+        device.gpu = info.gpu;
+        device.graphics_index = info.graphics_index;
+        device.present_index = info.present_index;
+    } else {
+        // If however, we have multiple GPU's then we have and choose which one we
+        // actually want to use. We always prefer to use a dedicated GPU over an 
+        // integrated one.
+        assert("todo: multiple GPU checks has not been implemented.");
+    }
+
+
+
+
+    // create a logical device from a physical device
+    std::vector<VkDeviceQueueCreateInfo> queue_infos{};
+    const std::set<uint32_t> unique_queues{ device.graphics_index, device.present_index };
+
     const float queue_priority = 1.0f;
-    VkDeviceQueueCreateInfo queue_info { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
-    queue_info.queueFamilyIndex = rc->graphics_queue.index;
-    queue_info.queueCount       = 1;
-    queue_info.pQueuePriorities = &queue_priority;
+    for (const uint32_t index : unique_queues) {
+        VkDeviceQueueCreateInfo queue_info{ VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
+        queue_info.queueFamilyIndex = index;
+        queue_info.queueCount = 1;
+        queue_info.pQueuePriorities = &queue_priority;
 
+        queue_infos.push_back(queue_info);
+    }
+    
 
     uint32_t property_count = 0;
-    vk_check(vkEnumerateDeviceExtensionProperties(rc->physical_device, nullptr, &property_count, nullptr));
+    vk_check(vkEnumerateDeviceExtensionProperties(device.gpu, nullptr, &property_count, nullptr));
     std::vector<VkExtensionProperties> device_properties(property_count);
-    vk_check(vkEnumerateDeviceExtensionProperties(rc->physical_device, nullptr, &property_count, device_properties.data()));
+    vk_check(vkEnumerateDeviceExtensionProperties(device.gpu, nullptr, &property_count, device_properties.data()));
+    
+    std::vector<const char*> device_extensions(extensions);
 
     // If a Vulkan implementation does not fully conform to the specification
     // then the device extension "VK_KHR_portability_subset" must be returned
@@ -383,25 +391,53 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
         device_extensions.push_back("VK_KHR_portability_subset");
 
 
-    VkDeviceCreateInfo device_info { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-    device_info.queueCreateInfoCount    = 1;
-    device_info.pQueueCreateInfos       = &queue_info;
-    device_info.enabledExtensionCount   = u32(device_extensions.size());
+    VkDeviceCreateInfo device_info{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+    device_info.queueCreateInfoCount = u32(queue_infos.size());
+    device_info.pQueueCreateInfos = queue_infos.data();
+    device_info.enabledExtensionCount = u32(device_extensions.size());
     device_info.ppEnabledExtensionNames = device_extensions.data();
-    device_info.pEnabledFeatures        = &requested_gpu_features;
+    device_info.pEnabledFeatures = &features;
 
-    vk_check(vkCreateDevice(rc->physical_device, &device_info, nullptr, &rc->device));
+    vk_check(vkCreateDevice(device.gpu, &device_info, nullptr, &device.device));
 
-    vkGetDeviceQueue(rc->device, 0, rc->graphics_queue.index, &rc->graphics_queue.handle);
+    vkGetDeviceQueue(device.device, device.graphics_index, 0, &device.graphics_queue);
+    vkGetDeviceQueue(device.device, device.present_index, 0, &device.present_queue);
 
-    // create VMA allocator
-    VmaAllocatorCreateInfo allocator_info {};
+    return device;
+}
+
+static VmaAllocator create_memory_allocator(VkInstance instance, uint32_t version, VkPhysicalDevice gpu, VkDevice device)
+{
+    VmaAllocator allocator{};
+
+    VmaAllocatorCreateInfo allocator_info{};
     allocator_info.vulkanApiVersion = version;
-    allocator_info.instance         = rc->instance;
-    allocator_info.physicalDevice   = rc->physical_device;
-    allocator_info.device           = rc->device;
+    allocator_info.instance = instance;
+    allocator_info.physicalDevice = gpu;
+    allocator_info.device = device;
 
-    vk_check(vmaCreateAllocator(&allocator_info, &rc->allocator));
+    vk_check(vmaCreateAllocator(&allocator_info, &allocator));
+
+    return allocator;
+}
+
+// Creates the base renderer context. This context is the core of the renderer
+// and handles all creation/destruction of Vulkan resources. This function must
+// be the first renderer function to be called.
+static renderer_context* create_renderer_context(uint32_t version, 
+                                                 const std::vector<const char*>& requested_layers,
+                                                 const std::vector<const char*>& requested_extensions,
+                                                 const VkPhysicalDeviceFeatures requested_gpu_features,
+                                                 const Window* window)
+{
+    auto rc = new renderer_context();
+
+    rc->window = window;
+
+    rc->instance  = create_instance(version, window->name, requested_layers);
+    rc->surface   = create_surface(rc->instance, window->handle);
+    rc->device    = create_device(rc->instance, rc->surface, requested_gpu_features, requested_extensions);
+    rc->allocator = create_memory_allocator(rc->instance, version, rc->device.gpu, rc->device.device);
 
     return rc;
 }
@@ -410,7 +446,7 @@ static renderer_context* create_renderer_context(uint32_t version, const Window*
 static void destroy_renderer_context(renderer_context* rc)
 {
     vmaDestroyAllocator(rc->allocator);
-    vkDestroyDevice(rc->device, nullptr);
+    vkDestroyDevice(rc->device.device, nullptr);
     vkDestroySurfaceKHR(rc->instance, rc->surface, nullptr);
     vkDestroyInstance(rc->instance, nullptr);
 
@@ -425,27 +461,27 @@ static renderer_submit_context* create_submit_context()
 
     VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
     pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    pool_info.queueFamilyIndex = gRc->graphics_queue.index;
+    pool_info.queueFamilyIndex = g_rc->device.graphics_index;
 
     // Create the resources required to upload data to GPU-only memory.
-    vk_check(vkCreateFence(gRc->device, &fence_info, nullptr, &context->Fence));
-    vk_check(vkCreateCommandPool(gRc->device, &pool_info, nullptr, &context->CmdPool));
+    vk_check(vkCreateFence(g_rc->device.device, &fence_info, nullptr, &context->Fence));
+    vk_check(vkCreateCommandPool(g_rc->device.device, &pool_info, nullptr, &context->CmdPool));
 
     VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
     allocate_info.commandPool        = context->CmdPool;
     allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocate_info.commandBufferCount = 1;
 
-    vk_check(vkAllocateCommandBuffers(gRc->device, &allocate_info, &context->CmdBuffer));
+    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &context->CmdBuffer));
 
     return context;
 }
 
 static void destroy_submit_context(renderer_submit_context* context)
 {
-    vkFreeCommandBuffers(gRc->device, context->CmdPool, 1, &context->CmdBuffer);
-    vkDestroyCommandPool(gRc->device, context->CmdPool, nullptr);
-    vkDestroyFence(gRc->device, context->Fence, nullptr);
+    vkFreeCommandBuffers(g_rc->device.device, context->CmdPool, 1, &context->CmdBuffer);
+    vkDestroyCommandPool(g_rc->device.device, context->CmdPool, nullptr);
+    vkDestroyFence(g_rc->device.device, context->Fence, nullptr);
 
     delete context;
 }
@@ -460,24 +496,24 @@ static void submit_to_gpu(const std::function<void()>& submit_func)
     // Record command that needs to be executed on the GPU. Since this is a
     // single submit command this will often be copying data into device local
     // memory
-    vk_check(vkBeginCommandBuffer(gSubmitContext->CmdBuffer, &begin_info));
+    vk_check(vkBeginCommandBuffer(g_sc->CmdBuffer, &begin_info));
     {
         submit_func();
     }
-    vk_check(vkEndCommandBuffer((gSubmitContext->CmdBuffer)));
+    vk_check(vkEndCommandBuffer((g_sc->CmdBuffer)));
 
     VkSubmitInfo end_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
     end_info.commandBufferCount = 1;
-    end_info.pCommandBuffers = &gSubmitContext->CmdBuffer;
+    end_info.pCommandBuffers = &g_sc->CmdBuffer;
 
     // Tell the GPU to now execute the previously recorded command
-    vk_check(vkQueueSubmit(gRc->graphics_queue.handle, 1, &end_info, gSubmitContext->Fence));
+    vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &end_info, g_sc->Fence));
 
-    vk_check(vkWaitForFences(gRc->device, 1, &gSubmitContext->Fence, true, UINT64_MAX));
-    vk_check(vkResetFences(gRc->device, 1, &gSubmitContext->Fence));
+    vk_check(vkWaitForFences(g_rc->device.device, 1, &g_sc->Fence, true, UINT64_MAX));
+    vk_check(vkResetFences(g_rc->device.device, 1, &g_sc->Fence));
 
     // Reset the command buffers inside the command pool
-    vk_check(vkResetCommandPool(gRc->device, gSubmitContext->CmdPool, 0));
+    vk_check(vkResetCommandPool(g_rc->device.device, g_sc->CmdPool, 0));
 }
 
 static VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect)
@@ -494,7 +530,7 @@ static VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspe
     imageViewInfo.subresourceRange.baseArrayLayer = 0;
     imageViewInfo.subresourceRange.layerCount = 1;
 
-    vk_check(vkCreateImageView(gRc->device, &imageViewInfo, nullptr, &view));
+    vk_check(vkCreateImageView(g_rc->device.device, &imageViewInfo, nullptr, &view));
 
     return view;
 }
@@ -520,7 +556,7 @@ static ImageBuffer create_image(VkFormat format,
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     allocInfo.requiredFlags = VkMemoryAllocateFlagBits(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vk_check(vmaCreateImage(gRc->allocator, &imageInfo, &allocInfo, &image.handle, &image.allocation, nullptr));
+    vk_check(vmaCreateImage(g_rc->allocator, &imageInfo, &allocInfo, &image.handle, &image.allocation, nullptr));
 
     image.view   = create_image_view(image.handle, format, aspect);
     image.format = format;
@@ -531,17 +567,17 @@ static ImageBuffer create_image(VkFormat format,
 
 static void destroy_image(ImageBuffer* image)
 {
-    vkDestroyImageView(gRc->device, image->view, nullptr);
-    vmaDestroyImage(gRc->allocator, image->handle, image->allocation);
+    vkDestroyImageView(g_rc->device.device, image->view, nullptr);
+    vmaDestroyImage(g_rc->allocator, image->handle, image->allocation);
 }
 
 // Maps/Fills an existing buffer with data.
 static void set_buffer_data(Buffer* buffer, void* data, uint32_t size)
 {
     void* allocation{};
-    vk_check(vmaMapMemory(gRc->allocator, buffer->allocation, &allocation));
+    vk_check(vmaMapMemory(g_rc->allocator, buffer->allocation, &allocation));
     std::memcpy(allocation, data, size);
-    vmaUnmapMemory(gRc->allocator, buffer->allocation);
+    vmaUnmapMemory(g_rc->allocator, buffer->allocation);
 }
 
 static Buffer create_buffer(uint32_t size, VkBufferUsageFlags type)
@@ -556,7 +592,7 @@ static Buffer create_buffer(uint32_t size, VkBufferUsageFlags type)
     alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
     alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
-    vk_check(vmaCreateBuffer(gRc->allocator,
+    vk_check(vmaCreateBuffer(g_rc->allocator,
                              &buffer_info,
                              &alloc_info,
                              &buffer.buffer,
@@ -582,7 +618,7 @@ static Buffer create_staging_buffer(void* data, uint32_t size)
     alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                        VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-    vk_check(vmaCreateBuffer(gRc->allocator,
+    vk_check(vmaCreateBuffer(g_rc->allocator,
                              &buffer_info,
                              &alloc_info,
                              &buffer.buffer,
@@ -608,7 +644,7 @@ static Buffer create_gpu_buffer(uint32_t size, VkBufferUsageFlags type)
     alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
     alloc_info.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
-    vk_check(vmaCreateBuffer(gRc->allocator,
+    vk_check(vmaCreateBuffer(g_rc->allocator,
                              &buffer_info,
                              &alloc_info,
                              &buffer.buffer,
@@ -621,7 +657,7 @@ static Buffer create_gpu_buffer(uint32_t size, VkBufferUsageFlags type)
 // Deallocates a buffer.
 static void destroy_buffer(Buffer* buffer)
 {
-    vmaDestroyBuffer(gRc->allocator, buffer->buffer, buffer->allocation);
+    vmaDestroyBuffer(g_rc->allocator, buffer->buffer, buffer->allocation);
 }
 
 
@@ -631,19 +667,19 @@ static void destroy_buffer(Buffer* buffer)
 // like to be created. It's important to remember that this is a request
 // and not guaranteed as the hardware may not support that number
 // of images.
-static Swapchain create_swapchain(buffer_mode bufferMode, vsync_mode vsyncMode)
+static Swapchain create_swapchain(buffer_mode buffering_mode, vsync_mode sync_mode)
 {
     Swapchain swapchain{};
 
     // get surface properties
     VkSurfaceCapabilitiesKHR surface_properties {};
-    vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gRc->physical_device, gRc->surface, &surface_properties));
+    vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(g_rc->device.gpu, g_rc->surface, &surface_properties));
 
     // todo: fix resolution for high density displays
 
     VkSwapchainCreateInfoKHR swapchain_info { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
-    swapchain_info.surface               = gRc->surface;
-    swapchain_info.minImageCount         = static_cast<uint32_t>(bufferMode);
+    swapchain_info.surface               = g_rc->surface;
+    swapchain_info.minImageCount         = static_cast<uint32_t>(buffering_mode);
     swapchain_info.imageFormat           = VK_FORMAT_B8G8R8A8_SRGB;
     swapchain_info.imageColorSpace       = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     swapchain_info.imageExtent           = surface_properties.currentExtent;
@@ -651,24 +687,36 @@ static Swapchain create_swapchain(buffer_mode bufferMode, vsync_mode vsyncMode)
     swapchain_info.imageUsage            = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_info.preTransform          = surface_properties.currentTransform;
     swapchain_info.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swapchain_info.presentMode           = static_cast<VkPresentModeKHR>(vsyncMode);
+    swapchain_info.presentMode           = static_cast<VkPresentModeKHR>(sync_mode);
     swapchain_info.clipped               = true;
-    swapchain_info.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
-    swapchain_info.queueFamilyIndexCount = 0;
-    swapchain_info.pQueueFamilyIndices   = nullptr;
 
-    vk_check(vkCreateSwapchainKHR(gRc->device, &swapchain_info, nullptr, &swapchain.handle));
+    // Specify how the swapchain should manage images if we have different rendering 
+    // and presentation queues for our gpu.
+    if (g_rc->device.graphics_index != g_rc->device.present_index) {
+        const uint32_t indices[2] { g_rc->device.graphics_index, g_rc->device.present_index };
+        
+        swapchain_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        swapchain_info.queueFamilyIndexCount = 2;
+        swapchain_info.pQueueFamilyIndices = indices;
+    } else {
+        swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        swapchain_info.queueFamilyIndexCount = 0;
+        swapchain_info.pQueueFamilyIndices = nullptr;
+    }
 
-    swapchain.bufferMode = bufferMode;
-    swapchain.vsyncMode  = vsyncMode;
+
+    vk_check(vkCreateSwapchainKHR(g_rc->device.device, &swapchain_info, nullptr, &swapchain.handle));
+
+    swapchain.buffering_mode = buffering_mode;
+    swapchain.sync_mode = sync_mode;
 
     // Get the image handles from the newly created swapchain. The number of
     // images that we get is guaranteed to be at least the minimum image count
     // specified.
     uint32_t img_count = 0;
-    vk_check(vkGetSwapchainImagesKHR(gRc->device, swapchain.handle, &img_count, nullptr));
+    vk_check(vkGetSwapchainImagesKHR(g_rc->device.device, swapchain.handle, &img_count, nullptr));
     std::vector<VkImage> color_images(img_count);
-    vk_check(vkGetSwapchainImagesKHR(gRc->device, swapchain.handle, &img_count, color_images.data()));
+    vk_check(vkGetSwapchainImagesKHR(g_rc->device.device, swapchain.handle, &img_count, color_images.data()));
 
 
     // create swapchain image views
@@ -702,11 +750,11 @@ static void destroy_swapchain(Swapchain& swapchain)
     destroy_image(&swapchain.depth_image);
 
     for (auto& image : swapchain.images) {
-        vkDestroyImageView(gRc->device, image.view, nullptr);
+        vkDestroyImageView(g_rc->device.device, image.view, nullptr);
     }
     swapchain.images.clear();
 
-    vkDestroySwapchainKHR(gRc->device, swapchain.handle, nullptr);
+    vkDestroySwapchainKHR(g_rc->device.device, swapchain.handle, nullptr);
 }
 
 /*
@@ -726,9 +774,19 @@ static void RebuildSwapchain(Swapchain& swapchain)
 */
 
 
-static VkSampler create_sampler()
+static VkSampler create_sampler(uint32_t anisotropic_level)
 {
     VkSampler sampler{};
+    
+    // get the maximum supported anisotropic filtering level
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(g_rc->device.gpu, &properties);
+
+    if (anisotropic_level > properties.limits.maxSamplerAnisotropy) {
+        anisotropic_level = properties.limits.maxSamplerAnisotropy;
+        
+        printf("Warning: Reducing sampler anisotropic level to %u.\n", anisotropic_level);
+    }
 
     VkSamplerCreateInfo sampler_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
     sampler_info.magFilter = VK_FILTER_LINEAR;
@@ -736,8 +794,8 @@ static VkSampler create_sampler()
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.anisotropyEnable = VK_TRUE;
-    sampler_info.maxAnisotropy = 16;
+    sampler_info.anisotropyEnable = anisotropic_level > 0 ? VK_TRUE : VK_FALSE;
+    sampler_info.maxAnisotropy = static_cast<float>(anisotropic_level);
     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
     sampler_info.compareEnable = VK_FALSE;
@@ -747,60 +805,57 @@ static VkSampler create_sampler()
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    vk_check(vkCreateSampler(gRc->device, &sampler_info, nullptr, &sampler));
+    vk_check(vkCreateSampler(g_rc->device.device, &sampler_info, nullptr, &sampler));
 
     return sampler;
 }
 
 static void destroy_sampler(VkSampler sampler)
 {
-    vkDestroySampler(gRc->device, sampler, nullptr);
+    vkDestroySampler(g_rc->device.device, sampler, nullptr);
 }
-
-
-
 
 static void create_frames()
 {
     VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
     pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    pool_info.queueFamilyIndex = gRc->graphics_queue.index;
+    pool_info.queueFamilyIndex = g_rc->device.graphics_index;
 
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
-    gFrames.resize(gSwapchain.images.size());
+    gFrames.resize(g_swapchain.images.size());
     for (auto& gFrame : gFrames) {
         // create rendering command pool and buffers
-        vk_check(vkCreateCommandPool(gRc->device, &pool_info, nullptr, &gFrame.cmd_pool));
+        vk_check(vkCreateCommandPool(g_rc->device.device, &pool_info, nullptr, &gFrame.cmd_pool));
 
         VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
         allocate_info.commandPool        = gFrame.cmd_pool;
         allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocate_info.commandBufferCount = 1;
-        vk_check(vkAllocateCommandBuffers(gRc->device, &allocate_info, &gFrame.cmd_buffer));
+        vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &gFrame.cmd_buffer));
 
 
         // create sync objects
-        vk_check(vkCreateFence(gRc->device, &fence_info, nullptr, &gFrame.submit_fence));
-        vk_check(vkCreateSemaphore(gRc->device, &semaphore_info, nullptr, &gFrame.acquired_semaphore));
-        vk_check(vkCreateSemaphore(gRc->device, &semaphore_info, nullptr, &gFrame.released_semaphore));
+        vk_check(vkCreateFence(g_rc->device.device, &fence_info, nullptr, &gFrame.submit_fence));
+        vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &gFrame.acquired_semaphore));
+        vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &gFrame.released_semaphore));
     }
 }
 
 static void destroy_frames()
 {
     for (auto& gFrame : gFrames) {
-        vkDestroySemaphore(gRc->device, gFrame.released_semaphore, nullptr);
-        vkDestroySemaphore(gRc->device, gFrame.acquired_semaphore, nullptr);
-        vkDestroyFence(gRc->device, gFrame.submit_fence, nullptr);
+        vkDestroySemaphore(g_rc->device.device, gFrame.released_semaphore, nullptr);
+        vkDestroySemaphore(g_rc->device.device, gFrame.acquired_semaphore, nullptr);
+        vkDestroyFence(g_rc->device.device, gFrame.submit_fence, nullptr);
 
         //vmaDestroyBuffer(gRc->allocator, frame.uniform_buffer.buffer, frame.uniform_buffer.allocation);
 
-        vkFreeCommandBuffers(gRc->device, gFrame.cmd_pool, 1, &gFrame.cmd_buffer);
-        vkDestroyCommandPool(gRc->device, gFrame.cmd_pool, nullptr);
+        vkFreeCommandBuffers(g_rc->device.device, gFrame.cmd_pool, 1, &gFrame.cmd_buffer);
+        vkDestroyCommandPool(g_rc->device.device, gFrame.cmd_pool, nullptr);
     }
 }
 
@@ -810,12 +865,12 @@ static void create_query()
     query_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_info.queryCount = 2;
 
-    vk_check(vkCreateQueryPool(gRc->device, &query_info, nullptr, &g_query_pool));
+    vk_check(vkCreateQueryPool(g_rc->device.device, &query_info, nullptr, &g_query_pool));
 }
 
 static void destroy_query()
 {
-    vkDestroyQueryPool(gRc->device, g_query_pool, nullptr);
+    vkDestroyQueryPool(g_rc->device.device, g_query_pool, nullptr);
 }
 
 
@@ -840,7 +895,7 @@ static void create_debug_ui(RenderPass& renderPass)
     pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
     pool_info.poolSizeCount = u32(IM_ARRAYSIZE(pool_sizes));
     pool_info.pPoolSizes = pool_sizes;
-    vk_check(vkCreateDescriptorPool(gRc->device, &pool_info, nullptr, &g_gui_descriptor_pool));
+    vk_check(vkCreateDescriptorPool(g_rc->device.device, &pool_info, nullptr, &g_gui_descriptor_pool));
 
 
 
@@ -855,13 +910,13 @@ static void create_debug_ui(RenderPass& renderPass)
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplGlfw_InitForVulkan(gRc->window->handle, true);
+    ImGui_ImplGlfw_InitForVulkan(g_rc->window->handle, true);
     ImGui_ImplVulkan_InitInfo init_info{};
-    init_info.Instance = gRc->instance;
-    init_info.PhysicalDevice = gRc->physical_device;
-    init_info.Device = gRc->device;
-    init_info.QueueFamily = gRc->graphics_queue.index;
-    init_info.Queue = gRc->graphics_queue.handle;
+    init_info.Instance = g_rc->instance;
+    init_info.PhysicalDevice = g_rc->device.gpu;
+    init_info.Device = g_rc->device.device;
+    init_info.QueueFamily = g_rc->device.graphics_index;
+    init_info.Queue = g_rc->device.graphics_queue;
     init_info.PipelineCache = nullptr;
     init_info.DescriptorPool = g_gui_descriptor_pool;
     init_info.Subpass = 0;
@@ -874,7 +929,7 @@ static void create_debug_ui(RenderPass& renderPass)
     ImGui_ImplVulkan_Init(&init_info, renderPass.handle);
 
     submit_to_gpu([] {
-        ImGui_ImplVulkan_CreateFontsTexture(gSubmitContext->CmdBuffer);
+        ImGui_ImplVulkan_CreateFontsTexture(g_sc->CmdBuffer);
     });
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
@@ -882,7 +937,7 @@ static void create_debug_ui(RenderPass& renderPass)
 
 static void destroy_debug_ui()
 {
-    vkDestroyDescriptorPool(gRc->device, g_gui_descriptor_pool, nullptr);
+    vkDestroyDescriptorPool(g_rc->device.device, g_gui_descriptor_pool, nullptr);
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -931,7 +986,7 @@ static Shader create_shader(VkShaderStageFlagBits type, const std::string& code)
     module_info.codeSize = u32(shaderc_result_get_length(result));
     module_info.pCode    = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(result));
 
-    vk_check(vkCreateShaderModule(gRc->device, &module_info, nullptr, &shader_module.handle));
+    vk_check(vkCreateShaderModule(g_rc->device.device, &module_info, nullptr, &shader_module.handle));
     shader_module.type = type;
 
     return shader_module;
@@ -939,15 +994,15 @@ static Shader create_shader(VkShaderStageFlagBits type, const std::string& code)
 
 static std::vector<VkFramebuffer> create_framebuffers(VkRenderPass renderPass, VkExtent2D extent, bool hasDepth)
 {
-    std::vector<VkFramebuffer> framebuffers(gSwapchain.images.size());
+    std::vector<VkFramebuffer> framebuffers(g_swapchain.images.size());
 
     for (std::size_t i = 0; i < framebuffers.size(); ++i) {
         std::vector<VkImageView> views {
-                gSwapchain.images[i].view
+                g_swapchain.images[i].view
         };
 
         if (hasDepth)
-            views.push_back(gSwapchain.depth_image.view);
+            views.push_back(g_swapchain.depth_image.view);
 
         VkFramebufferCreateInfo framebuffer_info{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
         framebuffer_info.renderPass = renderPass;
@@ -957,7 +1012,7 @@ static std::vector<VkFramebuffer> create_framebuffers(VkRenderPass renderPass, V
         framebuffer_info.height = extent.height;
         framebuffer_info.layers = 1;
 
-        vk_check(vkCreateFramebuffer(gRc->device, &framebuffer_info, nullptr, &framebuffers[i]));
+        vk_check(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info, nullptr, &framebuffers[i]));
     }
 
     return framebuffers;
@@ -966,12 +1021,12 @@ static std::vector<VkFramebuffer> create_framebuffers(VkRenderPass renderPass, V
 static void destroy_framebuffers(std::vector<VkFramebuffer>& framebuffers)
 {
     for (auto& framebuffer : framebuffers) {
-        vkDestroyFramebuffer(gRc->device, framebuffer, nullptr);
+        vkDestroyFramebuffer(g_rc->device.device, framebuffer, nullptr);
     }
     framebuffers.clear();
 }
 
-static RenderPass create_render_pass(const RenderPassInfo& info)
+static RenderPass create_render_pass(const render_pass_info& info)
 {
     RenderPass renderPass{};
 
@@ -1046,11 +1101,11 @@ static RenderPass create_render_pass(const RenderPassInfo& info)
     render_pass_info.dependencyCount = u32(dependencies.size());
     render_pass_info.pDependencies = dependencies.data();
 
-    vk_check(vkCreateRenderPass(gRc->device, &render_pass_info, nullptr, &renderPass.handle));
+    vk_check(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr, &renderPass.handle));
 
 
     // Create framebuffers
-    renderPass.framebuffers = create_framebuffers(renderPass.handle, gSwapchain.images[0].extent,
+    renderPass.framebuffers = create_framebuffers(renderPass.handle, g_swapchain.images[0].extent,
                                                   info.HasDepthAttachment);
 
     return renderPass;
@@ -1060,7 +1115,7 @@ static void destroy_render_pass(RenderPass& renderPass)
 {
     destroy_framebuffers(renderPass.framebuffers);
 
-    vkDestroyRenderPass(gRc->device, renderPass.handle, nullptr);
+    vkDestroyRenderPass(g_rc->device.device, renderPass.handle, nullptr);
 }
 
 static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass)
@@ -1087,7 +1142,7 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
     descriptor_layout_info.bindingCount = 2;
     descriptor_layout_info.pBindings    = descriptorBindings;
 
-    vk_check(vkCreateDescriptorSetLayout(gRc->device, &descriptor_layout_info, nullptr, &pipeline.DescriptorLayout));
+    vk_check(vkCreateDescriptorSetLayout(g_rc->device.device, &descriptor_layout_info, nullptr, &pipeline.DescriptorLayout));
 
     // push constant
     VkPushConstantRange push_constant{};
@@ -1102,7 +1157,7 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
     layout_info.pushConstantRangeCount = 1;
     layout_info.pPushConstantRanges    = &push_constant;
 
-    vk_check(vkCreatePipelineLayout(gRc->device, &layout_info, nullptr, &pipeline.layout));
+    vk_check(vkCreatePipelineLayout(g_rc->device.device, &layout_info, nullptr, &pipeline.layout));
 
 
     // create pipeline
@@ -1239,7 +1294,7 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
     graphics_pipeline_info.renderPass          = renderPass.handle;
     graphics_pipeline_info.subpass             = 0;
 
-    vk_check(vkCreateGraphicsPipelines(gRc->device,
+    vk_check(vkCreateGraphicsPipelines(g_rc->device.device,
                                        nullptr,
                                        1,
                                        &graphics_pipeline_info,
@@ -1250,16 +1305,16 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
 
     // Delete individual shaders since they are now part of the pipeline
     for (auto& shader : shaderModules)
-        vkDestroyShaderModule(gRc->device, shader, nullptr);
+        vkDestroyShaderModule(g_rc->device.device, shader, nullptr);
 
     return pipeline;
 }
 
 static void destroy_pipeline(Pipeline& pipeline)
 {
-    vkDestroyPipeline(gRc->device, pipeline.handle, nullptr);
-    vkDestroyPipelineLayout(gRc->device, pipeline.layout, nullptr);
-    vkDestroyDescriptorSetLayout(gRc->device, pipeline.DescriptorLayout, nullptr);
+    vkDestroyPipeline(g_rc->device.device, pipeline.handle, nullptr);
+    vkDestroyPipelineLayout(g_rc->device.device, pipeline.layout, nullptr);
+    vkDestroyDescriptorSetLayout(g_rc->device.device, pipeline.DescriptorLayout, nullptr);
 }
 
 
@@ -1272,10 +1327,10 @@ static void destroy_pipeline(Pipeline& pipeline)
 static void get_next_swapchain_image(Swapchain& swapchain)
 {
     // Wait for the GPU to finish all work before getting the next image
-    vk_check(vkWaitForFences(gRc->device, 1, &gFrames[currentFrame].submit_fence, true, UINT64_MAX));
+    vk_check(vkWaitForFences(g_rc->device.device, 1, &gFrames[currentFrame].submit_fence, true, UINT64_MAX));
 
     // Keep attempting to acquire the next frame.
-    VkResult result = vkAcquireNextImageKHR(gRc->device,
+    VkResult result = vkAcquireNextImageKHR(g_rc->device.device,
                                             swapchain.handle,
                                             UINT64_MAX,
                                             gFrames[currentFrame].acquired_semaphore,
@@ -1284,7 +1339,7 @@ static void get_next_swapchain_image(Swapchain& swapchain)
     while (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         //RebuildSwapchain(swapchain);
 
-        result = vkAcquireNextImageKHR(gRc->device,
+        result = vkAcquireNextImageKHR(g_rc->device.device,
                                        swapchain.handle,
                                        UINT64_MAX,
                                        gFrames[currentFrame].acquired_semaphore,
@@ -1294,7 +1349,7 @@ static void get_next_swapchain_image(Swapchain& swapchain)
     }
 
     // reset fence when about to submit work to the GPU
-    vk_check(vkResetFences(gRc->device, 1, &gFrames[currentFrame].submit_fence));
+    vk_check(vkResetFences(g_rc->device.device, 1, &gFrames[currentFrame].submit_fence));
 }
 
 // Submits a request to the GPU to start performing the actual computation needed
@@ -1312,7 +1367,7 @@ static void submit_image(const Frame& frame)
     submit_info.pSignalSemaphores    = &frame.released_semaphore;
 
 
-    vk_check(vkQueueSubmit(gRc->graphics_queue.handle, 1, &submit_info, frame.submit_fence));
+    vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, frame.submit_fence));
 }
 
 // Displays the newly finished rendered swapchain image onto the window
@@ -1327,7 +1382,7 @@ static void present_swapchain_image(Swapchain& swapchain)
     present_info.pResults           = nullptr;
 
     // request the GPU to present the rendered image onto the screen
-    const VkResult result = vkQueuePresentKHR(gRc->graphics_queue.handle, &present_info);
+    const VkResult result = vkQueuePresentKHR(g_rc->device.graphics_queue, &present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         //RebuildSwapchain(swapchain);
@@ -1377,50 +1432,70 @@ static void end_frame(Swapchain& swapchain, const Frame& frame)
 
 texture_buffer* engine_load_texture(const char*);
 
-Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mode vsyncMode)
+vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode, vsync_mode sync_mode)
 {
-    Renderer renderer{};
+    vulkan_renderer renderer{};
 
-    gRc            = create_renderer_context(VK_API_VERSION_1_3, window);
-    gSubmitContext = create_submit_context();
-    gSwapchain     = create_swapchain(bufferMode, vsyncMode);
 
-    gSampler       = create_sampler();
+    const std::vector<const char*> layers {
+        "VK_LAYER_KHRONOS_validation",
+#if defined(_WIN32)
+        "VK_LAYER_LUNARG_monitor"
+#endif
+    };
+
+    const std::vector<const char*> extensions {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
+
+    const VkPhysicalDeviceFeatures features {
+        .fillModeNonSolid = true,
+        .samplerAnisotropy = true,
+    };
+
+
+    // initialize renderer contexts
+    g_rc = create_renderer_context(VK_API_VERSION_1_3, layers, extensions, features, window);
+    g_sc = create_submit_context();
+
+    //
+    g_swapchain = create_swapchain(buffering_mode, sync_mode);
+    g_sampler = create_sampler(16);
 
     create_frames();
 
     create_shader_compiler();
 
+    {
+        render_pass_info render_info{};
+        render_info.ColorAttachmentCount = 1;
+        render_info.AttachmentFormat = VK_FORMAT_B8G8R8A8_SRGB;
+        render_info.AttachmentExtent = { g_swapchain.images[0].extent };
+        render_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+        render_info.HasDepthAttachment = true;
+        render_info.DepthFormat = VK_FORMAT_D32_SFLOAT;
 
-    RenderPassInfo renderPassInfo{};
-    renderPassInfo.ColorAttachmentCount  = 1;
-    renderPassInfo.AttachmentFormat      = VK_FORMAT_B8G8R8A8_SRGB;
-    renderPassInfo.AttachmentExtent      = { gSwapchain.images[0].extent };
-    renderPassInfo.MSAASamples           = VK_SAMPLE_COUNT_1_BIT;
-    renderPassInfo.HasDepthAttachment    = true;
-    renderPassInfo.DepthFormat           = VK_FORMAT_D32_SFLOAT;
+        renderer.geometryRenderPass = create_render_pass(render_info);
+    }
+    
+    {
+        render_pass_info ui_render_pass_info{};
+        ui_render_pass_info.ColorAttachmentCount = 1;
+        ui_render_pass_info.AttachmentFormat = VK_FORMAT_B8G8R8A8_SRGB;
+        ui_render_pass_info.AttachmentExtent = { g_swapchain.images[0].extent };
+        ui_render_pass_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+        ui_render_pass_info.HasDepthAttachment = false;
 
-    renderer.geometryRenderPass = create_render_pass(renderPassInfo);
+        renderer.uiRenderPass = create_render_pass(ui_render_pass_info);
+    }
 
-    RenderPassInfo debugUIRenderPassInfo{};
-    debugUIRenderPassInfo.ColorAttachmentCount = 1;
-    debugUIRenderPassInfo.AttachmentFormat     = VK_FORMAT_B8G8R8A8_SRGB;
-    debugUIRenderPassInfo.AttachmentExtent     = { gSwapchain.images[0].extent };
-    debugUIRenderPassInfo.MSAASamples          = VK_SAMPLE_COUNT_1_BIT;
-    debugUIRenderPassInfo.HasDepthAttachment   = false;
-
-    renderer.uiRenderPass = create_render_pass(debugUIRenderPassInfo);
+    
 
     const std::vector<ShaderInfo> shaderList {
             { VK_SHADER_STAGE_VERTEX_BIT, vs_code },
             { VK_SHADER_STAGE_FRAGMENT_BIT, fs_code }
     };
-
-    const std::vector<ShaderInfo> skysphereShaders {
-            { VK_SHADER_STAGE_VERTEX_BIT, skysphere_vs_code },
-            { VK_SHADER_STAGE_FRAGMENT_BIT, skysphere_fs_code }
-    };
-
 
     const std::vector<VkFormat> bindingAttributeFormats {
             VK_FORMAT_R32G32B32_SFLOAT, // Position
@@ -1435,15 +1510,6 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
     basePipelineInfo.PushConstantSize        = sizeof(glm::mat4);
     basePipelineInfo.PipelineShaders         = shaderList;
     renderer.basePipeline = create_pipeline(basePipelineInfo, renderer.geometryRenderPass);
-
-/*
-    PipelineInfo skyspherePipelineInfo{};
-    skyspherePipelineInfo.BindingLayoutSize       = sizeof(vertex);
-    skyspherePipelineInfo.BindingAttributeFormats = bindingAttributeFormats;
-    skyspherePipelineInfo.PushConstantSize        = sizeof(glm::mat4);
-    skyspherePipelineInfo.PipelineShaders         = skysphereShaders;
-    renderer.skyspherePipeline = create_pipeline(skyspherePipelineInfo, renderer.geometryRenderPass);
-*/
 
     create_debug_ui(renderer.uiRenderPass);
 
@@ -1464,7 +1530,7 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
     pool_info.pPoolSizes    = pool_sizes;
     pool_info.maxSets       = u32(frames_in_flight);
 
-    vk_check(vkCreateDescriptorPool(gRc->device, &pool_info, nullptr, &descriptor_pool));
+    vk_check(vkCreateDescriptorPool(g_rc->device.device, &pool_info, nullptr, &descriptor_pool));
 
     std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, renderer.basePipeline.DescriptorLayout);
     VkDescriptorSetAllocateInfo allocate_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
@@ -1472,7 +1538,7 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
     allocate_info.descriptorSetCount = u32(frames_in_flight);
     allocate_info.pSetLayouts        = layouts.data();
 
-    vk_check(vkAllocateDescriptorSets(gRc->device, &allocate_info, descriptor_sets.data()));
+    vk_check(vkAllocateDescriptorSets(g_rc->device.device, &allocate_info, descriptor_sets.data()));
 
     texture_buffer* b = engine_load_texture("assets/textures/earth.jpg");
     for (std::size_t i = 0; i < descriptor_sets.size(); ++i) {
@@ -1484,7 +1550,7 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
         VkDescriptorImageInfo image_info{};
         image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         image_info.imageView   = g_textures[0]->image.view; // todo:
-        image_info.sampler     = gSampler;
+        image_info.sampler     = g_sampler;
 
         VkWriteDescriptorSet descriptor_writes[2] {};
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1503,7 +1569,7 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
         descriptor_writes[1].descriptorCount = 1;
         descriptor_writes[1].pImageInfo     = &image_info;
 
-        vkUpdateDescriptorSets(gRc->device, 2, descriptor_writes, 0, nullptr);
+        vkUpdateDescriptorSets(g_rc->device.device, 2, descriptor_writes, 0, nullptr);
     }
 #endif
 
@@ -1511,11 +1577,11 @@ Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mod
     return renderer;
 }
 
-void destroy_renderer(Renderer& renderer)
+void destroy_renderer(vulkan_renderer& renderer)
 {
-    vk_check(vkDeviceWaitIdle(gRc->device));
+    vk_check(vkDeviceWaitIdle(g_rc->device.device));
 
-    vkDestroyDescriptorPool(gRc->device, descriptor_pool, nullptr);
+    vkDestroyDescriptorPool(g_rc->device.device, descriptor_pool, nullptr);
 
 
     // Free all entities created by the client
@@ -1566,20 +1632,20 @@ void destroy_renderer(Renderer& renderer)
 
     destroy_frames();
 
-    destroy_sampler(gSampler);
+    destroy_sampler(g_sampler);
 
-    destroy_swapchain(gSwapchain);
+    destroy_swapchain(g_swapchain);
 
-    destroy_submit_context(gSubmitContext);
-    destroy_renderer_context(gRc);
+    destroy_submit_context(g_sc);
+    destroy_renderer_context(g_rc);
 }
 
-void update_renderer_size(Renderer& renderer, uint32_t width, uint32_t height)
+void update_renderer_size(vulkan_renderer& renderer, uint32_t width, uint32_t height)
 {
-    vk_check(vkDeviceWaitIdle(gRc->device));
+    vk_check(vkDeviceWaitIdle(g_rc->device.device));
 
-    destroy_swapchain(gSwapchain);
-    gSwapchain = create_swapchain(buffer_mode::Triple, vsync_mode::Enabled);
+    destroy_swapchain(g_swapchain);
+    g_swapchain = create_swapchain(buffer_mode::tripple_buffering, vsync_mode::enabled);
 
     destroy_framebuffers(renderer.uiRenderPass.framebuffers);
     destroy_framebuffers(renderer.geometryRenderPass.framebuffers);
@@ -1612,9 +1678,9 @@ vertex_buffer* create_vertex_buffer(void* v, int vs, void* i, int is)
         vertex_copy_info.size = vs;
         index_copy_info.size = is;
 
-        vkCmdCopyBuffer(gSubmitContext->CmdBuffer, vertexStagingBuffer.buffer, r->vertex_buffer.buffer, 1,
+        vkCmdCopyBuffer(g_sc->CmdBuffer, vertexStagingBuffer.buffer, r->vertex_buffer.buffer, 1,
                         &vertex_copy_info);
-        vkCmdCopyBuffer(gSubmitContext->CmdBuffer, indexStagingBuffer.buffer, r->index_buffer.buffer, 1,
+        vkCmdCopyBuffer(g_sc->CmdBuffer, indexStagingBuffer.buffer, r->index_buffer.buffer, 1,
                         &index_copy_info);
     });
 
@@ -1659,7 +1725,7 @@ texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, ui
         imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
         // barrier the image into the transfer-receive layout
-        vkCmdPipelineBarrier(gSubmitContext->CmdBuffer,
+        vkCmdPipelineBarrier(g_sc->CmdBuffer,
                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                              VK_PIPELINE_STAGE_TRANSFER_BIT,
                              0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
@@ -1678,7 +1744,7 @@ texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, ui
         copyRegion.imageExtent = { width, height, 1 };
 
         //copy the buffer into the image
-        vkCmdCopyBufferToImage(gSubmitContext->CmdBuffer,
+        vkCmdCopyBufferToImage(g_sc->CmdBuffer,
                                staging_buffer.buffer,
                                buffer->image.handle,
                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
@@ -1693,7 +1759,7 @@ texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, ui
         imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
         //barrier the image into the shader readable layout
-        vkCmdPipelineBarrier(gSubmitContext->CmdBuffer,
+        vkCmdPipelineBarrier(g_sc->CmdBuffer,
                              VK_PIPELINE_STAGE_TRANSFER_BIT,
                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                              0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);
@@ -1735,12 +1801,12 @@ void begin_renderer_frame(quaternion_camera& camera)
     glm::mat4 vp = camera.proj * camera.view;
     set_buffer_data(&g_uniform_buffers[currentFrame], &vp, sizeof(glm::mat4));
 
-    begin_frame(gSwapchain, gFrames[currentFrame]);
+    begin_frame(g_swapchain, gFrames[currentFrame]);
 }
 
 void end_renderer_frame()
 {
-    end_frame(gSwapchain, gFrames[currentFrame]);
+    end_frame(g_swapchain, gFrames[currentFrame]);
 }
 
 VkCommandBuffer begin_render_pass(RenderPass& renderPass)
@@ -1751,8 +1817,8 @@ VkCommandBuffer begin_render_pass(RenderPass& renderPass)
 
     VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
     renderPassInfo.renderPass = renderPass.handle;
-    renderPassInfo.framebuffer = renderPass.framebuffers[gSwapchain.currentImage];
-    renderPassInfo.renderArea = {{ 0, 0 }, gSwapchain.images[0].extent }; // todo
+    renderPassInfo.framebuffer = renderPass.framebuffers[g_swapchain.currentImage];
+    renderPassInfo.renderArea = {{ 0, 0 }, g_swapchain.images[0].extent }; // todo
     renderPassInfo.clearValueCount = 2;
     renderPassInfo.pClearValues = clear_buffers;
 

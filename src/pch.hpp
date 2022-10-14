@@ -14,6 +14,8 @@
 #include <sstream>
 #include <functional>
 #include <regex>
+#include <optional>
+#include <set>
 
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>

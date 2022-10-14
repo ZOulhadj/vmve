@@ -9,20 +9,35 @@ struct entity;
 
 enum class buffer_mode
 {
-    Double  = 2,
-    Triple = 3
+    double_buffering  = 2,
+    tripple_buffering = 3
 };
 
 enum class vsync_mode
 {
-    Disabled = VK_PRESENT_MODE_IMMEDIATE_KHR,
-    Enabled  = VK_PRESENT_MODE_FIFO_KHR
+    disabled = VK_PRESENT_MODE_IMMEDIATE_KHR,
+    enabled  = VK_PRESENT_MODE_FIFO_KHR
 };
 
-struct Queue
+struct gpu_queues
 {
-    VkQueue handle;
-    uint32_t index;
+    VkQueue graphics_queue;
+    VkQueue present_queue;
+
+    uint32_t graphics_index;
+    uint32_t present_index;
+};
+
+struct device_context
+{
+    VkPhysicalDevice gpu;
+    VkDevice device;
+
+    VkQueue graphics_queue;
+    uint32_t graphics_index;
+
+    VkQueue present_queue;
+    uint32_t present_index;
 };
 
 struct renderer_context
@@ -31,9 +46,7 @@ struct renderer_context
 
     VkInstance instance;
     VkSurfaceKHR surface;
-    VkPhysicalDevice physical_device;
-    Queue graphics_queue;
-    VkDevice device;
+    device_context device;
     VmaAllocator allocator;
 };
 
@@ -61,8 +74,8 @@ struct Buffer
 
 struct Swapchain
 {
-    buffer_mode bufferMode;
-    vsync_mode  vsyncMode;
+    buffer_mode buffering_mode;
+    vsync_mode  sync_mode;
 
     VkSwapchainKHR handle;
 
@@ -98,7 +111,7 @@ struct Shader
     VkShaderModule        handle;
 };
 
-struct RenderPassInfo
+struct render_pass_info
 {
     uint32_t ColorAttachmentCount;
     VkFormat AttachmentFormat;
@@ -161,22 +174,21 @@ struct vertex
 };
 
 
-struct Renderer
+struct vulkan_renderer
 {
     RenderPass geometryRenderPass;
     RenderPass lightingRenderPass;
     RenderPass uiRenderPass;
 
     Pipeline basePipeline;
-    Pipeline skyspherePipeline;
 };
 
 
 
-Renderer create_renderer(const Window* window, buffer_mode bufferMode, vsync_mode vsyncMode);
-void destroy_renderer(Renderer& renderer);
+vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode, vsync_mode sync_mode);
+void destroy_renderer(vulkan_renderer& renderer);
 
-void update_renderer_size(Renderer& renderer, uint32_t width, uint32_t height);
+void update_renderer_size(vulkan_renderer& renderer, uint32_t width, uint32_t height);
 
 vertex_buffer* create_vertex_buffer(void* v, int vs, void* i, int is);
 texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height);
