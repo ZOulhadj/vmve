@@ -113,12 +113,18 @@ struct Shader
 
 struct render_pass_info
 {
-    uint32_t ColorAttachmentCount;
-    VkFormat AttachmentFormat;
-    VkExtent2D AttachmentExtent;
-    VkSampleCountFlagBits MSAASamples;
+    uint32_t attachment_count;
+    VkFormat format;
+    VkExtent2D size;
+    VkAttachmentLoadOp load_op;
+    VkAttachmentStoreOp store_op;
+    VkImageLayout initial_layout;
+    VkImageLayout final_layout;
+    VkImageLayout reference_layout;
 
-    bool HasDepthAttachment;
+    VkSampleCountFlagBits sample_count;
+
+    bool has_depth;
     VkFormat DepthFormat;
 };
 
@@ -138,10 +144,10 @@ struct ShaderInfo
 
 struct PipelineInfo
 {
-    uint32_t BindingLayoutSize;
-    std::vector<VkFormat> BindingAttributeFormats;
-    uint32_t PushConstantSize;
-    std::vector<ShaderInfo> PipelineShaders;
+    uint32_t binding_layout_size;
+    std::vector<VkFormat> binding_format;
+    uint32_t push_constant_size;
+    std::vector<ShaderInfo> shaders;
 };
 
 struct Pipeline
@@ -176,11 +182,14 @@ struct vertex
 
 struct vulkan_renderer
 {
-    RenderPass geometryRenderPass;
-    RenderPass lightingRenderPass;
-    RenderPass uiRenderPass;
+    RenderPass geometry_render_pass;
+    RenderPass lighting_render_pass;
+    RenderPass ui_render_pass;
 
-    Pipeline basePipeline;
+    Pipeline geometry_pipeline;
+    Pipeline lighting_pipeline;
+
+    Pipeline wireframe_pipeline; // todo:
 };
 
 

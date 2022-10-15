@@ -78,19 +78,19 @@ static void KeyPressEvent(key_pressed_event& e)
 
 static void mouse_move_event(mouse_moved_event& e)
 {
-    update_camera_view(g_camera, e.GetX(), e.GetY());
+    //update_camera_view(g_camera, e.GetX(), e.GetY());
 }
 
 static void ScrolledForwardsEvent(mouse_scrolled_up_event& e)
 {
-    g_camera.fov -= 2.0f;
-    // todo: Update projection
+    g_camera.fov -= 5.0f;
+    update_projection(g_camera);
 }
 
 static void ScrolledBackEvent(mouse_scrolled_down_event& e)
 {
-    g_camera.fov += 2.0f;
-    // todo: Update projection
+    g_camera.fov += 5.0f;
+    update_projection(g_camera);
 }
 
 static void engine_event_callback(Event& e)
@@ -113,17 +113,10 @@ void engine_start(const char* name)
 
     g_renderer = create_renderer(g_window, buffer_mode::tripple_buffering, vsync_mode::enabled);
 
-    g_camera  = create_camera({0.0f, 0.0f, -20.0f}, 45.0f, 50.0f);
+    g_camera  = create_camera({0.0f, 0.0f, -100.0f}, 60.0f, 10.0f);
 
     g_running = true;
     g_uptime  = 0.0f;
-
-
-
-
-    // todo: temp for skybox related stuff
-    icosphere = engine_load_model("assets/icosphere.obj");
-    skysphereEntity = engine_create_entity(icosphere);
 }
 
 void engine_exit()
@@ -200,7 +193,7 @@ vertex_buffer* engine_load_model(const char* path)
             v.normal.z = attrib.normals[3 * index.normal_index + 2];
 
             v.uv.x = attrib.texcoords[2 * index.texcoord_index + 0];
-            v.uv.y = attrib.texcoords[2 * index.texcoord_index + 1];
+            v.uv.y = attrib.texcoords[2 * index.texcoord_index + 1]; // -y vulkan
 
             vertices.push_back(v);
             indices.push_back(static_cast<uint32_t>(indices.size()));
@@ -214,6 +207,9 @@ vertex_buffer* engine_load_model(const char* path)
 
 texture_buffer* engine_load_texture(const char* path)
 {
+    texture_buffer* buffer{};
+
+    // Load the texture from the filesystem.
     int width, height, channels;
     unsigned char* texture = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
@@ -224,8 +220,11 @@ texture_buffer* engine_load_texture(const char* path)
         return nullptr;
     }
 
-    texture_buffer* buffer = create_texture_buffer(texture, width, height);
+    // Store texture data into GPU memory.
+    buffer = create_texture_buffer(texture, width, height);
 
+    // Now that the texture data has been copied into GPU memory we can safely
+    // delete that texture from the CPU.
     stbi_image_free(texture);
 
     return buffer;
@@ -310,115 +309,40 @@ void engine_render()
 
     begin_renderer_frame(g_camera);
     {
-        if (VkCommandBuffer cmdBuffer = begin_render_pass(g_renderer.geometryRenderPass))
+        if (VkCommandBuffer cmd = begin_render_pass(g_renderer.geometry_render_pass))
         {
-            bind_pipeline(g_renderer.basePipeline);
+            bind_pipeline(g_renderer.geometry_pipeline);
+
             for (auto& entity : entitiesToRender) {
                 bind_vertex_buffer(entity->vertexBuffer);
-                render_entity(entity, g_renderer.basePipeline);
+                render_entity(entity, g_renderer.geometry_pipeline);
             }
 
-            end_render_pass(cmdBuffer);
+            end_render_pass(cmd);
         }
 
 
-/*    VkCommandBuffer lightingPass = BeginRenderPass();
-    {
+		/*if (VkCommandBuffer cmd = begin_render_pass(g_renderer.lighting_render_pass))
+		{
+			bind_pipeline(g_renderer.lighting_pipeline);
 
-    }
-    EndRenderPass(lightingPass);*/
+			end_render_pass(cmd);
+		}*/
 
-#if 0
-        if (VkCommandBuffer cmdBuffer = begin_render_pass(g_renderer.uiRenderPass))
+
+        if (VkCommandBuffer cmd = begin_render_pass(g_renderer.ui_render_pass))
         {
-            ImGui_ImplVulkan_NewFrame();
+            /*ImGui_ImplVulkan_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
 
-            static bool renderer_options = false;
-            static bool renderer_stats   = false;
+            ImGui::Render();*/
 
-            static bool demo_window      = false;
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
-            if (ImGui::BeginMainMenuBar()) {
-                if (ImGui::BeginMenu("Engine")) {
-                    if (ImGui::MenuItem("Exit"))
-                        g_running = false;
-
-                    ImGui::EndMenu();
-                }
-                if (ImGui::BeginMenu("Rendering")) {
-                    ImGui::MenuItem("Stats", "", &renderer_stats);
-                    ImGui::MenuItem("Options", "", &renderer_options);
-                    ImGui::EndMenu();
-                }
-
-                if (ImGui::BeginMenu("Playback")) {
-                    ImGui::MenuItem("Timeline");
-
-                    ImGui::EndMenu();
-                }
-
-                if (ImGui::BeginMenu("Misc")) {
-                    ImGui::MenuItem("Show demo window", "", &demo_window);
-
-
-                    ImGui::EndMenu();
-                }
-
-                ImGui::Text("%f", g_uptime);
-
-                ImGui::EndMainMenuBar();
-            }
-
-            if (renderer_stats) {
-                ImGui::Begin("Rendering Stats", &renderer_stats);
-
-                ImGui::Text("Elapsed Frames: %d", g_elapsed_frames);
-                ImGui::Text("Delta Time: %f (ms)", g_delta_time);
-
-                ImGui::End();
-            }
-
-            if (renderer_options) {
-                static bool vsync = true;
-                static int image_count = 3;
-                static int fif         = 2;
-                static bool wireframe = false;
-                static const char* winding_orders[] = { "Clockwise (Default)", "Counter clockwise" };
-                static int winding_order_index = 0;
-                static const char* culling_list[] = { "Backface (Default)", "Frontface" };
-                static int culling_order_index = 0;
-
-                ImGui::Begin("Rendering Options", &renderer_options);
-
-                ImGui::Checkbox("VSync", &vsync);
-                ImGui::SliderInt("Swapchain images", &image_count, 1, 3);
-                ImGui::SliderInt("Frames in flight", &fif, 1, 3);
-                ImGui::Checkbox("Wireframe", &wireframe);
-                ImGui::ListBox("Winding order", &winding_order_index, winding_orders, 2);
-                ImGui::ListBox("Culling", &culling_order_index, culling_list, 2);
-
-                ImGui::Separator();
-
-                ImGui::Button("Apply");
-
-                ImGui::End();
-            }
-
-
-            if (demo_window)
-                ImGui::ShowDemoWindow(&demo_window);
-
-
-            ImGui::Render();
-
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuffer);
-
-            end_render_pass(cmdBuffer);
+            end_render_pass(cmd);
         }
-#endif
 
     }
     end_renderer_frame();

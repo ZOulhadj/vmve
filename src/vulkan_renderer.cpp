@@ -28,7 +28,7 @@ static std::vector<Buffer> g_uniform_buffers(frames_in_flight);
 static std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
 static VkDescriptorPool g_gui_descriptor_pool;
 
-const std::string vs_code = R"(
+const std::string geometry_vs_shader = R"(
 #version 450
 
 layout(location = 0) in vec3 position;
@@ -55,7 +55,7 @@ void main() {
 }
 )";
 
-const std::string fs_code = R"(
+const std::string geometry_fs_code = R"(
         #version 450
 
         layout(location = 0) out vec4 final_color;
@@ -70,6 +70,14 @@ const std::string fs_code = R"(
             final_color = vec4(color, 1.0);
         }
     )";
+
+const std::string lighting_vs_code = R"(
+    void main() { }
+)";
+
+const std::string lighting_fs_code = R"(
+    void main() { }
+)";
 
 static std::vector<vertex_buffer*> g_vertex_buffers;
 static std::vector<texture_buffer*> g_textures;
@@ -774,7 +782,7 @@ static void RebuildSwapchain(Swapchain& swapchain)
 */
 
 
-static VkSampler create_sampler(uint32_t anisotropic_level)
+static VkSampler create_sampler(VkFilter filtering, uint32_t anisotropic_level)
 {
     VkSampler sampler{};
     
@@ -789,8 +797,8 @@ static VkSampler create_sampler(uint32_t anisotropic_level)
     }
 
     VkSamplerCreateInfo sampler_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-    sampler_info.magFilter = VK_FILTER_LINEAR;
-    sampler_info.minFilter = VK_FILTER_LINEAR;
+    sampler_info.magFilter = filtering;
+    sampler_info.minFilter = filtering;
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -1035,33 +1043,32 @@ static RenderPass create_render_pass(const render_pass_info& info)
     std::vector<VkAttachmentReference> references;
     VkAttachmentReference* depthReference = nullptr;
 
-    for (std::size_t i = 0; i < info.ColorAttachmentCount; ++i) {
+    for (std::size_t i = 0; i < info.attachment_count; ++i) {
         VkAttachmentDescription attachment{};
-        attachment.format         = info.AttachmentFormat;
-        attachment.samples        = info.MSAASamples;
-        attachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+        attachment.format         = info.format;
+        attachment.samples        = info.sample_count;
+        attachment.loadOp         = info.load_op;
+        attachment.storeOp        = info.store_op;
         attachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        attachment.initialLayout  = info.initial_layout;
+        attachment.finalLayout    = info.final_layout;
 
-
-        VkAttachmentReference attachmentReference{};
-        attachmentReference.attachment = u32(i);
-        attachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference reference{};
+        reference.attachment = u32(i);
+        reference.layout     = info.reference_layout;
 
         attachments.push_back(attachment);
-        references.push_back(attachmentReference);
+        references.push_back(reference);
     }
 
     std::vector<VkSubpassDependency> dependencies;
     VkAttachmentReference depthRef{};
 
-    if (info.HasDepthAttachment) {
+    if (info.has_depth) {
         VkAttachmentDescription depthAttach{};
         depthAttach.format         = info.DepthFormat;
-        depthAttach.samples        = info.MSAASamples; // todo:
+        depthAttach.samples        = info.sample_count; // todo:
         depthAttach.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depthAttach.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         depthAttach.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -1106,7 +1113,7 @@ static RenderPass create_render_pass(const render_pass_info& info)
 
     // Create framebuffers
     renderPass.framebuffers = create_framebuffers(renderPass.handle, g_swapchain.images[0].extent,
-                                                  info.HasDepthAttachment);
+                                                  info.has_depth);
 
     return renderPass;
 }
@@ -1147,7 +1154,7 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
     // push constant
     VkPushConstantRange push_constant{};
     push_constant.offset     = 0;
-    push_constant.size       = pipelineInfo.PushConstantSize;
+    push_constant.size       = pipelineInfo.push_constant_size;
     push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     // create pipeline layout
@@ -1167,17 +1174,17 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
     for (std::size_t i = 0; i < 1; ++i) {
         VkVertexInputBindingDescription binding{};
         binding.binding   = u32(i);
-        binding.stride    = pipelineInfo.BindingLayoutSize;
+        binding.stride    = pipelineInfo.binding_layout_size;
         binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
         bindings.push_back(binding);
 
         uint32_t offset = 0;
-        for (std::size_t j = 0; j < pipelineInfo.BindingAttributeFormats.size(); ++j) {
+        for (std::size_t j = 0; j < pipelineInfo.binding_format.size(); ++j) {
             VkVertexInputAttributeDescription attribute{};
             attribute.location = u32(j);
             attribute.binding  = binding.binding;
-            attribute.format   = pipelineInfo.BindingAttributeFormats[i];
+            attribute.format   = pipelineInfo.binding_format[i];
             attribute.offset   = offset;
 
             offset += format_to_size(attribute.format);
@@ -1195,7 +1202,7 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
     std::vector<VkPipelineShaderStageCreateInfo> shader_infos;
     std::vector<VkShaderModule> shaderModules;
 
-    for (auto& shader : pipelineInfo.PipelineShaders) {
+    for (auto& shader : pipelineInfo.shaders) {
         // Compile shader
         VkShaderModule shaderHandle = create_shader(shader.Type, shader.Code).handle;
 
@@ -1436,7 +1443,6 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
 {
     vulkan_renderer renderer{};
 
-
     const std::vector<const char*> layers {
         "VK_LAYER_KHRONOS_validation",
 #if defined(_WIN32)
@@ -1461,57 +1467,107 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
 
     //
     g_swapchain = create_swapchain(buffering_mode, sync_mode);
-    g_sampler = create_sampler(16);
+    g_sampler = create_sampler(VK_FILTER_LINEAR, 16);
 
     create_frames();
 
     create_shader_compiler();
 
     {
-        render_pass_info render_info{};
-        render_info.ColorAttachmentCount = 1;
-        render_info.AttachmentFormat = VK_FORMAT_B8G8R8A8_SRGB;
-        render_info.AttachmentExtent = { g_swapchain.images[0].extent };
-        render_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-        render_info.HasDepthAttachment = true;
-        render_info.DepthFormat = VK_FORMAT_D32_SFLOAT;
+        render_pass_info geometry_pass{};
+        geometry_pass.attachment_count = 1;
+        geometry_pass.format = g_swapchain.images[0].format;
+        geometry_pass.size = { g_swapchain.images[0].extent };
+        geometry_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
+        geometry_pass.has_depth = true;
+        geometry_pass.DepthFormat = VK_FORMAT_D32_SFLOAT;
+        geometry_pass.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        geometry_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
+        geometry_pass.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        geometry_pass.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        geometry_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        renderer.geometryRenderPass = create_render_pass(render_info);
+        renderer.geometry_render_pass = create_render_pass(geometry_pass);
     }
+
+  //  {
+		//render_pass_info lighting_pass{};
+  //      lighting_pass.attachment_count = 1;
+		//lighting_pass.format = g_swapchain.images[0].format;
+		//lighting_pass.size = { g_swapchain.images[0].extent };
+		//lighting_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
+		//lighting_pass.has_depth = true;
+		//lighting_pass.DepthFormat = VK_FORMAT_D32_SFLOAT;
+		//lighting_pass.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		//lighting_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
+		//lighting_pass.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+		//lighting_pass.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		//lighting_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		//renderer.lighting_render_pass = create_render_pass(lighting_pass);
+  //  }
     
     {
-        render_pass_info ui_render_pass_info{};
-        ui_render_pass_info.ColorAttachmentCount = 1;
-        ui_render_pass_info.AttachmentFormat = VK_FORMAT_B8G8R8A8_SRGB;
-        ui_render_pass_info.AttachmentExtent = { g_swapchain.images[0].extent };
-        ui_render_pass_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-        ui_render_pass_info.HasDepthAttachment = false;
+        render_pass_info ui_pass{};
+        ui_pass.attachment_count = 1;
+        ui_pass.format = g_swapchain.images[0].format;
+        ui_pass.size = { g_swapchain.images[0].extent };
+        ui_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
+        ui_pass.has_depth = false;
+        ui_pass.load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
+        ui_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
+        ui_pass.initial_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        ui_pass.final_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        ui_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        renderer.uiRenderPass = create_render_pass(ui_render_pass_info);
+        renderer.ui_render_pass = create_render_pass(ui_pass);
     }
 
-    
 
-    const std::vector<ShaderInfo> shaderList {
-            { VK_SHADER_STAGE_VERTEX_BIT, vs_code },
-            { VK_SHADER_STAGE_FRAGMENT_BIT, fs_code }
-    };
-
-    const std::vector<VkFormat> bindingAttributeFormats {
+    const std::vector<VkFormat> binding_format {
             VK_FORMAT_R32G32B32_SFLOAT, // Position
             VK_FORMAT_R32G32B32_SFLOAT, // Color
             VK_FORMAT_R32G32B32_SFLOAT, // Normal
             VK_FORMAT_R32G32_SFLOAT     // UV
     };
 
-    PipelineInfo basePipelineInfo{};
-    basePipelineInfo.BindingLayoutSize       = sizeof(vertex);
-    basePipelineInfo.BindingAttributeFormats = bindingAttributeFormats;
-    basePipelineInfo.PushConstantSize        = sizeof(glm::mat4);
-    basePipelineInfo.PipelineShaders         = shaderList;
-    renderer.basePipeline = create_pipeline(basePipelineInfo, renderer.geometryRenderPass);
+    {
+		const std::vector<ShaderInfo> geometry_pipeline_shaders{
+			{ VK_SHADER_STAGE_VERTEX_BIT, geometry_vs_shader },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, geometry_fs_code }
+		};
 
-    create_debug_ui(renderer.uiRenderPass);
+		PipelineInfo pipeline_info{};
+		pipeline_info.binding_layout_size = sizeof(vertex);
+		pipeline_info.binding_format = binding_format;
+		pipeline_info.push_constant_size = sizeof(glm::mat4);
+		pipeline_info.shaders = geometry_pipeline_shaders;
+
+		renderer.geometry_pipeline = create_pipeline(pipeline_info, renderer.geometry_render_pass);
+    }
+
+	/*{
+		const std::vector<ShaderInfo> lighting_pipeline_shaders{
+			{ VK_SHADER_STAGE_VERTEX_BIT, lighting_vs_code },
+			{ VK_SHADER_STAGE_FRAGMENT_BIT, lighting_fs_code }
+		};
+
+		PipelineInfo pipeline_info{};
+		pipeline_info.binding_layout_size = sizeof(vertex);
+		pipeline_info.binding_format = binding_format;
+		pipeline_info.push_constant_size = sizeof(glm::mat4);
+		pipeline_info.shaders = lighting_pipeline_shaders;
+
+		renderer.lighting_pipeline = create_pipeline(pipeline_info, renderer.lighting_render_pass);
+	}*/
+
+    create_debug_ui(renderer.ui_render_pass);
+
+
+
+
+
+
 
 #if 1
     // create a uniform buffers (one for each frame in flight)
@@ -1532,7 +1588,7 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
 
     vk_check(vkCreateDescriptorPool(g_rc->device.device, &pool_info, nullptr, &descriptor_pool));
 
-    std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, renderer.basePipeline.DescriptorLayout);
+    std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, renderer.geometry_pipeline.DescriptorLayout);
     VkDescriptorSetAllocateInfo allocate_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
     allocate_info.descriptorPool     = descriptor_pool;
     allocate_info.descriptorSetCount = u32(frames_in_flight);
@@ -1619,10 +1675,12 @@ void destroy_renderer(vulkan_renderer& renderer)
 
 
     //destroy_pipeline(renderer.skyspherePipeline);
-    destroy_pipeline(renderer.basePipeline);
+    destroy_pipeline(renderer.lighting_pipeline);
+    destroy_pipeline(renderer.geometry_pipeline);
 
-    destroy_render_pass(renderer.uiRenderPass);
-    destroy_render_pass(renderer.geometryRenderPass);
+    destroy_render_pass(renderer.ui_render_pass);
+    destroy_render_pass(renderer.lighting_render_pass);
+    destroy_render_pass(renderer.geometry_render_pass);
 
     destroy_shader_compiler();
 
@@ -1647,13 +1705,13 @@ void update_renderer_size(vulkan_renderer& renderer, uint32_t width, uint32_t he
     destroy_swapchain(g_swapchain);
     g_swapchain = create_swapchain(buffer_mode::tripple_buffering, vsync_mode::enabled);
 
-    destroy_framebuffers(renderer.uiRenderPass.framebuffers);
-    destroy_framebuffers(renderer.geometryRenderPass.framebuffers);
+    destroy_framebuffers(renderer.ui_render_pass.framebuffers);
+    destroy_framebuffers(renderer.geometry_render_pass.framebuffers);
 
-    renderer.geometryRenderPass.framebuffers = create_framebuffers(renderer.geometryRenderPass.handle,
+    renderer.geometry_render_pass.framebuffers = create_framebuffers(renderer.geometry_render_pass.handle,
                                                                    {width, height},
                                                                    true);
-    renderer.uiRenderPass.framebuffers = create_framebuffers(renderer.uiRenderPass.handle,
+    renderer.ui_render_pass.framebuffers = create_framebuffers(renderer.ui_render_pass.handle,
                                                              {width, height},
                                                              false);
 }

@@ -64,7 +64,7 @@ void update_camera(quaternion_camera& camera)
     camera.roll      = 0.0f;
 }
 
-static void update_projection(quaternion_camera& camera)
+void update_projection(quaternion_camera& camera)
 {
     camera.proj = glm::perspective(glm::radians(camera.fov), camera.aspect_ratio, camera.far, camera.near);
     // Required if using Vulkan (left-handed coordinate-system)
