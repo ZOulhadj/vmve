@@ -11,14 +11,18 @@ struct quaternion_camera
     glm::quat orientation;
 
 
-    float aspect_ratio;
+    //float aspect_ratio;
+    float width;
+    float height;
+
+
     float speed;
     float view_speed;
     float roll_speed;
     float fov;
 
     float near;
-    float far;
+    //float far;
 
     glm::mat4 view;
     glm::mat4 proj;

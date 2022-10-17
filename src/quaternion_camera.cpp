@@ -1,21 +1,42 @@
 #include "quaternion_camera.hpp"
 
+
+// Reversed Z infinite perspective
+// GLM provides various types of perspective functions including infinitePerspective()
+// but a reversed depth version (far-near) is not. Thus, below is my own version
+// that creates an infinite perspective from far to near.
+glm::mat4 infinite_perspective(float fovy, float width, float height, float zNear)
+{
+	const float h = glm::cot(0.5f * fovy);
+	const float w = h * height / width;
+
+    glm::mat4 result = glm::mat4(0.0f);
+	result[0][0] = w;
+	result[1][1] = h;
+	result[2][2] = 0.0f;
+	result[2][3] = 1.0f;
+	result[3][2] = zNear;
+
+    return result;
+}
+
 quaternion_camera create_camera(const glm::vec3& position, float fov, float speed)
 {
     quaternion_camera camera{};
     camera.position    = position;
     camera.orientation = glm::quat(1, 0, 0, 0);
-    camera.aspect_ratio = 1280.0f / 720.0f;
+    //camera.aspect_ratio = 1280.0f / 720.0f;
+    camera.width = 1280.0f;
+    camera.height = 720.0f;
     camera.speed       = speed;
     camera.view_speed  = 0.1f;
     camera.roll_speed  = 180.0f;
     camera.roll        = 0.0f;
     camera.fov         = fov;
     camera.near        = 0.1f;
-    camera.far         = 10000.0f;
 
     camera.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
-    camera.proj = glm::perspective(glm::radians(camera.fov), camera.aspect_ratio, camera.far, camera.near);
+    camera.proj = infinite_perspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
 
     // Required if using Vulkan (left-handed coordinate-system)
     camera.proj[1][1] *= -1.0;
@@ -66,15 +87,12 @@ void update_camera(quaternion_camera& camera)
 
 void update_projection(quaternion_camera& camera)
 {
-    camera.proj = glm::perspective(glm::radians(camera.fov), camera.aspect_ratio, camera.far, camera.near);
+    camera.proj = infinite_perspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
     // Required if using Vulkan (left-handed coordinate-system)
     camera.proj[1][1] *= -1.0;
 }
 
 void update_camera_projection(quaternion_camera& camera, uint32_t width, uint32_t height)
 {
-    //cam.proj = glm::infinitePerspective(glm::radians<double>(cam.fov), (double)gWindow->width / gWindow->height, 0.1);
-    camera.aspect_ratio = (float)width / (float)height;
-
     update_projection(camera);
 }

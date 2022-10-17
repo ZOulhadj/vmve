@@ -16,6 +16,7 @@
 #include <regex>
 #include <optional>
 #include <set>
+#include <array>
 
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
@@ -32,6 +33,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/reciprocal.hpp> // glm::cot
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #include <imgui.h>

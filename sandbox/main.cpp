@@ -4,23 +4,35 @@ float utc_time = 10.0f;
 
 // This is the applications scale factor. This value gets applied to every
 // object in the scene in order to maintain correct scaling values.
-const float scale_factor = 0.000005f;
+constexpr float scale_factor = 0.000005f;
 
 // This is the applications speed factor relative to real world speeds.
-// A value of 10.0f means that the simulation will run 10% faster than
+// A value of 10 means that the simulation will run 10% faster than
 // world speed.
-float speed_factor = 100.0f;
+constexpr int speed_factor = 50.0f;
 
 // angular velocity of earth in degrees per second
 // radians 0.0000729211533f
-const float angular_velocity = 0.004178074321326839639f * speed_factor;
+constexpr float angular_velocity = 0.004178074321326839639f * speed_factor;
 
-const float sun_radius = 696'340'000.0f * scale_factor;
-const float earth_radius = 6'378'137.0f * scale_factor;
-const float moon_radius = 1'737'400.0f * scale_factor;
-const float iss_altitude = 408'000.0f * scale_factor;
+constexpr float sun_radius = 696'340'000.0f * scale_factor;
+constexpr float earth_radius = 6'378'137.0f * scale_factor;
+constexpr float moon_radius = 1'737'400.0f * scale_factor;
+constexpr float iss_altitude = 408'000.0f * scale_factor;
 
-const float iss_speed    = 0.07725304476742584f * speed_factor;
+constexpr float iss_speed    = 0.07725304476742584f * speed_factor;
+
+constexpr float sun_from_earth = 149'120'000'000.0f * scale_factor;
+constexpr float moon_from_earth = 384'400'000.0f * scale_factor;
+
+const const char* application_about = R"(
+    3D Earth Visualizer is an application created and maintained by 
+    Zakariya Oulhadj.
+
+)";
+
+
+
 
 /*
 glm::vec3 sphere_translation(float radius, float latitude, float longitude)
@@ -110,8 +122,8 @@ static void render_ui()
 		if (ImGui::BeginMenu("Simulation")) {
             ImGui::SliderFloat("Time (UTC)", &utc_time, 0.0f, 23.0f);
             ImGui::Checkbox("Realtime", &realtime);
-            if (!realtime)
-                ImGui::SliderFloat("Speed", &speed_factor, 1.0f, 50.0f);
+            //if (!realtime)
+            //    ImGui::SliderInt("Speed", &speed_factor, 1, 50, "%.2fx");
 
 
 			ImGui::EndMenu();
@@ -208,7 +220,7 @@ static void render_ui()
 
 	if (about_window) {
 		ImGui::Begin("About", &about_window);
-        ImGui::Text("");
+        ImGui::Text(application_about);
 		ImGui::End();
 	}
 
@@ -226,17 +238,17 @@ int main()
 
 
     const vertex_buffer* sphere = engine_load_model("assets/sphere.obj");
-    const vertex_buffer* cube   = engine_load_model("assets/iss.obj");
+    //const vertex_buffer* cube   = engine_load_model("assets/iss.obj"); // This takes quite a long time to load
 
-    //const texture_buffer* sun_texture   = engine_load_texture("assets/textures/sun.jpg");
-    //const texture_buffer* earth_texture = engine_load_texture("assets/textures/earth.jpg");
-    //const texture_buffer* moon_texture  = engine_load_texture("assets/textures/moon.jpg");
+    const texture_buffer* sun_texture   = engine_load_texture("assets/textures/sun.jpg");
+    const texture_buffer* earth_texture = engine_load_texture("assets/textures/earth.jpg");
+    const texture_buffer* moon_texture  = engine_load_texture("assets/textures/moon.jpg");
 
-    entity* sun_entity = engine_create_entity(sphere);
-    entity* earth_entity = engine_create_entity(sphere);
-    entity* moon_entity = engine_create_entity(sphere);
+    entity* sun_entity = engine_create_entity(sphere, sun_texture);
+    entity* earth_entity = engine_create_entity(sphere, earth_texture);
+    entity* moon_entity = engine_create_entity(sphere, moon_texture);
 
-    entity* test_entity = engine_create_entity(cube);
+    //entity* test_entity = engine_create_entity(cube, sun_texture);
 
 
 
@@ -260,28 +272,29 @@ int main()
 
         // Update entities
         const float time = engine_uptime();
-        const float earth_speed = angular_velocity * time * speed_factor;
+        const float earth_speed = angular_velocity * (time * speed_factor);
 
-        engine_translate_entity(sun_entity, -100.0f, 100.0f, 250.0f);
+        engine_translate_entity(sun_entity, 0.0f, 0.0f, sun_from_earth);
+        engine_scale_entity(sun_entity, sun_radius);
 
         engine_translate_entity(earth_entity, 0.0f, 0.0f, 0.0f);
         engine_scale_entity(earth_entity, earth_radius);
         engine_rotate_entity(earth_entity, earth_speed, 0.0f, 1.0f, 0.0f);
 
 
-        engine_translate_entity(moon_entity, 50.0f, 10.0f, 30.0f);
+        engine_translate_entity(moon_entity, -moon_from_earth, 0.0f, -moon_from_earth);
         engine_scale_entity(moon_entity, moon_radius);
 
 
-        glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 5.0f);
-        engine_translate_entity(test_entity, position.x, position.y, position.z);
-        engine_scale_entity(test_entity, 0.02f);
+        //glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 5.0f);
+        //engine_translate_entity(test_entity, position.x, position.y, position.z);
+        //engine_scale_entity(test_entity, 0.02f);
 
         // Rendering
         engine_render(sun_entity);
         engine_render(earth_entity);
         engine_render(moon_entity);
-        engine_render(test_entity);
+        //engine_render(test_entity);
 
 
         render_ui();

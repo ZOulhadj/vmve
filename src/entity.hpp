@@ -2,12 +2,14 @@
 #define MYENGINE_ENTITY_HPP
 
 struct vertex_buffer;
+struct texture_buffer;
 
 struct entity
 {
     glm::mat4 model;
 
-    const vertex_buffer* vertexBuffer;
+    const vertex_buffer* vertex_buffer;
+    const texture_buffer* texture_buffer;
 };
 
 void translate_entity(entity* e, float x, float y, float z);

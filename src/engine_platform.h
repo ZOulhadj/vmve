@@ -69,7 +69,7 @@ texture_buffer* engine_load_texture(const char* path);
 // object that is being represented. A model matrix is also part of
 // an entity that describes the full transformation including position,
 // rotation and scale in the world.
-entity* engine_create_entity(const vertex_buffer* vertexBuffer);
+entity* engine_create_entity(const vertex_buffer* buffer, const texture_buffer* texture);
 
 // Moves the default camera in the specified direction
 void engine_move_forwards();

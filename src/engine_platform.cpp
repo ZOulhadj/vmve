@@ -78,7 +78,7 @@ static void KeyPressEvent(key_pressed_event& e)
 
 static void mouse_move_event(mouse_moved_event& e)
 {
-    //update_camera_view(g_camera, e.GetX(), e.GetY());
+    update_camera_view(g_camera, e.GetX(), e.GetY());
 }
 
 static void ScrolledForwardsEvent(mouse_scrolled_up_event& e)
@@ -111,7 +111,7 @@ void engine_start(const char* name)
     g_window = create_window(name, 1280, 720);
     g_window->event_callback = engine_event_callback;
 
-    g_renderer = create_renderer(g_window, buffer_mode::tripple_buffering, vsync_mode::enabled);
+    g_renderer = create_renderer(g_window, buffer_mode::tripple_buffering, vsync_mode::disabled);
 
     g_camera  = create_camera({0.0f, 0.0f, -100.0f}, 60.0f, 10.0f);
 
@@ -192,8 +192,11 @@ vertex_buffer* engine_load_model(const char* path)
             v.normal.y = attrib.normals[3 * index.normal_index + 1];
             v.normal.z = attrib.normals[3 * index.normal_index + 2];
 
-            v.uv.x = attrib.texcoords[2 * index.texcoord_index + 0];
-            v.uv.y = attrib.texcoords[2 * index.texcoord_index + 1]; // -y vulkan
+            // Note that we are doing 1.0f - texture coordinate so that the
+            // texture does not get rendered upside down due to Vulkans
+            // coordinate system
+            v.uv.x = 1.0f - attrib.texcoords[2 * index.texcoord_index + 0];
+            v.uv.y = 1.0f - attrib.texcoords[2 * index.texcoord_index + 1];
 
             vertices.push_back(v);
             indices.push_back(static_cast<uint32_t>(indices.size()));
@@ -209,7 +212,7 @@ texture_buffer* engine_load_texture(const char* path)
 {
     texture_buffer* buffer{};
 
-    // Load the texture from the filesystem.
+    // Load the texture from the file system.
     int width, height, channels;
     unsigned char* texture = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
@@ -231,11 +234,11 @@ texture_buffer* engine_load_texture(const char* path)
 }
 
 
-entity* engine_create_entity(const vertex_buffer* vertexBuffer)
+entity* engine_create_entity(const vertex_buffer* buffer, const texture_buffer* texture)
 {
     assert(g_running);
 
-    return create_entity_renderer(vertexBuffer);
+    return create_entity_renderer(buffer, texture);
 }
 
 void engine_move_forwards()
@@ -302,7 +305,7 @@ void engine_render()
 
     // todo: This may not be the most accurate way of calculating frames.
     // todo: Maybe this value should be obtained by the GPU since it runs
-    // todo: separatly from the CPU.
+    // todo: separately from the CPU.
     ++g_elapsed_frames;
 
     update_camera(g_camera);
@@ -314,7 +317,7 @@ void engine_render()
             bind_pipeline(g_renderer.geometry_pipeline);
 
             for (auto& entity : entitiesToRender) {
-                bind_vertex_buffer(entity->vertexBuffer);
+                bind_vertex_buffer(entity->vertex_buffer);
                 render_entity(entity, g_renderer.geometry_pipeline);
             }
 

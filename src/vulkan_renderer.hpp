@@ -57,7 +57,7 @@ struct renderer_submit_context
     VkCommandBuffer CmdBuffer;
 };
 
-struct ImageBuffer
+struct image_buffer
 {
     VkImage       handle;
     VkImageView   view;
@@ -79,8 +79,8 @@ struct Swapchain
 
     VkSwapchainKHR handle;
 
-    std::vector<ImageBuffer> images;
-    ImageBuffer depth_image;
+    std::vector<image_buffer> images;
+    image_buffer depth_image;
 
     uint32_t currentImage;
 };
@@ -105,12 +105,6 @@ struct ShaderCompiler
     shaderc_compile_options_t options;
 };
 
-struct Shader
-{
-    VkShaderStageFlagBits type;
-    VkShaderModule        handle;
-};
-
 struct render_pass_info
 {
     uint32_t attachment_count;
@@ -125,7 +119,7 @@ struct render_pass_info
     VkSampleCountFlagBits sample_count;
 
     bool has_depth;
-    VkFormat DepthFormat;
+    VkFormat depth_format;
 };
 
 struct RenderPass
@@ -134,25 +128,34 @@ struct RenderPass
     std::vector<VkFramebuffer> framebuffers;
 };
 
+//
+//struct shader_info
+//{
+//    VkShaderStageFlagBits Type;
+//    std::string Code;
+//};
 
-struct ShaderInfo
+struct shader_module
 {
-    VkShaderStageFlagBits Type;
-    std::string Code;
+    VkShaderModule handle;
+    VkShaderStageFlagBits type;
 };
 
 
 struct PipelineInfo
 {
+    VkDescriptorSetLayout descriptor_layout;
+    uint32_t push_constant_size;
     uint32_t binding_layout_size;
     std::vector<VkFormat> binding_format;
-    uint32_t push_constant_size;
-    std::vector<ShaderInfo> shaders;
+ 
+    std::vector<shader_module> shaders;
+    bool wireframe;
 };
 
 struct Pipeline
 {
-    VkDescriptorSetLayout DescriptorLayout;
+//    VkDescriptorSetLayout descriptor_layout;
     VkPipelineLayout layout;
     VkPipeline handle;
 };
@@ -167,7 +170,12 @@ struct vertex_buffer
 
 struct texture_buffer
 {
-    ImageBuffer image;
+    image_buffer image;
+};
+
+struct uniform_buffer
+{
+    Buffer buffer;
 };
 
 
@@ -189,7 +197,7 @@ struct vulkan_renderer
     Pipeline geometry_pipeline;
     Pipeline lighting_pipeline;
 
-    Pipeline wireframe_pipeline; // todo:
+    Pipeline wireframe_pipeline;
 };
 
 
@@ -201,7 +209,7 @@ void update_renderer_size(vulkan_renderer& renderer, uint32_t width, uint32_t he
 
 vertex_buffer* create_vertex_buffer(void* v, int vs, void* i, int is);
 texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height);
-entity* create_entity_renderer(const vertex_buffer* vertexBuffer);
+entity* create_entity_renderer(const vertex_buffer* buffer, const texture_buffer* texture);
 
 void bind_vertex_buffer(const vertex_buffer* buffer);
 

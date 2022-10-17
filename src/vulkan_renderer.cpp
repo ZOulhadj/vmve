@@ -7,8 +7,6 @@ static renderer_submit_context* g_sc = nullptr;
 
 static Swapchain g_swapchain{};
 
-static VkSampler g_sampler = nullptr;
-
 static std::vector<Frame> gFrames;
 static ShaderCompiler g_shader_compiler{};
 constexpr int frames_in_flight        = 2;
@@ -20,15 +18,37 @@ constexpr int frames_in_flight        = 2;
 // frame and image index often are the same but is not guaranteed.
 static uint32_t currentFrame = 0;
 
+// A global pool that descriptor sets will be allocated from.
+static VkDescriptorPool g_descriptor_pool;
 
-static VkQueryPool g_query_pool = nullptr;
+// This is a global descriptor set that will be used for all draw calls and
+// will contain descriptors such as a projection view matrix, global scene
+// information including lighting.
+static VkDescriptorSetLayout g_global_descriptor_layout;
 
-static VkDescriptorPool descriptor_pool;
-static std::vector<Buffer> g_uniform_buffers(frames_in_flight);
-static std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
-static VkDescriptorPool g_gui_descriptor_pool;
+// This is the actual descriptor set/collection that will hold the descriptors
+// also known as resources. Since this is the global descriptor set, this will 
+// hold the resources for projection view matrix, scene lighting etc. The reason
+// why this is an array is so that each frame has its own descriptor set.
+static std::array<VkDescriptorSet, frames_in_flight> g_global_descriptor_sets;
 
-const std::string geometry_vs_shader = R"(
+
+// The resources that will be part of the global descriptor set
+static std::array<Buffer, frames_in_flight> g_view_projection_ubos;
+static std::array<Buffer, frames_in_flight> g_scene_ubos;
+VkSampler g_sampler;
+
+// alignas(x) is required here due to Vulkan requirements regarding buffer padding.
+struct scene_ubo {
+    alignas(16) glm::vec3 cam_pos;
+    alignas(16) glm::vec3 sun_pos;
+    alignas(16) glm::vec3 sun_color;
+};
+
+
+
+
+const std::string geometry_vs_code = R"(
 #version 450
 
 layout(location = 0) in vec3 position;
@@ -36,8 +56,9 @@ layout(location = 1) in vec3 color;
 layout(location = 2) in vec3 normal;
 layout(location = 3) in vec2 uv;
 
-layout(location = 0) out vec3 pixel_color;
 layout(location = 1) out vec2 texture_coord;
+layout(location = 2) out vec3 vertex_world_pos;
+layout(location = 3) out vec3 vertex_normal;
 
 layout(binding = 0) uniform model_view_projection {
     mat4 proj;
@@ -49,9 +70,14 @@ layout(push_constant) uniform constant
 } obj;
 
 void main() {
-    gl_Position = mvp.proj * obj.model * vec4(position, 1.0);
-    pixel_color = normal;
+
     texture_coord = uv;
+    vertex_world_pos = vec3(obj.model * vec4(position, 1.0));
+    vertex_normal = mat3(transpose(inverse(obj.model))) * normal;
+
+
+    gl_Position = mvp.proj * obj.model * vec4(position, 1.0);
+
 }
 )";
 
@@ -60,22 +86,49 @@ const std::string geometry_fs_code = R"(
 
         layout(location = 0) out vec4 final_color;
 
-        layout(location = 0) in vec3 pixel_color;
         layout(location = 1) in vec2 texture_coord;
+        layout(location = 2) in vec3 vertex_world_pos;
+        layout(location = 3) in vec3 vertex_normal;
 
-        layout(binding = 1) uniform sampler2D tex;
+
+        layout(binding = 1) uniform scene_ubo {
+            vec3 cam_pos;
+            vec3 sun_pos;
+            vec3 sun_color;
+        } scene;
+
+        layout(binding = 2) uniform sampler2D tex;
 
         void main() {
-            vec3 color = texture(tex, texture_coord).xyz;
+            // phong lighting = ambient + diffuse + specular
+
+            float ambient_intensity = 0.1f;
+            vec3 ambient_lighting = ambient_intensity * scene.sun_color;
+
+            vec3 norm = normalize(vertex_normal);
+            vec3 sun_dir = normalize(scene.sun_pos - vertex_world_pos);
+            float diff = max(dot(norm, sun_dir), 0.0);
+            vec3 diffuse = diff * scene.sun_color;
+
+            float specular_intensity = 0.5f;
+            vec3 view_dir = normalize(scene.cam_pos - vertex_world_pos);
+            vec3 reflect_dir = reflect(-sun_dir, norm);
+            float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
+            vec3 specular = specular_intensity * spec * scene.sun_color;
+
+            vec3 texel = texture(tex, texture_coord).xyz;
+            vec3 color = texel * (ambient_lighting + diffuse + specular);
             final_color = vec4(color, 1.0);
         }
     )";
 
 const std::string lighting_vs_code = R"(
+    #version 450
     void main() { }
 )";
 
 const std::string lighting_fs_code = R"(
+    #version 450
     void main() { }
 )";
 
@@ -543,12 +596,12 @@ static VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspe
     return view;
 }
 
-static ImageBuffer create_image(VkFormat format,
+static image_buffer create_image(VkFormat format,
                                 VkExtent2D extent,
                                 VkImageUsageFlags usage,
                                 VkImageAspectFlags aspect)
 {
-    ImageBuffer image{};
+    image_buffer image{};
 
     VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -573,7 +626,7 @@ static ImageBuffer create_image(VkFormat format,
     return image;
 }
 
-static void destroy_image(ImageBuffer* image)
+static void destroy_image(image_buffer* image)
 {
     vkDestroyImageView(g_rc->device.device, image->view, nullptr);
     vmaDestroyImage(g_rc->allocator, image->handle, image->allocation);
@@ -736,7 +789,7 @@ static Swapchain create_swapchain(buffer_mode buffering_mode, vsync_mode sync_mo
         //
         // Also, since all color images have the same format there will be a format for
         // each image and a swapchain global format for them.
-        ImageBuffer& image = swapchain.images[i];
+        image_buffer& image = swapchain.images[i];
 
         image.handle = color_images[i];
         image.view   = create_image_view(image.handle, swapchain_info.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -867,54 +920,16 @@ static void destroy_frames()
     }
 }
 
-static void create_query()
-{
-    VkQueryPoolCreateInfo query_info { VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
-    query_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    query_info.queryCount = 2;
-
-    vk_check(vkCreateQueryPool(g_rc->device.device, &query_info, nullptr, &g_query_pool));
-}
-
-static void destroy_query()
-{
-    vkDestroyQueryPool(g_rc->device.device, g_query_pool, nullptr);
-}
-
-
 static void create_debug_ui(RenderPass& renderPass)
 {
-    const VkDescriptorPoolSize pool_sizes[] = {
-            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-    };
-
-    VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
-    pool_info.poolSizeCount = u32(IM_ARRAYSIZE(pool_sizes));
-    pool_info.pPoolSizes = pool_sizes;
-    vk_check(vkCreateDescriptorPool(g_rc->device.device, &pool_info, nullptr, &g_gui_descriptor_pool));
-
-
-
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
 
-    if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
+  /*  if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
         printf("Failed to load required font for ImGui.\n");
         return;
-    }
+    }*/
 
     ImGui::StyleColorsDark();
 
@@ -926,7 +941,7 @@ static void create_debug_ui(RenderPass& renderPass)
     init_info.QueueFamily = g_rc->device.graphics_index;
     init_info.Queue = g_rc->device.graphics_queue;
     init_info.PipelineCache = nullptr;
-    init_info.DescriptorPool = g_gui_descriptor_pool;
+    init_info.DescriptorPool = g_descriptor_pool;
     init_info.Subpass = 0;
     init_info.MinImageCount = gFrames.size();
     init_info.ImageCount = gFrames.size();
@@ -945,8 +960,6 @@ static void create_debug_ui(RenderPass& renderPass)
 
 static void destroy_debug_ui()
 {
-    vkDestroyDescriptorPool(g_rc->device.device, g_gui_descriptor_pool, nullptr);
-
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
 
@@ -968,9 +981,9 @@ static void destroy_shader_compiler()
     shaderc_compiler_release(g_shader_compiler.compiler);
 }
 
-static Shader create_shader(VkShaderStageFlagBits type, const std::string& code)
+static shader_module create_shader(VkShaderStageFlagBits type, const std::string& code)
 {
-    Shader shader_module{};
+    shader_module shader{};
 
     shaderc_compilation_result_t result;
     shaderc_compilation_status status;
@@ -994,10 +1007,10 @@ static Shader create_shader(VkShaderStageFlagBits type, const std::string& code)
     module_info.codeSize = u32(shaderc_result_get_length(result));
     module_info.pCode    = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(result));
 
-    vk_check(vkCreateShaderModule(g_rc->device.device, &module_info, nullptr, &shader_module.handle));
-    shader_module.type = type;
+    vk_check(vkCreateShaderModule(g_rc->device.device, &module_info, nullptr, &shader.handle));
+    shader.type = type;
 
-    return shader_module;
+    return shader;
 }
 
 static std::vector<VkFramebuffer> create_framebuffers(VkRenderPass renderPass, VkExtent2D extent, bool hasDepth)
@@ -1067,7 +1080,7 @@ static RenderPass create_render_pass(const render_pass_info& info)
 
     if (info.has_depth) {
         VkAttachmentDescription depthAttach{};
-        depthAttach.format         = info.DepthFormat;
+        depthAttach.format         = info.depth_format;
         depthAttach.samples        = info.sample_count; // todo:
         depthAttach.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depthAttach.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -1125,31 +1138,52 @@ static void destroy_render_pass(RenderPass& renderPass)
     vkDestroyRenderPass(g_rc->device.device, renderPass.handle, nullptr);
 }
 
+
+static VkDescriptorPool create_descriptor_pool(const std::vector<VkDescriptorPoolSize>& sizes, uint32_t max_sets)
+{
+    VkDescriptorPool pool{};
+    
+    VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+    pool_info.poolSizeCount = u32(sizes.size());
+    pool_info.pPoolSizes = sizes.data();
+    pool_info.maxSets = max_sets;
+
+    vk_check(vkCreateDescriptorPool(g_rc->device.device, &pool_info, nullptr, &pool));
+
+    return pool;
+}
+
+static VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<VkDescriptorSetLayoutBinding>& bindings)
+{
+    VkDescriptorSetLayout layout{};
+
+	VkDescriptorSetLayoutCreateInfo descriptor_layout_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+	descriptor_layout_info.bindingCount = u32(bindings.size());
+	descriptor_layout_info.pBindings    = bindings.data();
+
+	vk_check(vkCreateDescriptorSetLayout(g_rc->device.device, &descriptor_layout_info, nullptr, &layout));
+
+    return layout;
+}
+
+static std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorPool pool, const std::vector<VkDescriptorSetLayout>& layouts)
+{
+    std::vector<VkDescriptorSet> descriptor_sets(layouts.size());
+
+    VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+    allocate_info.descriptorPool = g_descriptor_pool;
+    allocate_info.descriptorSetCount = u32(layouts.size());
+    allocate_info.pSetLayouts = layouts.data();
+
+    vk_check(vkAllocateDescriptorSets(g_rc->device.device, &allocate_info, descriptor_sets.data()));
+
+    return descriptor_sets;
+}
+
+
 static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass)
 {
     Pipeline pipeline{};
-
-
-    // create descriptor set layout
-    VkDescriptorSetLayoutBinding uniformBinding{};
-    uniformBinding.binding = 0;
-    uniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uniformBinding.descriptorCount = 1;
-    uniformBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    VkDescriptorSetLayoutBinding samplerBinding{};
-    samplerBinding.binding = 1;
-    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerBinding.descriptorCount = 1;
-    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    VkDescriptorSetLayoutBinding descriptorBindings[2] { uniformBinding, samplerBinding };
-
-    VkDescriptorSetLayoutCreateInfo descriptor_layout_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-    descriptor_layout_info.bindingCount = 2;
-    descriptor_layout_info.pBindings    = descriptorBindings;
-
-    vk_check(vkCreateDescriptorSetLayout(g_rc->device.device, &descriptor_layout_info, nullptr, &pipeline.DescriptorLayout));
 
     // push constant
     VkPushConstantRange push_constant{};
@@ -1160,7 +1194,7 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
     // create pipeline layout
     VkPipelineLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     layout_info.setLayoutCount = 1;
-    layout_info.pSetLayouts    = &pipeline.DescriptorLayout;
+    layout_info.pSetLayouts    = &pipelineInfo.descriptor_layout;
     layout_info.pushConstantRangeCount = 1;
     layout_info.pPushConstantRanges    = &push_constant;
 
@@ -1200,19 +1234,13 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
     vertex_input_info.pVertexAttributeDescriptions    = attributes.data();
 
     std::vector<VkPipelineShaderStageCreateInfo> shader_infos;
-    std::vector<VkShaderModule> shaderModules;
-
     for (auto& shader : pipelineInfo.shaders) {
-        // Compile shader
-        VkShaderModule shaderHandle = create_shader(shader.Type, shader.Code).handle;
-
         // Create shader module
         VkPipelineShaderStageCreateInfo shader_info{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
-        shader_info.stage  = shader.Type;
-        shader_info.module = shaderHandle;
+        shader_info.stage  = shader.type;
+        shader_info.module = shader.handle;
         shader_info.pName  = "main";
 
-        shaderModules.push_back(shaderHandle);
         shader_infos.push_back(shader_info);
     }
 
@@ -1228,7 +1256,7 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
     VkPipelineRasterizationStateCreateInfo rasterizer_info { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
     rasterizer_info.depthClampEnable        = VK_FALSE;
     rasterizer_info.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer_info.polygonMode             = VK_POLYGON_MODE_FILL;
+    rasterizer_info.polygonMode             = !pipelineInfo.wireframe ? VK_POLYGON_MODE_FILL : VK_POLYGON_MODE_LINE;
     rasterizer_info.cullMode                = VK_CULL_MODE_BACK_BIT;
     rasterizer_info.frontFace               = VK_FRONT_FACE_CLOCKWISE;
     rasterizer_info.depthBiasEnable         = VK_FALSE;
@@ -1308,12 +1336,6 @@ static Pipeline create_pipeline(PipelineInfo& pipelineInfo, const RenderPass& re
                                        nullptr,
                                        &pipeline.handle));
 
-
-
-    // Delete individual shaders since they are now part of the pipeline
-    for (auto& shader : shaderModules)
-        vkDestroyShaderModule(g_rc->device.device, shader, nullptr);
-
     return pipeline;
 }
 
@@ -1321,7 +1343,6 @@ static void destroy_pipeline(Pipeline& pipeline)
 {
     vkDestroyPipeline(g_rc->device.device, pipeline.handle, nullptr);
     vkDestroyPipelineLayout(g_rc->device.device, pipeline.layout, nullptr);
-    vkDestroyDescriptorSetLayout(g_rc->device.device, pipeline.DescriptorLayout, nullptr);
 }
 
 
@@ -1467,11 +1488,117 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
 
     //
     g_swapchain = create_swapchain(buffering_mode, sync_mode);
-    g_sampler = create_sampler(VK_FILTER_LINEAR, 16);
 
     create_frames();
-
     create_shader_compiler();
+
+
+	const std::vector<VkDescriptorPoolSize> pool_sizes {
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+	};
+
+    g_descriptor_pool = create_descriptor_pool(pool_sizes, 1000 * pool_sizes.size());
+
+    const std::vector<VkDescriptorSetLayoutBinding> global_layout{
+        { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
+        { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
+        { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT } // image sampler
+    };
+
+    g_global_descriptor_layout = create_descriptor_set_layout(global_layout);
+
+
+
+	// allocator memory for the global descriptor set
+    for (std::size_t i = 0; i < g_global_descriptor_sets.size(); ++i) {
+		VkDescriptorSetAllocateInfo info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+        info.descriptorPool = g_descriptor_pool;
+        info.pSetLayouts = &g_global_descriptor_layout;
+        info.descriptorSetCount = 1;
+
+        vk_check(vkAllocateDescriptorSets(g_rc->device.device, &info, &g_global_descriptor_sets[i]));
+    }
+
+
+
+
+    // temp here: create the global descriptor resources
+    for (std::size_t i = 0; i < g_view_projection_ubos.size(); ++i) {
+        g_view_projection_ubos[i] = create_buffer(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    }
+	for (std::size_t i = 0; i < g_scene_ubos.size(); ++i) {
+        g_scene_ubos[i] = create_buffer(sizeof(scene_ubo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+	}
+    g_sampler = create_sampler(VK_FILTER_LINEAR, 16);
+
+
+    const texture_buffer* moon_texture = engine_load_texture("assets/textures/earth.jpg");
+
+    for (std::size_t i = 0; i < g_global_descriptor_sets.size(); ++i) {
+		VkDescriptorBufferInfo view_proj_ubo {};
+        view_proj_ubo.buffer = g_view_projection_ubos[i].buffer;
+        view_proj_ubo.offset = 0;
+        view_proj_ubo.range = VK_WHOLE_SIZE; // or sizeof(struct)
+
+		VkDescriptorBufferInfo scene_ubo_info {};
+        scene_ubo_info.buffer = g_scene_ubos[i].buffer;
+        scene_ubo_info.offset = 0;
+        scene_ubo_info.range = VK_WHOLE_SIZE; // or sizeof(struct)
+
+
+		VkDescriptorImageInfo image_info{};
+		image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		image_info.imageView = moon_texture->image.view;
+		image_info.sampler = g_sampler;
+
+        std::array<VkWriteDescriptorSet, 3> descriptor_writes{};
+		descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptor_writes[0].dstSet = g_global_descriptor_sets[i];
+		descriptor_writes[0].dstBinding = 0;
+		descriptor_writes[0].dstArrayElement = 0;
+		descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptor_writes[0].descriptorCount = 1;
+		descriptor_writes[0].pBufferInfo = &view_proj_ubo;
+
+		descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptor_writes[1].dstSet = g_global_descriptor_sets[i];
+		descriptor_writes[1].dstBinding = 1;
+		descriptor_writes[1].dstArrayElement = 0;
+		descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptor_writes[1].descriptorCount = 1;
+		descriptor_writes[1].pBufferInfo = &scene_ubo_info;
+
+		descriptor_writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptor_writes[2].dstSet = g_global_descriptor_sets[i];
+		descriptor_writes[2].dstBinding = 2;
+		descriptor_writes[2].dstArrayElement = 0;
+		descriptor_writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptor_writes[2].descriptorCount = 1;
+		descriptor_writes[2].pImageInfo = &image_info;
+
+		vkUpdateDescriptorSets(g_rc->device.device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
+    }
+
+
+
+
+    // Here we compile the required shaders all in one go
+    const shader_module geometry_vs = create_shader(VK_SHADER_STAGE_VERTEX_BIT, geometry_vs_code);
+    const shader_module geometry_fs = create_shader(VK_SHADER_STAGE_FRAGMENT_BIT, geometry_fs_code);
+
+    const shader_module lighting_vs = create_shader(VK_SHADER_STAGE_VERTEX_BIT, lighting_vs_code);
+    const shader_module lighting_fs = create_shader(VK_SHADER_STAGE_FRAGMENT_BIT, lighting_fs_code);
+
 
     {
         render_pass_info geometry_pass{};
@@ -1480,7 +1607,7 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
         geometry_pass.size = { g_swapchain.images[0].extent };
         geometry_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
         geometry_pass.has_depth = true;
-        geometry_pass.DepthFormat = VK_FORMAT_D32_SFLOAT;
+        geometry_pass.depth_format = VK_FORMAT_D32_SFLOAT;
         geometry_pass.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
         geometry_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
         geometry_pass.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -1490,22 +1617,22 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
         renderer.geometry_render_pass = create_render_pass(geometry_pass);
     }
 
-  //  {
-		//render_pass_info lighting_pass{};
-  //      lighting_pass.attachment_count = 1;
-		//lighting_pass.format = g_swapchain.images[0].format;
-		//lighting_pass.size = { g_swapchain.images[0].extent };
-		//lighting_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
-		//lighting_pass.has_depth = true;
-		//lighting_pass.DepthFormat = VK_FORMAT_D32_SFLOAT;
-		//lighting_pass.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		//lighting_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
-		//lighting_pass.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-		//lighting_pass.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		//lighting_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    {
+        render_pass_info lighting_pass{};
+        lighting_pass.attachment_count = 1;
+        lighting_pass.format = g_swapchain.images[0].format;
+        lighting_pass.size = { g_swapchain.images[0].extent };
+        lighting_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
+        lighting_pass.has_depth = true;
+        lighting_pass.depth_format = VK_FORMAT_D32_SFLOAT;
+        lighting_pass.load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
+        lighting_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
+        lighting_pass.initial_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        lighting_pass.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        lighting_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-		//renderer.lighting_render_pass = create_render_pass(lighting_pass);
-  //  }
+        renderer.lighting_render_pass = create_render_pass(lighting_pass);
+    }
     
     {
         render_pass_info ui_pass{};
@@ -1524,110 +1651,124 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
     }
 
 
+    // Create a base pipeline info struct that multiple pipelines can derive
     const std::vector<VkFormat> binding_format {
-            VK_FORMAT_R32G32B32_SFLOAT, // Position
-            VK_FORMAT_R32G32B32_SFLOAT, // Color
-            VK_FORMAT_R32G32B32_SFLOAT, // Normal
-            VK_FORMAT_R32G32_SFLOAT     // UV
+        VK_FORMAT_R32G32B32_SFLOAT, // Position
+        VK_FORMAT_R32G32B32_SFLOAT, // Color
+        VK_FORMAT_R32G32B32_SFLOAT, // Normal
+        VK_FORMAT_R32G32_SFLOAT     // UV
     };
 
+    PipelineInfo pipeline_info{};
+    pipeline_info.descriptor_layout = g_global_descriptor_layout;
+    pipeline_info.push_constant_size = sizeof(glm::mat4);
+    pipeline_info.binding_layout_size = sizeof(vertex);
+    pipeline_info.binding_format      = binding_format;
+
+    pipeline_info.wireframe           = false;
+
     {
-		const std::vector<ShaderInfo> geometry_pipeline_shaders{
-			{ VK_SHADER_STAGE_VERTEX_BIT, geometry_vs_shader },
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, geometry_fs_code }
-		};
-
-		PipelineInfo pipeline_info{};
-		pipeline_info.binding_layout_size = sizeof(vertex);
-		pipeline_info.binding_format = binding_format;
-		pipeline_info.push_constant_size = sizeof(glm::mat4);
-		pipeline_info.shaders = geometry_pipeline_shaders;
-
-		renderer.geometry_pipeline = create_pipeline(pipeline_info, renderer.geometry_render_pass);
+        pipeline_info.shaders = { geometry_vs, geometry_fs };
+        renderer.geometry_pipeline = create_pipeline(pipeline_info, renderer.geometry_render_pass);
     }
+    {
+        pipeline_info.shaders = { lighting_vs, lighting_fs };
+        renderer.lighting_pipeline = create_pipeline(pipeline_info, renderer.lighting_render_pass);
+    }   
+    {
+        pipeline_info.shaders = { geometry_vs, geometry_fs };
+        pipeline_info.wireframe = true;
 
-	/*{
-		const std::vector<ShaderInfo> lighting_pipeline_shaders{
-			{ VK_SHADER_STAGE_VERTEX_BIT, lighting_vs_code },
-			{ VK_SHADER_STAGE_FRAGMENT_BIT, lighting_fs_code }
-		};
-
-		PipelineInfo pipeline_info{};
-		pipeline_info.binding_layout_size = sizeof(vertex);
-		pipeline_info.binding_format = binding_format;
-		pipeline_info.push_constant_size = sizeof(glm::mat4);
-		pipeline_info.shaders = lighting_pipeline_shaders;
-
-		renderer.lighting_pipeline = create_pipeline(pipeline_info, renderer.lighting_render_pass);
-	}*/
+        renderer.wireframe_pipeline = create_pipeline(pipeline_info, renderer.geometry_render_pass);
+    }
 
     create_debug_ui(renderer.ui_render_pass);
 
 
 
+    // descriptor is a struct/metadata to a resource
+    //
+    // descriptor set is a collection of descriptors
+    // 
+    // descriptors should be grouped together into descriptor sets
+    // based on binding frequency.
+    //
+    //
+    // For example:
+    //
+    // Descriptor Set #0 (Global data shared for most draw calls)
+    // # UBO [Projection View Matrix]
+    // # UBO [Lights in a scene]
+    //
+    //
+    // Descriptor Set #1 (Per-draw call)
+    // # Texture
+    // # Texture
+    // # Texture
+    // # Texture
+    // # Texture
+    // # Model Matrix
+    //
+    //
+    // [Bind Descriptor Set #0]------------------------------------------------
+    // [Bind Descriptor Set #1][Bind Descriptor Set #1][Bind Descriptor Set #1]
+    //         (VkDraw)                (VkDraw)                (VkDraw)
+	//
+    // or
+    //
+    // For example:
+	//
+	// Descriptor Set #0 (Global data shared for most draw calls)
+	// # UBO [Projection View Matrix]
+	// # UBO [Lights in a scene]
+	//
+	//
+	// Descriptor Set #1 (Per-draw call)
+	// # Texture
+	// # Texture
+	// # Texture
+	// # Texture
+	// # Texture
+    // 
+    // Descriptor Set #2 (Per draw call)
+	// # Model Matrix
+	//
+	//
+	// [Bind Descriptor Set #0]------------------------------------------------
+	// [Bind Descriptor Set #1][Bind Descriptor Set #1][Bind Descriptor Set #1]
+    // [Bind Descriptor Set #2][Bind Descriptor Set #2][Bind Descriptor Set #2]
+	//         (VkDraw)                (VkDraw)                (VkDraw)
 
 
-
-
-#if 1
     // create a uniform buffers (one for each frame in flight)
-    for (auto& uniform_buffer : g_uniform_buffers) {
+   /* for (auto& uniform_buffer : g_uniform_buffers) {
         uniform_buffer = create_buffer(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    }
+    }*/
+
+ //   std::vector<VkDescriptorPoolSize> pool_sizes(2);
+ //   pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+ //   pool_sizes[0].descriptorCount = 1000; // 1 (scene) + 1 (object)
+
+	//pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	//pool_sizes[1].descriptorCount = 1000; // 1 per object
 
 
-    VkDescriptorPoolSize pool_sizes[2] {
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, u32(frames_in_flight) },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, u32(frames_in_flight) },
-    };
+ //   g_descriptor_pool = create_descriptor_pool(pool_sizes, 50);
+ // 
+	//std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, renderer.geometry_pipeline.descriptor_layout);
+    //allocate_descriptor_sets(descriptor_pool, layouts);
 
-    VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-    pool_info.poolSizeCount = 2;
-    pool_info.pPoolSizes    = pool_sizes;
-    pool_info.maxSets       = u32(frames_in_flight);
 
-    vk_check(vkCreateDescriptorPool(g_rc->device.device, &pool_info, nullptr, &descriptor_pool));
 
-    std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, renderer.geometry_pipeline.DescriptorLayout);
-    VkDescriptorSetAllocateInfo allocate_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-    allocate_info.descriptorPool     = descriptor_pool;
-    allocate_info.descriptorSetCount = u32(frames_in_flight);
-    allocate_info.pSetLayouts        = layouts.data();
+    // todo: when creating a each entity we need to write the descriptor sets
 
-    vk_check(vkAllocateDescriptorSets(g_rc->device.device, &allocate_info, descriptor_sets.data()));
 
-    texture_buffer* b = engine_load_texture("assets/textures/earth.jpg");
-    for (std::size_t i = 0; i < descriptor_sets.size(); ++i) {
-        VkDescriptorBufferInfo buffer_info{};
-        buffer_info.buffer = g_uniform_buffers[i].buffer;
-        buffer_info.offset = 0;
-        buffer_info.range  = VK_WHOLE_SIZE; // or sizeof(struct)
+    // Delete all individual shaders since they are now part of the various pipelines
+	vkDestroyShaderModule(g_rc->device.device, lighting_fs.handle, nullptr);
+	vkDestroyShaderModule(g_rc->device.device, lighting_vs.handle, nullptr);
 
-        VkDescriptorImageInfo image_info{};
-        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        image_info.imageView   = g_textures[0]->image.view; // todo:
-        image_info.sampler     = g_sampler;
-
-        VkWriteDescriptorSet descriptor_writes[2] {};
-        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet          = descriptor_sets[i];
-        descriptor_writes[0].dstBinding      = 0;
-        descriptor_writes[0].dstArrayElement = 0;
-        descriptor_writes[0].descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_writes[0].descriptorCount = 1;
-        descriptor_writes[0].pBufferInfo     = &buffer_info;
-
-        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[1].dstSet          = descriptor_sets[i];
-        descriptor_writes[1].dstBinding      = 1;
-        descriptor_writes[1].dstArrayElement = 0;
-        descriptor_writes[1].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptor_writes[1].descriptorCount = 1;
-        descriptor_writes[1].pImageInfo     = &image_info;
-
-        vkUpdateDescriptorSets(g_rc->device.device, 2, descriptor_writes, 0, nullptr);
-    }
-#endif
+    vkDestroyShaderModule(g_rc->device.device, geometry_fs.handle, nullptr);
+    vkDestroyShaderModule(g_rc->device.device, geometry_vs.handle, nullptr);
 
 
     return renderer;
@@ -1637,7 +1778,7 @@ void destroy_renderer(vulkan_renderer& renderer)
 {
     vk_check(vkDeviceWaitIdle(g_rc->device.device));
 
-    vkDestroyDescriptorPool(g_rc->device.device, descriptor_pool, nullptr);
+    vkDestroyDescriptorPool(g_rc->device.device, g_descriptor_pool, nullptr);
 
 
     // Free all entities created by the client
@@ -1655,11 +1796,11 @@ void destroy_renderer(vulkan_renderer& renderer)
     }
     g_textures.clear();
 
-    // Free all renderable resources that may have been allocated by the client
+    // Free all render resources that may have been allocated by the client
     for (auto& r : g_vertex_buffers) {
         destroy_buffer(&r->index_buffer);
         destroy_buffer(&r->vertex_buffer);
-
+        
         delete r;
     }
     g_vertex_buffers.clear();
@@ -1668,13 +1809,14 @@ void destroy_renderer(vulkan_renderer& renderer)
 
 
 
-    for (auto& buffer : g_uniform_buffers) {
-        destroy_buffer(&buffer);
-    }
-    g_uniform_buffers.clear();
-
+    //for (auto& buffer : g_uniform_buffers) {
+    //    destroy_buffer(&buffer);
+    //}
+    //g_uniform_buffers.clear();
+    // destroy_sampler(g_sampler);
 
     //destroy_pipeline(renderer.skyspherePipeline);
+    destroy_pipeline(renderer.wireframe_pipeline);
     destroy_pipeline(renderer.lighting_pipeline);
     destroy_pipeline(renderer.geometry_pipeline);
 
@@ -1690,7 +1832,6 @@ void destroy_renderer(vulkan_renderer& renderer)
 
     destroy_frames();
 
-    destroy_sampler(g_sampler);
 
     destroy_swapchain(g_swapchain);
 
@@ -1824,7 +1965,6 @@ texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, ui
 
     });
 
-
     destroy_buffer(&staging_buffer);
 
     g_textures.push_back(buffer);
@@ -1832,11 +1972,12 @@ texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, ui
     return buffer;
 }
 
-entity* create_entity_renderer(const vertex_buffer* vertexBuffer)
+entity* create_entity_renderer(const vertex_buffer* buffer, const texture_buffer* texture)
 {
     auto e = new entity();
     e->model        = glm::mat4(1.0f);
-    e->vertexBuffer = vertexBuffer;
+    e->vertex_buffer = buffer;
+    e->texture_buffer = texture;
 
     g_entities.push_back(e);
 
@@ -1856,8 +1997,14 @@ void bind_vertex_buffer(const vertex_buffer* buffer)
 void begin_renderer_frame(quaternion_camera& camera)
 {
     // copy data into uniform buffer
-    glm::mat4 vp = camera.proj * camera.view;
-    set_buffer_data(&g_uniform_buffers[currentFrame], &vp, sizeof(glm::mat4));
+	glm::mat4 vp = camera.proj * camera.view;
+	set_buffer_data(&g_view_projection_ubos[currentFrame], &vp, sizeof(glm::mat4));
+
+    scene_ubo s{};
+    s.cam_pos = camera.position;
+    s.sun_pos = glm::vec3(glfwGetTime(), 200.0f, 500.0f);
+    s.sun_color = glm::vec3(1.0f, 1.0f, 1.0f);
+    set_buffer_data(&g_scene_ubos[currentFrame], &s, sizeof(scene_ubo));
 
     begin_frame(g_swapchain, gFrames[currentFrame]);
 }
@@ -1895,15 +2042,16 @@ void bind_pipeline(Pipeline& pipeline)
     const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
 
     vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
-    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptor_sets[currentFrame], 0, nullptr);
+    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &g_global_descriptor_sets[currentFrame], 0, nullptr);
 }
 
 void render_entity(entity* e, Pipeline& pipeline)
 {
     const VkCommandBuffer& cmd_buffer = gFrames[currentFrame].cmd_buffer;
 
+
     vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &e->model);
-    vkCmdDrawIndexed(cmd_buffer, e->vertexBuffer->index_count, 1, 0, 0, 0);
+    vkCmdDrawIndexed(cmd_buffer, e->vertex_buffer->index_count, 1, 0, 0, 0);
 
 
     // Reset the entity transform matrix after being rendered.
