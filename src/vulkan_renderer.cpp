@@ -32,7 +32,6 @@ static VkDescriptorSetLayout g_global_descriptor_layout;
 // why this is an array is so that each frame has its own descriptor set.
 static std::array<VkDescriptorSet, frames_in_flight> g_global_descriptor_sets;
 
-
 // The resources that will be part of the global descriptor set
 static std::array<Buffer, frames_in_flight> g_view_projection_ubos;
 static std::array<Buffer, frames_in_flight> g_scene_ubos;
@@ -1533,12 +1532,10 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
 
 
     // temp here: create the global descriptor resources
-    for (std::size_t i = 0; i < g_view_projection_ubos.size(); ++i) {
+    for (std::size_t i = 0; i < frames_in_flight; ++i) {
         g_view_projection_ubos[i] = create_buffer(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    }
-	for (std::size_t i = 0; i < g_scene_ubos.size(); ++i) {
         g_scene_ubos[i] = create_buffer(sizeof(scene_ubo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-	}
+    }
     g_sampler = create_sampler(VK_FILTER_LINEAR, 16);
 
 
@@ -1739,27 +1736,6 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
     // [Bind Descriptor Set #2][Bind Descriptor Set #2][Bind Descriptor Set #2]
 	//         (VkDraw)                (VkDraw)                (VkDraw)
 
-
-    // create a uniform buffers (one for each frame in flight)
-   /* for (auto& uniform_buffer : g_uniform_buffers) {
-        uniform_buffer = create_buffer(sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    }*/
-
- //   std::vector<VkDescriptorPoolSize> pool_sizes(2);
- //   pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
- //   pool_sizes[0].descriptorCount = 1000; // 1 (scene) + 1 (object)
-
-	//pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//pool_sizes[1].descriptorCount = 1000; // 1 per object
-
-
- //   g_descriptor_pool = create_descriptor_pool(pool_sizes, 50);
- // 
-	//std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, renderer.geometry_pipeline.descriptor_layout);
-    //allocate_descriptor_sets(descriptor_pool, layouts);
-
-
-
     // todo: when creating a each entity we need to write the descriptor sets
 
 
@@ -1778,6 +1754,15 @@ void destroy_renderer(vulkan_renderer& renderer)
 {
     vk_check(vkDeviceWaitIdle(g_rc->device.device));
 
+
+    destroy_sampler(g_sampler);
+	for (std::size_t i = 0; i < frames_in_flight; ++i) {
+        destroy_buffer(&g_scene_ubos[i]);
+        destroy_buffer(&g_view_projection_ubos[i]);
+	}
+    
+    vkDestroyDescriptorSetLayout(g_rc->device.device, g_global_descriptor_layout, nullptr);
+	
     vkDestroyDescriptorPool(g_rc->device.device, g_descriptor_pool, nullptr);
 
 
@@ -1805,16 +1790,6 @@ void destroy_renderer(vulkan_renderer& renderer)
     }
     g_vertex_buffers.clear();
 
-
-
-
-
-    //for (auto& buffer : g_uniform_buffers) {
-    //    destroy_buffer(&buffer);
-    //}
-    //g_uniform_buffers.clear();
-    // destroy_sampler(g_sampler);
-
     //destroy_pipeline(renderer.skyspherePipeline);
     destroy_pipeline(renderer.wireframe_pipeline);
     destroy_pipeline(renderer.lighting_pipeline);
@@ -1827,8 +1802,6 @@ void destroy_renderer(vulkan_renderer& renderer)
     destroy_shader_compiler();
 
     destroy_debug_ui();
-
-    //destroy_renderer_query();
 
     destroy_frames();
 
@@ -2002,7 +1975,7 @@ void begin_renderer_frame(quaternion_camera& camera)
 
     scene_ubo s{};
     s.cam_pos = camera.position;
-    s.sun_pos = glm::vec3(glfwGetTime(), 200.0f, 500.0f);
+    s.sun_pos = glm::vec3(0.0f, 0.0f, 1.0f);
     s.sun_color = glm::vec3(1.0f, 1.0f, 1.0f);
     set_buffer_data(&g_scene_ubos[currentFrame], &s, sizeof(scene_ubo));
 
