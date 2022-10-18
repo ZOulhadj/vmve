@@ -9,7 +9,7 @@ constexpr float scale_factor = 0.000005f;
 // This is the applications speed factor relative to real world speeds.
 // A value of 10 means that the simulation will run 10% faster than
 // world speed.
-constexpr int speed_factor = 50.0f;
+constexpr int speed_factor = 10.0f;
 
 // angular velocity of earth in degrees per second
 // radians 0.0000729211533f
@@ -232,12 +232,20 @@ static void render_ui()
 	ImGui::Render();
 }
 
+
+struct engine_scene
+{
+    glm::vec3 camera_pos;
+    glm::vec3 sun_pos;
+    glm::vec3 sun_color;
+};
+
 int main()
 {
     engine_start("3D Satellite Visualizer");
 
 
-    const vertex_buffer* sphere = engine_load_model("assets/sphere.obj");
+    const vertex_buffer* sphere = engine_load_model("assets/sphere_hp.obj");
     //const vertex_buffer* cube   = engine_load_model("assets/iss.obj"); // This takes quite a long time to load
 
     const texture_buffer* sun_texture   = engine_load_texture("assets/textures/sun.jpg");
@@ -251,6 +259,10 @@ int main()
     //entity* test_entity = engine_create_entity(cube, sun_texture);
 
 
+    engine_scene scene;
+
+
+
 
     glm::vec3 london = cartesian(earth_radius, 51.5072, 0.1276, 2.0f);
     glm::vec2 london2 = geographic(earth_radius, london);
@@ -260,6 +272,9 @@ int main()
 
 
     while (engine_running()) {
+        if (engine_is_key_down(GLFW_KEY_ESCAPE)) engine_stop();
+
+
         // Camera movement
         if (engine_is_key_down(87))  engine_move_forwards();
         if (engine_is_key_down(83))  engine_move_backwards();

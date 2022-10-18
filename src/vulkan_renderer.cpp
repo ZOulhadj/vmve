@@ -1975,7 +1975,7 @@ void begin_renderer_frame(quaternion_camera& camera)
 
     scene_ubo s{};
     s.cam_pos = camera.position;
-    s.sun_pos = glm::vec3(0.0f, 0.0f, 1.0f);
+    s.sun_pos = glm::vec3(0.0f, 0.0f, -200.0f);
     s.sun_color = glm::vec3(1.0f, 1.0f, 1.0f);
     set_buffer_data(&g_scene_ubos[currentFrame], &s, sizeof(scene_ubo));
 

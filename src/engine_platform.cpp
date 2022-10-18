@@ -335,12 +335,7 @@ void engine_render()
 
         if (VkCommandBuffer cmd = begin_render_pass(g_renderer.ui_render_pass))
         {
-            /*ImGui_ImplVulkan_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
 
-
-            ImGui::Render();*/
 
             ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
