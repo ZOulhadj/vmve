@@ -43,10 +43,6 @@ static int g_elapsed_frames = 0;
 
 static bool g_running = false;
 
-// Internal buffers and entities
-vertex_buffer* icosphere = nullptr;
-entity* skysphereEntity = nullptr;
-
 
 std::vector<entity*> entitiesToRender;
 
@@ -60,18 +56,18 @@ static std::string load_text_file(std::string_view path)
     return buffer.str();
 }
 
-static void WindowCloseEvent(window_closed_event& e)
+static void window_close_event(window_closed_event& e)
 {
     g_running = false;
 }
 
-static void WindowResized(window_resized_event& e)
+static void window_resize_event(window_resized_event& e)
 {
     update_camera_projection(g_camera, e.GetWidth(), e.GetHeight());
     update_renderer_size(g_renderer, e.GetWidth(), e.GetHeight());
 }
 
-static void KeyPressEvent(key_pressed_event& e)
+static void key_press_event(key_pressed_event& e)
 {
 
 }
@@ -81,13 +77,13 @@ static void mouse_move_event(mouse_moved_event& e)
     update_camera_view(g_camera, e.GetX(), e.GetY());
 }
 
-static void ScrolledForwardsEvent(mouse_scrolled_up_event& e)
+static void scroll_up_event(mouse_scrolled_up_event& e)
 {
     g_camera.fov -= 5.0f;
     update_projection(g_camera);
 }
 
-static void ScrolledBackEvent(mouse_scrolled_down_event& e)
+static void scroll_down_event(mouse_scrolled_down_event& e)
 {
     g_camera.fov += 5.0f;
     update_projection(g_camera);
@@ -96,12 +92,12 @@ static void ScrolledBackEvent(mouse_scrolled_down_event& e)
 static void engine_event_callback(Event& e)
 {
     event_dispatcher dispatcher(e);
-    dispatcher.dispatch<window_closed_event>(WindowCloseEvent);
-    dispatcher.dispatch<window_resized_event>(WindowResized);
-    dispatcher.dispatch<key_pressed_event>(KeyPressEvent);
+    dispatcher.dispatch<window_closed_event>(window_close_event);
+    dispatcher.dispatch<window_resized_event>(window_resize_event);
+    dispatcher.dispatch<key_pressed_event>(key_press_event);
     dispatcher.dispatch<mouse_moved_event>(mouse_move_event);
-    dispatcher.dispatch<mouse_scrolled_up_event>(ScrolledForwardsEvent);
-    dispatcher.dispatch<mouse_scrolled_down_event>(ScrolledBackEvent);
+    dispatcher.dispatch<mouse_scrolled_up_event>(scroll_up_event);
+    dispatcher.dispatch<mouse_scrolled_down_event>(scroll_down_event);
 }
 
 void engine_start(const char* name)
@@ -312,35 +308,34 @@ void engine_render()
 
     begin_renderer_frame(g_camera);
     {
-        if (VkCommandBuffer cmd = begin_render_pass(g_renderer.geometry_render_pass))
-        {
-            bind_pipeline(g_renderer.geometry_pipeline);
+        // This is the geometry pass which is where all geometry data is rendered first.
+		const VkCommandBuffer cmd = begin_render_pass(g_renderer.geometry_render_pass);
+		bind_pipeline(g_renderer.geometry_pipeline);
 
-            for (auto& entity : entitiesToRender) {
-                bind_vertex_buffer(entity->vertex_buffer);
-                render_entity(entity, g_renderer.geometry_pipeline);
-            }
+		for (auto& entity : entitiesToRender) {
+			bind_vertex_buffer(entity->vertex_buffer);
+			render_entity(entity, g_renderer.geometry_pipeline);
+		}
 
-            end_render_pass(cmd);
-        }
+		end_render_pass(cmd);
 
-
+        // The second pass is called the lighting pass and is where the renderer will perform
+        // lighting calculations based on the entire frame. This two-step process is called 
+        // deferred rendering.
 		/*if (VkCommandBuffer cmd = begin_render_pass(g_renderer.lighting_render_pass))
 		{
 			bind_pipeline(g_renderer.lighting_pipeline);
 
 			end_render_pass(cmd);
 		}*/
+        
+        // This is the UI render pass and which is separate from the deferred rendering passes
+        // above.
+		const VkCommandBuffer cmd = begin_render_pass(g_renderer.ui_render_pass);
 
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
-        if (VkCommandBuffer cmd = begin_render_pass(g_renderer.ui_render_pass))
-        {
-
-
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
-
-            end_render_pass(cmd);
-        }
+		end_render_pass(cmd);
 
     }
     end_renderer_frame();

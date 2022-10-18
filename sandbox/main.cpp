@@ -244,7 +244,6 @@ int main()
 {
     engine_start("3D Satellite Visualizer");
 
-
     const vertex_buffer* sphere = engine_load_model("assets/sphere_hp.obj");
     //const vertex_buffer* cube   = engine_load_model("assets/iss.obj"); // This takes quite a long time to load
 
