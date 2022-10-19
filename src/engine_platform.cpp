@@ -309,33 +309,33 @@ void engine_render()
     begin_renderer_frame(g_camera);
     {
         // This is the geometry pass which is where all geometry data is rendered first.
-		const VkCommandBuffer cmd = begin_render_pass(g_renderer.geometry_render_pass);
-		bind_pipeline(g_renderer.geometry_pipeline);
+        begin_render_pass(g_renderer.geometry_render_pass);
+        bind_pipeline(g_renderer.geometry_pipeline);
 
-		for (auto& entity : entitiesToRender) {
-			bind_vertex_buffer(entity->vertex_buffer);
-			render_entity(entity, g_renderer.geometry_pipeline);
-		}
+        for (auto& entity : entitiesToRender) {
+            bind_vertex_buffer(entity->vertex_buffer);
+            render_entity(entity, g_renderer.geometry_pipeline);
+        }
 
-		end_render_pass(cmd);
+        end_render_pass();
 
         // The second pass is called the lighting pass and is where the renderer will perform
         // lighting calculations based on the entire frame. This two-step process is called 
         // deferred rendering.
-		/*if (VkCommandBuffer cmd = begin_render_pass(g_renderer.lighting_render_pass))
-		{
-			bind_pipeline(g_renderer.lighting_pipeline);
+        /*if (VkCommandBuffer cmd = begin_render_pass(g_renderer.lighting_render_pass))
+        {
+            bind_pipeline(g_renderer.lighting_pipeline);
 
-			end_render_pass(cmd);
-		}*/
+            end_render_pass(cmd);
+        }*/
         
         // This is the UI render pass and which is separate from the deferred rendering passes
         // above.
-		const VkCommandBuffer cmd = begin_render_pass(g_renderer.ui_render_pass);
+        begin_render_pass(g_renderer.ui_render_pass);
 
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), get_current_command_buffer());
 
-		end_render_pass(cmd);
+        end_render_pass();
 
     }
     end_renderer_frame();

@@ -107,9 +107,13 @@ struct ShaderCompiler
 
 struct render_pass_info
 {
-    uint32_t attachment_count;
-    VkFormat format;
-    VkExtent2D size;
+    //uint32_t attachment_count;
+
+    std::vector<image_buffer> color_attachments;
+    std::vector<image_buffer> depth_attachments;
+
+    //VkFormat format;
+    //VkExtent2D size;
     VkAttachmentLoadOp load_op;
     VkAttachmentStoreOp store_op;
     VkImageLayout initial_layout;
@@ -118,11 +122,11 @@ struct render_pass_info
 
     VkSampleCountFlagBits sample_count;
 
-    bool has_depth;
-    VkFormat depth_format;
+    //bool has_depth;
+    //VkFormat depth_format;
 };
 
-struct RenderPass
+struct render_pass
 {
     VkRenderPass handle;
     std::vector<VkFramebuffer> framebuffers;
@@ -190,12 +194,12 @@ struct vertex
 
 struct vulkan_renderer
 {
-    RenderPass geometry_render_pass;
-    RenderPass lighting_render_pass;
-    RenderPass ui_render_pass;
+    render_pass geometry_render_pass;
+    //RenderPass lighting_render_pass;
+    render_pass ui_render_pass;
 
     Pipeline geometry_pipeline;
-    Pipeline lighting_pipeline;
+    //Pipeline lighting_pipeline;
 
     Pipeline wireframe_pipeline;
 };
@@ -216,8 +220,10 @@ void bind_vertex_buffer(const vertex_buffer* buffer);
 void begin_renderer_frame(quaternion_camera& camera);
 void end_renderer_frame();
 
-VkCommandBuffer begin_render_pass(RenderPass& renderPass);
-void end_render_pass(VkCommandBuffer commandBuffer);
+VkCommandBuffer get_current_command_buffer();
+
+void begin_render_pass(render_pass& renderPass);
+void end_render_pass();
 
 void bind_pipeline(Pipeline& pipeline);
 

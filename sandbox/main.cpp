@@ -245,7 +245,7 @@ int main()
     engine_start("3D Satellite Visualizer");
 
     const vertex_buffer* sphere = engine_load_model("assets/sphere_hp.obj");
-    //const vertex_buffer* cube   = engine_load_model("assets/iss.obj"); // This takes quite a long time to load
+    const vertex_buffer* cube   = engine_load_model("assets/iss.obj"); // This takes quite a long time to load
 
     const texture_buffer* sun_texture   = engine_load_texture("assets/textures/sun.jpg");
     const texture_buffer* earth_texture = engine_load_texture("assets/textures/earth.jpg");
@@ -255,7 +255,7 @@ int main()
     entity* earth_entity = engine_create_entity(sphere, earth_texture);
     entity* moon_entity = engine_create_entity(sphere, moon_texture);
 
-    //entity* test_entity = engine_create_entity(cube, sun_texture);
+    entity* test_entity = engine_create_entity(cube, sun_texture);
 
 
     engine_scene scene;
@@ -300,15 +300,15 @@ int main()
         engine_scale_entity(moon_entity, moon_radius);
 
 
-        //glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 5.0f);
-        //engine_translate_entity(test_entity, position.x, position.y, position.z);
-        //engine_scale_entity(test_entity, 0.02f);
+        glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 5.0f);
+        engine_translate_entity(test_entity, position.x, position.y, position.z);
+        engine_scale_entity(test_entity, 0.02f);
 
         // Rendering
         engine_render(sun_entity);
         engine_render(earth_entity);
         engine_render(moon_entity);
-        //engine_render(test_entity);
+        engine_render(test_entity);
 
 
         render_ui();
