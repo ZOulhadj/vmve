@@ -9,15 +9,6 @@ static Swapchain g_swapchain{};
 
 static std::vector<Frame> g_frames;
 static ShaderCompiler g_shader_compiler{};
-constexpr int frames_in_flight        = 2;
-
-
-
-static image_buffer g_positions{};
-static image_buffer g_normals{};
-static image_buffer g_colors{};
-static image_buffer g_depth{};
-
 
 
 
@@ -1026,11 +1017,16 @@ static std::vector<VkFramebuffer> create_framebuffers(VkRenderPass renderPass,
                                                       const std::vector<image_buffer>& color_attachments,
                                                       const std::vector<image_buffer>& depth_attachments)
 {
+    // Each swapchain image has a corresponding framebuffer that will contain views into image
+    // buffers.
+    //
+    // todo: frames_in_flight != swapchain images
     std::vector<VkFramebuffer> framebuffers(g_swapchain.images.size());
 
     // Create framebuffers with attachments.
-    for (std::size_t i = 0; i < framebuffers.size(); ++i) {
-        std::vector<VkImageView> attachments { g_swapchain.images[i].view };
+    for (std::size_t i = 0; i < g_swapchain.images.size(); ++i) {
+        std::vector<VkImageView> attachments { color_attachments[i].view };
+       
         
         if (!depth_attachments.empty())
             attachments.push_back(g_swapchain.depth_image.view);
@@ -1039,8 +1035,8 @@ static std::vector<VkFramebuffer> create_framebuffers(VkRenderPass renderPass,
         framebuffer_info.renderPass = renderPass;
         framebuffer_info.attachmentCount = u32(attachments.size());
         framebuffer_info.pAttachments = attachments.data();
-        framebuffer_info.width = g_swapchain.images[i].extent.width;
-        framebuffer_info.height = g_swapchain.images[i].extent.height;
+        framebuffer_info.width = color_attachments[i].extent.width;
+        framebuffer_info.height = color_attachments[i].extent.height;
         framebuffer_info.layers = 1;
 
         vk_check(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info, nullptr, &framebuffers[i]));
@@ -1054,10 +1050,10 @@ static void destroy_framebuffers(std::vector<VkFramebuffer>& framebuffers)
     for (auto& framebuffer : framebuffers) {
         vkDestroyFramebuffer(g_rc->device.device, framebuffer, nullptr);
     }
-    framebuffers.clear();
 }
 
-static render_pass create_render_pass(const render_pass_info& info)
+static render_pass create_render_pass(const render_pass_info& info, const std::vector<image_buffer>& color_attachments,
+                                                                    const std::vector<image_buffer>& depth_attachments)
 {
     render_pass target{};
 
@@ -1067,9 +1063,9 @@ static render_pass create_render_pass(const render_pass_info& info)
     std::vector<VkAttachmentReference> depth_references;
     std::vector<VkSubpassDependency> dependencies;
 
-    for (std::size_t i = 0; i < info.color_attachments.size(); ++i) {
+    for (std::size_t i = 0; i < info.color_attachment_count; ++i) {
         VkAttachmentDescription attachment{};
-        attachment.format         = info.color_attachments[i].format;
+        attachment.format         = info.color_attachment_format;
         attachment.samples        = info.sample_count;
         attachment.loadOp         = info.load_op;
         attachment.storeOp        = info.store_op;
@@ -1086,10 +1082,10 @@ static render_pass create_render_pass(const render_pass_info& info)
         color_references.push_back(reference);
     }
 
-    for (std::size_t i = 0; i < info.depth_attachments.size(); ++i) {
+    for (std::size_t i = 0; i < info.depth_attachment_count; ++i) {
         VkAttachmentDescription depthAttach{};
-        depthAttach.format         = info.depth_attachments[i].format;
-        depthAttach.samples        = info.sample_count; // todo:
+        depthAttach.format         = info.depth_attachment_format;
+        depthAttach.samples        = info.sample_count;
         depthAttach.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depthAttach.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         depthAttach.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -1133,7 +1129,7 @@ static render_pass create_render_pass(const render_pass_info& info)
 
 
     // Create framebuffers
-    target.framebuffers = create_framebuffers(target.handle, info.color_attachments, info.depth_attachments);
+    target.framebuffers = create_framebuffers(target.handle, color_attachments, depth_attachments);
 
     return target;
 }
@@ -1606,45 +1602,12 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
     const shader_module lighting_fs = create_shader(VK_SHADER_STAGE_FRAGMENT_BIT, lighting_fs_code);
 
 
-
-
-
-
-
-
-    // Create off-screen framebuffers (G-Buffer)
-    //
-    VkExtent2D fb_size = { 2048, 2048 };
-    // Positions (World space)
-    g_positions = create_image(VK_FORMAT_R16G16B16A16_SFLOAT, fb_size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    // Normals (World space)
-    g_normals = create_image(VK_FORMAT_R16G16B16A16_SFLOAT, fb_size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    // Albedo
-    g_colors = create_image(VK_FORMAT_B8G8R8A8_SRGB, fb_size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    // Depth
-    g_depth = create_image(VK_FORMAT_D32_SFLOAT, fb_size, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-
-    //{
-    //	render_pass_info geometry_pass{};
- //       geometry_pass.color_attachments = { g_positions, g_normals, g_colors };
- //       geometry_pass.depth_attachments = { g_depth };
-    //	geometry_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
-    //	geometry_pass.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    //	geometry_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
-    //	geometry_pass.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    //	geometry_pass.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    //	geometry_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    //	renderer.geometry_render_pass = create_render_pass(geometry_pass);
-    //}
-
-
-
     {
         render_pass_info geometry_pass{};
-        geometry_pass.color_attachments = { g_swapchain.images[0] };
-        geometry_pass.depth_attachments = { g_swapchain.depth_image };
+        geometry_pass.color_attachment_count = 1;
+        geometry_pass.color_attachment_format = VK_FORMAT_B8G8R8A8_SRGB;
+        geometry_pass.depth_attachment_count = 1;
+        geometry_pass.depth_attachment_format = VK_FORMAT_D32_SFLOAT;
         geometry_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
         geometry_pass.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
         geometry_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
@@ -1652,29 +1615,13 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
         geometry_pass.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         geometry_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        renderer.geometry_render_pass = create_render_pass(geometry_pass);
+        renderer.geometry_render_pass = create_render_pass(geometry_pass, g_swapchain.images, { g_swapchain.depth_image });
     }
-
-    //{
-    //    render_pass_info lighting_pass{};
-    //    //lighting_pass.attachment_count = 1;
-    //    lighting_pass.format = g_swapchain.images[0].format;
-    //    lighting_pass.size = { g_swapchain.images[0].extent };
-    //    lighting_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
-    //    lighting_pass.has_depth = true;
-    //    lighting_pass.depth_format = VK_FORMAT_D32_SFLOAT;
-    //    lighting_pass.load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
-    //    lighting_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
-    //    lighting_pass.initial_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    //    lighting_pass.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    //    lighting_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    //    renderer.lighting_render_pass = create_render_pass(lighting_pass);
-    //}
     
     {
         render_pass_info ui_pass{};
-        ui_pass.color_attachments = { g_swapchain.images[0] };
+        ui_pass.color_attachment_count = 1;
+        ui_pass.color_attachment_format = VK_FORMAT_B8G8R8A8_SRGB;
         ui_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
         ui_pass.load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
         ui_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
@@ -1682,7 +1629,7 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
         ui_pass.final_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         ui_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        renderer.ui_render_pass = create_render_pass(ui_pass);
+        renderer.ui_render_pass = create_render_pass(ui_pass, g_swapchain.images, {});
     }
 
 
@@ -1842,13 +1789,6 @@ void destroy_renderer(vulkan_renderer& renderer)
     destroy_debug_ui();
 
     destroy_frames();
-
-
-    destroy_image(&g_depth);
-    destroy_image(&g_colors);
-    destroy_image(&g_normals);
-    destroy_image(&g_positions);
-
 
 
     destroy_swapchain(g_swapchain);
@@ -2073,7 +2013,6 @@ void render_entity(entity* e, Pipeline& pipeline)
 
     vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &e->model);
     vkCmdDrawIndexed(cmd_buffer, e->vertex_buffer->index_count, 1, 0, 0, 0);
-
 
     // Reset the entity transform matrix after being rendered.
     e->model = glm::mat4(1.0f);

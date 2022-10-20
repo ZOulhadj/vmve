@@ -31,9 +31,6 @@ const const char* application_about = R"(
 
 )";
 
-
-
-
 /*
 glm::vec3 sphere_translation(float radius, float latitude, float longitude)
 {
@@ -47,7 +44,6 @@ glm::vec3 sphere_translation(float radius, float latitude, float longitude)
     return { x, y, z };
 }
 */
-
 
 glm::vec3 cartesian(float radius, float latitude, float longitude, float elevation = 0.0f)
 {
@@ -242,7 +238,7 @@ struct engine_scene
 
 int main()
 {
-    engine_start("3D Satellite Visualizer");
+    engine_start("3D Earth Satellite Visualizer");
 
     const vertex_buffer* sphere = engine_load_model("assets/sphere_hp.obj");
     const vertex_buffer* cube   = engine_load_model("assets/iss.obj"); // This takes quite a long time to load

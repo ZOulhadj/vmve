@@ -5,6 +5,10 @@
 #include "quaternion_camera.hpp"
 
 
+
+constexpr int frames_in_flight = 2;
+
+
 struct entity;
 
 enum class buffer_mode
@@ -107,13 +111,13 @@ struct ShaderCompiler
 
 struct render_pass_info
 {
-    //uint32_t attachment_count;
+    uint32_t color_attachment_count;
+    VkFormat color_attachment_format;
 
-    std::vector<image_buffer> color_attachments;
-    std::vector<image_buffer> depth_attachments;
+    uint32_t depth_attachment_count;
+    VkFormat depth_attachment_format;
 
-    //VkFormat format;
-    //VkExtent2D size;
+    VkExtent2D attachment_size;
     VkAttachmentLoadOp load_op;
     VkAttachmentStoreOp store_op;
     VkImageLayout initial_layout;
@@ -121,23 +125,14 @@ struct render_pass_info
     VkImageLayout reference_layout;
 
     VkSampleCountFlagBits sample_count;
-
-    //bool has_depth;
-    //VkFormat depth_format;
 };
 
 struct render_pass
 {
     VkRenderPass handle;
+
     std::vector<VkFramebuffer> framebuffers;
 };
-
-//
-//struct shader_info
-//{
-//    VkShaderStageFlagBits Type;
-//    std::string Code;
-//};
 
 struct shader_module
 {
