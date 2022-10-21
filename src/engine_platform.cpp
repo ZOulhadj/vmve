@@ -45,7 +45,7 @@ static bool g_running = false;
 
 
 std::vector<entity*> entitiesToRender;
-
+entity* g_skysphere_entity;
 
 static std::string load_text_file(std::string_view path)
 {
@@ -99,7 +99,8 @@ static void engine_event_callback(Event& e)
     dispatcher.dispatch<mouse_scrolled_up_event>(scroll_up_event);
     dispatcher.dispatch<mouse_scrolled_down_event>(scroll_down_event);
 }
-
+vertex_buffer* sphere;
+texture_buffer* skysphere_texture;
 void engine_start(const char* name)
 {
     assert(name != nullptr);
@@ -111,8 +112,16 @@ void engine_start(const char* name)
 
     g_camera  = create_camera({0.0f, 0.0f, -100.0f}, 60.0f, 10.0f);
 
+
+
     g_running = true;
     g_uptime  = 0.0f;
+
+
+    sphere = engine_load_model("assets/sphere.obj");
+    skysphere_texture = engine_load_texture("assets/textures/space.jpg");
+
+    g_skysphere_entity = engine_create_entity(sphere, skysphere_texture);
 }
 
 void engine_exit()
@@ -310,13 +319,19 @@ void engine_render()
     {
         // This is the geometry pass which is where all geometry data is rendered first.
         begin_render_pass(g_renderer.geometry_render_pass);
+
+
+        bind_pipeline(g_renderer.skysphere_pipeline);
+        bind_vertex_buffer(g_skysphere_entity->vertex_buffer);
+        render_entity(g_skysphere_entity, g_renderer.skysphere_pipeline);
+
+
         bind_pipeline(g_renderer.geometry_pipeline);
+        for (std::size_t i = 0; i < entitiesToRender.size(); ++i) {
+            bind_vertex_buffer(entitiesToRender[i]->vertex_buffer);
+            render_entity(entitiesToRender[i], g_renderer.geometry_pipeline);
 
-        for (auto& entity : entitiesToRender) {
-            bind_vertex_buffer(entity->vertex_buffer);
-            render_entity(entity, g_renderer.geometry_pipeline);
         }
-
         end_render_pass();
 
         // The second pass is called the lighting pass and is where the renderer will perform

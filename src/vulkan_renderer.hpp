@@ -143,13 +143,15 @@ struct shader_module
 
 struct PipelineInfo
 {
-    VkDescriptorSetLayout descriptor_layout;
+    std::vector<VkDescriptorSetLayout> descriptor_layouts;
     uint32_t push_constant_size;
     uint32_t binding_layout_size;
     std::vector<VkFormat> binding_format;
- 
+
     std::vector<shader_module> shaders;
     bool wireframe;
+    bool depth_testing;
+    VkCullModeFlags cull_mode;
 };
 
 struct Pipeline
@@ -194,6 +196,7 @@ struct vulkan_renderer
     render_pass ui_render_pass;
 
     Pipeline geometry_pipeline;
+    Pipeline skysphere_pipeline;
     //Pipeline lighting_pipeline;
 
     Pipeline wireframe_pipeline;

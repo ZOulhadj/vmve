@@ -241,7 +241,7 @@ int main()
     engine_start("3D Earth Satellite Visualizer");
 
     const vertex_buffer* sphere = engine_load_model("assets/sphere_hp.obj");
-    const vertex_buffer* cube   = engine_load_model("assets/iss.obj"); // This takes quite a long time to load
+    //const vertex_buffer* cube   = engine_load_model("assets/iss.obj"); // This takes quite a long time to load
 
     const texture_buffer* sun_texture   = engine_load_texture("assets/textures/sun.jpg");
     const texture_buffer* earth_texture = engine_load_texture("assets/textures/earth.jpg");
@@ -251,7 +251,7 @@ int main()
     entity* earth_entity = engine_create_entity(sphere, earth_texture);
     entity* moon_entity = engine_create_entity(sphere, moon_texture);
 
-    entity* test_entity = engine_create_entity(cube, sun_texture);
+    //entity* test_entity = engine_create_entity(cube, sun_texture);
 
 
     engine_scene scene;
@@ -284,7 +284,7 @@ int main()
         const float time = engine_uptime();
         const float earth_speed = angular_velocity * (time * speed_factor);
 
-        engine_translate_entity(sun_entity, 0.0f, 0.0f, sun_from_earth);
+        engine_translate_entity(sun_entity, 0.0f, 0.0f, 10000.0f);
         engine_scale_entity(sun_entity, sun_radius);
 
         engine_translate_entity(earth_entity, 0.0f, 0.0f, 0.0f);
@@ -292,19 +292,19 @@ int main()
         engine_rotate_entity(earth_entity, earth_speed, 0.0f, 1.0f, 0.0f);
 
 
-        engine_translate_entity(moon_entity, -moon_from_earth, 0.0f, -moon_from_earth);
+        engine_translate_entity(moon_entity, 0.0f, 0.0f, 200.0f);
         engine_scale_entity(moon_entity, moon_radius);
 
 
-        glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 5.0f);
+       /* glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 5.0f);
         engine_translate_entity(test_entity, position.x, position.y, position.z);
-        engine_scale_entity(test_entity, 0.02f);
+        engine_scale_entity(test_entity, 0.02f);*/
 
         // Rendering
         engine_render(sun_entity);
         engine_render(earth_entity);
         engine_render(moon_entity);
-        engine_render(test_entity);
+        //engine_render(test_entity);
 
 
         render_ui();

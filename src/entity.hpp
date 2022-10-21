@@ -10,6 +10,8 @@ struct entity
 
     const vertex_buffer* vertex_buffer;
     const texture_buffer* texture_buffer;
+
+    VkDescriptorSet descriptor_set;
 };
 
 void translate_entity(entity* e, float x, float y, float z);
