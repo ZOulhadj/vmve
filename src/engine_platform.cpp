@@ -20,7 +20,8 @@
 #endif
 
 
-#include "vulkan_renderer.hpp"
+#include "rendering/vulkan_renderer.hpp"
+#include "rendering/ui.hpp"
 #include "window.hpp"
 #include "quaternion_camera.hpp"
 #include "entity.hpp"
@@ -34,6 +35,7 @@
 
 static Window* g_window       = nullptr;
 static vulkan_renderer g_renderer{};
+static ImGuiContext* g_ui_context = nullptr;
 static quaternion_camera g_camera{};
 
 // todo: uptime must be fixed as it is not working correctly
@@ -101,33 +103,34 @@ static void engine_event_callback(Event& e)
 }
 vertex_buffer* sphere;
 texture_buffer* skysphere_texture;
-void engine_start(const char* name)
+void StartEngine(const char* name)
 {
     assert(name != nullptr);
 
-    g_window = create_window(name, 1280, 720);
+    g_window = CreateWindow(name, 1280, 720);
     g_window->event_callback = engine_event_callback;
 
-    g_renderer = create_renderer(g_window, buffer_mode::tripple_buffering, vsync_mode::disabled);
-
-    g_camera  = create_camera({0.0f, 0.0f, -100.0f}, 60.0f, 10.0f);
-
+    g_renderer   = CreateRenderer(g_window, buffer_mode::tripple_buffering, vsync_mode::disabled);
+    g_ui_context = CreateUserInterface(g_renderer.ui_render_pass.handle);
+    
+    g_camera  = CreateCamera({0.0f, 0.0f, -100.0f}, 60.0f, 10.0f);
 
 
     g_running = true;
     g_uptime  = 0.0f;
 
 
-    sphere = engine_load_model("assets/sphere.obj");
+    sphere = engine_load_model("assets/icosphere.obj");
     skysphere_texture = engine_load_texture("assets/textures/space.jpg");
 
     g_skysphere_entity = engine_create_entity(sphere, skysphere_texture);
 }
 
-void engine_exit()
+void StopEngine()
 {
-    destroy_renderer(g_renderer);
-    destroy_window(g_window);
+    DestroyUserInterface(g_ui_context);
+    DestroyRenderer(g_renderer);
+    DestroyWindow(g_window);
 }
 
 void engine_stop()
@@ -295,7 +298,7 @@ void engine_roll_right()
 }
 
 
-void engine_render()
+void engine_render(const engine_scene& scene)
 {
     // Calculate the delta time between previous and current frame. This
     // allows for frame dependent systems such as movement and translation
@@ -388,4 +391,24 @@ void engine_scale_entity(entity* e, float x, float y, float z)
 void engine_get_entity_position(const entity* e, float* x, float* y, float* z)
 {
     get_entity_position(e, x, y, z);
+}
+
+glm::vec2 get_window_size()
+{
+    return glm::vec2(g_window->width, g_window->height);
+}
+
+glm::mat4 get_camera_projection()
+{
+    return g_camera.proj;
+}
+
+glm::mat4 get_camera_view()
+{
+    return g_camera.view;
+}
+
+glm::vec3 get_camera_position()
+{
+    return g_camera.position;
 }

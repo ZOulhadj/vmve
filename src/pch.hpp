@@ -25,6 +25,7 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#define GLM_FORCE_SWIZZLE
 #define GLM_FORCE_LEFT_HANDED
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/vec2.hpp>
@@ -34,6 +35,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/reciprocal.hpp> // glm::cot
+#include <glm/gtc/type_ptr.hpp>
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #include <imgui.h>
@@ -43,6 +45,9 @@
 #include <stb_image.h>
 
 #include <tiny_obj_loader.h>
+
+
+#undef CreateWindow
 
 #endif
 

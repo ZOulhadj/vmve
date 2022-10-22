@@ -38,19 +38,22 @@ add_executable(${PROJECT_NAME}
         ${IMGUI_SRC}
 
         # engine test file
-        sandbox/main.cpp
+        "sandbox/main.cpp"
 
         # engine source
-        src/window.cpp
-        src/vulkan_renderer.cpp
-        src/quaternion_camera.cpp
-        src/entity.cpp
-        src/engine_platform.cpp
+        "src/window.cpp"
+        "src/engine_platform.cpp"
+        "src/quaternion_camera.cpp"
+        "src/entity.cpp"
+
+        # engine rendering
+        "src/rendering/vulkan_renderer.cpp"
+        "src/rendering/ui.cpp"
 
         # precompiled header
         # note: this is required to compile header only files such as STB
         # note: this will be removed in the future.
-        src/pch.cpp)
+        "src/pch.cpp" )
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE

@@ -25,11 +25,16 @@ constexpr float iss_speed    = 0.07725304476742584f * speed_factor;
 constexpr float sun_from_earth = 149'120'000'000.0f * scale_factor;
 constexpr float moon_from_earth = 384'400'000.0f * scale_factor;
 
-const const char* application_about = R"(
+const char* application_about = R"(
     3D Earth Visualizer is an application created and maintained by 
     Zakariya Oulhadj.
 
 )";
+
+
+static glm::vec3 sun_pos = glm::vec3(0.0f);
+static glm::vec3 earth_pos = glm::vec3(0.0f);
+static glm::vec3 moon_pos = glm::vec3(0.0f);
 
 /*
 glm::vec3 sphere_translation(float radius, float latitude, float longitude)
@@ -78,6 +83,21 @@ glm::vec2 geographic(float radius, const glm::vec3& position)
     return { glm::degrees(latitude), glm::degrees(longitude) };
 }
 
+
+glm::vec2 world_to_screen(const glm::vec3& position, const glm::vec2& offset = glm::vec2(0.0f))
+{
+    const glm::mat4 proj = get_camera_projection();
+    const glm::mat4 view = get_camera_view();
+    const glm::vec2 win_size = get_window_size();
+
+    const glm::vec4 clip_pos         = proj * (view * glm::vec4(position, 1.0));
+    const glm::vec3 ndc_space_pos    = glm::vec3(clip_pos.x / clip_pos.w, clip_pos.y / clip_pos.w, clip_pos.z / clip_pos.w);
+    const glm::vec2 window_space_pos = ((ndc_space_pos.xy() + 1.0f) / 2.0f) * win_size + offset;
+
+    return window_space_pos;
+}
+
+
 static void render_ui()
 {
 	ImGui_ImplVulkan_NewFrame();
@@ -95,6 +115,7 @@ static void render_ui()
     static bool triple_buffering = true;
     static bool vsync = true;
     static bool realtime = true;
+    static bool overlay = false;
 
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("Engine")) {
@@ -150,6 +171,7 @@ static void render_ui()
         ImGui::Checkbox("Wireframe", &wireframe);
         ImGui::Text("Camera controls");
 
+        ImGui::Checkbox("Entity overlay", &overlay);
 
         ImGui::End();
     }
@@ -224,24 +246,50 @@ static void render_ui()
 	if (demo_window)
 		ImGui::ShowDemoWindow(&demo_window);
 
+    if (overlay) {
+        // get screen space from world space
+        glm::vec2 sun_screen_pos = world_to_screen(sun_pos);
+        glm::vec2 earth_screen_pos = world_to_screen(earth_pos);
+        glm::vec2 moon_screen_pos = world_to_screen(moon_pos);
+
+        static bool o = true;
+
+        const ImGuiWindowFlags flags = ImGuiWindowFlags_None |
+            ImGuiWindowFlags_NoInputs |
+            ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_NoBackground |
+            ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_AlwaysAutoResize;
+
+
+        ImGui::SetNextWindowPos(ImVec2(sun_screen_pos.x, sun_screen_pos.y));
+        ImGui::Begin("text0", &o, flags);
+        ImGui::Text("Sun");
+        ImGui::Text("%.2f, %.2f, %.2f", sun_pos.x, sun_pos.y, sun_pos.z);
+        ImGui::End();
+
+        ImGui::SetNextWindowPos(ImVec2(earth_screen_pos.x, earth_screen_pos.y));
+        ImGui::Begin("text1", &o, flags);
+        ImGui::Text("Earth");
+        ImGui::Text("%.2f, %.2f, %.2f", earth_pos.x, earth_pos.y, earth_pos.z);
+        ImGui::End();
+
+        ImGui::SetNextWindowPos(ImVec2(moon_screen_pos.x, moon_screen_pos.y));
+        ImGui::Begin("text2", &o, flags);
+        ImGui::Text("Moon");
+        ImGui::Text("%.2f, %.2f, %.2f", moon_pos.x, moon_pos.y, moon_pos.z);
+        ImGui::End();
+    }
+    
 
 	ImGui::Render();
 }
 
-
-struct engine_scene
-{
-    glm::vec3 camera_pos;
-    glm::vec3 sun_pos;
-    glm::vec3 sun_color;
-};
-
 int main()
 {
-    engine_start("3D Earth Satellite Visualizer");
+    StartEngine("3D Earth Satellite Visualizer");
 
-    const vertex_buffer* sphere = engine_load_model("assets/sphere_hp.obj");
-    //const vertex_buffer* cube   = engine_load_model("assets/iss.obj"); // This takes quite a long time to load
+    const vertex_buffer* sphere = engine_load_model("assets/sphere.obj");
 
     const texture_buffer* sun_texture   = engine_load_texture("assets/textures/sun.jpg");
     const texture_buffer* earth_texture = engine_load_texture("assets/textures/earth.jpg");
@@ -250,20 +298,6 @@ int main()
     entity* sun_entity = engine_create_entity(sphere, sun_texture);
     entity* earth_entity = engine_create_entity(sphere, earth_texture);
     entity* moon_entity = engine_create_entity(sphere, moon_texture);
-
-    //entity* test_entity = engine_create_entity(cube, sun_texture);
-
-
-    engine_scene scene;
-
-
-
-
-    glm::vec3 london = cartesian(earth_radius, 51.5072, 0.1276, 2.0f);
-    glm::vec2 london2 = geographic(earth_radius, london);
-
-    printf("%s\n", glm::to_string(london).c_str());
-    printf("%s\n", glm::to_string(london2).c_str());
 
 
     while (engine_running()) {
@@ -284,37 +318,40 @@ int main()
         const float time = engine_uptime();
         const float earth_speed = angular_velocity * (time * speed_factor);
 
-        engine_translate_entity(sun_entity, 0.0f, 0.0f, 10000.0f);
-        engine_scale_entity(sun_entity, sun_radius);
+        sun_pos = glm::vec3(0.0f, 0.0f, sun_from_earth);
+        earth_pos = glm::vec3(0.0f, 0.0f, 0.0f);
+        moon_pos = glm::vec3(glm::sin(glm::radians(time)) * moon_from_earth, 0.0f, glm::cos(glm::radians(time)) * moon_from_earth);
 
-        engine_translate_entity(earth_entity, 0.0f, 0.0f, 0.0f);
+        engine_translate_entity(sun_entity, sun_pos.x, sun_pos.y, sun_pos.z);
+        engine_scale_entity(sun_entity, sun_radius);
+        engine_rotate_entity(sun_entity, time, 0.0f, 1.0f, 0.0f);
+
+        engine_translate_entity(earth_entity, earth_pos.x, earth_pos.y, earth_pos.z);
         engine_scale_entity(earth_entity, earth_radius);
         engine_rotate_entity(earth_entity, earth_speed, 0.0f, 1.0f, 0.0f);
 
 
-        engine_translate_entity(moon_entity, 0.0f, 0.0f, 200.0f);
+        engine_translate_entity(moon_entity, moon_pos.x, moon_pos.y, moon_pos.z);
         engine_scale_entity(moon_entity, moon_radius);
-
-
-       /* glm::vec3 position = cartesian(earth_radius, 51.5072, 0.1276, 5.0f);
-        engine_translate_entity(test_entity, position.x, position.y, position.z);
-        engine_scale_entity(test_entity, 0.02f);*/
+        engine_rotate_entity(moon_entity, time, 0.0f, 1.0f, 0.0f);
 
         // Rendering
         engine_render(sun_entity);
         engine_render(earth_entity);
         engine_render(moon_entity);
-        //engine_render(test_entity);
-
 
         render_ui();
 
+        engine_scene scene{};
+        scene.camera_position = get_camera_position();
+        scene.sun_position    = sun_pos;
+        scene.sun_color       = glm::vec3(1.0f, 1.0f, 1.0f);
 
-        engine_render();
+        engine_render(scene);
 
     }
 
-    engine_exit();
+    StopEngine();
 
     return 0;
 }

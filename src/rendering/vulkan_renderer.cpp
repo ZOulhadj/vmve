@@ -1,9 +1,10 @@
 #include "vulkan_renderer.hpp"
 
-#include "entity.hpp"
+#include "common.hpp"
 
-static renderer_context* g_rc  = nullptr;
-static renderer_submit_context* g_sc = nullptr;
+#include "../entity.hpp"
+
+static RendererContext* g_rc  = nullptr;
 
 static Swapchain g_swapchain{};
 
@@ -19,8 +20,6 @@ static ShaderCompiler g_shader_compiler{};
 // frame and image index often are the same but is not guaranteed.
 static uint32_t current_frame = 0;
 
-// A global pool that descriptor sets will be allocated from.
-static VkDescriptorPool g_descriptor_pool;
 
 // This is a global descriptor set that will be used for all draw calls and
 // will contain descriptors such as a projection view matrix, global scene
@@ -62,79 +61,78 @@ struct scene_ubo {
 
 
 const std::string geometry_vs_code = R"(
-#version 450
+    #version 450
 
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 color;
-layout(location = 2) in vec3 normal;
-layout(location = 3) in vec2 uv;
+    layout(location = 0) in vec3 position;
+    layout(location = 1) in vec3 color;
+    layout(location = 2) in vec3 normal;
+    layout(location = 3) in vec2 uv;
 
-layout(location = 1) out vec2 texture_coord;
-layout(location = 2) out vec3 vertex_world_pos;
-layout(location = 3) out vec3 vertex_normal;
+    layout(location = 1) out vec2 texture_coord;
+    layout(location = 2) out vec3 vertex_position;
+    layout(location = 3) out vec3 vertex_normal;
 
-layout(binding = 0) uniform model_view_projection {
-    mat4 view;
-    mat4 proj;
-} mvp;
+    layout(binding = 0) uniform model_view_projection {
+        mat4 view;
+        mat4 proj;
+    } mvp;
 
-layout(push_constant) uniform constant
-{
-   mat4 model;
-} obj;
+    layout(push_constant) uniform constant
+    {
+       mat4 model;
+    } obj;
 
-void main() {
+    void main() {
 
-    texture_coord = uv;
-    vertex_world_pos = vec3(obj.model * vec4(position, 1.0));
-    vertex_normal = mat3(transpose(inverse(obj.model))) * normal;
+        texture_coord = uv;
+        vertex_position = vec3(obj.model * vec4(position, 1.0));
+        vertex_normal = mat3(transpose(inverse(obj.model))) * normal;
 
 
-    gl_Position = mvp.proj * mvp.view * obj.model * vec4(position, 1.0);
-
-}
+        gl_Position = mvp.proj * mvp.view * obj.model * vec4(position, 1.0);
+    }
 )";
 
 const std::string geometry_fs_code = R"(
-        #version 450
+    #version 450
 
-        layout(location = 0) out vec4 final_color;
+    layout(location = 0) out vec4 final_color;
 
-        layout(location = 1) in vec2 texture_coord;
-        layout(location = 2) in vec3 vertex_world_pos;
-        layout(location = 3) in vec3 vertex_normal;
+    layout(location = 1) in vec2 texture_coord;
+    layout(location = 2) in vec3 vertex_position;
+    layout(location = 3) in vec3 vertex_normal;
 
 
-        layout(binding = 1) uniform scene_ubo {
-            vec3 cam_pos;
-            vec3 sun_pos;
-            vec3 sun_color;
-        } scene;
+    layout(binding = 1) uniform scene_ubo {
+        vec3 cam_pos;
+        vec3 sun_pos;
+        vec3 sun_color;
+    } scene;
 
-        layout(set = 1, binding = 0) uniform sampler2D tex;
+    layout(set = 1, binding = 0) uniform sampler2D tex;
 
-        void main() {
-            // phong lighting = ambient + diffuse + specular
+    void main() {
+        // phong lighting = ambient + diffuse + specular
 
-            float ambient_intensity = 0.1f;
-            vec3 ambient_lighting = ambient_intensity * scene.sun_color;
+        float ambient_intensity = 0.05f;
+        vec3 ambient_lighting = ambient_intensity * scene.sun_color;
 
-            vec3 norm = normalize(vertex_normal);
-            vec3 sun_dir = normalize(scene.sun_pos - vertex_world_pos);
-            float diff = max(dot(norm, sun_dir), 0.0);
-            vec3 diffuse = diff * scene.sun_color;
+        vec3 norm = normalize(vertex_normal);
+        vec3 sun_dir = normalize(scene.sun_pos - vertex_position);
+        float diff = max(dot(norm, sun_dir), 0.0);
+        vec3 diffuse = diff * scene.sun_color;
 
-            float specular_intensity = 0.5f;
-            vec3 view_dir = normalize(scene.cam_pos - vertex_world_pos);
-            vec3 reflect_dir = reflect(-sun_dir, norm);
-            float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
-            vec3 specular = specular_intensity * spec * scene.sun_color;
+        float specular_intensity = 0.5f;
+        vec3 view_dir = normalize(scene.cam_pos - vertex_position);
+        vec3 reflect_dir = reflect(-sun_dir, norm);
+        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
+        vec3 specular = specular_intensity * spec * scene.sun_color;
 
-            vec3 texel = texture(tex, texture_coord).xyz;
-            vec3 color = texel * (ambient_lighting + diffuse + specular);
-            final_color = vec4(color, 1.0);
-        }
-    )";
+        vec3 texel = texture(tex, texture_coord).xyz;
+        vec3 color = (ambient_lighting + diffuse + specular) * texel;
+        final_color = vec4(color, 1.0);
+    }
+)";
 
 
 const std::string skysphere_vs_code = R"(
@@ -151,7 +149,7 @@ const std::string skysphere_vs_code = R"(
     } mvp;
 
     void main() {
-        gl_Position = mat4(mat3(mvp.view)) * vec4(position, 1.0);
+        gl_Position = mvp.proj * mat4(mat3(mvp.view)) * vec4(position, 1.0);
         texture_coord = uv;
     }
 )";
@@ -190,136 +188,6 @@ const std::string lighting_fs_code = R"(
 static std::vector<vertex_buffer*> g_vertex_buffers;
 static std::vector<texture_buffer*> g_textures;
 static std::vector<entity*> g_entities;
-
-// This is a helper function used for all Vulkan related function calls that
-// return a VkResult value.
-static void vk_check(VkResult result)
-{
-    // todo(zak): Should we return a bool, throw, exit(), or abort()?
-    if (result != VK_SUCCESS) {
-        abort();
-    }
-}
-
-// Helper cast function often used for Vulkan create info structs
-// that accept an uint32_t.
-template <typename T>
-static uint32_t u32(T t)
-{
-    // todo(zak): check if T is a numerical value
-
-    return static_cast<uint32_t>(t);
-}
-
-// Compares a list of requested instance layers against the layers available
-// on the system. If all the requested layers have been found then true is
-// returned.
-static bool compare_layers(const std::vector<const char*>& requested,
-                           const std::vector<VkLayerProperties>& layers)
-{
-    for (const auto& requested_name : requested) {
-        const auto iter = std::find_if(layers.begin(), layers.end(), [=](const auto& layer) {
-            return std::strcmp(requested_name, layer.layerName) == 0;
-        });
-
-        if (iter == layers.end()) {
-            printf("Failed to find instance layer: %s\n", requested_name);
-            return false;
-        }
-    }
-
-    return true;
-}
-
-// Compares a list of requested extensions against the extensions available
-// on the system. If all the requested extensions have been found then true is
-// returned.
-static bool compare_extensions(const std::vector<const char*>& requested,
-                               const std::vector<VkExtensionProperties>& extensions)
-{
-    for (const auto& requested_name : requested) {
-        const auto iter = std::find_if(extensions.begin(), extensions.end(), [=](const auto& extension) {
-            return std::strcmp(requested_name, extension.extensionName) == 0;
-        });
-
-        if (iter == extensions.end()) {
-            printf("Failed to find extension: %s\n", requested_name);
-            return false;
-        }
-    }
-
-
-    return true;
-}
-
-
-static bool has_extension(std::string_view name, const std::vector<VkExtensionProperties>& extensions)
-{
-    const auto iter = std::find_if(extensions.begin(), extensions.end(), [=](const auto& extension) {
-        return std::strcmp(name.data(), extension.extensionName) == 0;
-    });
-
-    return iter != extensions.end();
-}
-
-
-// A helper function that returns the size in bytes of a particular format
-// based on the number of components and data type.
-static uint32_t format_to_size(VkFormat format)
-{
-    switch (format) {
-        case VK_FORMAT_R32G32_SFLOAT:       return 2 * sizeof(float);
-        case VK_FORMAT_R32G32B32_SFLOAT:    return 3 * sizeof(float);
-        case VK_FORMAT_R32G32B32A32_SFLOAT: return 4 * sizeof(float);
-    }
-
-    return 0;
-}
-
-static shaderc_shader_kind convert_shader_type(VkShaderStageFlagBits type)
-{
-    switch (type) {
-        case VK_SHADER_STAGE_VERTEX_BIT: return shaderc_vertex_shader;
-        case VK_SHADER_STAGE_FRAGMENT_BIT: return shaderc_fragment_shader;
-        case VK_SHADER_STAGE_COMPUTE_BIT: return shaderc_compute_shader;
-        case VK_SHADER_STAGE_GEOMETRY_BIT: return shaderc_geometry_shader;
-        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: return shaderc_tess_control_shader;
-        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: return shaderc_tess_evaluation_shader;
-    }
-
-    return shaderc_glsl_infer_from_source;
-}
-
-
-// Checks if the physical device supports the requested features. This works by
-// creating two arrays and filling them one with the requested features and the
-// other array with the features that is supported. Then we simply compare them
-// to see if all requested features are present.
-static bool has_required_features(VkPhysicalDevice physical_device,
-                                  VkPhysicalDeviceFeatures requested_features)
-{
-    VkPhysicalDeviceFeatures available_features{};
-    vkGetPhysicalDeviceFeatures(physical_device, &available_features);
-
-    constexpr auto feature_count = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
-
-    VkBool32 requested_array[feature_count];
-    memcpy(&requested_array, &requested_features, sizeof(requested_array));
-
-    VkBool32 available_array[feature_count];
-    memcpy(&available_array, &available_features, sizeof(available_array));
-
-
-    // Compare feature arrays
-    // todo: Is it possible to use a bitwise operation for the comparison?
-    for (std::size_t i = 0; i < feature_count; ++i) {
-        if (requested_array[i] && !available_array[i])
-            return false;
-    }
-
-
-    return true;
-}
 
 // create_instance
 //
@@ -540,13 +408,13 @@ static VmaAllocator create_memory_allocator(VkInstance instance, uint32_t versio
 // Creates the base renderer context. This context is the core of the renderer
 // and handles all creation/destruction of Vulkan resources. This function must
 // be the first renderer function to be called.
-static renderer_context* create_renderer_context(uint32_t version, 
+static RendererContext* CreateRendererContext(uint32_t version, 
                                                  const std::vector<const char*>& requested_layers,
                                                  const std::vector<const char*>& requested_extensions,
                                                  const VkPhysicalDeviceFeatures requested_gpu_features,
                                                  const Window* window)
 {
-    auto rc = new renderer_context();
+    auto rc = new RendererContext();
 
     rc->window = window;
 
@@ -559,8 +427,10 @@ static renderer_context* create_renderer_context(uint32_t version,
 }
 
 // Deallocates/frees memory allocated by the renderer context.
-static void destroy_renderer_context(renderer_context* rc)
+static void destroy_renderer_context(RendererContext* rc)
 {
+
+
     vmaDestroyAllocator(rc->allocator);
     vkDestroyDevice(rc->device.device, nullptr);
     vkDestroySurfaceKHR(rc->instance, rc->surface, nullptr);
@@ -569,9 +439,9 @@ static void destroy_renderer_context(renderer_context* rc)
     delete rc;
 }
 
-static renderer_submit_context* create_submit_context()
+static RendererSubmitContext* CreateSubmitContext()
 {
-    auto context = new renderer_submit_context();
+    auto context = new RendererSubmitContext();
 
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
 
@@ -593,7 +463,7 @@ static renderer_submit_context* create_submit_context()
     return context;
 }
 
-static void destroy_submit_context(renderer_submit_context* context)
+static void destroy_submit_context(RendererSubmitContext* context)
 {
     vkFreeCommandBuffers(g_rc->device.device, context->CmdPool, 1, &context->CmdBuffer);
     vkDestroyCommandPool(g_rc->device.device, context->CmdPool, nullptr);
@@ -604,32 +474,34 @@ static void destroy_submit_context(renderer_submit_context* context)
 
 // A function that executes a command directly on the GPU. This is most often
 // used for copying data from staging buffers into GPU local buffers.
-static void submit_to_gpu(const std::function<void()>& submit_func)
+void submit_to_gpu(const std::function<void()>& submit_func)
 {
+    const RendererSubmitContext* context = g_rc->submit;
+
     VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     // Record command that needs to be executed on the GPU. Since this is a
     // single submit command this will often be copying data into device local
     // memory
-    vk_check(vkBeginCommandBuffer(g_sc->CmdBuffer, &begin_info));
+    vk_check(vkBeginCommandBuffer(context->CmdBuffer, &begin_info));
     {
         submit_func();
     }
-    vk_check(vkEndCommandBuffer((g_sc->CmdBuffer)));
+    vk_check(vkEndCommandBuffer((context->CmdBuffer)));
 
     VkSubmitInfo end_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
     end_info.commandBufferCount = 1;
-    end_info.pCommandBuffers = &g_sc->CmdBuffer;
+    end_info.pCommandBuffers = &context->CmdBuffer;
 
     // Tell the GPU to now execute the previously recorded command
-    vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &end_info, g_sc->Fence));
+    vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &end_info, context->Fence));
 
-    vk_check(vkWaitForFences(g_rc->device.device, 1, &g_sc->Fence, true, UINT64_MAX));
-    vk_check(vkResetFences(g_rc->device.device, 1, &g_sc->Fence));
+    vk_check(vkWaitForFences(g_rc->device.device, 1, &context->Fence, true, UINT64_MAX));
+    vk_check(vkResetFences(g_rc->device.device, 1, &context->Fence));
 
     // Reset the command buffers inside the command pool
-    vk_check(vkResetCommandPool(g_rc->device.device, g_sc->CmdPool, 0));
+    vk_check(vkResetCommandPool(g_rc->device.device, context->CmdPool, 0));
 }
 
 static VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect)
@@ -975,52 +847,6 @@ static void destroy_frames()
     }
 }
 
-static void create_debug_ui(render_pass& renderPass)
-{
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-
-  /*  if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
-        printf("Failed to load required font for ImGui.\n");
-        return;
-    }*/
-
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplGlfw_InitForVulkan(g_rc->window->handle, true);
-    ImGui_ImplVulkan_InitInfo init_info{};
-    init_info.Instance = g_rc->instance;
-    init_info.PhysicalDevice = g_rc->device.gpu;
-    init_info.Device = g_rc->device.device;
-    init_info.QueueFamily = g_rc->device.graphics_index;
-    init_info.Queue = g_rc->device.graphics_queue;
-    init_info.PipelineCache = nullptr;
-    init_info.DescriptorPool = g_descriptor_pool;
-    init_info.Subpass = 0;
-    init_info.MinImageCount = g_frames.size();
-    init_info.ImageCount = g_frames.size();
-    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    init_info.Allocator = nullptr;
-    init_info.CheckVkResultFn = vk_check;
-
-    ImGui_ImplVulkan_Init(&init_info, renderPass.handle);
-
-    submit_to_gpu([] {
-        ImGui_ImplVulkan_CreateFontsTexture(g_sc->CmdBuffer);
-    });
-
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
-}
-
-static void destroy_debug_ui()
-{
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-
-    ImGui::DestroyContext();
-}
-
 static void create_shader_compiler()
 {
     // todo(zak): Check for potential initialization errors.
@@ -1230,7 +1056,7 @@ static std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayo
 
     for (auto& descriptor_set : descriptor_sets) {
         VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        allocate_info.descriptorPool = g_descriptor_pool;
+        allocate_info.descriptorPool = g_rc->pool;
         allocate_info.descriptorSetCount = 1;
         allocate_info.pSetLayouts = &layout;
 
@@ -1246,7 +1072,7 @@ static VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout)
     VkDescriptorSet descriptor_set{};
 
     VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-    allocate_info.descriptorPool = g_descriptor_pool;
+    allocate_info.descriptorPool = g_rc->pool;
     allocate_info.descriptorSetCount = 1;
     allocate_info.pSetLayouts = &layout;
 
@@ -1534,7 +1360,7 @@ static void end_frame(Swapchain& swapchain, const Frame& frame)
 
 texture_buffer* engine_load_texture(const char*);
 
-vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode, vsync_mode sync_mode)
+vulkan_renderer CreateRenderer(const Window* window, buffer_mode buffering_mode, vsync_mode sync_mode)
 {
     vulkan_renderer renderer{};
 
@@ -1557,8 +1383,8 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
 
 
     // initialize renderer contexts
-    g_rc = create_renderer_context(VK_API_VERSION_1_3, layers, extensions, features, window);
-    g_sc = create_submit_context();
+    g_rc         = CreateRendererContext(VK_API_VERSION_1_3, layers, extensions, features, window);
+    g_rc->submit = CreateSubmitContext();
 
     //
     g_swapchain = create_swapchain(buffering_mode, sync_mode);
@@ -1580,7 +1406,7 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
         { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
     };
 
-    g_descriptor_pool = create_descriptor_pool(pool_sizes, 1000 * pool_sizes.size());
+    g_rc->pool = create_descriptor_pool(pool_sizes, 1000 * pool_sizes.size());
 
     const std::vector<VkDescriptorSetLayoutBinding> global_layout{
         { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
@@ -1604,7 +1430,7 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
         g_view_projection_ubos[i] = create_buffer(sizeof(view_projection), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         g_scene_ubos[i] = create_buffer(sizeof(scene_ubo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     }
-    g_sampler = create_sampler(VK_FILTER_NEAREST, 16);
+    g_sampler = create_sampler(VK_FILTER_LINEAR, 16);
 
     for (std::size_t i = 0; i < g_global_descriptor_sets.size(); ++i) {
         VkDescriptorBufferInfo view_proj_ubo{};
@@ -1702,8 +1528,8 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
     }
     {
         pipeline_info.shaders = { skysphere_vs, skysphere_fs };
-        pipeline_info.cull_mode = VK_CULL_MODE_NONE;
         pipeline_info.depth_testing = false;
+         pipeline_info.cull_mode = VK_CULL_MODE_FRONT_BIT;
         renderer.skysphere_pipeline = create_pipeline(pipeline_info, renderer.geometry_render_pass);
     }
     {
@@ -1713,10 +1539,6 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
         pipeline_info.cull_mode = VK_CULL_MODE_BACK_BIT;
         renderer.wireframe_pipeline = create_pipeline(pipeline_info, renderer.geometry_render_pass);
     }
-
-    create_debug_ui(renderer.ui_render_pass);
-
-
 
     // descriptor is a struct/metadata to a resource
     //
@@ -1786,7 +1608,7 @@ vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode
     return renderer;
 }
 
-void destroy_renderer(vulkan_renderer& renderer)
+void DestroyRenderer(vulkan_renderer& renderer)
 {
     vk_check(vkDeviceWaitIdle(g_rc->device.device));
 
@@ -1799,7 +1621,7 @@ void destroy_renderer(vulkan_renderer& renderer)
     
     vkDestroyDescriptorSetLayout(g_rc->device.device, g_global_descriptor_layout, nullptr);
     
-    vkDestroyDescriptorPool(g_rc->device.device, g_descriptor_pool, nullptr);
+    vkDestroyDescriptorPool(g_rc->device.device, g_rc->pool, nullptr);
 
 
     // Free all entities created by the client
@@ -1837,15 +1659,18 @@ void destroy_renderer(vulkan_renderer& renderer)
 
     destroy_shader_compiler();
 
-    destroy_debug_ui();
-
     destroy_frames();
 
 
     destroy_swapchain(g_swapchain);
 
-    destroy_submit_context(g_sc);
+    destroy_submit_context(g_rc->submit);
     destroy_renderer_context(g_rc);
+}
+
+RendererContext* GetRendererContext()
+{
+    return g_rc;
 }
 
 void update_renderer_size(vulkan_renderer& renderer, uint32_t width, uint32_t height)
@@ -1885,9 +1710,9 @@ vertex_buffer* create_vertex_buffer(void* v, int vs, void* i, int is)
         vertex_copy_info.size = vs;
         index_copy_info.size = is;
 
-        vkCmdCopyBuffer(g_sc->CmdBuffer, vertexStagingBuffer.buffer, r->vertex_buffer.buffer, 1,
+        vkCmdCopyBuffer(g_rc->submit->CmdBuffer, vertexStagingBuffer.buffer, r->vertex_buffer.buffer, 1,
                         &vertex_copy_info);
-        vkCmdCopyBuffer(g_sc->CmdBuffer, indexStagingBuffer.buffer, r->index_buffer.buffer, 1,
+        vkCmdCopyBuffer(g_rc->submit->CmdBuffer, indexStagingBuffer.buffer, r->index_buffer.buffer, 1,
                         &index_copy_info);
     });
 
@@ -1932,7 +1757,7 @@ texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, ui
         imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
         // barrier the image into the transfer-receive layout
-        vkCmdPipelineBarrier(g_sc->CmdBuffer,
+        vkCmdPipelineBarrier(g_rc->submit->CmdBuffer,
                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                              VK_PIPELINE_STAGE_TRANSFER_BIT,
                              0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toTransfer);
@@ -1951,7 +1776,7 @@ texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, ui
         copyRegion.imageExtent = { width, height, 1 };
 
         //copy the buffer into the image
-        vkCmdCopyBufferToImage(g_sc->CmdBuffer,
+        vkCmdCopyBufferToImage(g_rc->submit->CmdBuffer,
                                staging_buffer.buffer,
                                buffer->image.handle,
                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
@@ -1966,7 +1791,7 @@ texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, ui
         imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
         //barrier the image into the shader readable layout
-        vkCmdPipelineBarrier(g_sc->CmdBuffer,
+        vkCmdPipelineBarrier(g_rc->submit->CmdBuffer,
                              VK_PIPELINE_STAGE_TRANSFER_BIT,
                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                              0, 0, nullptr, 0, nullptr, 1, &imageBarrier_toReadable);

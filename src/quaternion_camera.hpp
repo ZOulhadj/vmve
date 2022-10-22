@@ -33,7 +33,7 @@ struct quaternion_camera
 };
 
 
-quaternion_camera create_camera(const glm::vec3& position, float fov, float speed);
+quaternion_camera CreateCamera(const glm::vec3& position, float fov, float speed);
 
 void update_camera_view(quaternion_camera& camera, float cursor_x, float cursor_y);
 void update_camera(quaternion_camera& camera);

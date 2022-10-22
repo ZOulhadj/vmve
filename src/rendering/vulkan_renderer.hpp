@@ -1,8 +1,8 @@
 #ifndef MYENGINE_VULKAN_RENDERER_HPP
 #define MYENGINE_VULKAN_RENDERER_HPP
 
-#include "window.hpp"
-#include "quaternion_camera.hpp"
+#include "../window.hpp"
+#include "../quaternion_camera.hpp"
 
 
 
@@ -44,7 +44,14 @@ struct device_context
     uint32_t present_index;
 };
 
-struct renderer_context
+struct RendererSubmitContext
+{
+    VkFence         Fence;
+    VkCommandPool   CmdPool;
+    VkCommandBuffer CmdBuffer;
+};
+
+struct RendererContext
 {
     const Window* window;
 
@@ -52,13 +59,10 @@ struct renderer_context
     VkSurfaceKHR surface;
     device_context device;
     VmaAllocator allocator;
-};
 
-struct renderer_submit_context
-{
-    VkFence         Fence;
-    VkCommandPool   CmdPool;
-    VkCommandBuffer CmdBuffer;
+    RendererSubmitContext* submit;
+
+    VkDescriptorPool pool;
 };
 
 struct image_buffer
@@ -204,8 +208,12 @@ struct vulkan_renderer
 
 
 
-vulkan_renderer create_renderer(const Window* window, buffer_mode buffering_mode, vsync_mode sync_mode);
-void destroy_renderer(vulkan_renderer& renderer);
+vulkan_renderer CreateRenderer(const Window* window, buffer_mode buffering_mode, vsync_mode sync_mode);
+void DestroyRenderer(vulkan_renderer& renderer);
+
+RendererContext* GetRendererContext();
+
+void submit_to_gpu(const std::function<void()>& submit_func);
 
 void update_renderer_size(vulkan_renderer& renderer, uint32_t width, uint32_t height);
 

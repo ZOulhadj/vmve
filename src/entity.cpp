@@ -1,6 +1,6 @@
 #include "entity.hpp"
 
-#include "vulkan_renderer.hpp"
+#include "rendering/vulkan_renderer.hpp"
 
 void translate_entity(entity* e, float x, float y, float z)
 {

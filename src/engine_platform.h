@@ -17,15 +17,24 @@ struct vertex_buffer;
 struct texture_buffer;
 struct entity;
 
+
+
+struct engine_scene
+{
+    glm::vec3 camera_position;
+    glm::vec3 sun_position;
+    glm::vec3 sun_color;
+};
+
 // This is the entry point for the engine and is where all initialization
 // takes place. This should be the first function that gets called by
 // the client application.
-void engine_start(const char* name);
+void StartEngine(const char* name);
 
 // This will terminate the engine by freeing all resources by the client and
 // the engine then shutting down all subsystems. This should be the final engine
 // function call within the client application.
-void engine_exit();
+void StopEngine();
 
 // This function simply sets the running status of the engine to false which
 // in turn will exit the main rendering loop once running() is called.
@@ -81,7 +90,7 @@ void engine_move_down();
 void engine_roll_left();
 void engine_roll_right();
 
-void engine_render();
+void engine_render(const engine_scene& scene);
 
 // This function submits work to the GPU to execute. In other words, rendering
 // an object onto the screen.
@@ -96,4 +105,10 @@ void engine_get_entity_position(const entity* e, float* x, float* y, float* z);
 
 
 
+// Window
+glm::vec2 get_window_size();
 
+// Camera
+glm::mat4 get_camera_projection();
+glm::mat4 get_camera_view();
+glm::vec3 get_camera_position();

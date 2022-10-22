@@ -6,7 +6,7 @@
 
 // Initialized the GLFW library and creates a window. Window callbacks send
 // events to the application callback.
-Window* create_window(const char* name, uint32_t width, uint32_t height)
+Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
 {
     auto window = new Window();
 
@@ -33,7 +33,7 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
     if (!window->handle)
         return nullptr;
 
-    glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // window callbacks
     glfwSetWindowUserPointer(window->handle, window);
@@ -125,7 +125,7 @@ Window* create_window(const char* name, uint32_t width, uint32_t height)
 }
 
 // Destroys the window and terminates the GLFW library.
-void destroy_window(const Window* window)
+void DestroyWindow(const Window* window)
 {
     glfwDestroyWindow(window->handle);
     glfwTerminate();

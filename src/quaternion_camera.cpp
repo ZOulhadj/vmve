@@ -20,7 +20,7 @@ glm::mat4 infinite_perspective(float fovy, float width, float height, float zNea
     return result;
 }
 
-quaternion_camera create_camera(const glm::vec3& position, float fov, float speed)
+quaternion_camera CreateCamera(const glm::vec3& position, float fov, float speed)
 {
     quaternion_camera camera{};
     camera.position    = position;
