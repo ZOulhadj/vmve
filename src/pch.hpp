@@ -2,6 +2,7 @@
 #define MYENGINE_PCH_HPP
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstdint>
 #include <ctime>
 #include <cstring>

@@ -4,15 +4,112 @@
 #include "events/key_event.hpp"
 #include "events/mouse_event.hpp"
 
+
+
+
+static void GLFWErrorCallback(int code, const char* description)
+{
+     printf("(%d) %s\n", code, description);
+}
+
+static void WindowCloseCallback(GLFWwindow* window)
+{
+    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+
+    WindowClosedEvent e;
+    ptr->EventCallback(e);
+}
+
+static void WindowResizeCallback(GLFWwindow* window, int width, int height)
+{
+    // todo: window resizing is done within the framebuffer callback since that
+    // todo: returns the actual pixel count of the display. This ensures that
+    // todo: for monitors with a high DPI we return the real pixels.
+}
+
+static void WindowFramebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+    ptr->width = width;
+    ptr->height = height;
+
+    WindowResizedEvent e(width, height);
+    ptr->EventCallback(e);
+}
+
+static void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+
+    if (action == GLFW_PRESS) {
+        KeyPressedEvent e(key);
+        ptr->EventCallback(e);
+    } else if (action == GLFW_REPEAT) {
+        KeyPressedEvent e(key);
+        ptr->EventCallback(e);
+    } else if (action == GLFW_RELEASE) {
+        KeyReleasedEvent e(key);
+        ptr->EventCallback(e);
+    }
+}
+
+static void WindowMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+
+    if (action == GLFW_PRESS) {
+        MouseButtonPressedEvent e(button);
+        ptr->EventCallback(e);
+    } else if (action == GLFW_REPEAT) {
+        MouseButtonPressedEvent e(button);
+        ptr->EventCallback(e);
+    } else if (action == GLFW_RELEASE) {
+        MouseButtonReleaseEvent e(button);
+        ptr->EventCallback(e);
+    }
+}
+
+static void WindowMouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+
+    if (yoffset == 1.0) {
+        MouseScrolledUpEvent e;
+        ptr->EventCallback(e);
+    } else if (yoffset == -1.0) {
+        MouseScrolledDownEvent e;
+        ptr->EventCallback(e);
+    }
+}
+
+static void WindowCursorPosCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+
+    MouseMovedEvent e(xpos, ypos);
+    ptr->EventCallback(e);
+}
+
+static void WindowCursorEnterCallback(GLFWwindow* window, int entered)
+{
+    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+
+    if (entered) {
+        MouseEnteredEvent e;
+        ptr->EventCallback(e);
+    } else {
+        MouseLeftEvent e;
+        ptr->EventCallback(e);
+    }
+}
+
 // Initialized the GLFW library and creates a window. Window callbacks send
 // events to the application callback.
 Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
 {
-    auto window = new Window();
+    Window* window = (Window*)malloc(sizeof(Window));
 
-    glfwSetErrorCallback([](int error_code, const char* description) {
-        printf("%s\n", description);
-    });
+    glfwSetErrorCallback(GLFWErrorCallback);
 
     if (!glfwInit())
         return nullptr;
@@ -20,12 +117,7 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, true);
 
-    window->handle = glfwCreateWindow(
-            static_cast<int>(width),
-            static_cast<int>(height),
-            name,
-            nullptr,
-            nullptr);
+    window->handle = glfwCreateWindow((int)width, (int)height, name, nullptr, nullptr);
     window->name   = name;
     window->width  = width;
     window->height = height;
@@ -37,105 +129,35 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
 
     // window callbacks
     glfwSetWindowUserPointer(window->handle, window);
-    glfwSetWindowCloseCallback(window->handle, [](GLFWwindow* window) {
-        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    glfwSetWindowCloseCallback(window->handle, WindowCloseCallback);
+    glfwSetWindowSizeCallback(window->handle, WindowResizeCallback);
+    glfwSetFramebufferSizeCallback(window->handle, WindowFramebufferResizeCallback);
 
-        window_closed_event e;
-        ptr->event_callback(e);
-    });
-
-    glfwSetWindowSizeCallback(window->handle, [](GLFWwindow* window, int width, int height) {
-        // todo: window resizing is done within the framebuffer callback since that
-        // todo: returns the actual pixel count of the display. This ensures that
-        // todo: for monitors with a high DPI we return the real pixels.
-    });
-
-    glfwSetFramebufferSizeCallback(window->handle, [](GLFWwindow* window, int width, int height) {
-        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
-        ptr->width = width;
-        ptr->height = height;
-
-        window_resized_event e(width, height);
-        ptr->event_callback(e);
-    });
-
-    glfwSetKeyCallback(window->handle, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-        if (action == GLFW_PRESS) {
-            key_pressed_event e(key);
-            ptr->event_callback(e);
-        }  else if (action == GLFW_REPEAT) {
-            key_pressed_event e(key);
-            ptr->event_callback(e);
-        } else if (action == GLFW_RELEASE) {
-            key_released_event e(key);
-            ptr->event_callback(e);
-        }
-    });
-
-    glfwSetMouseButtonCallback(window->handle, [](GLFWwindow* window, int button, int action, int mods) {
-        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-        if (action == GLFW_PRESS) {
-            mouse_button_pressed_event e(button);
-            ptr->event_callback(e);
-        } else if (action == GLFW_REPEAT) {
-            mouse_button_pressed_event e(button);
-            ptr->event_callback(e);
-        } else if (action == GLFW_RELEASE) {
-            mouse_button_released_event e(button);
-            ptr->event_callback(e);
-        }
-
-    });
-
-    glfwSetCursorPosCallback(window->handle, [](GLFWwindow* window, double xpos, double ypos) {
-        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-        mouse_moved_event e(xpos, ypos);
-        ptr->event_callback(e);
-    });
-
-    glfwSetCursorEnterCallback(window->handle, [](GLFWwindow* window, int entered) {
-        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-        if (entered) {
-            mouse_entered_event e;
-            ptr->event_callback(e);
-        } else {
-            mouse_left_event e;
-            ptr->event_callback(e);
-        }
-    });
-
-    glfwSetScrollCallback(window->handle, [](GLFWwindow* window, double xoffset, double yoffset) {
-        const auto ptr = static_cast<Window*>(glfwGetWindowUserPointer(window));
-
-        if (yoffset == 1.0) {
-            mouse_scrolled_up_event e;
-            ptr->event_callback(e);
-        } else if (yoffset == -1.0) {
-            mouse_scrolled_down_event e;
-            ptr->event_callback(e);
-        }
-    });
+    // input callbacks
+    glfwSetKeyCallback(window->handle, WindowKeyCallback);
+    glfwSetMouseButtonCallback(window->handle, WindowMouseButtonCallback);
+    glfwSetScrollCallback(window->handle, WindowMouseScrollCallback);
+    glfwSetCursorPosCallback(window->handle, WindowCursorPosCallback);
+    glfwSetCursorEnterCallback(window->handle, WindowCursorEnterCallback);
 
     return window;
 }
 
 // Destroys the window and terminates the GLFW library.
-void DestroyWindow(const Window* window)
+void DestroyWindow(Window* window)
 {
+    if (!window)
+        return;
+
     glfwDestroyWindow(window->handle);
     glfwTerminate();
 
-    delete window;
+    free(window);
 }
 
 // Updates a window by polling for any new events since the last window update
 // function call.
-void update_window()
+void UpdateWindow(Window* window)
 {
     glfwPollEvents();
 }

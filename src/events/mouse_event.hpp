@@ -17,20 +17,20 @@ private:
     int m_ButtonCode;
 };
 
-class mouse_button_pressed_event : public mouse_button_event
+class MouseButtonPressedEvent : public mouse_button_event
 {
 public:
-    mouse_button_pressed_event(int buttonCode)
+    MouseButtonPressedEvent(int buttonCode)
         : mouse_button_event(buttonCode)
     {}
 
     EVENT_CLASS_TYPE(MouseButtonPressedEvent);
 };
 
-class mouse_button_released_event : public mouse_button_event
+class MouseButtonReleaseEvent : public mouse_button_event
 {
 public:
-    mouse_button_released_event(int buttonCode)
+    MouseButtonReleaseEvent(int buttonCode)
         : mouse_button_event(buttonCode)
     {}
 
@@ -38,10 +38,10 @@ public:
 };
 
 
-class mouse_moved_event : public Event
+class MouseMovedEvent : public Event
 {
 public:
-    mouse_moved_event(double x, double y)
+    MouseMovedEvent(double x, double y)
         : m_XPos(x), m_YPos(y)
     {}
 
@@ -54,25 +54,25 @@ private:
     double m_YPos;
 };
 
-class mouse_entered_event : public Event
+class MouseEnteredEvent : public Event
 {
 public:
     EVENT_CLASS_TYPE(MouseEnteredEvent);
 };
 
-class mouse_left_event : public Event
+class MouseLeftEvent : public Event
 {
 public:
     EVENT_CLASS_TYPE(MouseLeftEvent);
 };
 
-class mouse_scrolled_up_event : public Event
+class MouseScrolledUpEvent : public Event
 {
 public:
     EVENT_CLASS_TYPE(MouseScrolledUpEvent);
 };
 
-class mouse_scrolled_down_event : public Event
+class MouseScrolledDownEvent : public Event
 {
 public:
     EVENT_CLASS_TYPE(MouseScrolledDownEvent);

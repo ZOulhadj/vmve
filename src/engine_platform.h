@@ -13,17 +13,17 @@
 
 
 // forward declarations for pointer types
-struct vertex_buffer;
-struct texture_buffer;
-struct entity;
+struct VertexBuffer;
+struct TextureBuffer;
+struct Entity;
 
 
 
-struct engine_scene
+struct EngineScene
 {
-    glm::vec3 camera_position;
-    glm::vec3 sun_position;
-    glm::vec3 sun_color;
+    alignas(16) glm::vec3 camera_position;
+    alignas(16) glm::vec3 sun_position;
+    alignas(16) glm::vec3 sun_color;
 };
 
 // This is the entry point for the engine and is where all initialization
@@ -43,19 +43,19 @@ void engine_stop();
 // Returns the running status of the engine. Once the engine has been
 // initialized then this is set to true. The client can use this for the
 // main update loop.
-bool engine_running();
+bool IsEngineRunning();
 
 // The uptime returns the number of seconds since the engine
 // was initialized.
-float engine_uptime();
+float EngineGetUptime();
 
 // The delta time will return the time difference in milliseconds
 // between the current and previous frame.
-float engine_get_delta_time();
+float EngineGetDeltaTime();
 
 // Returns a boolean value based on if the given key is currently
 // pressed down.
-bool engine_is_key_down(int keycode);
+bool EngineIsKeyDown(int keycode);
 
 // Returns a boolean value based on if the given mouse button
 // is pressed down.
@@ -63,22 +63,22 @@ bool engine_is_mouse_button_down(int buttoncode);
 
 // Creates a region of memory stored on the GPU. The object returns
 // a pointer to a vertex and index buffer which can be used for rendering.
-vertex_buffer* engine_create_render_buffer(void* v, int vs, void* i, int is);
+VertexBuffer* EngineCreateRenderBuffer(void* v, int vs, void* i, int is);
 
 // Loads a model file from the filesystem and internally creates a render
 // buffer which is returned to the client.
-vertex_buffer* engine_load_model(const char* path);
+VertexBuffer* EngineLoadModel(const char* path);
 
 // Loads a texture file from the filesystem and returns a pointer to that
 // texture image.
-texture_buffer* engine_load_texture(const char* path);
+TextureBuffer* EngineLoadTexture(const char* path);
 
 // Creates an entity which is an object that is rendered onto the screen.
 // Each entity has a pointer to a vertex buffer that describes the
 // object that is being represented. A model matrix is also part of
 // an entity that describes the full transformation including position,
 // rotation and scale in the world.
-entity* engine_create_entity(const vertex_buffer* buffer, const texture_buffer* texture);
+Entity* EngineCreateEntity(const VertexBuffer* buffer, const TextureBuffer* texture);
 
 // Moves the default camera in the specified direction
 void engine_move_forwards();
@@ -90,18 +90,18 @@ void engine_move_down();
 void engine_roll_left();
 void engine_roll_right();
 
-void engine_render(const engine_scene& scene);
+void EngineRender(const EngineScene& scene);
 
 // This function submits work to the GPU to execute. In other words, rendering
 // an object onto the screen.
-void engine_render(entity* e);
+void EngineRender(Entity* e);
 
-void engine_translate_entity(entity* e, float x, float y, float z);
-void engine_rotate_entity(entity* e, float deg, float x, float y, float z);
-void engine_scale_entity(entity* e, float scale);
-void engine_scale_entity(entity* e, float x, float y, float z);
+void EngineTranslateEntity(Entity* e, float x, float y, float z);
+void EngineRotateEntity(Entity* e, float deg, float x, float y, float z);
+void EngineScaleEntity(Entity* e, float scale);
+void EngineScaleEntity(Entity* e, float x, float y, float z);
 
-void engine_get_entity_position(const entity* e, float* x, float* y, float* z);
+void engine_get_entity_position(const Entity* e, float* x, float* y, float* z);
 
 
 

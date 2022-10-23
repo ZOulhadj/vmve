@@ -13,10 +13,10 @@ ImGuiContext* CreateUserInterface(VkRenderPass renderPass)
     context = ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
-    if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
+    /*if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
         printf("Failed to load required font for ImGui.\n");
         return nullptr;
-    }
+    }*/
 
     ImGui::StyleColorsDark();
 
@@ -36,14 +36,14 @@ ImGuiContext* CreateUserInterface(VkRenderPass renderPass)
     init_info.ImageCount      = 3;
     init_info.MSAASamples     = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator       = nullptr;
-    init_info.CheckVkResultFn = vk_check;
+    init_info.CheckVkResultFn = VkCheck;
 
     if (!ImGui_ImplVulkan_Init(&init_info, renderPass))
         return nullptr;
 
 
     // Submit ImGui fonts to the GPU in order to be used during rendering.
-    submit_to_gpu([&] { ImGui_ImplVulkan_CreateFontsTexture(rc->submit->CmdBuffer); });
+    SubmitToGPU([&] { ImGui_ImplVulkan_CreateFontsTexture(rc->submit->CmdBuffer); });
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 

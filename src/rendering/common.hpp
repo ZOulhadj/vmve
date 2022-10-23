@@ -4,7 +4,7 @@
 
 // This is a helper function used for all Vulkan related function calls that
 // return a VkResult value.
-static void vk_check(VkResult result)
+static void VkCheck(VkResult result)
 {
     // todo(zak): Should we return a bool, throw, exit(), or abort()?
     if (result != VK_SUCCESS) {
@@ -15,7 +15,7 @@ static void vk_check(VkResult result)
 // Helper cast function often used for Vulkan create info structs
 // that accept an uint32_t.
 template <typename T>
-static uint32_t u32(T t)
+static uint32_t U32(T t)
 {
     // todo(zak): check if T is a numerical value
 
@@ -25,7 +25,7 @@ static uint32_t u32(T t)
 // Compares a list of requested instance layers against the layers available
 // on the system. If all the requested layers have been found then true is
 // returned.
-static bool compare_layers(const std::vector<const char*>& requested,
+static bool CompareLayers(const std::vector<const char*>& requested,
     const std::vector<VkLayerProperties>& layers)
 {
     for (const auto& requested_name : requested) {
@@ -45,7 +45,7 @@ static bool compare_layers(const std::vector<const char*>& requested,
 // Compares a list of requested extensions against the extensions available
 // on the system. If all the requested extensions have been found then true is
 // returned.
-static bool compare_extensions(const std::vector<const char*>& requested,
+static bool CompareExtensions(const std::vector<const char*>& requested,
     const std::vector<VkExtensionProperties>& extensions)
 {
     for (const auto& requested_name : requested) {
@@ -64,7 +64,7 @@ static bool compare_extensions(const std::vector<const char*>& requested,
 }
 
 
-static bool has_extension(std::string_view name, const std::vector<VkExtensionProperties>& extensions)
+static bool HasExtensions(std::string_view name, const std::vector<VkExtensionProperties>& extensions)
 {
     const auto iter = std::find_if(extensions.begin(), extensions.end(), [=](const auto& extension) {
         return std::strcmp(name.data(), extension.extensionName) == 0;
@@ -76,7 +76,7 @@ static bool has_extension(std::string_view name, const std::vector<VkExtensionPr
 
 // A helper function that returns the size in bytes of a particular format
 // based on the number of components and data type.
-static uint32_t format_to_size(VkFormat format)
+static uint32_t FormatToSize(VkFormat format)
 {
     switch (format) {
     case VK_FORMAT_R32G32_SFLOAT:       return 2 * sizeof(float);
@@ -87,7 +87,7 @@ static uint32_t format_to_size(VkFormat format)
     return 0;
 }
 
-static shaderc_shader_kind convert_shader_type(VkShaderStageFlagBits type)
+static shaderc_shader_kind ConvertShaderType(VkShaderStageFlagBits type)
 {
     switch (type) {
     case VK_SHADER_STAGE_VERTEX_BIT: return shaderc_vertex_shader;
@@ -106,7 +106,7 @@ static shaderc_shader_kind convert_shader_type(VkShaderStageFlagBits type)
 // creating two arrays and filling them one with the requested features and the
 // other array with the features that is supported. Then we simply compare them
 // to see if all requested features are present.
-static bool has_required_features(VkPhysicalDevice physical_device,
+static bool HasRequiredFeatures(VkPhysicalDevice physical_device,
     VkPhysicalDeviceFeatures requested_features)
 {
     VkPhysicalDeviceFeatures available_features{};

@@ -1,7 +1,7 @@
 #ifndef MYENGINE_QUATERNION_CAMERA_HPP
 #define MYENGINE_QUATERNION_CAMERA_HPP
 
-struct quaternion_camera
+struct QuatCamera
 {
     glm::vec3 position;
     glm::vec3 front_vector;
@@ -33,13 +33,13 @@ struct quaternion_camera
 };
 
 
-quaternion_camera CreateCamera(const glm::vec3& position, float fov, float speed);
+QuatCamera CreateCamera(const glm::vec3& position, float fov, float speed);
 
-void update_camera_view(quaternion_camera& camera, float cursor_x, float cursor_y);
-void update_camera(quaternion_camera& camera);
+void update_camera_view(QuatCamera& camera, float cursor_x, float cursor_y);
+void UpdateCamera(QuatCamera& camera);
 
-void update_projection(quaternion_camera& camera);
-void update_camera_projection(quaternion_camera& camera, uint32_t width, uint32_t height);
+void update_projection(QuatCamera& camera);
+void UpdateCameraProjection(QuatCamera& camera, uint32_t width, uint32_t height);
 
 
 #endif

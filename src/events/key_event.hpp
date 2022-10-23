@@ -18,20 +18,20 @@ private:
 };
 
 
-class key_pressed_event : public key_event
+class KeyPressedEvent : public key_event
 {
 public:
-    key_pressed_event(int keycode)
+    KeyPressedEvent(int keycode)
         : key_event(keycode)
     {}
 
     EVENT_CLASS_TYPE(KeyPressedEvent);
 };
 
-class key_released_event : public key_event
+class KeyReleasedEvent : public key_event
 {
 public:
-    key_released_event(int keycode)
+    KeyReleasedEvent(int keycode)
         : key_event(keycode)
     {}
 

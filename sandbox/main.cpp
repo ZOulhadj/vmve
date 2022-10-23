@@ -36,6 +36,8 @@ static glm::vec3 sun_pos = glm::vec3(0.0f);
 static glm::vec3 earth_pos = glm::vec3(0.0f);
 static glm::vec3 moon_pos = glm::vec3(0.0f);
 
+static glm::vec3 sun_color = glm::vec3(1.0f);
+
 /*
 glm::vec3 sphere_translation(float radius, float latitude, float longitude)
 {
@@ -98,7 +100,7 @@ glm::vec2 world_to_screen(const glm::vec3& position, const glm::vec2& offset = g
 }
 
 
-static void render_ui()
+static void RenderGUI()
 {
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -172,6 +174,8 @@ static void render_ui()
         ImGui::Text("Camera controls");
 
         ImGui::Checkbox("Entity overlay", &overlay);
+
+        ImGui::SliderFloat3("Sun color", glm::value_ptr(sun_color), 0.0f, 1.0f);
 
         ImGui::End();
     }
@@ -289,65 +293,65 @@ int main()
 {
     StartEngine("3D Earth Satellite Visualizer");
 
-    const vertex_buffer* sphere = engine_load_model("assets/sphere.obj");
+    const VertexBuffer* sphere = EngineLoadModel("assets/sphere.obj");
 
-    const texture_buffer* sun_texture   = engine_load_texture("assets/textures/sun.jpg");
-    const texture_buffer* earth_texture = engine_load_texture("assets/textures/earth.jpg");
-    const texture_buffer* moon_texture  = engine_load_texture("assets/textures/moon.jpg");
+    const TextureBuffer* sun_texture   = EngineLoadTexture("assets/textures/sun.jpg");
+    const TextureBuffer* earth_texture = EngineLoadTexture("assets/textures/earth.jpg");
+    const TextureBuffer* moon_texture  = EngineLoadTexture("assets/textures/moon.jpg");
 
-    entity* sun_entity = engine_create_entity(sphere, sun_texture);
-    entity* earth_entity = engine_create_entity(sphere, earth_texture);
-    entity* moon_entity = engine_create_entity(sphere, moon_texture);
+    Entity* sun_entity = EngineCreateEntity(sphere, sun_texture);
+    Entity* earth_entity = EngineCreateEntity(sphere, earth_texture);
+    Entity* moon_entity = EngineCreateEntity(sphere, moon_texture);
 
 
-    while (engine_running()) {
-        if (engine_is_key_down(GLFW_KEY_ESCAPE)) engine_stop();
+    while (IsEngineRunning()) {
+        if (EngineIsKeyDown(GLFW_KEY_ESCAPE)) engine_stop();
 
 
         // Camera movement
-        if (engine_is_key_down(87))  engine_move_forwards();
-        if (engine_is_key_down(83))  engine_move_backwards();
-        if (engine_is_key_down(65))  engine_move_left();
-        if (engine_is_key_down(68))  engine_move_right();
-        if (engine_is_key_down(32))  engine_move_up();
-        if (engine_is_key_down(341)) engine_move_down();
-        if (engine_is_key_down(81))  engine_roll_left();
-        if (engine_is_key_down(69))  engine_roll_right();
+        if (EngineIsKeyDown(87))  engine_move_forwards();
+        if (EngineIsKeyDown(83))  engine_move_backwards();
+        if (EngineIsKeyDown(65))  engine_move_left();
+        if (EngineIsKeyDown(68))  engine_move_right();
+        if (EngineIsKeyDown(32))  engine_move_up();
+        if (EngineIsKeyDown(341)) engine_move_down();
+        if (EngineIsKeyDown(81))  engine_roll_left();
+        if (EngineIsKeyDown(69))  engine_roll_right();
 
         // Update entities
-        const float time = engine_uptime();
+        const float time = EngineGetUptime();
         const float earth_speed = angular_velocity * (time * speed_factor);
 
-        sun_pos = glm::vec3(0.0f, 0.0f, sun_from_earth);
+        sun_pos = glm::vec3(glm::sin(glm::radians(-time)) * sun_from_earth, 0.0f, glm::cos(glm::radians(-time)) * sun_from_earth);
         earth_pos = glm::vec3(0.0f, 0.0f, 0.0f);
         moon_pos = glm::vec3(glm::sin(glm::radians(time)) * moon_from_earth, 0.0f, glm::cos(glm::radians(time)) * moon_from_earth);
 
-        engine_translate_entity(sun_entity, sun_pos.x, sun_pos.y, sun_pos.z);
-        engine_scale_entity(sun_entity, sun_radius);
-        engine_rotate_entity(sun_entity, time, 0.0f, 1.0f, 0.0f);
+        EngineTranslateEntity(sun_entity, sun_pos.x, sun_pos.y, sun_pos.z);
+        EngineScaleEntity(sun_entity, sun_radius);
+        EngineRotateEntity(sun_entity, time, 0.0f, 1.0f, 0.0f);
 
-        engine_translate_entity(earth_entity, earth_pos.x, earth_pos.y, earth_pos.z);
-        engine_scale_entity(earth_entity, earth_radius);
-        engine_rotate_entity(earth_entity, earth_speed, 0.0f, 1.0f, 0.0f);
+        EngineTranslateEntity(earth_entity, earth_pos.x, earth_pos.y, earth_pos.z);
+        EngineScaleEntity(earth_entity, earth_radius);
+        EngineRotateEntity(earth_entity, earth_speed, 0.0f, 1.0f, 0.0f);
 
 
-        engine_translate_entity(moon_entity, moon_pos.x, moon_pos.y, moon_pos.z);
-        engine_scale_entity(moon_entity, moon_radius);
-        engine_rotate_entity(moon_entity, time, 0.0f, 1.0f, 0.0f);
+        EngineTranslateEntity(moon_entity, moon_pos.x, moon_pos.y, moon_pos.z);
+        EngineScaleEntity(moon_entity, moon_radius);
+        EngineRotateEntity(moon_entity, time, 0.0f, 1.0f, 0.0f);
 
         // Rendering
-        engine_render(sun_entity);
-        engine_render(earth_entity);
-        engine_render(moon_entity);
+        EngineRender(sun_entity);
+        EngineRender(earth_entity);
+        EngineRender(moon_entity);
 
-        render_ui();
+        RenderGUI();
 
-        engine_scene scene{};
+        EngineScene scene{};
         scene.camera_position = get_camera_position();
         scene.sun_position    = sun_pos;
-        scene.sun_color       = glm::vec3(1.0f, 1.0f, 1.0f);
+        scene.sun_color       = sun_color;
 
-        engine_render(scene);
+        EngineRender(scene);
 
     }
 

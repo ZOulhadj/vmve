@@ -20,9 +20,9 @@ glm::mat4 infinite_perspective(float fovy, float width, float height, float zNea
     return result;
 }
 
-quaternion_camera CreateCamera(const glm::vec3& position, float fov, float speed)
+QuatCamera CreateCamera(const glm::vec3& position, float fov, float speed)
 {
-    quaternion_camera camera{};
+    QuatCamera camera{};
     camera.position    = position;
     camera.orientation = glm::quat(1, 0, 0, 0);
     //camera.aspect_ratio = 1280.0f / 720.0f;
@@ -44,13 +44,13 @@ quaternion_camera CreateCamera(const glm::vec3& position, float fov, float speed
     return camera;
 }
 
-void update_camera_view(quaternion_camera& camera, float cursor_x, float cursor_y)
+void update_camera_view(QuatCamera& camera, float cursor_x, float cursor_y)
 {
     camera.cursor_x = cursor_x;
     camera.cursor_y = cursor_y;
 }
 
-void update_camera(quaternion_camera& camera)
+void UpdateCamera(QuatCamera& camera)
 {
     // todo(zak): Need to fix unwanted roll when rotating
     // Get the mouse offsets
@@ -85,14 +85,14 @@ void update_camera(quaternion_camera& camera)
     camera.roll      = 0.0f;
 }
 
-void update_projection(quaternion_camera& camera)
+void update_projection(QuatCamera& camera)
 {
     camera.proj = infinite_perspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
     // Required if using Vulkan (left-handed coordinate-system)
     camera.proj[1][1] *= -1.0;
 }
 
-void update_camera_projection(quaternion_camera& camera, uint32_t width, uint32_t height)
+void UpdateCameraProjection(QuatCamera& camera, uint32_t width, uint32_t height)
 {
     update_projection(camera);
 }

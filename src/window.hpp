@@ -11,7 +11,7 @@ struct Window
     uint32_t width;
     uint32_t height;
 
-    event_function  event_callback;
+    event_function  EventCallback;
 };
 
 // Initialized the GLFW library and creates a window. Window callbacks send
@@ -19,11 +19,11 @@ struct Window
 Window* CreateWindow(const char* name, uint32_t width, uint32_t height);
 
 // Destroys the window and terminates the GLFW library.
-void DestroyWindow(const Window* window);
+void DestroyWindow(Window* window);
 
 // Updates a window by polling for any new events since the last window update
 // function call.
-void update_window();
+void UpdateWindow(Window* window);
 
 
 

@@ -2,25 +2,24 @@
 #define MYENGINE_VULKAN_RENDERER_HPP
 
 #include "../window.hpp"
-#include "../quaternion_camera.hpp"
 
 
 
 constexpr int frames_in_flight = 2;
 
 
-struct entity;
+struct Entity;
 
-enum class buffer_mode
+enum class BufferMode
 {
-    double_buffering  = 2,
-    tripple_buffering = 3
+    Double = 2,
+    Triple = 3
 };
 
-enum class vsync_mode
+enum class VSyncMode
 {
-    disabled = VK_PRESENT_MODE_IMMEDIATE_KHR,
-    enabled  = VK_PRESENT_MODE_FIFO_KHR
+    Disabled = VK_PRESENT_MODE_IMMEDIATE_KHR,
+    Enabled  = VK_PRESENT_MODE_FIFO_KHR
 };
 
 struct gpu_queues
@@ -65,7 +64,7 @@ struct RendererContext
     VkDescriptorPool pool;
 };
 
-struct image_buffer
+struct ImageBuffer
 {
     VkImage       handle;
     VkImageView   view;
@@ -82,13 +81,13 @@ struct Buffer
 
 struct Swapchain
 {
-    buffer_mode buffering_mode;
-    vsync_mode  sync_mode;
+    BufferMode buffering_mode;
+    VSyncMode  sync_mode;
 
     VkSwapchainKHR handle;
 
-    std::vector<image_buffer> images;
-    image_buffer depth_image;
+    std::vector<ImageBuffer> images;
+    ImageBuffer depth_image;
 
     uint32_t currentImage;
 };
@@ -131,14 +130,14 @@ struct render_pass_info
     VkSampleCountFlagBits sample_count;
 };
 
-struct render_pass
+struct RenderPass
 {
     VkRenderPass handle;
 
     std::vector<VkFramebuffer> framebuffers;
 };
 
-struct shader_module
+struct Shader
 {
     VkShaderModule handle;
     VkShaderStageFlagBits type;
@@ -152,7 +151,7 @@ struct PipelineInfo
     uint32_t binding_layout_size;
     std::vector<VkFormat> binding_format;
 
-    std::vector<shader_module> shaders;
+    std::vector<Shader> shaders;
     bool wireframe;
     bool depth_testing;
     VkCullModeFlags cull_mode;
@@ -166,16 +165,16 @@ struct Pipeline
 };
 
 
-struct vertex_buffer
+struct VertexBuffer
 {
     Buffer   vertex_buffer;
     Buffer   index_buffer;
     uint32_t index_count;
 };
 
-struct texture_buffer
+struct TextureBuffer
 {
-    image_buffer image;
+    ImageBuffer image;
 };
 
 struct uniform_buffer
@@ -193,46 +192,68 @@ struct vertex
 };
 
 
-struct vulkan_renderer
-{
-    render_pass geometry_render_pass;
-    //RenderPass lighting_render_pass;
-    render_pass ui_render_pass;
+//struct VulkanRenderer
+//{
+//    render_pass geometryPass;
+//    //RenderPass lighting_render_pass;
+//    render_pass guiPass;
+//
+//    Pipeline geometryPipeline;
+//    Pipeline skyspherePipeline;
+//    //Pipeline lighting_pipeline;
+//
+//    Pipeline wireframe_pipeline;
+//};
+//
 
-    Pipeline geometry_pipeline;
-    Pipeline skysphere_pipeline;
-    //Pipeline lighting_pipeline;
 
-    Pipeline wireframe_pipeline;
-};
-
-
-
-vulkan_renderer CreateRenderer(const Window* window, buffer_mode buffering_mode, vsync_mode sync_mode);
-void DestroyRenderer(vulkan_renderer& renderer);
+RendererContext* CreateRenderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode);
+void DestroyRenderer(RendererContext* context);
 
 RendererContext* GetRendererContext();
 
-void submit_to_gpu(const std::function<void()>& submit_func);
+void SubmitToGPU(const std::function<void()>& submit_func);
 
-void update_renderer_size(vulkan_renderer& renderer, uint32_t width, uint32_t height);
+Swapchain& GetSwapchain();
+VkSampler CreateSampler(VkFilter filtering, uint32_t anisotropic_level);
+void DestroySampler(VkSampler sampler);
 
-vertex_buffer* create_vertex_buffer(void* v, int vs, void* i, int is);
-texture_buffer* create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height);
-entity* create_entity_renderer(const vertex_buffer* buffer, const texture_buffer* texture);
+VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
+std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout, uint32_t frames);
+VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout);
+void SetBufferData(Buffer* buffer, void* data, uint32_t size);
+Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type);
+void DestroyBuffer(Buffer& buffer);
 
-void bind_vertex_buffer(const vertex_buffer* buffer);
+//void update_renderer_size(VulkanRenderer& renderer, uint32_t width, uint32_t height);
 
-void begin_renderer_frame(quaternion_camera& camera);
-void end_renderer_frame();
+Shader CreateShader(VkShaderStageFlagBits type, const std::string& code);
+void DestroyShader(Shader& shader);
 
-VkCommandBuffer get_current_command_buffer();
+RenderPass CreateRenderPass(const render_pass_info& info, const std::vector<ImageBuffer>& color_attachments,
+                                                          const std::vector<ImageBuffer>& depth_attachments);
+void DestroyRenderPass(RenderPass& renderPass);
 
-void begin_render_pass(render_pass& renderPass);
-void end_render_pass();
+Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass);
+void DestroyPipeline(Pipeline& pipeline);
 
-void bind_pipeline(Pipeline& pipeline);
+VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is);
+TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height);
+void DestroyImage(ImageBuffer* image);
 
-void render_entity(entity* e, Pipeline& pipeline);
+void BindVertexBuffer(const VertexBuffer* buffer);
+
+uint32_t GetCurrentFrame();
+void BeginFrame();
+void EndFrame();
+
+VkCommandBuffer GetCommandBuffer();
+
+void BeginRenderPass(RenderPass& renderPass);
+void EndRenderPass();
+
+void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
+
+void Render(Entity* e, Pipeline& pipeline);
 
 #endif
