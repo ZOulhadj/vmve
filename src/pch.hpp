@@ -18,6 +18,7 @@
 #include <optional>
 #include <set>
 #include <array>
+#include <map>
 
 
 #include <vulkan/vulkan.h>
@@ -50,6 +51,11 @@
 
 
 #undef CreateWindow
+
+#if defined(_MSC_VER)
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 
 #endif
 

@@ -1,8 +1,5 @@
 #include "engine_platform.h"
 
-#if defined(_MSC_VER)
-#define _CRT_SECURE_NO_WARNINGS
-#endif
 
 #include "rendering/common.hpp"
 #include "rendering/vulkan_renderer.hpp"
@@ -21,11 +18,11 @@
 
 
 
-Engine* gEngine = nullptr;
+static Engine* gEngine            = nullptr;
 
 static Window* gWindow            = nullptr;
 static RendererContext* gRenderer = nullptr;
-ImGuiContext* guiContext = nullptr;
+static ImGuiContext* guiContext   = nullptr;
 
 
 RenderPass geometryPass{};
@@ -39,10 +36,12 @@ QuatCamera gCamera;
 
 
 
+// Globally allocated resources where creation/deletion is managed by the engine.
 static std::vector<VertexBuffer*> gVertexBuffers;
 static std::vector<TextureBuffer*> gTextures;
-static std::vector<Entity*> gEntities;
 
+static std::vector<Entity*> gEntities;         // Keeps track of entities so that they can be cleaned up
+static std::map<const VertexBuffer*, std::vector<Entity*>> gEntitiesRender; // Which entities we will render for the current frame.
 
 
 
@@ -74,9 +73,9 @@ struct ViewProjection
     glm::mat4 projection;
 };
 
-std::vector<Entity*> gEntitiesToRender;
-Entity* gSkysphereEntity;
 
+// TODO: This should be moved into main.cpp
+Entity* gSkysphereEntity;
 VertexBuffer* sphereModel;
 TextureBuffer* skysphereTexture;
 
@@ -129,21 +128,21 @@ Engine* StartEngine(const char* name)
     }
 
 
-    // Load shaders text file
-    std::string geometryVSCode = LoadTextFile("src/shaders/geometry.vert");
-    std::string geometryFSCode = LoadTextFile("src/shaders/geometry.frag");
+    // Load shaders text files
+    std::string geometryVSCode  = LoadTextFile("src/shaders/geometry.vert");
+    std::string geometryFSCode  = LoadTextFile("src/shaders/geometry.frag");
     std::string skysphereVSCode = LoadTextFile("src/shaders/skysphere.vert");
     std::string skysphereFSCode = LoadTextFile("src/shaders/skysphere.frag");
-    std::string lightingVSCode = LoadTextFile("src/shaders/lighting.vert");
-    std::string lightingFSCode = LoadTextFile("src/shaders/lighting.frag");
+    std::string lightingVSCode  = LoadTextFile("src/shaders/lighting.vert");
+    std::string lightingFSCode  = LoadTextFile("src/shaders/lighting.frag");
 
     // Compile text shaders into Vulkan binary shader modules
-    Shader geometryVS = CreateVertexShader(geometryVSCode);
-    Shader geometryFS = CreateFragmentShader(geometryFSCode);
+    Shader geometryVS  = CreateVertexShader(geometryVSCode);
+    Shader geometryFS  = CreateFragmentShader(geometryFSCode);
     Shader skysphereVS = CreateVertexShader(skysphereVSCode);
     Shader skysphereFS = CreateFragmentShader(skysphereFSCode);
-    Shader lightingVS = CreateVertexShader(lightingVSCode);
-    Shader lightingFS = CreateFragmentShader(lightingFSCode);
+    Shader lightingVS  = CreateVertexShader(lightingVSCode);
+    Shader lightingFS  = CreateFragmentShader(lightingFSCode);
 
 
     const std::vector<VkDescriptorSetLayoutBinding> global_layout{
@@ -253,7 +252,6 @@ Engine* StartEngine(const char* name)
 
     sphereModel = EngineLoadModel("assets/icosphere.obj");
     skysphereTexture = EngineLoadTexture("assets/textures/space.jpg");
-
     gSkysphereEntity = EngineCreateEntity(sphereModel, skysphereTexture);
 
 
@@ -274,8 +272,13 @@ void StopEngine()
 
 
     // Free all entities created by the client
-    for (auto& entity : gEntities)
-        delete entity;
+    for (auto& map : gEntitiesRender) {
+        for (auto& entity : map.second)
+            delete entity;
+
+        delete map.first;
+    }
+
     gEntities.clear();
 
 
@@ -365,10 +368,19 @@ void EngineRender(const EngineScene& scene)
 
 
         BindPipeline(geometryPipeline, gSceneDescriptorSets);
-        for (const auto& i : gEntitiesToRender) {
-            BindVertexBuffer(i->vertex_buffer);
-            Render(i, geometryPipeline);
+
+
+        // A map structure is used to bind a vertex buffer (key) and then
+        // the entities (values) are looped over. This reduces the number of
+        // vertex bindings required as we bind a buffer one by one.
+        for (const auto& i : gEntitiesRender) {
+            BindVertexBuffer(i.first);
+
+            for (const auto& entity : i.second)
+                Render(entity, geometryPipeline);
         }
+        gEntitiesRender.clear();
+
         EndRenderPass();
 
         // The second pass is called the lighting pass and is where the renderer will perform
@@ -381,10 +393,11 @@ void EngineRender(const EngineScene& scene)
     }
     EndFrame();
 
-    gEntitiesToRender.clear();
-
     UpdateWindow(gWindow);
 }
+
+
+
 
 
 static bool Press(KeyPressedEvent& event)
@@ -414,7 +427,10 @@ static bool ButtonRelease(MouseButtonReleasedEvent& event)
 static bool Resize(WindowResizedEvent& event)
 {
     UpdateCameraProjection(gCamera, event.GetWidth(), event.GetHeight());
+
     // todo: update renderer size
+    //UpdateRendererSize();
+
     return true;
 }
 
@@ -530,9 +546,6 @@ Entity* EngineCreateEntity(const VertexBuffer* buffer, const TextureBuffer* text
     e->texture_buffer = texture;
     e->descriptor_set = AllocateDescriptorSet(gObjectDescriptorLayout);
 
-    gEntities.push_back(e);
-
-
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = e->texture_buffer->image.view;
@@ -549,61 +562,69 @@ Entity* EngineCreateEntity(const VertexBuffer* buffer, const TextureBuffer* text
 
     vkUpdateDescriptorSets(gRenderer->device.device, 1, &write, 0, nullptr);
 
+
+    gEntities.push_back(e);
+
     return e;
 }
 
 void engine_move_forwards()
 {
-    //const float speed  = gCamera.speed * gDeltaTime;
-    //gCamera.position += gCamera.front_vector * speed;
+    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    gCamera.position += gCamera.front_vector * speed;
 }
 
 void engine_move_backwards()
 {
-    //const float speed  = gCamera.speed * gDeltaTime;
-    //gCamera.position -= gCamera.front_vector * speed;
+    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    gCamera.position -= gCamera.front_vector * speed;
 }
 
 void engine_move_left()
 {
-    //const float speed  = gCamera.speed * gDeltaTime;
-    //gCamera.position -= gCamera.right_vector * speed;
+    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    gCamera.position -= gCamera.right_vector * speed;
 }
 
 void engine_move_right()
 {
-    //const float speed  = gCamera.speed * gDeltaTime;
-    //gCamera.position += gCamera.right_vector * speed;
+    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    gCamera.position += gCamera.right_vector * speed;
 }
 
 void engine_move_up()
 {
-    //const float speed  = gCamera.speed * gDeltaTime;
-    //gCamera.position += gCamera.up_vector * speed;
+    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    gCamera.position += gCamera.up_vector * speed;
 }
 
 void engine_move_down()
 {
-    //const float speed  = gCamera.speed * gDeltaTime;
-    //gCamera.position -= gCamera.up_vector * speed;
+    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    gCamera.position -= gCamera.up_vector * speed;
 }
 
 void engine_roll_left()
 {
-    //const float roll_speed = gCamera.roll_speed * gDeltaTime;
-    //gCamera.roll         -= roll_speed;
+    const float roll_speed = gCamera.roll_speed * gEngine->DeltaTime;
+    gCamera.roll         -= roll_speed;
 }
 
 void engine_roll_right()
 {
-    //const float roll_speed = gCamera.roll_speed * gDeltaTime;
-    //gCamera.roll         += roll_speed;
+    const float roll_speed = gCamera.roll_speed * gEngine->DeltaTime;
+    gCamera.roll         += roll_speed;
 }
 
 
 void EngineRender(Entity* e)
 {
-    gEntitiesToRender.push_back(e);
+    gEntitiesRender[e->vertex_buffer].push_back(e);
+}
+
+void EngineRenderSkybox(Entity* e)
+{
+
 }
 
 void EngineTranslateEntity(Entity* e, float x, float y, float z)

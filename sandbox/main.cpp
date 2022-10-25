@@ -297,16 +297,18 @@ int main()
 {
     gEngine = StartEngine("3D Earth Satellite Visualizer");
 
-    VertexBuffer* sphere = EngineLoadModel("assets/sphere.obj");
+    VertexBuffer* icosphere = EngineLoadModel("assets/icosphere.obj");
+    VertexBuffer* sphere = EngineLoadModel("assets/sphere_hp.obj");
 
     TextureBuffer* sun_texture   = EngineLoadTexture("assets/textures/sun.jpg");
     TextureBuffer* earth_texture = EngineLoadTexture("assets/textures/earth.jpg");
     TextureBuffer* moon_texture  = EngineLoadTexture("assets/textures/moon.jpg");
+    TextureBuffer* bg_texture    = EngineLoadTexture("assets/textures/skysphere.jpg");
 
     Entity* sun_entity   = EngineCreateEntity(sphere, sun_texture);
     Entity* earth_entity = EngineCreateEntity(sphere, earth_texture);
     Entity* moon_entity  = EngineCreateEntity(sphere, moon_texture);
-
+    Entity* bg_entity    = EngineCreateEntity(icosphere, bg_texture);
 
 
     while (gEngine->Running) {
@@ -345,6 +347,8 @@ int main()
         EngineRender(sun_entity);
         EngineRender(earth_entity);
         EngineRender(moon_entity);
+
+        EngineRenderSkybox(bg_entity);
 
         RenderGUI();
 

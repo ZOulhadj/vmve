@@ -85,6 +85,8 @@ void EngineRender(const EngineScene& scene);
 // an object onto the screen.
 void EngineRender(Entity* e);
 
+void EngineRenderSkybox(Entity* e);
+
 void EngineTranslateEntity(Entity* e, float x, float y, float z);
 void EngineRotateEntity(Entity* e, float deg, float x, float y, float z);
 void EngineScaleEntity(Entity* e, float scale);
