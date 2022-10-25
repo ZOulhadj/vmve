@@ -53,7 +53,7 @@ add_executable(${PROJECT_NAME}
         # precompiled header
         # note: this is required to compile header only files such as STB
         # note: this will be removed in the future.
-        "src/pch.cpp" )
+        "src/pch.cpp" src/input.cpp)
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE

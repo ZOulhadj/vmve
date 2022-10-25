@@ -692,7 +692,7 @@ static void DestroyShaderCompiler()
     shaderc_compiler_release(g_shader_compiler.compiler);
 }
 
-Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
+static Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
 {
     Shader shader{};
 
@@ -723,6 +723,17 @@ Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
 
     return shader;
 }
+
+Shader CreateVertexShader(const std::string& code)
+{
+    return CreateShader(VK_SHADER_STAGE_VERTEX_BIT, code);
+}
+
+Shader CreateFragmentShader(const std::string& code)
+{
+    return CreateShader(VK_SHADER_STAGE_FRAGMENT_BIT, code);
+}
+
 
 void DestroyShader(Shader& shader)
 {
@@ -768,8 +779,8 @@ static void DestroyFramebuffers(std::vector<VkFramebuffer>& framebuffers)
     }
 }
 
-RenderPass CreateRenderPass(const render_pass_info& info, const std::vector<ImageBuffer>& color_attachments,
-                                                          const std::vector<ImageBuffer>& depth_attachments)
+RenderPass CreateRenderPass(const RenderPassInfo& info, const std::vector<ImageBuffer>& color_attachments,
+                            const std::vector<ImageBuffer>& depth_attachments)
 {
     RenderPass target{};
 

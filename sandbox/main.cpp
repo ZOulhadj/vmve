@@ -1,5 +1,9 @@
 #include "../src/engine_platform.h"
 
+
+
+static Engine* gEngine = nullptr;
+
 float utc_time = 10.0f;
 
 // This is the applications scale factor. This value gets applied to every
@@ -102,33 +106,33 @@ glm::vec2 world_to_screen(const glm::vec3& position, const glm::vec2& offset = g
 
 static void RenderGUI()
 {
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
 
     static bool engine_options = false;
     static bool satellite_window = false;
     static bool documentation_window = false;
     static bool about_window = false;
-	static bool demo_window = false;
+    static bool demo_window = false;
 
     static bool wireframe = false;
     static bool triple_buffering = true;
     static bool vsync = true;
     static bool realtime = true;
-    static bool overlay = false;
+    static bool overlay = true;
 
-	if (ImGui::BeginMainMenuBar()) {
-		if (ImGui::BeginMenu("Engine")) {
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("Engine")) {
             if (ImGui::MenuItem("Options"))
                 engine_options = true;
 
             if (ImGui::MenuItem("Exit"))
-                engine_stop();
+                gEngine->Running = false;
 
-			ImGui::EndMenu();
-		}
+            ImGui::EndMenu();
+        }
 
         if (ImGui::BeginMenu("Tracking")) {
             if (ImGui::MenuItem("Satellites"))
@@ -138,18 +142,18 @@ static void RenderGUI()
         }
 
 
-		if (ImGui::BeginMenu("Simulation")) {
+        if (ImGui::BeginMenu("Simulation")) {
             ImGui::SliderFloat("Time (UTC)", &utc_time, 0.0f, 23.0f);
             ImGui::Checkbox("Realtime", &realtime);
             //if (!realtime)
             //    ImGui::SliderInt("Speed", &speed_factor, 1, 50, "%.2fx");
 
 
-			ImGui::EndMenu();
-		}
+            ImGui::EndMenu();
+        }
 
 
-		if (ImGui::BeginMenu("Help")) {
+        if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("Documentation"))
                 documentation_window = true;
             
@@ -159,11 +163,11 @@ static void RenderGUI()
             if (ImGui::MenuItem("Show ImGui demo window"))
                 demo_window = true;
 
-			ImGui::EndMenu();
-		}
+            ImGui::EndMenu();
+        }
 
-		ImGui::EndMainMenuBar();
-	}
+        ImGui::EndMainMenuBar();
+    }
 
     if (engine_options) {
         ImGui::Begin("Engine Options", &engine_options);
@@ -181,74 +185,74 @@ static void RenderGUI()
     }
 
     if (satellite_window) {
-		ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
-		if (ImGui::Begin("Satellites", &satellite_window, ImGuiWindowFlags_MenuBar))
-		{
+        ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin("Satellites", &satellite_window, ImGuiWindowFlags_MenuBar))
+        {
 
-			// Left
-			static int selected = 0;
-			{
-				ImGui::BeginChild("left pane", ImVec2(150, 0), true);
-				for (int i = 0; i < 100; i++)
-				{
-					// FIXME: Good candidate to use ImGuiSelectableFlags_SelectOnNav
-					char label[128];
-					sprintf(label, "MyObject %d", i);
-					if (ImGui::Selectable(label, selected == i))
-						selected = i;
-				}
-				ImGui::EndChild();
-			}
-			ImGui::SameLine();
+            // Left
+            static int selected = 0;
+            {
+                ImGui::BeginChild("left pane", ImVec2(150, 0), true);
+                for (int i = 0; i < 100; i++)
+                {
+                    // FIXME: Good candidate to use ImGuiSelectableFlags_SelectOnNav
+                    char label[128];
+                    sprintf(label, "MyObject %d", i);
+                    if (ImGui::Selectable(label, selected == i))
+                        selected = i;
+                }
+                ImGui::EndChild();
+            }
+            ImGui::SameLine();
 
-			// Right
-			{
-				ImGui::BeginGroup();
-				ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); // Leave room for 1 line below us
-				ImGui::Text("MyObject: %d", selected);
-				ImGui::Separator();
-				if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None))
-				{
-					if (ImGui::BeginTabItem("Description"))
-					{
-						ImGui::TextWrapped("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ");
-						ImGui::EndTabItem();
-					}
-					if (ImGui::BeginTabItem("Details"))
-					{
-						ImGui::Text("ID: 00001");
+            // Right
+            {
+                ImGui::BeginGroup();
+                ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); // Leave room for 1 line below us
+                ImGui::Text("MyObject: %d", selected);
+                ImGui::Separator();
+                if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None))
+                {
+                    if (ImGui::BeginTabItem("Description"))
+                    {
+                        ImGui::TextWrapped("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ");
+                        ImGui::EndTabItem();
+                    }
+                    if (ImGui::BeginTabItem("Details"))
+                    {
+                        ImGui::Text("ID: 00001");
                         ImGui::Text("Longitude: 51 30' 35.5140'\"' N");
                         ImGui::Text("Latitude:  0 7' 5.1312'\"' W");
                         ImGui::Text("Elevation: 324km");
 
-						ImGui::EndTabItem();
-					}
-					ImGui::EndTabBar();
-				}
-				ImGui::EndChild();
+                        ImGui::EndTabItem();
+                    }
+                    ImGui::EndTabBar();
+                }
+                ImGui::EndChild();
 
-				if (ImGui::Button("Track")) {}
-				ImGui::EndGroup();
-			}
-		}
-		ImGui::End();
+                if (ImGui::Button("Track")) {}
+                ImGui::EndGroup();
+            }
+        }
+        ImGui::End();
     }
 
     if (documentation_window) {
-		ImGui::Begin("Documentation", &documentation_window);
+        ImGui::Begin("Documentation", &documentation_window);
 
-		ImGui::End();
+        ImGui::End();
     }
 
-	if (about_window) {
-		ImGui::Begin("About", &about_window);
+    if (about_window) {
+        ImGui::Begin("About", &about_window);
         ImGui::Text(application_about);
-		ImGui::End();
-	}
+        ImGui::End();
+    }
 
 
-	if (demo_window)
-		ImGui::ShowDemoWindow(&demo_window);
+    if (demo_window)
+        ImGui::ShowDemoWindow(&demo_window);
 
     if (overlay) {
         // get screen space from world space
@@ -286,28 +290,26 @@ static void RenderGUI()
     }
     
 
-	ImGui::Render();
+    ImGui::Render();
 }
 
 int main()
 {
-    StartEngine("3D Earth Satellite Visualizer");
+    gEngine = StartEngine("3D Earth Satellite Visualizer");
 
-    const VertexBuffer* sphere = EngineLoadModel("assets/sphere.obj");
+    VertexBuffer* sphere = EngineLoadModel("assets/sphere.obj");
 
-    const TextureBuffer* sun_texture   = EngineLoadTexture("assets/textures/sun.jpg");
-    const TextureBuffer* earth_texture = EngineLoadTexture("assets/textures/earth.jpg");
-    const TextureBuffer* moon_texture  = EngineLoadTexture("assets/textures/moon.jpg");
+    TextureBuffer* sun_texture   = EngineLoadTexture("assets/textures/sun.jpg");
+    TextureBuffer* earth_texture = EngineLoadTexture("assets/textures/earth.jpg");
+    TextureBuffer* moon_texture  = EngineLoadTexture("assets/textures/moon.jpg");
 
-    Entity* sun_entity = EngineCreateEntity(sphere, sun_texture);
+    Entity* sun_entity   = EngineCreateEntity(sphere, sun_texture);
     Entity* earth_entity = EngineCreateEntity(sphere, earth_texture);
-    Entity* moon_entity = EngineCreateEntity(sphere, moon_texture);
+    Entity* moon_entity  = EngineCreateEntity(sphere, moon_texture);
 
 
-    while (IsEngineRunning()) {
-        if (EngineIsKeyDown(GLFW_KEY_ESCAPE)) engine_stop();
 
-
+    while (gEngine->Running) {
         // Camera movement
         if (EngineIsKeyDown(87))  engine_move_forwards();
         if (EngineIsKeyDown(83))  engine_move_backwards();
@@ -319,7 +321,7 @@ int main()
         if (EngineIsKeyDown(69))  engine_roll_right();
 
         // Update entities
-        const float time = EngineGetUptime();
+        const float time = gEngine->Uptime * 100.0f;
         const float earth_speed = angular_velocity * (time * speed_factor);
 
         sun_pos = glm::vec3(glm::sin(glm::radians(-time)) * sun_from_earth, 0.0f, glm::cos(glm::radians(-time)) * sun_from_earth);
@@ -346,9 +348,12 @@ int main()
 
         RenderGUI();
 
+        // TODO: Sun position is half on the X and Z axis because if the light is directly
+        // TODO: at the center then the sun will look dark due to normals. Will need to
+        // TODO: figure how how to light a scene except for the sun.
         EngineScene scene{};
         scene.camera_position = get_camera_position();
-        scene.sun_position    = sun_pos;
+        scene.sun_position    = glm::vec3(sun_pos.x / 2.0f, sun_pos.y, sun_pos.z / 2.0f);
         scene.sun_color       = sun_color;
 
         EngineRender(scene);

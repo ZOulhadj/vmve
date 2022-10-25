@@ -5,7 +5,7 @@
 // GLM provides various types of perspective functions including infinitePerspective()
 // but a reversed depth version (far-near) is not. Thus, below is my own version
 // that creates an infinite perspective from far to near.
-glm::mat4 infinite_perspective(float fovy, float width, float height, float zNear)
+glm::mat4 InfinitePerspective(float fovy, float width, float height, float zNear)
 {
 	const float h = glm::cot(0.5f * fovy);
 	const float w = h * height / width;
@@ -25,7 +25,6 @@ QuatCamera CreateCamera(const glm::vec3& position, float fov, float speed)
     QuatCamera camera{};
     camera.position    = position;
     camera.orientation = glm::quat(1, 0, 0, 0);
-    //camera.aspect_ratio = 1280.0f / 720.0f;
     camera.width = 1280.0f;
     camera.height = 720.0f;
     camera.speed       = speed;
@@ -34,9 +33,8 @@ QuatCamera CreateCamera(const glm::vec3& position, float fov, float speed)
     camera.roll        = 0.0f;
     camera.fov         = fov;
     camera.near        = 0.1f;
-
     camera.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
-    camera.proj = infinite_perspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
+    camera.proj = InfinitePerspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
 
     // Required if using Vulkan (left-handed coordinate-system)
     camera.proj[1][1] *= -1.0;
@@ -44,7 +42,7 @@ QuatCamera CreateCamera(const glm::vec3& position, float fov, float speed)
     return camera;
 }
 
-void update_camera_view(QuatCamera& camera, float cursor_x, float cursor_y)
+void UpdateCameraView(QuatCamera& camera, float cursor_x, float cursor_y)
 {
     camera.cursor_x = cursor_x;
     camera.cursor_y = cursor_y;
@@ -81,13 +79,12 @@ void UpdateCamera(QuatCamera& camera)
     camera.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
 
     // Build final camera transform matrix
-    //cam.view = proj * view;
     camera.roll      = 0.0f;
 }
 
 void update_projection(QuatCamera& camera)
 {
-    camera.proj = infinite_perspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
+    camera.proj = InfinitePerspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
     // Required if using Vulkan (left-handed coordinate-system)
     camera.proj[1][1] *= -1.0;
 }

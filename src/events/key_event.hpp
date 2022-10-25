@@ -3,13 +3,13 @@
 
 #include "event.hpp"
 
-class key_event : public Event
+class KeyEvent : public Event
 {
 public:
-    int get_key_code() const { return m_KeyCode; }
+    int GetKeyCode() const { return m_KeyCode; }
 
 protected:
-    key_event(int keycode)
+    KeyEvent(int keycode)
         : m_KeyCode(keycode)
     {}
 
@@ -18,21 +18,21 @@ private:
 };
 
 
-class KeyPressedEvent : public key_event
+class KeyPressedEvent : public KeyEvent
 {
 public:
     KeyPressedEvent(int keycode)
-        : key_event(keycode)
+        : KeyEvent(keycode)
     {}
 
     EVENT_CLASS_TYPE(KeyPressedEvent);
 };
 
-class KeyReleasedEvent : public key_event
+class KeyReleasedEvent : public KeyEvent
 {
 public:
     KeyReleasedEvent(int keycode)
-        : key_event(keycode)
+        : KeyEvent(keycode)
     {}
 
     EVENT_CLASS_TYPE(KeyReleasedEvent);

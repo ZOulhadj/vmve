@@ -3,13 +3,13 @@
 
 #include "event.hpp"
 
-class mouse_button_event : public Event
+class MouseButtonEvent : public Event
 {
 public:
     int GetButtonCode() const { return m_ButtonCode; }
 
 protected:
-    mouse_button_event(int buttonCode)
+    MouseButtonEvent(int buttonCode)
         : m_ButtonCode(buttonCode)
     {}
 
@@ -17,21 +17,21 @@ private:
     int m_ButtonCode;
 };
 
-class MouseButtonPressedEvent : public mouse_button_event
+class MouseButtonPressedEvent : public MouseButtonEvent
 {
 public:
     MouseButtonPressedEvent(int buttonCode)
-        : mouse_button_event(buttonCode)
+        : MouseButtonEvent(buttonCode)
     {}
 
     EVENT_CLASS_TYPE(MouseButtonPressedEvent);
 };
 
-class MouseButtonReleaseEvent : public mouse_button_event
+class MouseButtonReleasedEvent : public MouseButtonEvent
 {
 public:
-    MouseButtonReleaseEvent(int buttonCode)
-        : mouse_button_event(buttonCode)
+    MouseButtonReleasedEvent(int buttonCode)
+        : MouseButtonEvent(buttonCode)
     {}
 
     EVENT_CLASS_TYPE(MouseButtonReleasedEvent);

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MYENGINE_PLATFORM_H
+#define MYENGINE_PLATFORM_H
 
 // Introduction:
 // This is the engine interface file. This is a C compatible header file
@@ -17,6 +18,18 @@ struct VertexBuffer;
 struct TextureBuffer;
 struct Entity;
 
+struct Engine
+{
+
+
+
+
+    // Statistics
+    bool  Running;
+    float Uptime;
+    float DeltaTime;
+    float ElapsedFrames;
+};
 
 
 struct EngineScene
@@ -29,41 +42,17 @@ struct EngineScene
 // This is the entry point for the engine and is where all initialization
 // takes place. This should be the first function that gets called by
 // the client application.
-void StartEngine(const char* name);
+Engine* StartEngine(const char* name);
 
 // This will terminate the engine by freeing all resources by the client and
 // the engine then shutting down all subsystems. This should be the final engine
 // function call within the client application.
 void StopEngine();
 
-// This function simply sets the running status of the engine to false which
-// in turn will exit the main rendering loop once running() is called.
-void engine_stop();
-
-// Returns the running status of the engine. Once the engine has been
-// initialized then this is set to true. The client can use this for the
-// main update loop.
-bool IsEngineRunning();
-
-// The uptime returns the number of seconds since the engine
-// was initialized.
-float EngineGetUptime();
-
-// The delta time will return the time difference in milliseconds
-// between the current and previous frame.
-float EngineGetDeltaTime();
 
 // Returns a boolean value based on if the given key is currently
 // pressed down.
 bool EngineIsKeyDown(int keycode);
-
-// Returns a boolean value based on if the given mouse button
-// is pressed down.
-bool engine_is_mouse_button_down(int buttoncode);
-
-// Creates a region of memory stored on the GPU. The object returns
-// a pointer to a vertex and index buffer which can be used for rendering.
-VertexBuffer* EngineCreateRenderBuffer(void* v, int vs, void* i, int is);
 
 // Loads a model file from the filesystem and internally creates a render
 // buffer which is returned to the client.
@@ -112,3 +101,5 @@ glm::vec2 get_window_size();
 glm::mat4 get_camera_projection();
 glm::mat4 get_camera_view();
 glm::vec3 get_camera_position();
+
+#endif

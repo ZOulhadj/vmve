@@ -13,6 +13,7 @@ ImGuiContext* CreateUserInterface(VkRenderPass renderPass)
     context = ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
     /*if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
         printf("Failed to load required font for ImGui.\n");
         return nullptr;
@@ -20,7 +21,7 @@ ImGuiContext* CreateUserInterface(VkRenderPass renderPass)
 
     ImGui::StyleColorsDark();
 
-    if (!ImGui_ImplGlfw_InitForVulkan(rc->window->handle, true))
+    if (!ImGui_ImplGlfw_InitForVulkan(rc->window->handle, false))
         return nullptr;
 
     ImGui_ImplVulkan_InitInfo init_info{};
@@ -33,7 +34,7 @@ ImGuiContext* CreateUserInterface(VkRenderPass renderPass)
     init_info.DescriptorPool  = rc->pool;
     init_info.Subpass         = 0;
     init_info.MinImageCount   = 2;
-    init_info.ImageCount      = 3;
+    init_info.ImageCount      = 2;
     init_info.MSAASamples     = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator       = nullptr;
     init_info.CheckVkResultFn = VkCheck;

@@ -14,7 +14,7 @@ static void GLFWErrorCallback(int code, const char* description)
 
 static void WindowCloseCallback(GLFWwindow* window)
 {
-    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     WindowClosedEvent e;
     ptr->EventCallback(e);
@@ -39,7 +39,7 @@ static void WindowFramebufferResizeCallback(GLFWwindow* window, int width, int h
 
 static void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (action == GLFW_PRESS) {
         KeyPressedEvent e(key);
@@ -55,7 +55,7 @@ static void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int act
 
 static void WindowMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (action == GLFW_PRESS) {
         MouseButtonPressedEvent e(button);
@@ -64,14 +64,14 @@ static void WindowMouseButtonCallback(GLFWwindow* window, int button, int action
         MouseButtonPressedEvent e(button);
         ptr->EventCallback(e);
     } else if (action == GLFW_RELEASE) {
-        MouseButtonReleaseEvent e(button);
+        MouseButtonReleasedEvent e(button);
         ptr->EventCallback(e);
     }
 }
 
 static void WindowMouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (yoffset == 1.0) {
         MouseScrolledUpEvent e;
@@ -84,7 +84,7 @@ static void WindowMouseScrollCallback(GLFWwindow* window, double xoffset, double
 
 static void WindowCursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     MouseMovedEvent e(xpos, ypos);
     ptr->EventCallback(e);
@@ -92,7 +92,7 @@ static void WindowCursorPosCallback(GLFWwindow* window, double xpos, double ypos
 
 static void WindowCursorEnterCallback(GLFWwindow* window, int entered)
 {
-    const Window* ptr = (Window*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (entered) {
         MouseEnteredEvent e;
@@ -107,7 +107,7 @@ static void WindowCursorEnterCallback(GLFWwindow* window, int entered)
 // events to the application callback.
 Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
 {
-    Window* window = (Window*)malloc(sizeof(Window));
+    Window* window = new Window();
 
     glfwSetErrorCallback(GLFWErrorCallback);
 
@@ -152,7 +152,7 @@ void DestroyWindow(Window* window)
     glfwDestroyWindow(window->handle);
     glfwTerminate();
 
-    free(window);
+    delete window;
 }
 
 // Updates a window by polling for any new events since the last window update

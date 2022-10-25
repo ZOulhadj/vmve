@@ -1,24 +1,8 @@
 #include "engine_platform.h"
 
-// todo: Implement multiple render passes (75%)
-// todo: Render debug ui into separate render pass
-// todo: Implement texture loading/rendering
-// todo: Add a default skybox
-// todo: Implement double-precision (relative-origin)
-// todo: Add detailed GPU querying
-// todo: Add performance monitoring (QueryPool)
-// todo: Add deferred rendering
-// todo: Add support gltf file format
-// todo: Add support for DirectX12 (Xbox)
-// todo: Add pipeline cache
-// todo: Combine shaders into single program
-// todo: Implement event system
-// todo: Implement model tessellation
-
 #if defined(_MSC_VER)
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-
 
 #include "rendering/common.hpp"
 #include "rendering/vulkan_renderer.hpp"
@@ -33,159 +17,34 @@
 #include "events/key_event.hpp"
 #include "events/mouse_event.hpp"
 
+#include "utility.hpp"
+
+
+
+Engine* gEngine = nullptr;
 
 static Window* gWindow            = nullptr;
 static RendererContext* gRenderer = nullptr;
-static ImGuiContext* gGuiContext  = nullptr;
+ImGuiContext* guiContext = nullptr;
 
-static QuatCamera gCamera{};
 
- 
+RenderPass geometryPass{};
+RenderPass guiPass{};
+
+Pipeline geometryPipeline{};
+Pipeline skyspherePipeline{};
+Pipeline wireframePipeline{};
+
+QuatCamera gCamera;
+
+
+
 static std::vector<VertexBuffer*> gVertexBuffers;
 static std::vector<TextureBuffer*> gTextures;
 static std::vector<Entity*> gEntities;
 
-// todo: uptime must be fixed as it is not working correctly
-static float gUptime      = 0.0f;
-static float gDeltaTime   = 0.0f;
-static int gElapsedFrames = 0;
-
-static bool gRunning = false;
 
 
-const std::string geometry_vs_code = R"(
-    #version 450
-
-    layout(location = 0) in vec3 position;
-    layout(location = 1) in vec3 color;
-    layout(location = 2) in vec3 normal;
-    layout(location = 3) in vec2 uv;
-
-    layout(location = 1) out vec2 texture_coord;
-    layout(location = 2) out vec3 vertex_position;
-    layout(location = 3) out vec3 vertex_normal;
-
-    layout(binding = 0) uniform model_view_projection {
-        mat4 view;
-        mat4 proj;
-    } mvp;
-
-    layout(push_constant) uniform constant
-    {
-       mat4 model;
-    } obj;
-
-    void main() {
-
-        texture_coord = uv;
-        vertex_position = vec3(obj.model * vec4(position, 1.0));
-        vertex_normal = mat3(transpose(inverse(obj.model))) * normal;
-
-
-        gl_Position = mvp.proj * mvp.view * obj.model * vec4(position, 1.0);
-    }
-)";
-
-const std::string geometry_fs_code = R"(
-    #version 450
-
-    layout(location = 0) out vec4 final_color;
-
-    layout(location = 1) in vec2 texture_coord;
-    layout(location = 2) in vec3 vertex_position;
-    layout(location = 3) in vec3 vertex_normal;
-
-
-    layout(binding = 1) uniform scene_ubo {
-        vec3 cam_pos;
-        vec3 sun_pos;
-        vec3 sun_color;
-    } scene;
-
-    layout(set = 1, binding = 0) uniform sampler2D tex;
-
-    void main() {
-        // phong lighting = ambient + diffuse + specular
-
-        float ambient_intensity = 0.05f;
-        vec3 ambient_lighting = ambient_intensity * scene.sun_color;
-
-        vec3 norm = normalize(vertex_normal);
-        vec3 sun_dir = normalize(scene.sun_pos - vertex_position);
-        float diff = max(dot(norm, sun_dir), 0.0);
-        vec3 diffuse = diff * scene.sun_color;
-
-        float specular_intensity = 0.5f;
-        vec3 view_dir = normalize(scene.cam_pos - vertex_position);
-        vec3 reflect_dir = reflect(-sun_dir, norm);
-        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
-        vec3 specular = specular_intensity * spec * scene.sun_color;
-
-        vec3 texel = texture(tex, texture_coord).xyz;
-        vec3 color = (ambient_lighting + diffuse + specular) * texel;
-        final_color = vec4(color, 1.0);
-    }
-)";
-
-
-const std::string skysphere_vs_code = R"(
-    #version 450
-    
-    layout(location = 0) in vec3 position;
-    layout(location = 3) in vec2 uv;
-
-    layout(location = 1) out vec2 texture_coord;
-
-    layout(binding = 0) uniform model_view_projection {
-        mat4 view;
-        mat4 proj;
-    } mvp;
-
-    void main() {
-        gl_Position = mvp.proj * mat4(mat3(mvp.view)) * vec4(position, 1.0);
-        texture_coord = uv;
-    }
-)";
-
-const std::string skysphere_fs_code = R"(
-        #version 450
-
-        layout(location = 1) in vec2 texture_coord;
-
-        layout(location = 0) out vec4 final_color;
-
-        layout(set = 1, binding = 0) uniform sampler2D tex;
-
-        void main() {
-            vec3 texel = texture(tex, texture_coord).xyz;
-
-            
-            final_color = vec4(texel, 1.0);
-        }
-    )";
-
-
-const std::string lighting_vs_code = R"(
-    #version 450
-
-    void main() { }
-)";
-
-
-
-const std::string lighting_fs_code = R"(
-    #version 450
-    void main() { }
-)";
-
-
-RenderPass geometryPass;
-RenderPass guiPass;
-
-Pipeline geometryPipeline;
-Pipeline skyspherePipeline;
-Pipeline wireframePipeline;
-Pipeline guiPipeline;
 
 
 // This is a global descriptor set that will be used for all draw calls and
@@ -207,10 +66,7 @@ static std::vector<Buffer> gSceneBuffer;
 // A global texture sampler
 VkSampler g_sampler;
 
-
 static VkDescriptorSetLayout gObjectDescriptorLayout;
-//static std::vector<VkDescriptorSet> g_per_object_descriptor_sets;
-
 
 struct ViewProjection
 {
@@ -218,126 +74,85 @@ struct ViewProjection
     glm::mat4 projection;
 };
 
-std::vector<Entity*> entitiesToRender;
+std::vector<Entity*> gEntitiesToRender;
 Entity* gSkysphereEntity;
 
 VertexBuffer* sphereModel;
 TextureBuffer* skysphereTexture;
 
-static std::string LoadTextFile(std::string_view path)
-{
-    std::ifstream file(path.data());
-    std::stringstream buffer;
-    buffer << file.rdbuf();
 
-    return buffer.str();
-}
 
-static void window_close_event(WindowClosedEvent& e)
-{
-    gRunning = false;
-}
 
-static void window_resize_event(WindowResizedEvent& e)
-{
-    UpdateCameraProjection(gCamera, e.GetWidth(), e.GetHeight());
-    //update_renderer_size(gRenderer, e.GetWidth(), e.GetHeight());
-}
+static void EngineEventCallback(Event& event);
 
-static void key_press_event(KeyPressedEvent& e)
-{
 
-}
-
-static void mouse_move_event(MouseMovedEvent& e)
-{
-    update_camera_view(gCamera, e.GetX(), e.GetY());
-}
-
-static void scroll_up_event(MouseScrolledUpEvent& e)
-{
-    gCamera.fov -= 5.0f;
-    update_projection(gCamera);
-}
-
-static void scroll_down_event(MouseScrolledDownEvent& e)
-{
-    gCamera.fov += 5.0f;
-    update_projection(gCamera);
-}
-
-static void EngineEventCallback(Event& e)
-{
-    event_dispatcher dispatcher(e);
-    dispatcher.dispatch<WindowClosedEvent>(window_close_event);
-    dispatcher.dispatch<WindowResizedEvent>(window_resize_event);
-    dispatcher.dispatch<KeyPressedEvent>(key_press_event);
-    dispatcher.dispatch<MouseMovedEvent>(mouse_move_event);
-    dispatcher.dispatch<MouseScrolledUpEvent>(scroll_up_event);
-    dispatcher.dispatch<MouseScrolledDownEvent>(scroll_down_event);
-}
-
-void StartEngine(const char* name)
+Engine* StartEngine(const char* name)
 {
     assert(name != nullptr);
+
+    gEngine = (Engine*)malloc(sizeof(Engine));
 
     gWindow = CreateWindow(name, 1280, 720);
     gWindow->EventCallback = EngineEventCallback;
 
-    gRenderer   = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Disabled);
-
-
+    gRenderer = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Disabled);
 
     {
-        render_pass_info geometry_pass{};
-        geometry_pass.color_attachment_count = 1;
-        geometry_pass.color_attachment_format = VK_FORMAT_B8G8R8A8_SRGB;
-        geometry_pass.depth_attachment_count = 1;
-        geometry_pass.depth_attachment_format = VK_FORMAT_D32_SFLOAT;
-        geometry_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
-        geometry_pass.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        geometry_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
-        geometry_pass.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-        geometry_pass.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        geometry_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        RenderPassInfo info{};
+        info.color_attachment_count = 1;
+        info.color_attachment_format = VK_FORMAT_B8G8R8A8_SRGB;
+        info.depth_attachment_count = 1;
+        info.depth_attachment_format = VK_FORMAT_D32_SFLOAT;
+        info.sample_count = VK_SAMPLE_COUNT_1_BIT;
+        info.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        info.store_op = VK_ATTACHMENT_STORE_OP_STORE;
+        info.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        info.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        info.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        geometryPass = CreateRenderPass(geometry_pass, GetSwapchain().images, { GetSwapchain().depth_image });
+
+        geometryPass = CreateRenderPass(info, GetSwapchain().images, {GetSwapchain().depth_image });
     }
 
     {
-        render_pass_info ui_pass{};
-        ui_pass.color_attachment_count = 1;
-        ui_pass.color_attachment_format = VK_FORMAT_B8G8R8A8_SRGB;
-        ui_pass.sample_count = VK_SAMPLE_COUNT_1_BIT;
-        ui_pass.load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
-        ui_pass.store_op = VK_ATTACHMENT_STORE_OP_STORE;
-        ui_pass.initial_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        ui_pass.final_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        ui_pass.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        RenderPassInfo info{};
+        info.color_attachment_count = 1;
+        info.color_attachment_format = VK_FORMAT_B8G8R8A8_SRGB;
+        info.sample_count = VK_SAMPLE_COUNT_1_BIT;
+        info.load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
+        info.store_op = VK_ATTACHMENT_STORE_OP_STORE;
+        info.initial_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        info.final_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        info.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        guiPass = CreateRenderPass(ui_pass, GetSwapchain().images, {});
+        guiPass = CreateRenderPass(info, GetSwapchain().images, {});
     }
 
-    // Here we compile the required shaders all in one go
-    Shader geometryVS = CreateShader(VK_SHADER_STAGE_VERTEX_BIT, geometry_vs_code);
-    Shader geometryFS = CreateShader(VK_SHADER_STAGE_FRAGMENT_BIT, geometry_fs_code);
 
-    Shader skysphereVS = CreateShader(VK_SHADER_STAGE_VERTEX_BIT, skysphere_vs_code);
-    Shader skysphereFS = CreateShader(VK_SHADER_STAGE_FRAGMENT_BIT, skysphere_fs_code);
+    // Load shaders text file
+    std::string geometryVSCode = LoadTextFile("src/shaders/geometry.vert");
+    std::string geometryFSCode = LoadTextFile("src/shaders/geometry.frag");
+    std::string skysphereVSCode = LoadTextFile("src/shaders/skysphere.vert");
+    std::string skysphereFSCode = LoadTextFile("src/shaders/skysphere.frag");
+    std::string lightingVSCode = LoadTextFile("src/shaders/lighting.vert");
+    std::string lightingFSCode = LoadTextFile("src/shaders/lighting.frag");
 
-    Shader lighting_vs = CreateShader(VK_SHADER_STAGE_VERTEX_BIT, lighting_vs_code);
-    Shader lighting_fs = CreateShader(VK_SHADER_STAGE_FRAGMENT_BIT, lighting_fs_code);
-
-
+    // Compile text shaders into Vulkan binary shader modules
+    Shader geometryVS = CreateVertexShader(geometryVSCode);
+    Shader geometryFS = CreateFragmentShader(geometryFSCode);
+    Shader skysphereVS = CreateVertexShader(skysphereVSCode);
+    Shader skysphereFS = CreateFragmentShader(skysphereFSCode);
+    Shader lightingVS = CreateVertexShader(lightingVSCode);
+    Shader lightingFS = CreateFragmentShader(lightingFSCode);
 
 
     const std::vector<VkDescriptorSetLayoutBinding> global_layout{
-      { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
-      { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
+            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
+            { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
     };
 
     const std::vector<VkDescriptorSetLayoutBinding> per_object_layout{
-        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
     };
 
     gSceneDescriptorLayout = CreateDescriptorSetLayout(global_layout);
@@ -390,10 +205,10 @@ void StartEngine(const char* name)
 
 
     const std::vector<VkFormat> binding_format{
-       VK_FORMAT_R32G32B32_SFLOAT, // Position
-       VK_FORMAT_R32G32B32_SFLOAT, // Color
-       VK_FORMAT_R32G32B32_SFLOAT, // Normal
-       VK_FORMAT_R32G32_SFLOAT     // UV
+            VK_FORMAT_R32G32B32_SFLOAT, // Position
+            VK_FORMAT_R32G32B32_SFLOAT, // Color
+            VK_FORMAT_R32G32B32_SFLOAT, // Normal
+            VK_FORMAT_R32G32_SFLOAT     // UV
     };
 
     PipelineInfo info{};
@@ -424,36 +239,38 @@ void StartEngine(const char* name)
     }
 
     // Delete all individual shaders since they are now part of the various pipelines
-    DestroyShader(lighting_fs);
-    DestroyShader(lighting_vs);
-
+    DestroyShader(lightingFS);
+    DestroyShader(lightingVS);
     DestroyShader(skysphereFS);
     DestroyShader(skysphereVS);
-
     DestroyShader(geometryFS);
     DestroyShader(geometryVS);
 
+    guiContext = CreateUserInterface(guiPass.handle);
 
-
-    gGuiContext = CreateUserInterface(guiPass.handle);
-    
-    gCamera  = CreateCamera({0.0f, 0.0f, -100.0f}, 60.0f, 10.0f);
-
-
-    gRunning = true;
-    gUptime  = 0.0f;
+    gCamera = CreateCamera({0.0f, 0.0f, -100.0f}, 60.0f, 10.0f);
 
 
     sphereModel = EngineLoadModel("assets/icosphere.obj");
     skysphereTexture = EngineLoadTexture("assets/textures/space.jpg");
 
     gSkysphereEntity = EngineCreateEntity(sphereModel, skysphereTexture);
+
+
+
+
+
+    gEngine->Running = true;
+    gEngine->Uptime  = 0.0f;
+    gEngine->DeltaTime = 0.0f;
+    gEngine->ElapsedFrames = 0.0f;
+
+    return gEngine;
 }
 
 void StopEngine()
 {
     VkCheck(vkDeviceWaitIdle(gRenderer->device.device));
-
 
 
     // Free all entities created by the client
@@ -480,10 +297,6 @@ void StopEngine()
     gVertexBuffers.clear();
 
 
-
-    DestroyUserInterface(gGuiContext);
-
-
     DestroySampler(g_sampler);
     for (std::size_t i = 0; i < frames_in_flight; ++i) {
         DestroyBuffer(gSceneBuffer[i]);
@@ -493,36 +306,137 @@ void StopEngine()
     vkDestroyDescriptorSetLayout(gRenderer->device.device, gObjectDescriptorLayout, nullptr);
     vkDestroyDescriptorSetLayout(gRenderer->device.device, gSceneDescriptorLayout, nullptr);
 
+
     DestroyPipeline(wireframePipeline);
     DestroyPipeline(skyspherePipeline);
     DestroyPipeline(geometryPipeline);
+    DestroyRenderPass(geometryPass);
+
 
     DestroyRenderPass(guiPass);
-    DestroyRenderPass(geometryPass);
+
+    DestroyUserInterface(guiContext);
 
     DestroyRenderer(gRenderer);
     DestroyWindow(gWindow);
 }
 
-void engine_stop()
+
+void EngineRender(const EngineScene& scene)
 {
-    gRunning = false;
+    // Calculate the delta time between previous and current frame. This
+    // allows for frame dependent systems such as movement and translation
+    // to run at the same speed no matter the time difference between two
+    // frames.
+    static clock_t lastTime;
+    const clock_t currentTime = clock();
+    gEngine->DeltaTime = ((float)currentTime - (float)lastTime) / CLOCKS_PER_SEC;
+    lastTime  = currentTime;
+
+    gEngine->Uptime += gEngine->DeltaTime;
+
+    // todo: This may not be the most accurate way of calculating frames.
+    // todo: Maybe this value should be obtained by the GPU since it runs
+    // todo: separately from the CPU.
+    ++gEngine->ElapsedFrames;
+
+
+    UpdateCamera(gCamera);
+
+    // copy data into uniform buffer
+    ViewProjection vp{};
+    vp.view = gCamera.view;
+    vp.projection = gCamera.proj;
+
+    uint32_t frame = GetCurrentFrame();
+
+    SetBufferData(&gCameraBuffer[frame], &vp, sizeof(ViewProjection));
+    SetBufferData(&gSceneBuffer[frame], (void*)&scene, sizeof(EngineScene));
+
+
+    BeginFrame();
+    {
+        // This is the geometry pass which is where all geometry data is rendered first.
+        BeginRenderPass(geometryPass);
+
+        BindPipeline(skyspherePipeline, gSceneDescriptorSets);
+        BindVertexBuffer(gSkysphereEntity->vertex_buffer);
+        Render(gSkysphereEntity, skyspherePipeline);
+
+
+        BindPipeline(geometryPipeline, gSceneDescriptorSets);
+        for (const auto& i : gEntitiesToRender) {
+            BindVertexBuffer(i->vertex_buffer);
+            Render(i, geometryPipeline);
+        }
+        EndRenderPass();
+
+        // The second pass is called the lighting pass and is where the renderer will perform
+        // lighting calculations based on the entire frame. This two-step process is called
+        // deferred rendering.
+
+        BeginRenderPass(guiPass);
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), GetCommandBuffer());
+        EndRenderPass();
+    }
+    EndFrame();
+
+    gEntitiesToRender.clear();
+
+    UpdateWindow(gWindow);
 }
 
-bool IsEngineRunning()
+
+static bool Press(KeyPressedEvent& event)
 {
-    return gRunning;
+
+
+    return true;
 }
 
-float EngineGetUptime()
+static bool ButtonPress(MouseButtonPressedEvent& event)
 {
-    return gUptime;
+    ImGuiIO& io = ImGui::GetIO();
+    io.MouseDown[event.GetButtonCode()] = true;
+
+    return true;
 }
 
-float EngineGetDeltaTime()
+static bool ButtonRelease(MouseButtonReleasedEvent& event)
 {
-    return gDeltaTime;
+    ImGuiIO& io = ImGui::GetIO();
+    io.MouseDown[event.GetButtonCode()] = false;
+
+    return true;
 }
+
+
+static bool Resize(WindowResizedEvent& event)
+{
+    UpdateCameraProjection(gCamera, event.GetWidth(), event.GetHeight());
+    // todo: update renderer size
+    return true;
+}
+
+static bool Close(WindowClosedEvent& event)
+{
+    gEngine->Running = false;
+
+    return true;
+}
+
+
+static void EngineEventCallback(Event& event)
+{
+    EventDispatcher dispatcher(event);
+
+    dispatcher.Dispatch<KeyPressedEvent>(Press);
+    dispatcher.Dispatch<MouseButtonPressedEvent>(ButtonPress);
+    dispatcher.Dispatch<MouseButtonReleasedEvent>(ButtonRelease);
+    dispatcher.Dispatch<WindowResizedEvent>(Resize);
+    dispatcher.Dispatch<WindowClosedEvent>(Close);
+}
+
 
 bool EngineIsKeyDown(int keycode)
 {
@@ -531,18 +445,6 @@ bool EngineIsKeyDown(int keycode)
     return state == GLFW_PRESS;
 }
 
-bool engine_is_mouse_button_down(int buttoncode)
-{
-    return false;
-}
-
-VertexBuffer* EngineCreateRenderBuffer(void* v, int vs, void* i, int is)
-{
-    VertexBuffer* buffer = CreateVertexBuffer(v, vs, i, is);
-    gVertexBuffers.push_back(buffer);
-
-    return buffer;
-}
 
 VertexBuffer* EngineLoadModel(const char* path)
 {
@@ -619,7 +521,6 @@ TextureBuffer* EngineLoadTexture(const char* path)
     return buffer;
 }
 
-
 Entity* EngineCreateEntity(const VertexBuffer* buffer, const TextureBuffer* texture)
 {
     auto e = new Entity();
@@ -653,129 +554,56 @@ Entity* EngineCreateEntity(const VertexBuffer* buffer, const TextureBuffer* text
 
 void engine_move_forwards()
 {
-    const float speed  = gCamera.speed * gDeltaTime;
-    gCamera.position += gCamera.front_vector * speed;
+    //const float speed  = gCamera.speed * gDeltaTime;
+    //gCamera.position += gCamera.front_vector * speed;
 }
 
 void engine_move_backwards()
 {
-    const float speed  = gCamera.speed * gDeltaTime;
-    gCamera.position -= gCamera.front_vector * speed;
+    //const float speed  = gCamera.speed * gDeltaTime;
+    //gCamera.position -= gCamera.front_vector * speed;
 }
 
 void engine_move_left()
 {
-    const float speed  = gCamera.speed * gDeltaTime;
-    gCamera.position -= gCamera.right_vector * speed;
+    //const float speed  = gCamera.speed * gDeltaTime;
+    //gCamera.position -= gCamera.right_vector * speed;
 }
 
 void engine_move_right()
 {
-    const float speed  = gCamera.speed * gDeltaTime;
-    gCamera.position += gCamera.right_vector * speed;
+    //const float speed  = gCamera.speed * gDeltaTime;
+    //gCamera.position += gCamera.right_vector * speed;
 }
 
 void engine_move_up()
 {
-    const float speed  = gCamera.speed * gDeltaTime;
-    gCamera.position += gCamera.up_vector * speed;
+    //const float speed  = gCamera.speed * gDeltaTime;
+    //gCamera.position += gCamera.up_vector * speed;
 }
 
 void engine_move_down()
 {
-    const float speed  = gCamera.speed * gDeltaTime;
-    gCamera.position -= gCamera.up_vector * speed;
+    //const float speed  = gCamera.speed * gDeltaTime;
+    //gCamera.position -= gCamera.up_vector * speed;
 }
 
 void engine_roll_left()
 {
-    const float roll_speed = gCamera.roll_speed * gDeltaTime;
-    gCamera.roll         -= roll_speed;
+    //const float roll_speed = gCamera.roll_speed * gDeltaTime;
+    //gCamera.roll         -= roll_speed;
 }
 
 void engine_roll_right()
 {
-    const float roll_speed = gCamera.roll_speed * gDeltaTime;
-    gCamera.roll         += roll_speed;
+    //const float roll_speed = gCamera.roll_speed * gDeltaTime;
+    //gCamera.roll         += roll_speed;
 }
 
-
-void EngineRender(const EngineScene& scene)
-{
-    // Calculate the delta time between previous and current frame. This
-    // allows for frame dependent systems such as movement and translation
-    // to run at the same speed no matter the time difference between two
-    // frames.
-    static clock_t lastTime;
-    const clock_t currentTime = clock();
-    gDeltaTime = ((float)currentTime - lastTime) / CLOCKS_PER_SEC;
-    lastTime  = currentTime;
-
-    gUptime += gDeltaTime;
-
-    // todo: This may not be the most accurate way of calculating frames.
-    // todo: Maybe this value should be obtained by the GPU since it runs
-    // todo: separately from the CPU.
-    ++gElapsedFrames;
-
-    UpdateCamera(gCamera);
-
-    // copy data into uniform buffer
-    ViewProjection vp{};
-    vp.view = gCamera.view;
-    vp.projection = gCamera.proj;
-
-    uint32_t frame = GetCurrentFrame();
-
-    SetBufferData(&gCameraBuffer[frame], &vp, sizeof(ViewProjection));
-    SetBufferData(&gSceneBuffer[frame], (void*)&scene, sizeof(EngineScene));
-
-
-
-
-    BeginFrame();
-    {
-        // This is the geometry pass which is where all geometry data is rendered first.
-        BeginRenderPass(geometryPass);
-
-
-        BindPipeline(skyspherePipeline, gSceneDescriptorSets);
-        BindVertexBuffer(gSkysphereEntity->vertex_buffer);
-        Render(gSkysphereEntity, skyspherePipeline);
-
-
-        BindPipeline(geometryPipeline, gSceneDescriptorSets);
-        for (std::size_t i = 0; i < entitiesToRender.size(); ++i) {
-            BindVertexBuffer(entitiesToRender[i]->vertex_buffer);
-            Render(entitiesToRender[i], geometryPipeline);
-
-        }
-        EndRenderPass();
-
-        // The second pass is called the lighting pass and is where the renderer will perform
-        // lighting calculations based on the entire frame. This two-step process is called 
-        // deferred rendering.
-
-        
-        // This is the UI render pass and which is separate from the deferred rendering passes
-        // above.
-        BeginRenderPass(guiPass);
-
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), GetCommandBuffer());
-
-        EndRenderPass();
-
-    }
-    EndFrame();
-
-    entitiesToRender.clear();
-
-    UpdateWindow(gWindow);
-}
 
 void EngineRender(Entity* e)
 {
-    entitiesToRender.push_back(e);
+    gEntitiesToRender.push_back(e);
 }
 
 void EngineTranslateEntity(Entity* e, float x, float y, float z)
@@ -805,7 +633,7 @@ void engine_get_entity_position(const Entity* e, float* x, float* y, float* z)
 
 glm::vec2 get_window_size()
 {
-    return glm::vec2(gWindow->width, gWindow->height);
+    return { gWindow->width, gWindow->height };
 }
 
 glm::mat4 get_camera_projection()

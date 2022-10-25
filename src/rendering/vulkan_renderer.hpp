@@ -112,7 +112,7 @@ struct ShaderCompiler
     shaderc_compile_options_t options;
 };
 
-struct render_pass_info
+struct RenderPassInfo
 {
     uint32_t color_attachment_count;
     VkFormat color_attachment_format;
@@ -227,11 +227,13 @@ void DestroyBuffer(Buffer& buffer);
 
 //void update_renderer_size(VulkanRenderer& renderer, uint32_t width, uint32_t height);
 
-Shader CreateShader(VkShaderStageFlagBits type, const std::string& code);
+
+Shader CreateVertexShader(const std::string& code);
+Shader CreateFragmentShader(const std::string& code);
 void DestroyShader(Shader& shader);
 
-RenderPass CreateRenderPass(const render_pass_info& info, const std::vector<ImageBuffer>& color_attachments,
-                                                          const std::vector<ImageBuffer>& depth_attachments);
+RenderPass CreateRenderPass(const RenderPassInfo& info, const std::vector<ImageBuffer>& color_attachments,
+                            const std::vector<ImageBuffer>& depth_attachments);
 void DestroyRenderPass(RenderPass& renderPass);
 
 Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass);
