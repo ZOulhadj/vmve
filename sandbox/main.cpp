@@ -303,7 +303,7 @@ int main()
     TextureBuffer* sun_texture   = EngineLoadTexture("assets/textures/sun.jpg");
     TextureBuffer* earth_texture = EngineLoadTexture("assets/textures/earth.jpg");
     TextureBuffer* moon_texture  = EngineLoadTexture("assets/textures/moon.jpg");
-    TextureBuffer* bg_texture    = EngineLoadTexture("assets/textures/skysphere.jpg");
+    TextureBuffer* bg_texture    = EngineLoadTexture("assets/textures/space.jpg");
 
     Entity* sun_entity   = EngineCreateEntity(sphere, sun_texture);
     Entity* earth_entity = EngineCreateEntity(sphere, earth_texture);
