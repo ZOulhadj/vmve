@@ -2,31 +2,33 @@
 
 #include "rendering/vulkan_renderer.hpp"
 
-void translate_entity(Entity* e, float x, float y, float z)
+void Translate(EntityInstance* e, const glm::vec3& position)
 {
-    e->model = glm::translate(e->model, { x, y, z });
+    e->modelMatrix = glm::translate(e->modelMatrix, position);
 }
 
-void rotate_entity(Entity* e, float deg, float x, float y, float z)
+void Rotate(EntityInstance* e, float deg, const glm::vec3& axis)
 {
-    e->model = glm::rotate(e->model, glm::radians(deg), { x, y, z });
+    e->modelMatrix = glm::rotate(e->modelMatrix, glm::radians(deg), axis);
 }
 
-void scale_entity(Entity* e, float scale)
+void Scale(EntityInstance* e, float scale)
 {
-    e->model = glm::scale(e->model, { scale, scale, scale });
+    e->modelMatrix = glm::scale(e->modelMatrix, glm::vec3(scale));
 }
 
-void scale_entity(Entity* e, float x, float y, float z)
+void Scale(EntityInstance* e, const glm::vec3& axis)
 {
-    e->model = glm::scale(e->model, { x, y, z });
+    e->modelMatrix = glm::scale(e->modelMatrix, axis);
 }
 
-void get_entity_position(const Entity* e, float* x, float* y, float* z)
+glm::vec3 GetPosition(const EntityInstance* e)
 {
-    // The position of an entity is encoded into the last column of the model
-    // matrix so simply return that last column to get x, y and z.
-    *x = e->model[3].x;
-    *y = e->model[3].y;
-    *z = e->model[3].z;
+    // The position of an entity is encoded into the last column of the
+    // transformation matrix so simply return that last column to get x, y and z.
+    float x = e->modelMatrix[3].x;
+    float y = e->modelMatrix[3].y;
+    float z = e->modelMatrix[3].z;
+
+    return { x, y, z };
 }

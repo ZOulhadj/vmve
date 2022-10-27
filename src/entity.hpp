@@ -1,23 +1,23 @@
 #ifndef MYENGINE_ENTITY_HPP
 #define MYENGINE_ENTITY_HPP
 
-struct VertexBuffer;
-struct TextureBuffer;
+struct EntityModel;
+struct EntityTexture;
 
-struct Entity
+struct EntityInstance
 {
-    glm::mat4 model;
+    glm::mat4 modelMatrix;
 
-    const VertexBuffer* vertex_buffer;
-    const TextureBuffer* texture_buffer;
+    const EntityModel* model;
+    const EntityTexture* texture;
 
-    VkDescriptorSet descriptor_set;
+    VkDescriptorSet descriptorSet;
 };
 
-void translate_entity(Entity* e, float x, float y, float z);
-void rotate_entity(Entity* e, float deg, float x, float y, float z);
-void scale_entity(Entity* e, float scale);
-void scale_entity(Entity* e, float x, float y, float z);
-void get_entity_position(const Entity* e, float* x, float* y, float* z);
+void Translate(EntityInstance* e, const glm::vec3& position);
+void Rotate(EntityInstance* e, float deg, const glm::vec3& axis);
+void Scale(EntityInstance* e, float scale);
+void Scale(EntityInstance* e, const glm::vec3& axis);
+glm::vec3 GetPosition(const EntityInstance* e);
 
 #endif

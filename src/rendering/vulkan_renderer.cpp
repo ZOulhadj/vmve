@@ -1288,9 +1288,9 @@ RendererContext* GetRendererContext()
 //}
 
 
-VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is)
+EntityModel* CreateVertexBuffer(void* v, int vs, void* i, int is)
 {
-    auto r = new VertexBuffer();
+    auto r = new EntityModel();
 
     // Create a temporary "staging" buffer that will be used to copy the data
     // from CPU memory over to GPU memory.
@@ -1321,9 +1321,9 @@ VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is)
     return r;
 }
 
-TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height)
+EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height)
 {
-    auto buffer = new TextureBuffer();
+    auto buffer = new EntityTexture();
 
     Buffer staging_buffer = CreateStagingBuffer(texture, width * height * 4);
 
@@ -1398,7 +1398,7 @@ TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint3
     return buffer;
 }
 
-void BindVertexBuffer(const VertexBuffer* buffer)
+void BindVertexBuffer(const EntityModel* buffer)
 {
     const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
 
@@ -1456,15 +1456,15 @@ void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descri
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets[current_frame], 0, nullptr);
 }
 
-void Render(Entity* e, Pipeline& pipeline)
+void Render(EntityInstance* e, Pipeline& pipeline)
 {
     const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
 
 
-    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &e->descriptor_set, 0, nullptr);
-    vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &e->model);
-    vkCmdDrawIndexed(cmd_buffer, e->vertex_buffer->index_count, 1, 0, 0, 0);
+    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &e->descriptorSet, 0, nullptr);
+    vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &e->modelMatrix);
+    vkCmdDrawIndexed(cmd_buffer, e->model->index_count, 1, 0, 0, 0);
 
     // Reset the entity transform matrix after being rendered.
-    e->model = glm::mat4(1.0f);
+    e->modelMatrix = glm::mat4(1.0f);
 }

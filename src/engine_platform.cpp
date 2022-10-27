@@ -37,12 +37,13 @@ QuatCamera gCamera;
 
 
 // Globally allocated resources where creation/deletion is managed by the engine.
-static std::vector<VertexBuffer*> gVertexBuffers;
-static std::vector<TextureBuffer*> gTextures;
+static std::vector<EntityModel*> gVertexBuffers;
+static std::vector<EntityTexture*> gTextures;
 
-static std::vector<Entity*> gEntities;         // Keeps track of entities so that they can be cleaned up
-static std::map<const VertexBuffer*, std::vector<Entity*>> gEntitiesRender; // Which entities we will render for the current frame.
+static std::vector<EntityInstance*> gEntities;         // Keeps track of entities so that they can be cleaned up
+static std::map<const EntityModel*, std::vector<EntityInstance*>> gEntitiesRender; // Which entities we will render for the current frame.
 
+static EntityInstance* gSkybox = nullptr;
 
 
 
@@ -74,18 +75,10 @@ struct ViewProjection
 };
 
 
-// TODO: This should be moved into main.cpp
-Entity* gSkysphereEntity;
-VertexBuffer* sphereModel;
-TextureBuffer* skysphereTexture;
-
-
-
-
 static void EngineEventCallback(Event& event);
 
 
-Engine* StartEngine(const char* name)
+Engine* EngineStart(const char* name)
 {
     assert(name != nullptr);
 
@@ -94,7 +87,9 @@ Engine* StartEngine(const char* name)
     gWindow = CreateWindow(name, 1280, 720);
     gWindow->EventCallback = EngineEventCallback;
 
-    gRenderer = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Disabled);
+    gRenderer = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Enabled);
+
+
 
     {
         RenderPassInfo info{};
@@ -247,26 +242,18 @@ Engine* StartEngine(const char* name)
 
     guiContext = CreateUserInterface(guiPass.handle);
 
-    gCamera = CreateCamera({0.0f, 0.0f, -100.0f}, 60.0f, 10.0f);
+    gCamera = CreateCamera({0.0f, 6'378'137.0f, 0.0f}, 45.0f, 1000000.0f);
 
 
-    sphereModel = EngineLoadModel("assets/icosphere.obj");
-    skysphereTexture = EngineLoadTexture("assets/textures/space.jpg");
-    gSkysphereEntity = EngineCreateEntity(sphereModel, skysphereTexture);
-
-
-
-
-
-    gEngine->Running = true;
-    gEngine->Uptime  = 0.0f;
-    gEngine->DeltaTime = 0.0f;
-    gEngine->ElapsedFrames = 0.0f;
+    gEngine->running = true;
+    gEngine->uptime  = 0.0f;
+    gEngine->deltaTime = 0.0f;
+    gEngine->elapsedFrames = 0.0f;
 
     return gEngine;
 }
 
-void StopEngine()
+void EngineStop()
 {
     VkCheck(vkDeviceWaitIdle(gRenderer->device.device));
 
@@ -333,15 +320,15 @@ void EngineRender(const EngineScene& scene)
     // frames.
     static clock_t lastTime;
     const clock_t currentTime = clock();
-    gEngine->DeltaTime = ((float)currentTime - (float)lastTime) / CLOCKS_PER_SEC;
+    gEngine->deltaTime = ((float)currentTime - (float)lastTime) / CLOCKS_PER_SEC;
     lastTime  = currentTime;
 
-    gEngine->Uptime += gEngine->DeltaTime;
+    gEngine->uptime += gEngine->deltaTime;
 
     // todo: This may not be the most accurate way of calculating frames.
     // todo: Maybe this value should be obtained by the GPU since it runs
     // todo: separately from the CPU.
-    ++gEngine->ElapsedFrames;
+    ++gEngine->elapsedFrames;
 
 
     UpdateCamera(gCamera);
@@ -363,8 +350,8 @@ void EngineRender(const EngineScene& scene)
         BeginRenderPass(geometryPass);
 
         BindPipeline(skyspherePipeline, gSceneDescriptorSets);
-        BindVertexBuffer(gSkysphereEntity->vertex_buffer);
-        Render(gSkysphereEntity, skyspherePipeline);
+        BindVertexBuffer(gSkybox->model);
+        Render(gSkybox, skyspherePipeline);
 
 
         BindPipeline(geometryPipeline, gSceneDescriptorSets);
@@ -388,7 +375,8 @@ void EngineRender(const EngineScene& scene)
         // deferred rendering.
 
         BeginRenderPass(guiPass);
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), GetCommandBuffer());
+        if (ImDrawData* data = ImGui::GetDrawData())
+            ImGui_ImplVulkan_RenderDrawData(data, GetCommandBuffer());
         EndRenderPass();
     }
     EndFrame();
@@ -423,6 +411,13 @@ static bool ButtonRelease(MouseButtonReleasedEvent& event)
     return true;
 }
 
+static bool MouseMove(MouseMovedEvent& event)
+{
+    UpdateCameraView(gCamera, event.GetX(), event.GetY());
+
+    return true;
+}
+
 
 static bool Resize(WindowResizedEvent& event)
 {
@@ -436,7 +431,7 @@ static bool Resize(WindowResizedEvent& event)
 
 static bool Close(WindowClosedEvent& event)
 {
-    gEngine->Running = false;
+    gEngine->running = false;
 
     return true;
 }
@@ -449,6 +444,7 @@ static void EngineEventCallback(Event& event)
     dispatcher.Dispatch<KeyPressedEvent>(Press);
     dispatcher.Dispatch<MouseButtonPressedEvent>(ButtonPress);
     dispatcher.Dispatch<MouseButtonReleasedEvent>(ButtonRelease);
+    dispatcher.Dispatch<MouseMovedEvent>(MouseMove);
     dispatcher.Dispatch<WindowResizedEvent>(Resize);
     dispatcher.Dispatch<WindowClosedEvent>(Close);
 }
@@ -462,9 +458,9 @@ bool EngineIsKeyDown(int keycode)
 }
 
 
-VertexBuffer* EngineLoadModel(const char* path)
+EntityModel* EngineLoadModel(const char* path)
 {
-    VertexBuffer* buffer = nullptr;
+    EntityModel* buffer = nullptr;
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -510,9 +506,9 @@ VertexBuffer* EngineLoadModel(const char* path)
     return buffer;
 }
 
-TextureBuffer* EngineLoadTexture(const char* path)
+EntityTexture* EngineLoadTexture(const char* path)
 {
-    TextureBuffer* buffer = nullptr;
+    EntityTexture* buffer = nullptr;
 
     // Load the texture from the file system.
     int width, height, channels;
@@ -537,23 +533,23 @@ TextureBuffer* EngineLoadTexture(const char* path)
     return buffer;
 }
 
-Entity* EngineCreateEntity(const VertexBuffer* buffer, const TextureBuffer* texture)
+EntityInstance* EngineCreateEntity(const EntityModel* model, const EntityTexture* texture)
 {
-    auto e = new Entity();
+    auto e = new EntityInstance();
  
-    e->model          = glm::mat4(1.0f);
-    e->vertex_buffer  = buffer;
-    e->texture_buffer = texture;
-    e->descriptor_set = AllocateDescriptorSet(gObjectDescriptorLayout);
+    e->modelMatrix   = glm::mat4(1.0f);
+    e->model         = model;
+    e->texture       = texture;
+    e->descriptorSet = AllocateDescriptorSet(gObjectDescriptorLayout);
 
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = e->texture_buffer->image.view;
+    image_info.imageView = e->texture->image.view;
     image_info.sampler = g_sampler;
 
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = e->descriptor_set;
+    write.dstSet = e->descriptorSet;
     write.dstBinding = 0;
     write.dstArrayElement = 0;
     write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -570,89 +566,89 @@ Entity* EngineCreateEntity(const VertexBuffer* buffer, const TextureBuffer* text
 
 void engine_move_forwards()
 {
-    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    const float speed  = gCamera.speed * gEngine->deltaTime;
     gCamera.position += gCamera.front_vector * speed;
 }
 
 void engine_move_backwards()
 {
-    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    const float speed  = gCamera.speed * gEngine->deltaTime;
     gCamera.position -= gCamera.front_vector * speed;
 }
 
 void engine_move_left()
 {
-    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    const float speed  = gCamera.speed * gEngine->deltaTime;
     gCamera.position -= gCamera.right_vector * speed;
 }
 
 void engine_move_right()
 {
-    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    const float speed  = gCamera.speed * gEngine->deltaTime;
     gCamera.position += gCamera.right_vector * speed;
 }
 
 void engine_move_up()
 {
-    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    const float speed  = gCamera.speed * gEngine->deltaTime;
     gCamera.position += gCamera.up_vector * speed;
 }
 
 void engine_move_down()
 {
-    const float speed  = gCamera.speed * gEngine->DeltaTime;
+    const float speed  = gCamera.speed * gEngine->deltaTime;
     gCamera.position -= gCamera.up_vector * speed;
 }
 
 void engine_roll_left()
 {
-    const float roll_speed = gCamera.roll_speed * gEngine->DeltaTime;
+    const float roll_speed = gCamera.roll_speed * gEngine->deltaTime;
     gCamera.roll         -= roll_speed;
 }
 
 void engine_roll_right()
 {
-    const float roll_speed = gCamera.roll_speed * gEngine->DeltaTime;
+    const float roll_speed = gCamera.roll_speed * gEngine->deltaTime;
     gCamera.roll         += roll_speed;
 }
 
 
-void EngineRender(Entity* e)
+void EngineRender(EntityInstance* e)
 {
-    gEntitiesRender[e->vertex_buffer].push_back(e);
+    gEntitiesRender[e->model].push_back(e);
 }
 
-void EngineRenderSkybox(Entity* e)
+void EngineRenderSkybox(EntityInstance* e)
 {
-
+    gSkybox = e;
 }
 
-void EngineTranslateEntity(Entity* e, float x, float y, float z)
+void EngineTranslate(EntityInstance* e, const glm::vec3& position)
 {
-    translate_entity(e, x, y, z);
+    Translate(e, position);
 }
 
-void EngineRotateEntity(Entity* e, float deg, float x, float y, float z)
+void EngineRotate(EntityInstance* e, float deg, const glm::vec3& axis)
 {
-    rotate_entity(e, deg, x, y, z);
+    Rotate(e, deg, axis);
 }
 
-void EngineScaleEntity(Entity* e, float scale)
+void EngineScale(EntityInstance* e, float scale)
 {
-    scale_entity(e, scale);
+    Scale(e, scale);
 }
 
-void EngineScaleEntity(Entity* e, float x, float y, float z)
+void EngineScale(EntityInstance* e, const glm::vec3& position)
 {
-    scale_entity(e, x, y, z);
+    Scale(e, position);
 }
 
-void engine_get_entity_position(const Entity* e, float* x, float* y, float* z)
+glm::vec3 EngineGetPosition(const EntityInstance* e)
 {
-    get_entity_position(e, x, y, z);
+    return GetPosition(e);
 }
 
-glm::vec2 get_window_size()
+glm::vec2 GetWindowSize()
 {
     return { gWindow->width, gWindow->height };
 }
@@ -667,7 +663,7 @@ glm::mat4 get_camera_view()
     return gCamera.view;
 }
 
-glm::vec3 get_camera_position()
+glm::vec3 EngineGetCameraPosition()
 {
     return gCamera.position;
 }

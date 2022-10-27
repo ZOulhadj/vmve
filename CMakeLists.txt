@@ -45,6 +45,7 @@ add_executable(${PROJECT_NAME}
         "src/engine_platform.cpp"
         "src/quaternion_camera.cpp"
         "src/entity.cpp"
+        "src/input.cpp"
 
         # engine rendering
         "src/rendering/vulkan_renderer.cpp"
@@ -53,7 +54,7 @@ add_executable(${PROJECT_NAME}
         # precompiled header
         # note: this is required to compile header only files such as STB
         # note: this will be removed in the future.
-        "src/pch.cpp" src/input.cpp)
+        "src/pch.cpp")
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE

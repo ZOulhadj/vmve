@@ -8,7 +8,7 @@
 constexpr int frames_in_flight = 2;
 
 
-struct Entity;
+struct EntityInstance;
 
 enum class BufferMode
 {
@@ -165,14 +165,14 @@ struct Pipeline
 };
 
 
-struct VertexBuffer
+struct EntityModel
 {
     Buffer   vertex_buffer;
     Buffer   index_buffer;
     uint32_t index_count;
 };
 
-struct TextureBuffer
+struct EntityTexture
 {
     ImageBuffer image;
 };
@@ -239,11 +239,11 @@ void DestroyRenderPass(RenderPass& renderPass);
 Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass);
 void DestroyPipeline(Pipeline& pipeline);
 
-VertexBuffer* CreateVertexBuffer(void* v, int vs, void* i, int is);
-TextureBuffer* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height);
+EntityModel* CreateVertexBuffer(void* v, int vs, void* i, int is);
+EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height);
 void DestroyImage(ImageBuffer* image);
 
-void BindVertexBuffer(const VertexBuffer* buffer);
+void BindVertexBuffer(const EntityModel* buffer);
 
 uint32_t GetCurrentFrame();
 void BeginFrame();
@@ -256,6 +256,6 @@ void EndRenderPass();
 
 void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
 
-void Render(Entity* e, Pipeline& pipeline);
+void Render(EntityInstance* e, Pipeline& pipeline);
 
 #endif

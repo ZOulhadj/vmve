@@ -1,46 +1,8 @@
 #include "../src/engine_platform.h"
 
+#include "constants.hpp"
+#include "ui.hpp"
 
-
-static Engine* gEngine = nullptr;
-
-float utc_time = 10.0f;
-
-// This is the applications scale factor. This value gets applied to every
-// object in the scene in order to maintain correct scaling values.
-constexpr float scale_factor = 0.000005f;
-
-// This is the applications speed factor relative to real world speeds.
-// A value of 10 means that the simulation will run 10% faster than
-// world speed.
-constexpr int speed_factor = 10.0f;
-
-// angular velocity of earth in degrees per second
-// radians 0.0000729211533f
-constexpr float angular_velocity = 0.004178074321326839639f * speed_factor;
-
-constexpr float sun_radius = 696'340'000.0f * scale_factor;
-constexpr float earth_radius = 6'378'137.0f * scale_factor;
-constexpr float moon_radius = 1'737'400.0f * scale_factor;
-constexpr float iss_altitude = 408'000.0f * scale_factor;
-
-constexpr float iss_speed    = 0.07725304476742584f * speed_factor;
-
-constexpr float sun_from_earth = 149'120'000'000.0f * scale_factor;
-constexpr float moon_from_earth = 384'400'000.0f * scale_factor;
-
-const char* application_about = R"(
-    3D Earth Visualizer is an application created and maintained by 
-    Zakariya Oulhadj.
-
-)";
-
-
-static glm::vec3 sun_pos = glm::vec3(0.0f);
-static glm::vec3 earth_pos = glm::vec3(0.0f);
-static glm::vec3 moon_pos = glm::vec3(0.0f);
-
-static glm::vec3 sun_color = glm::vec3(1.0f);
 
 /*
 glm::vec3 sphere_translation(float radius, float latitude, float longitude)
@@ -90,11 +52,11 @@ glm::vec2 geographic(float radius, const glm::vec3& position)
 }
 
 
-glm::vec2 world_to_screen(const glm::vec3& position, const glm::vec2& offset = glm::vec2(0.0f))
+glm::vec2 WorldToScreen(const glm::vec3& position, const glm::vec2& offset = glm::vec2(0.0f))
 {
     const glm::mat4 proj = get_camera_projection();
     const glm::mat4 view = get_camera_view();
-    const glm::vec2 win_size = get_window_size();
+    const glm::vec2 win_size = GetWindowSize();
 
     const glm::vec4 clip_pos         = proj * (view * glm::vec4(position, 1.0));
     const glm::vec3 ndc_space_pos    = glm::vec3(clip_pos.x / clip_pos.w, clip_pos.y / clip_pos.w, clip_pos.z / clip_pos.w);
@@ -103,268 +65,107 @@ glm::vec2 world_to_screen(const glm::vec3& position, const glm::vec2& offset = g
     return window_space_pos;
 }
 
-
-static void RenderGUI()
+glm::vec3 CircularTransform(EntityInstance* e, float angle, float freq, float radius)
 {
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    const glm::vec3& position = EngineGetPosition(e);
 
+    const float radians = glm::radians(angle * freq);
 
-    static bool engine_options = false;
-    static bool satellite_window = false;
-    static bool documentation_window = false;
-    static bool about_window = false;
-    static bool demo_window = false;
+    const float x = glm::cos(radians) * radius;
+    const float y = position.y;
+    const float z = glm::sin(radians) * radius;
 
-    static bool wireframe = false;
-    static bool triple_buffering = true;
-    static bool vsync = true;
-    static bool realtime = true;
-    static bool overlay = true;
-
-    if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("Engine")) {
-            if (ImGui::MenuItem("Options"))
-                engine_options = true;
-
-            if (ImGui::MenuItem("Exit"))
-                gEngine->Running = false;
-
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Tracking")) {
-            if (ImGui::MenuItem("Satellites"))
-                satellite_window = true;
-
-            ImGui::EndMenu();
-        }
-
-
-        if (ImGui::BeginMenu("Simulation")) {
-            ImGui::SliderFloat("Time (UTC)", &utc_time, 0.0f, 23.0f);
-            ImGui::Checkbox("Realtime", &realtime);
-            //if (!realtime)
-            //    ImGui::SliderInt("Speed", &speed_factor, 1, 50, "%.2fx");
-
-
-            ImGui::EndMenu();
-        }
-
-
-        if (ImGui::BeginMenu("Help")) {
-            if (ImGui::MenuItem("Documentation"))
-                documentation_window = true;
-            
-            if (ImGui::MenuItem("About"))
-                about_window = true;
-            
-            if (ImGui::MenuItem("Show ImGui demo window"))
-                demo_window = true;
-
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMainMenuBar();
-    }
-
-    if (engine_options) {
-        ImGui::Begin("Engine Options", &engine_options);
-
-        ImGui::Checkbox("VSync", &vsync);
-        ImGui::Checkbox("Triple Buffering", &triple_buffering);
-        ImGui::Checkbox("Wireframe", &wireframe);
-        ImGui::Text("Camera controls");
-
-        ImGui::Checkbox("Entity overlay", &overlay);
-
-        ImGui::SliderFloat3("Sun color", glm::value_ptr(sun_color), 0.0f, 1.0f);
-
-        ImGui::End();
-    }
-
-    if (satellite_window) {
-        ImGui::SetNextWindowSize(ImVec2(500, 440), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin("Satellites", &satellite_window, ImGuiWindowFlags_MenuBar))
-        {
-
-            // Left
-            static int selected = 0;
-            {
-                ImGui::BeginChild("left pane", ImVec2(150, 0), true);
-                for (int i = 0; i < 100; i++)
-                {
-                    // FIXME: Good candidate to use ImGuiSelectableFlags_SelectOnNav
-                    char label[128];
-                    sprintf(label, "MyObject %d", i);
-                    if (ImGui::Selectable(label, selected == i))
-                        selected = i;
-                }
-                ImGui::EndChild();
-            }
-            ImGui::SameLine();
-
-            // Right
-            {
-                ImGui::BeginGroup();
-                ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); // Leave room for 1 line below us
-                ImGui::Text("MyObject: %d", selected);
-                ImGui::Separator();
-                if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None))
-                {
-                    if (ImGui::BeginTabItem("Description"))
-                    {
-                        ImGui::TextWrapped("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ");
-                        ImGui::EndTabItem();
-                    }
-                    if (ImGui::BeginTabItem("Details"))
-                    {
-                        ImGui::Text("ID: 00001");
-                        ImGui::Text("Longitude: 51 30' 35.5140'\"' N");
-                        ImGui::Text("Latitude:  0 7' 5.1312'\"' W");
-                        ImGui::Text("Elevation: 324km");
-
-                        ImGui::EndTabItem();
-                    }
-                    ImGui::EndTabBar();
-                }
-                ImGui::EndChild();
-
-                if (ImGui::Button("Track")) {}
-                ImGui::EndGroup();
-            }
-        }
-        ImGui::End();
-    }
-
-    if (documentation_window) {
-        ImGui::Begin("Documentation", &documentation_window);
-
-        ImGui::End();
-    }
-
-    if (about_window) {
-        ImGui::Begin("About", &about_window);
-        ImGui::Text(application_about);
-        ImGui::End();
-    }
-
-
-    if (demo_window)
-        ImGui::ShowDemoWindow(&demo_window);
-
-    if (overlay) {
-        // get screen space from world space
-        glm::vec2 sun_screen_pos = world_to_screen(sun_pos);
-        glm::vec2 earth_screen_pos = world_to_screen(earth_pos);
-        glm::vec2 moon_screen_pos = world_to_screen(moon_pos);
-
-        static bool o = true;
-
-        const ImGuiWindowFlags flags = ImGuiWindowFlags_None |
-            ImGuiWindowFlags_NoInputs |
-            ImGuiWindowFlags_NoDecoration |
-            ImGuiWindowFlags_NoBackground |
-            ImGuiWindowFlags_NoSavedSettings |
-            ImGuiWindowFlags_AlwaysAutoResize;
-
-
-        ImGui::SetNextWindowPos(ImVec2(sun_screen_pos.x, sun_screen_pos.y));
-        ImGui::Begin("text0", &o, flags);
-        ImGui::Text("Sun");
-        ImGui::Text("%.2f, %.2f, %.2f", sun_pos.x, sun_pos.y, sun_pos.z);
-        ImGui::End();
-
-        ImGui::SetNextWindowPos(ImVec2(earth_screen_pos.x, earth_screen_pos.y));
-        ImGui::Begin("text1", &o, flags);
-        ImGui::Text("Earth");
-        ImGui::Text("%.2f, %.2f, %.2f", earth_pos.x, earth_pos.y, earth_pos.z);
-        ImGui::End();
-
-        ImGui::SetNextWindowPos(ImVec2(moon_screen_pos.x, moon_screen_pos.y));
-        ImGui::Begin("text2", &o, flags);
-        ImGui::Text("Moon");
-        ImGui::Text("%.2f, %.2f, %.2f", moon_pos.x, moon_pos.y, moon_pos.z);
-        ImGui::End();
-    }
-    
-
-    ImGui::Render();
+    return position + glm::vec3(x, y, z);
 }
+
+float AUDistance(const glm::vec3& a, const glm::vec3& b)
+{
+    float d = glm::pow(glm::pow(b.x - a.x, 2.0f) +
+                       glm::pow(b.y - a.y, 2.0f) +
+                       glm::pow(b.z - a.z, 2.0f),
+                       0.5f);
+
+    return d / sun_from_earth;
+}
+
 
 int main()
 {
-    gEngine = StartEngine("3D Earth Satellite Visualizer");
-
-    VertexBuffer* icosphere = EngineLoadModel("assets/icosphere.obj");
-    VertexBuffer* sphere = EngineLoadModel("assets/sphere_hp.obj");
-
-    TextureBuffer* sun_texture   = EngineLoadTexture("assets/textures/sun.jpg");
-    TextureBuffer* earth_texture = EngineLoadTexture("assets/textures/earth.jpg");
-    TextureBuffer* moon_texture  = EngineLoadTexture("assets/textures/moon.jpg");
-    TextureBuffer* bg_texture    = EngineLoadTexture("assets/textures/space.jpg");
-
-    Entity* sun_entity   = EngineCreateEntity(sphere, sun_texture);
-    Entity* earth_entity = EngineCreateEntity(sphere, earth_texture);
-    Entity* moon_entity  = EngineCreateEntity(sphere, moon_texture);
-    Entity* bg_entity    = EngineCreateEntity(icosphere, bg_texture);
+    Engine* engine = EngineStart("3D Earth Satellite Visualizer");
 
 
-    while (gEngine->Running) {
+    // Create global application resources
+    EntityModel* icosphere = EngineLoadModel("assets/icosphere.obj");
+    EntityModel* sphere    = EngineLoadModel("assets/sphere.obj");
+
+    EntityTexture* sunTexture   = EngineLoadTexture("assets/textures/sun.jpg");
+    EntityTexture* earthTexture = EngineLoadTexture("assets/textures/earth.jpg");
+    EntityTexture* moonTexture  = EngineLoadTexture("assets/textures/moon.jpg");
+    EntityTexture* spaceTexture = EngineLoadTexture("assets/textures/space.jpg");
+
+    // Construct entity instances
+    EntityInstance* sun   = EngineCreateEntity(sphere, sunTexture);
+    EntityInstance* earth = EngineCreateEntity(sphere, earthTexture);
+    EntityInstance* moon  = EngineCreateEntity(sphere, moonTexture);
+    EntityInstance* space = EngineCreateEntity(icosphere, spaceTexture);
+
+
+
+    while (engine->running) {
         // Camera movement
-        if (EngineIsKeyDown(87))  engine_move_forwards();
-        if (EngineIsKeyDown(83))  engine_move_backwards();
-        if (EngineIsKeyDown(65))  engine_move_left();
-        if (EngineIsKeyDown(68))  engine_move_right();
-        if (EngineIsKeyDown(32))  engine_move_up();
-        if (EngineIsKeyDown(341)) engine_move_down();
-        if (EngineIsKeyDown(81))  engine_roll_left();
-        if (EngineIsKeyDown(69))  engine_roll_right();
+        if (EngineIsKeyDown(GLFW_KEY_W))  engine_move_forwards();
+        if (EngineIsKeyDown(GLFW_KEY_S))  engine_move_backwards();
+        if (EngineIsKeyDown(GLFW_KEY_A))  engine_move_left();
+        if (EngineIsKeyDown(GLFW_KEY_D))  engine_move_right();
+        if (EngineIsKeyDown(GLFW_KEY_SPACE))  engine_move_up();
+        if (EngineIsKeyDown(GLFW_KEY_LEFT_CONTROL)) engine_move_down();
+        if (EngineIsKeyDown(GLFW_KEY_Q))  engine_roll_left();
+        if (EngineIsKeyDown(GLFW_KEY_E))  engine_roll_right();
 
         // Update entities
-        const float time = gEngine->Uptime * 100.0f;
-        const float earth_speed = angular_velocity * (time * speed_factor);
+        const float time = engine->uptime;
 
-        sun_pos = glm::vec3(glm::sin(glm::radians(-time)) * sun_from_earth, 0.0f, glm::cos(glm::radians(-time)) * sun_from_earth);
-        earth_pos = glm::vec3(0.0f, 0.0f, 0.0f);
-        moon_pos = glm::vec3(glm::sin(glm::radians(time)) * moon_from_earth, 0.0f, glm::cos(glm::radians(time)) * moon_from_earth);
+        { // Sun
+            EngineTranslate(sun, CircularTransform(sun, time, -10.0f, sun_from_earth));
+            EngineScale(sun, sun_radius);
+            EngineRotate(sun, 0.0f, {0.0f, 1.0f, 0.0f});
+        }
+        { // Earth
+            EngineTranslate(earth, {0.0f, 0.0f, 0.0f});
+            EngineScale(earth, earth_radius);
+            EngineRotate(earth, 0.0f, {0.0f, 1.0f, 0.0f});
+        }
+        { // Moon
+            EngineTranslate(moon, CircularTransform(moon, time, -15.0f, moon_from_earth));
+            EngineScale(moon, moon_radius);
+            EngineRotate(moon, 0.0f, {0.0f, 1.0f, 0.0f});
+        }
 
-        EngineTranslateEntity(sun_entity, sun_pos.x, sun_pos.y, sun_pos.z);
-        EngineScaleEntity(sun_entity, sun_radius);
-        EngineRotateEntity(sun_entity, time, 0.0f, 1.0f, 0.0f);
-
-        EngineTranslateEntity(earth_entity, earth_pos.x, earth_pos.y, earth_pos.z);
-        EngineScaleEntity(earth_entity, earth_radius);
-        EngineRotateEntity(earth_entity, earth_speed, 0.0f, 1.0f, 0.0f);
-
-
-        EngineTranslateEntity(moon_entity, moon_pos.x, moon_pos.y, moon_pos.z);
-        EngineScaleEntity(moon_entity, moon_radius);
-        EngineRotateEntity(moon_entity, time, 0.0f, 1.0f, 0.0f);
 
         // Rendering
-        EngineRender(sun_entity);
-        EngineRender(earth_entity);
-        EngineRender(moon_entity);
+        EngineRender(sun);
+        EngineRender(earth);
+        EngineRender(moon);
+        EngineRenderSkybox(space);
 
-        EngineRenderSkybox(bg_entity);
+        // Render User Interface
+        RenderMenuBar();
+        RenderOverlay();
 
-        RenderGUI();
-
-        // TODO: Sun position is half on the X and Z axis because if the light is directly
-        // TODO: at the center then the sun will look dark due to normals. Will need to
-        // TODO: figure how how to light a scene except for the sun.
+        // Initialize scene
         EngineScene scene{};
-        scene.camera_position = get_camera_position();
-        scene.sun_position    = glm::vec3(sun_pos.x / 2.0f, sun_pos.y, sun_pos.z / 2.0f);
-        scene.sun_color       = sun_color;
+        scene.ambientStrength   = 0.05f;
+        scene.specularStrength  = 0.5f;
+        scene.specularShininess = 16.0f;
+        scene.cameraPosition    = EngineGetCameraPosition();
+        scene.lightPosition     = EngineGetPosition(sun) / 2.0f;
+        scene.lightColor        = glm::vec3(1.0f);
 
         EngineRender(scene);
 
     }
 
-    StopEngine();
+    EngineStop();
 
     return 0;
 }

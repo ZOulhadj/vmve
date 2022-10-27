@@ -39,6 +39,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/reciprocal.hpp> // glm::cot
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/exponential.hpp>
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #include <imgui.h>
