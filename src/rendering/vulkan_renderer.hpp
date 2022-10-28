@@ -4,7 +4,6 @@
 #include "../window.hpp"
 
 
-
 constexpr int frames_in_flight = 2;
 
 
@@ -151,7 +150,6 @@ struct PipelineInfo
 
 struct Pipeline
 {
-//    VkDescriptorSetLayout descriptor_layout;
     VkPipelineLayout layout;
     VkPipeline handle;
 };
@@ -189,21 +187,6 @@ struct Vertex
     // that the vertex buffers can be tightly packed. TODO: Should revisit this.
     //float padding;
 };
-
-
-//struct VulkanRenderer
-//{
-//    render_pass geometryPass;
-//    //RenderPass lighting_render_pass;
-//    render_pass guiPass;
-//
-//    Pipeline geometryPipeline;
-//    Pipeline skyspherePipeline;
-//    //Pipeline lighting_pipeline;
-//
-//    Pipeline wireframe_pipeline;
-//};
-//
 
 
 RendererContext* CreateRenderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode);
