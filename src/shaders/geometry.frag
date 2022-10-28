@@ -26,32 +26,29 @@ void main()
 
     // Get pixel colors for each texture map
     vec3 albedo   = texture(albedoTexture, texture_coord).rgb;
-    vec3 normal   = texture(normalTexture, texture_coord).rgb;
+    vec3 normal   = 2.0 * texture(normalTexture, texture_coord).rgb - 1.0;
     vec3 specular = texture(specularTexture, texture_coord).rgb;
 
 
     // Global properties
     vec3 normalized_normal = normalize(normal);
     vec3 lightDir   = normalize(scene.lightPosition - vertex_position);
-
-
+    vec3 viewDir    = normalize(scene.cameraPosition - vertex_position);
+    vec3 reflectDir = reflect(-lightDir, normalized_normal);
 
     // ambient
-    vec3 ambientResult = albedo * scene.lightColor * 0.05;
+    vec3 ambientResult = scene.ambientStrength * albedo;
 
     // diffuse
-    float diff = max(dot(normalized_normal, lightDir), 0.0);
-    vec3 diffuseResult = albedo * diff * scene.lightColor;
-
+    float diff         = max(dot(normalized_normal, lightDir), 0.0);
+    vec3 diffuseResult = diff * albedo;
 
     // specular
-    vec3 view_dir  = normalize(scene.cameraPosition - vertex_position);
-    vec3 reflectDir = reflect(-lightDir, normalized_normal);
-    float spec     = pow(max(dot(view_dir, reflectDir), 0.0), scene.specularShininess);
-    vec3 specularResult = spec * specular * scene.lightColor;
+    float spec          = pow(max(dot(viewDir, reflectDir), 0.0), scene.specularShininess);
+    vec3 specularResult = spec * specular;
 
 
     // final result
-    vec3 result = (ambientResult + diffuseResult + specularResult);
+    vec3 result = ambientResult + diffuseResult + specularResult;
     final_color = vec4(result, 1.0);
 }

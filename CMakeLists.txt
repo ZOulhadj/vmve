@@ -24,6 +24,7 @@ add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glm)
 add_subdirectory(vendor/vma)
 add_subdirectory(vendor/tiny_obj_loader)
+add_subdirectory(vendor/assimp)
 
 set(IMGUI_SRC
         vendor/imgui/imgui.cpp
@@ -73,4 +74,5 @@ target_link_libraries(${PROJECT_NAME}
         Vulkan::Vulkan
         shaderc_shared
         VulkanMemoryAllocator
-        tinyobjloader)
+        tinyobjloader
+        assimp)

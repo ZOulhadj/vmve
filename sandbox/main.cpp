@@ -101,17 +101,18 @@ int main()
     EntityTexture* sunTexture   = EngineLoadTexture("assets/textures/sun/sun.jpg");
 
     EntityTexture* earthTexture = EngineLoadTexture("assets/textures/earth/earth.jpg");
-    EntityTexture* earthBumpTexture = EngineLoadTexture("assets/textures/earth/normal.png");
-    EntityTexture* earthSpecTexture = EngineLoadTexture("assets/textures/earth/spec.jpg");
+    EntityTexture* earthNormalTexture = EngineLoadTexture("assets/textures/earth/normal.jpg");
+    EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg");
 
     EntityTexture* moonTexture  = EngineLoadTexture("assets/textures/moon/moon.jpg");
-    EntityTexture* spaceTexture = EngineLoadTexture("assets/textures/space.jpg");
+    //EntityTexture* moonNormalTexture  = EngineLoadTexture("assets/textures/moon/moon.jpg");
+    EntityTexture* spaceTexture = EngineLoadTexture("assets/textures/space2.jpg");
 
     // Construct entity instances
-    EntityInstance* sun   = EngineCreateEntity(sphere, sunTexture, earthBumpTexture, earthSpecTexture);
-    EntityInstance* earth = EngineCreateEntity(sphere, earthTexture, earthBumpTexture, earthSpecTexture);
-    EntityInstance* moon  = EngineCreateEntity(sphere, moonTexture, earthBumpTexture, earthSpecTexture);
-    EntityInstance* space = EngineCreateEntity(icosphere, spaceTexture, earthBumpTexture, earthSpecTexture);
+    EntityInstance* sun   = EngineCreateEntity(sphere, sunTexture, earthNormalTexture, earthSpecularTexture);
+    EntityInstance* earth = EngineCreateEntity(sphere, earthTexture, earthNormalTexture, earthSpecularTexture);
+    EntityInstance* moon  = EngineCreateEntity(sphere, moonTexture, earthNormalTexture, earthSpecularTexture);
+    EntityInstance* space = EngineCreateEntity(icosphere, spaceTexture, earthNormalTexture, earthSpecularTexture);
 
     glm::vec3 london = cartesian(earthRadius + iss_altitude, 46.636375, -173.238388);
     EngineCamera* camera = EngineCreateCamera(london, 60.0f, 500000.0f);
@@ -131,8 +132,8 @@ int main()
         const float time = engine->uptime;
 
         { // Sun
-            //EngineTranslate(sun, CircularTransform(sun, time, -10.0f, earthToSunDistance));
-            EngineTranslate(sun, { 0.0f, 0.0f, earthToSunDistance});
+            EngineTranslate(sun, CircularTransform(sun, time, -10.0f, earthToSunDistance));
+            //EngineTranslate(sun, { 0.0f, 0.0f, earthToSunDistance});
             EngineScale(sun, sunRadius);
             EngineRotate(sun, 0.0f, {0.0f, 1.0f, 0.0f});
         }
@@ -160,12 +161,12 @@ int main()
 
         // Initialize scene
         EngineScene scene{};
-        scene.ambientStrength   = 0.2f;
+        scene.ambientStrength   = 0.05f;
         scene.specularStrength  = 0.2f;
         scene.specularShininess = 128.0f;
         scene.cameraPosition    = EngineGetCameraPosition(camera);
         scene.lightPosition     = EngineGetPosition(sun) / 2.0f;
-        scene.lightColor        = glm::vec3(1.0f);
+        scene.lightColor        = glm::vec3(1.0f, 1.0f, 1.0f);
 
         EngineRender(scene);
 
