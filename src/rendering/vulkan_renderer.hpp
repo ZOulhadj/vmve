@@ -178,14 +178,16 @@ struct uniform_buffer
 struct Vertex
 {
     glm::vec3 position;
-    glm::vec3 color;
     glm::vec3 normal;
     glm::vec2 uv;
+
+    glm::vec3 tangent;
+    glm::vec3 biTangent;
 
     // Due to the previous variable being a vec2 this means the struct is not
     // aligned in memory. Adding an extra dummy variable for padding will ensure
     // that the vertex buffers can be tightly packed. TODO: Should revisit this.
-    float padding;
+    //float padding;
 };
 
 

@@ -86,7 +86,7 @@ Engine* EngineStart(const char* name)
     gWindow = CreateWindow(name, 1280, 720);
     gWindow->EventCallback = EngineEventCallback;
 
-    gRenderer = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Enabled);
+    gRenderer = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Disabled);
 
 
 
@@ -141,7 +141,7 @@ Engine* EngineStart(const char* name)
 
     const std::vector<VkDescriptorSetLayoutBinding> global_layout{
             { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
-            { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
+            { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
     };
 
     const std::vector<VkDescriptorSetLayoutBinding> per_object_layout{
@@ -242,8 +242,6 @@ Engine* EngineStart(const char* name)
     DestroyShader(geometryVS);
 
     guiContext = CreateUserInterface(guiPass.handle);
-
-    //gCamera = CreateCamera({0.0f, 6'378'137.0f, 0.0f}, 45.0f, 1000000.0f);
 
 
     gEngine->running = true;
@@ -458,11 +456,90 @@ bool EngineIsKeyDown(int keycode)
     return state == GLFW_PRESS;
 }
 
+static void ProcessMesh(std::vector<Vertex>& v, std::vector<uint32_t>& indices, aiMesh* mesh, const aiScene* scene)
+{
+    // walk through each of the mesh's vertices
+    for(unsigned int i = 0; i < mesh->mNumVertices; i++)
+    {
+        Vertex vertex{};
+
+        vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+
+        if (mesh->HasNormals())
+            vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+
+        // check if texture coordinates exist
+        if(mesh->mTextureCoords[0]) {
+            // todo: "1.0f -" is used here. Double check that this is correct.
+
+            // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
+            // use models where a vertex can have multiple texture coordinates, so we always take the first set (0).
+            vertex.uv        = glm::vec2(1.0 - mesh->mTextureCoords[0][i].x, 1.0 - mesh->mTextureCoords[0][i].y);
+            vertex.tangent   = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+            vertex.biTangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
+        }
+        else
+            vertex.uv = glm::vec2(0.0f);
+
+        v.push_back(vertex);
+    }
+
+    // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+    for(unsigned int i = 0; i < mesh->mNumFaces; i++)
+    {
+        aiFace face = mesh->mFaces[i];
+        // retrieve all indices of the face and store them in the indices vector
+        for(unsigned int j = 0; j < face.mNumIndices; j++)
+            indices.push_back(face.mIndices[j]);
+    }
+
+#if 0
+    // process materials
+    aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+    // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
+    // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER.
+    // Same applies to other texture as the following list summarizes:
+    // diffuse: texture_diffuseN
+    // specular: texture_specularN
+    // normal: texture_normalN
+
+
+    // 1. diffuse maps
+    vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+    textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+    // 2. specular maps
+    vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+    textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+    // 3. normal maps
+    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+    textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+    // 4. height maps
+    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+    textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+#endif
+
+}
+
+static void ProcessNode(std::vector<Vertex>& v, std::vector<uint32_t>& indices,
+                        aiNode* node, const aiScene* scene)
+{
+
+    for (std::size_t i = 0; i < node->mNumMeshes; ++i) {
+        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+
+        ProcessMesh(v, indices, mesh, scene);
+    }
+
+    for (std::size_t i = 0; i < node->mNumChildren; ++i)
+        ProcessNode(v, indices, node->mChildren[i], scene);
+
+}
 
 EntityModel* EngineLoadModel(const char* path)
 {
     EntityModel* buffer = nullptr;
 
+#if 0
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -503,6 +580,28 @@ EntityModel* EngineLoadModel(const char* path)
                                 indices.data(), sizeof(unsigned int) * indices.size());
 
     gVertexBuffers.push_back(buffer);
+#else
+    Assimp::Importer importer;
+
+    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_PreTransformVertices |
+    aiProcess_CalcTangentSpace);
+
+    if (!scene) {
+        printf("Failed to load model at path: %s\n", path);
+        return nullptr;
+    }
+
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+
+    ProcessNode(vertices, indices, scene->mRootNode, scene);
+
+    buffer = CreateVertexBuffer(vertices.data(), sizeof(Vertex) * vertices.size(),
+                                indices.data(), sizeof(unsigned int) * indices.size());
+
+    gVertexBuffers.push_back(buffer);
+#endif
+
 
     return buffer;
 }

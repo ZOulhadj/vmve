@@ -100,12 +100,11 @@ int main()
 
     EntityTexture* sunTexture   = EngineLoadTexture("assets/textures/sun/sun.jpg");
 
-    EntityTexture* earthTexture = EngineLoadTexture("assets/textures/earth/earth.jpg");
-    EntityTexture* earthNormalTexture = EngineLoadTexture("assets/textures/earth/normal.jpg");
+    EntityTexture* earthTexture         = EngineLoadTexture("assets/textures/earth/earth.jpg");
+    EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.png");
     EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg");
 
     EntityTexture* moonTexture  = EngineLoadTexture("assets/textures/moon/moon.jpg");
-    //EntityTexture* moonNormalTexture  = EngineLoadTexture("assets/textures/moon/moon.jpg");
     EntityTexture* spaceTexture = EngineLoadTexture("assets/textures/space2.jpg");
 
     // Construct entity instances
@@ -115,7 +114,7 @@ int main()
     EntityInstance* space = EngineCreateEntity(icosphere, spaceTexture, earthNormalTexture, earthSpecularTexture);
 
     glm::vec3 london = cartesian(earthRadius + iss_altitude, 46.636375, -173.238388);
-    EngineCamera* camera = EngineCreateCamera(london, 60.0f, 500000.0f);
+    EngineCamera* camera = EngineCreateCamera(london, 60.0f, lightSpeed / 20.0f);
 
     while (engine->running) {
         // Camera movement
@@ -132,8 +131,8 @@ int main()
         const float time = engine->uptime;
 
         { // Sun
-            EngineTranslate(sun, CircularTransform(sun, time, -10.0f, earthToSunDistance));
-            //EngineTranslate(sun, { 0.0f, 0.0f, earthToSunDistance});
+            //EngineTranslate(sun, CircularTransform(sun, time, -10.0f, earthToSunDistance));
+            EngineTranslate(sun, { 0.0f, 0.0f, earthToSunDistance});
             EngineScale(sun, sunRadius);
             EngineRotate(sun, 0.0f, {0.0f, 1.0f, 0.0f});
         }
