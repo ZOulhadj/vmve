@@ -30,12 +30,11 @@ void main()
     // Get pixel colors for each texture map
     vec3 albedo   = texture(albedoTexture, texture_coord).rgb;
     vec3 normal   = texture(normalTexture, texture_coord).rgb;
-    normal = normalize(normal * 2.0 - 1.0);
     vec3 specular = texture(specularTexture, texture_coord).rgb;
 
 
     // Global properties
-    vec3 normalized_normal = normalize(normal);
+    vec3 normalized_normal = normalize(normal * 2.0 - 1.0);
     vec3 lightDir   = normalize(tangentLightPos - tangentFragPos);
     vec3 viewDir    = normalize(tangentViewPos - tangentFragPos);
     vec3 reflectDir = reflect(-lightDir, normalized_normal);

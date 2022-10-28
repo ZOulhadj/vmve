@@ -86,7 +86,7 @@ Engine* EngineStart(const char* name)
     gWindow = CreateWindow(name, 1280, 720);
     gWindow->EventCallback = EngineEventCallback;
 
-    gRenderer = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Disabled);
+    gRenderer = CreateRenderer(gWindow, BufferMode::Triple, VSyncMode::Enabled);
 
 
 

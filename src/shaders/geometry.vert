@@ -34,8 +34,8 @@ layout(push_constant) uniform constant
     mat4 model;
 } obj;
 
-void main() {
-
+void main()
+{
     texture_coord = uv;
     vertex_position = vec3(obj.model * vec4(position, 1.0));
     mat3 normalMatrix = transpose(inverse(mat3(obj.model)));

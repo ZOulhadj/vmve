@@ -101,7 +101,7 @@ int main()
     EntityTexture* sunTexture   = EngineLoadTexture("assets/textures/sun/sun.jpg");
 
     EntityTexture* earthTexture         = EngineLoadTexture("assets/textures/earth/earth.jpg");
-    EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.png");
+    EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.jpg");
     EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg");
 
     EntityTexture* moonTexture  = EngineLoadTexture("assets/textures/moon/moon.jpg");
