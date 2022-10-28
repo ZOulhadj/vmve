@@ -17,6 +17,7 @@
 struct EntityModel;
 struct EntityTexture;
 struct EntityInstance;
+struct EngineCamera;
 
 struct Engine
 {
@@ -75,7 +76,13 @@ EntityTexture* EngineLoadTexture(const char* path);
 // object that is being represented. A model matrix is also part of
 // an entity that describes the full transformation including position,
 // rotation and scale in the world.
-EntityInstance* EngineCreateEntity(const EntityModel* model, const EntityTexture* texture);
+EntityInstance* EngineCreateEntity(const EntityModel* model,
+                                   const EntityTexture* texture,
+                                   const EntityTexture* bump,
+                                   const EntityTexture* spec);
+
+
+EngineCamera* EngineCreateCamera(const glm::vec3& position, float fovy, float speed);
 
 // Moves the default camera in the specified direction
 void engine_move_forwards();
@@ -109,6 +116,6 @@ glm::vec2 GetWindowSize();
 // Camera
 glm::mat4 get_camera_projection();
 glm::mat4 get_camera_view();
-glm::vec3 EngineGetCameraPosition();
+glm::vec3 EngineGetCameraPosition(const EngineCamera* camera);
 
 #endif

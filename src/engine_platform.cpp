@@ -32,8 +32,6 @@ Pipeline geometryPipeline{};
 Pipeline skyspherePipeline{};
 Pipeline wireframePipeline{};
 
-QuatCamera gCamera;
-
 
 
 // Globally allocated resources where creation/deletion is managed by the engine.
@@ -45,6 +43,7 @@ static std::map<const EntityModel*, std::vector<EntityInstance*>> gEntitiesRende
 
 static EntityInstance* gSkybox = nullptr;
 
+static QuatCamera gCamera;
 
 
 // This is a global descriptor set that will be used for all draw calls and
@@ -147,6 +146,8 @@ Engine* EngineStart(const char* name)
 
     const std::vector<VkDescriptorSetLayoutBinding> per_object_layout{
             { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
+            { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
+            { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
     };
 
     gSceneDescriptorLayout = CreateDescriptorSetLayout(global_layout);
@@ -208,7 +209,7 @@ Engine* EngineStart(const char* name)
     PipelineInfo info{};
     info.descriptor_layouts = { gSceneDescriptorLayout, gObjectDescriptorLayout };
     info.push_constant_size = sizeof(glm::mat4);
-    info.binding_layout_size = sizeof(vertex);
+    info.binding_layout_size = sizeof(Vertex);
     info.binding_format = binding_format;
 
     info.wireframe = false;
@@ -242,7 +243,7 @@ Engine* EngineStart(const char* name)
 
     guiContext = CreateUserInterface(guiPass.handle);
 
-    gCamera = CreateCamera({0.0f, 6'378'137.0f, 0.0f}, 45.0f, 1000000.0f);
+    //gCamera = CreateCamera({0.0f, 6'378'137.0f, 0.0f}, 45.0f, 1000000.0f);
 
 
     gEngine->running = true;
@@ -472,12 +473,12 @@ EntityModel* EngineLoadModel(const char* path)
         return nullptr;
     }
 
-    std::vector<vertex> vertices;
+    std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
     for (const auto& shape : shapes) {
         for (const auto& index : shape.mesh.indices) {
-            vertex v{};
+            Vertex v{};
             v.position.x = attrib.vertices[3 * index.vertex_index + 0];
             v.position.y = attrib.vertices[3 * index.vertex_index + 1];
             v.position.z = attrib.vertices[3 * index.vertex_index + 2];
@@ -498,7 +499,7 @@ EntityModel* EngineLoadModel(const char* path)
 
     }
 
-    buffer = CreateVertexBuffer(vertices.data(), sizeof(vertex) * vertices.size(),
+    buffer = CreateVertexBuffer(vertices.data(), sizeof(Vertex) * vertices.size(),
                                 indices.data(), sizeof(unsigned int) * indices.size());
 
     gVertexBuffers.push_back(buffer);
@@ -533,19 +534,34 @@ EntityTexture* EngineLoadTexture(const char* path)
     return buffer;
 }
 
-EntityInstance* EngineCreateEntity(const EntityModel* model, const EntityTexture* texture)
+EntityInstance* EngineCreateEntity(const EntityModel* model,
+                                   const EntityTexture* texture,
+                                   const EntityTexture* bump,
+                                   const EntityTexture* spec)
 {
     auto e = new EntityInstance();
  
     e->modelMatrix   = glm::mat4(1.0f);
     e->model         = model;
     e->texture       = texture;
+    e->bump          = bump;
+    e->spec          = spec;
     e->descriptorSet = AllocateDescriptorSet(gObjectDescriptorLayout);
 
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = e->texture->image.view;
     image_info.sampler = g_sampler;
+
+    VkDescriptorImageInfo bump_image_info{};
+    bump_image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    bump_image_info.imageView = e->bump->image.view;
+    bump_image_info.sampler = g_sampler;
+
+    VkDescriptorImageInfo spec_image_info{};
+    spec_image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    spec_image_info.imageView = e->spec->image.view;
+    spec_image_info.sampler = g_sampler;
 
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -556,13 +572,40 @@ EntityInstance* EngineCreateEntity(const EntityModel* model, const EntityTexture
     write.descriptorCount = 1;
     write.pImageInfo = &image_info;
 
-    vkUpdateDescriptorSets(gRenderer->device.device, 1, &write, 0, nullptr);
+    VkWriteDescriptorSet write2{};
+    write2.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write2.dstSet = e->descriptorSet;
+    write2.dstBinding = 1;
+    write2.dstArrayElement = 0;
+    write2.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write2.descriptorCount = 1;
+    write2.pImageInfo = &bump_image_info;
 
+    VkWriteDescriptorSet write3{};
+    write3.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write3.dstSet = e->descriptorSet;
+    write3.dstBinding = 2;
+    write3.dstArrayElement = 0;
+    write3.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write3.descriptorCount = 1;
+    write3.pImageInfo = &spec_image_info;
+
+    VkWriteDescriptorSet writes[3] = { write, write2, write3 };
+
+    vkUpdateDescriptorSets(gRenderer->device.device, 3, writes, 0, nullptr);
 
     gEntities.push_back(e);
 
     return e;
 }
+
+EngineCamera* EngineCreateCamera(const glm::vec3& position, float fovy, float speed)
+{
+    gCamera = CreateCamera(position, fovy, speed);
+
+    return (EngineCamera*)&gCamera;
+}
+
 
 void engine_move_forwards()
 {
@@ -663,7 +706,7 @@ glm::mat4 get_camera_view()
     return gCamera.view;
 }
 
-glm::vec3 EngineGetCameraPosition()
+glm::vec3 EngineGetCameraPosition(const EngineCamera* camera)
 {
     return gCamera.position;
 }

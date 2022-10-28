@@ -125,7 +125,7 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
     if (!window->handle)
         return nullptr;
 
-    //glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // window callbacks
     glfwSetWindowUserPointer(window->handle, window);

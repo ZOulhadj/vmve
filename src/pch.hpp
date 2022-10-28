@@ -7,6 +7,7 @@
 #include <ctime>
 #include <cstring>
 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <string_view>

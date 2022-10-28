@@ -57,7 +57,7 @@ void RenderOverlay()
 //            ImGui::SliderFloat("Time (UTC)", &utc_time, 0.0f, 23.0f);
 //            ImGui::Checkbox("Realtime", &realtime);
 //            //if (!realtime)
-//            //    ImGui::SliderInt("Speed", &speed_factor, 1, 50, "%.2fx");
+//            //    ImGui::SliderInt("Speed", &globalSpeed, 1, 50, "%.2fx");
 //
 //
 //            ImGui::EndMenu();
@@ -155,7 +155,7 @@ void RenderOverlay()
 //
 //    if (about_window) {
 //        ImGui::Begin("About", &about_window);
-//        ImGui::Text(application_about);
+//        ImGui::Text(appDescription);
 //        ImGui::End();
 //    }
 //

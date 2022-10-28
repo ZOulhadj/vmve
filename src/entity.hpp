@@ -10,6 +10,8 @@ struct EntityInstance
 
     const EntityModel* model;
     const EntityTexture* texture;
+    const EntityTexture* bump;
+    const EntityTexture* spec;
 
     VkDescriptorSet descriptorSet;
 };

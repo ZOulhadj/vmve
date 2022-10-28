@@ -22,14 +22,6 @@ enum class VSyncMode
     Enabled  = VK_PRESENT_MODE_FIFO_KHR
 };
 
-struct gpu_queues
-{
-    VkQueue graphics_queue;
-    VkQueue present_queue;
-
-    uint32_t graphics_index;
-    uint32_t present_index;
-};
 
 struct device_context
 {
@@ -183,12 +175,17 @@ struct uniform_buffer
 };
 
 
-struct vertex
+struct Vertex
 {
     glm::vec3 position;
     glm::vec3 color;
     glm::vec3 normal;
     glm::vec2 uv;
+
+    // Due to the previous variable being a vec2 this means the struct is not
+    // aligned in memory. Adding an extra dummy variable for padding will ensure
+    // that the vertex buffers can be tightly packed. TODO: Should revisit this.
+    float padding;
 };
 
 
