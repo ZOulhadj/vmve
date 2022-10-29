@@ -1,7 +1,7 @@
 #ifndef MY_ENGINE_UTILITY_HPP
 #define MY_ENGINE_UTILITY_HPP
 
-static std::string LoadTextFile(std::string_view path)
+std::string LoadTextFile(std::string_view path)
 {
     std::ifstream file(path.data());
     std::stringstream buffer;
@@ -9,5 +9,6 @@ static std::string LoadTextFile(std::string_view path)
 
     return buffer.str();
 }
+
 
 #endif

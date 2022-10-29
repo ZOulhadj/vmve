@@ -7,6 +7,7 @@ struct EntityTexture;
 struct EntityInstance
 {
     glm::mat4 modelMatrix;
+    glm::vec3 position;
 
     const EntityModel* model;
     const EntityTexture* texture;

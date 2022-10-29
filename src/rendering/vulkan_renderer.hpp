@@ -222,7 +222,7 @@ Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass
 void DestroyPipeline(Pipeline& pipeline);
 
 EntityModel* CreateVertexBuffer(void* v, int vs, void* i, int is);
-EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height);
+EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format);
 void DestroyImage(ImageBuffer* image);
 
 void BindVertexBuffer(const EntityModel* buffer);

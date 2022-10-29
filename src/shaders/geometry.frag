@@ -2,13 +2,13 @@
 
 layout(location = 0) out vec4 final_color;
 
-layout(location = 1) in vec2 texture_coord;
-layout(location = 2) in vec3 vertex_position;
-//layout(location = 3) in vec3 vertex_normal;
+layout(location = 0) in vec2 texture_coord;
+layout(location = 1) in vec3 vertex_position;
+layout(location = 2) in vec3 vertex_normal;
 
-layout(location = 4) in vec3 tangentLightPos;
-layout(location = 5) in vec3 tangentViewPos;
-layout(location = 6) in vec3 tangentFragPos;
+layout(location = 3) in vec3 tangentLightPos;
+layout(location = 4) in vec3 tangentViewPos;
+layout(location = 5) in vec3 tangentFragPos;
 
 layout(binding = 1) uniform scene_ubo
 {
@@ -34,26 +34,24 @@ void main()
 
 
     // Global properties
-    vec3 normalized_normal = normalize(normal * 2.0 - 1.0);
+    vec3 norm = normalize(normal * 2.0 - 1.0);
     vec3 lightDir   = normalize(tangentLightPos - tangentFragPos);
     vec3 viewDir    = normalize(tangentViewPos - tangentFragPos);
-    vec3 reflectDir = reflect(-lightDir, normalized_normal);
+    vec3 reflectDir = reflect(-lightDir, norm);
     vec3 halfwayDir = normalize(lightDir + viewDir);
-
-
 
     // ambient
     vec3 ambientResult = scene.ambientStrength * albedo;
 
     // diffuse
-    vec3 diffuseResult = max(dot(normalized_normal, lightDir), 0.0) * albedo;
+    vec3 diffuseResult = max(dot(lightDir, norm), 0.0) * albedo;
 
     // specular
-    float spec          = pow(max(dot(viewDir, halfwayDir), 0.0), scene.specularShininess);
+    float spec          = pow(max(dot(norm, halfwayDir), 0.0), scene.specularShininess);
     vec3 specularResult = scene.specularStrength * spec * specular;
 
 
     // final result
-    vec3 result = ambientResult + diffuseResult + specularResult;
-    final_color = vec4(diffuseResult, 1.0);
+    vec3 result = (ambientResult + diffuseResult + specularResult) * scene.lightColor;
+    final_color = vec4(result, 1.0);
 }

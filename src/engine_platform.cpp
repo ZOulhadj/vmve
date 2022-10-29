@@ -148,6 +148,7 @@ Engine* EngineStart(const char* name)
             { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
             { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
             { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
+            { 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
     };
 
     gSceneDescriptorLayout = CreateDescriptorSetLayout(global_layout);
@@ -412,7 +413,7 @@ static bool ButtonRelease(MouseButtonReleasedEvent& event)
 
 static bool MouseMove(MouseMovedEvent& event)
 {
-    UpdateCameraView(gCamera, event.GetX(), event.GetY());
+    //UpdateCameraView(gCamera, event.GetX(), event.GetY());
 
     return true;
 }
@@ -456,11 +457,11 @@ bool EngineIsKeyDown(int keycode)
     return state == GLFW_PRESS;
 }
 
-static void ProcessMesh(std::vector<Vertex>& v, std::vector<uint32_t>& indices, aiMesh* mesh, const aiScene* scene)
+static void ProcessMesh(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices,
+                        const aiMesh* mesh, const aiScene* scene)
 {
     // walk through each of the mesh's vertices
-    for(unsigned int i = 0; i < mesh->mNumVertices; i++)
-    {
+    for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
         Vertex vertex{};
 
         vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
@@ -469,25 +470,29 @@ static void ProcessMesh(std::vector<Vertex>& v, std::vector<uint32_t>& indices, 
             vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
 
         // check if texture coordinates exist
-        if(mesh->mTextureCoords[0]) {
+        if(mesh->HasTextureCoords(0)) {
             // todo: "1.0f -" is used here. Double check that this is correct.
 
-            // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
-            // use models where a vertex can have multiple texture coordinates, so we always take the first set (0).
-            vertex.uv        = glm::vec2(1.0 - mesh->mTextureCoords[0][i].x, 1.0 - mesh->mTextureCoords[0][i].y);
+            // a vertex can contain up to 8 different texture coordinates.
+            // We thus make the assumption that we won't
+            // use models where a vertex can have multiple texture coordinates,
+            // so we always take the first set (0).
+            vertex.uv        = glm::vec2(1.0f - mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y);
             vertex.tangent   = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
             vertex.biTangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
-        }
-        else
+        } else {
             vertex.uv = glm::vec2(0.0f);
+        }
 
-        v.push_back(vertex);
+
+        vertices.push_back(vertex);
     }
 
-    // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-    for(unsigned int i = 0; i < mesh->mNumFaces; i++)
-    {
-        aiFace face = mesh->mFaces[i];
+    // now walk through each of the mesh's faces (a face is a mesh its triangle)
+    // and retrieve the corresponding vertex indices.
+    for(unsigned int i = 0; i < mesh->mNumFaces; i++) {
+        const aiFace& face = mesh->mFaces[i];
+
         // retrieve all indices of the face and store them in the indices vector
         for(unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
@@ -520,18 +525,15 @@ static void ProcessMesh(std::vector<Vertex>& v, std::vector<uint32_t>& indices, 
 
 }
 
-static void ProcessNode(std::vector<Vertex>& v, std::vector<uint32_t>& indices,
+static void ProcessModel(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices,
                         aiNode* node, const aiScene* scene)
 {
 
-    for (std::size_t i = 0; i < node->mNumMeshes; ++i) {
-        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-
-        ProcessMesh(v, indices, mesh, scene);
-    }
+    for (std::size_t i = 0; i < node->mNumMeshes; ++i)
+        ProcessMesh(vertices, indices, scene->mMeshes[node->mMeshes[i]], scene);
 
     for (std::size_t i = 0; i < node->mNumChildren; ++i)
-        ProcessNode(v, indices, node->mChildren[i], scene);
+        ProcessModel(vertices, indices, node->mChildren[i], scene);
 
 }
 
@@ -583,8 +585,11 @@ EntityModel* EngineLoadModel(const char* path)
 #else
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_PreTransformVertices |
-    aiProcess_CalcTangentSpace);
+    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate |
+                                                   aiProcess_CalcTangentSpace |
+                                                   aiProcess_PreTransformVertices
+
+                                                   );
 
     if (!scene) {
         printf("Failed to load model at path: %s\n", path);
@@ -594,10 +599,10 @@ EntityModel* EngineLoadModel(const char* path)
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
-    ProcessNode(vertices, indices, scene->mRootNode, scene);
+    ProcessModel(vertices, indices, scene->mRootNode, scene);
 
     buffer = CreateVertexBuffer(vertices.data(), sizeof(Vertex) * vertices.size(),
-                                indices.data(), sizeof(unsigned int) * indices.size());
+                                indices.data(), sizeof(uint32_t) * indices.size());
 
     gVertexBuffers.push_back(buffer);
 #endif
@@ -606,7 +611,7 @@ EntityModel* EngineLoadModel(const char* path)
     return buffer;
 }
 
-EntityTexture* EngineLoadTexture(const char* path)
+EntityTexture* EngineLoadTexture(const char* path, VkFormat format)
 {
     EntityTexture* buffer = nullptr;
 
@@ -622,7 +627,7 @@ EntityTexture* EngineLoadTexture(const char* path)
     }
 
     // Store texture data into GPU memory.
-    buffer = CreateTextureBuffer(texture, width, height);
+    buffer = CreateTextureBuffer(texture, width, height, format);
 
     gTextures.push_back(buffer);
 
@@ -641,6 +646,7 @@ EntityInstance* EngineCreateEntity(const EntityModel* model,
     auto e = new EntityInstance();
  
     e->modelMatrix   = glm::mat4(1.0f);
+    e->position      = glm::vec3(0.0f);
     e->model         = model;
     e->texture       = texture;
     e->bump          = bump;
@@ -662,36 +668,33 @@ EntityInstance* EngineCreateEntity(const EntityModel* model,
     spec_image_info.imageView = e->spec->image.view;
     spec_image_info.sampler = g_sampler;
 
-    VkWriteDescriptorSet write{};
-    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = e->descriptorSet;
-    write.dstBinding = 0;
-    write.dstArrayElement = 0;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write.descriptorCount = 1;
-    write.pImageInfo = &image_info;
+    std::array<VkWriteDescriptorSet, 3> writes{};
 
-    VkWriteDescriptorSet write2{};
-    write2.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write2.dstSet = e->descriptorSet;
-    write2.dstBinding = 1;
-    write2.dstArrayElement = 0;
-    write2.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write2.descriptorCount = 1;
-    write2.pImageInfo = &bump_image_info;
+    writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[0].dstSet = e->descriptorSet;
+    writes[0].dstBinding = 0;
+    writes[0].dstArrayElement = 0;
+    writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    writes[0].descriptorCount = 1;
+    writes[0].pImageInfo = &image_info;
 
-    VkWriteDescriptorSet write3{};
-    write3.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write3.dstSet = e->descriptorSet;
-    write3.dstBinding = 2;
-    write3.dstArrayElement = 0;
-    write3.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write3.descriptorCount = 1;
-    write3.pImageInfo = &spec_image_info;
+    writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[1].dstSet = e->descriptorSet;
+    writes[1].dstBinding = 1;
+    writes[1].dstArrayElement = 0;
+    writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    writes[1].descriptorCount = 1;
+    writes[1].pImageInfo = &bump_image_info;
 
-    VkWriteDescriptorSet writes[3] = { write, write2, write3 };
+    writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[2].dstSet = e->descriptorSet;
+    writes[2].dstBinding = 2;
+    writes[2].dstArrayElement = 0;
+    writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    writes[2].descriptorCount = 1;
+    writes[2].pImageInfo = &spec_image_info;
 
-    vkUpdateDescriptorSets(gRenderer->device.device, 3, writes, 0, nullptr);
+    vkUpdateDescriptorSets(gRenderer->device.device, U32(writes.size()), writes.data(), 0, nullptr);
 
     gEntities.push_back(e);
 
@@ -790,22 +793,19 @@ glm::vec3 EngineGetPosition(const EntityInstance* e)
     return GetPosition(e);
 }
 
-glm::vec2 GetWindowSize()
+glm::vec2 EngineWorldToScreen(const glm::vec3& position, const glm::vec2& offset)
 {
-    return { gWindow->width, gWindow->height };
+    const glm::vec2 windowSize = glm::vec2(gWindow->width, gWindow->height);
+
+    const glm::vec4 clip   = gCamera.proj * gCamera.view * glm::vec4(position, 1.0);
+    const glm::vec3 ndc    = clip.xyz() / clip.w;
+    const glm::vec2 screen = ((ndc.xy() + 1.0f) / 2.0f) * windowSize + offset;
+
+    return screen;
 }
 
-glm::mat4 get_camera_projection()
-{
-    return gCamera.proj;
-}
 
-glm::mat4 get_camera_view()
-{
-    return gCamera.view;
-}
-
-glm::vec3 EngineGetCameraPosition(const EngineCamera* camera)
+glm::vec3 EngineGetCameraPosition(const EngineCamera*)
 {
     return gCamera.position;
 }

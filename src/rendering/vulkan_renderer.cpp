@@ -1321,13 +1321,13 @@ EntityModel* CreateVertexBuffer(void* v, int vs, void* i, int is)
     return r;
 }
 
-EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height)
+EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
 {
     auto buffer = new EntityTexture();
 
     Buffer staging_buffer = CreateStagingBuffer(texture, width * height * 4);
 
-    buffer->image = CreateImage(VK_FORMAT_R8G8B8A8_SRGB,
+    buffer->image = CreateImage(format,
                                  {width, height},
                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                  VK_IMAGE_ASPECT_COLOR_BIT);

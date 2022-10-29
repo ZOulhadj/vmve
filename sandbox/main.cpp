@@ -3,7 +3,6 @@
 #include "constants.hpp"
 #include "ui.hpp"
 
-
 /*
 glm::vec3 sphere_translation(float radius, float latitude, float longitude)
 {
@@ -51,20 +50,6 @@ glm::vec2 geographic(float radius, const glm::vec3& position)
     return { glm::degrees(latitude), glm::degrees(longitude) };
 }
 
-
-glm::vec2 WorldToScreen(const glm::vec3& position, const glm::vec2& offset = glm::vec2(0.0f))
-{
-    const glm::mat4 proj = get_camera_projection();
-    const glm::mat4 view = get_camera_view();
-    const glm::vec2 win_size = GetWindowSize();
-
-    const glm::vec4 clip_pos         = proj * (view * glm::vec4(position, 1.0));
-    const glm::vec3 ndc_space_pos    = glm::vec3(clip_pos.x / clip_pos.w, clip_pos.y / clip_pos.w, clip_pos.z / clip_pos.w);
-    const glm::vec2 window_space_pos = ((ndc_space_pos.xy() + 1.0f) / 2.0f) * win_size + offset;
-
-    return window_space_pos;
-}
-
 glm::vec3 CircularTransform(EntityInstance* e, float angle, float freq, float radius)
 {
     const glm::vec3& position = EngineGetPosition(e);
@@ -75,7 +60,18 @@ glm::vec3 CircularTransform(EntityInstance* e, float angle, float freq, float ra
     const float y = position.y;
     const float z = glm::sin(radians) * radius;
 
-    return position + glm::vec3(x, y, z);
+    return glm::vec3(x, y, z);
+}
+
+glm::vec3 CircularTransform(const glm::vec3& pos, float angle, float freq, float radius)
+{
+    const float radians = glm::radians(angle * freq);
+
+    const float x = glm::cos(radians) * radius;
+    const float y = pos.y;
+    const float z = glm::sin(radians) * radius;
+
+    return pos + glm::vec3(x, y, z);
 }
 
 float AUDistance(const glm::vec3& a, const glm::vec3& b)
@@ -97,15 +93,16 @@ int main()
     // Create global application resources
     EntityModel* icosphere = EngineLoadModel("assets/icosphere.obj");
     EntityModel* sphere    = EngineLoadModel("assets/sphere_hp.obj");
+    EntityModel* cube      = EngineLoadModel("assets/iss.obj");
 
-    EntityTexture* sunTexture   = EngineLoadTexture("assets/textures/sun/sun.jpg");
+    EntityTexture* sunTexture   = EngineLoadTexture("assets/textures/sun/sun.jpg", VK_FORMAT_R8G8B8A8_SRGB);
 
-    EntityTexture* earthTexture         = EngineLoadTexture("assets/textures/earth/earth.jpg");
-    EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.jpg");
-    EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg");
+    EntityTexture* earthTexture         = EngineLoadTexture("assets/textures/earth/albedo.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+    EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
+    EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg", VK_FORMAT_R8G8B8A8_UNORM);
 
-    EntityTexture* moonTexture  = EngineLoadTexture("assets/textures/moon/moon.jpg");
-    EntityTexture* spaceTexture = EngineLoadTexture("assets/textures/space2.jpg");
+    EntityTexture* moonTexture  = EngineLoadTexture("assets/textures/moon/moon.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+    EntityTexture* spaceTexture = EngineLoadTexture("assets/textures/skysphere/space.jpg", VK_FORMAT_R8G8B8A8_SRGB);
 
     // Construct entity instances
     EntityInstance* sun   = EngineCreateEntity(sphere, sunTexture, earthNormalTexture, earthSpecularTexture);
@@ -113,10 +110,26 @@ int main()
     EntityInstance* moon  = EngineCreateEntity(sphere, moonTexture, earthNormalTexture, earthSpecularTexture);
     EntityInstance* space = EngineCreateEntity(icosphere, spaceTexture, earthNormalTexture, earthSpecularTexture);
 
-    glm::vec3 london = cartesian(earthRadius + iss_altitude, 46.636375, -173.238388);
-    EngineCamera* camera = EngineCreateCamera(london, 60.0f, lightSpeed / 20.0f);
+
+    EntityInstance* satellite = EngineCreateEntity(cube, moonTexture, earthNormalTexture, earthSpecularTexture);
+
+    //glm::vec3 london = cartesian(earthRadius + iss_altitude, 46.636375, -173.238388);
+    glm::vec3 london = cartesian(earthRadius, 0.0f, 0.0f, iss_altitude);
+    EngineCamera* camera = EngineCreateCamera(london, 60.0f, cameraSpeed * 100.0f);
+
+
+    EngineScene scene {
+        .ambientStrength = 0.05f,
+        .specularStrength = 0.15f,
+        .specularShininess = 128.0f,
+        .cameraPosition = EngineGetCameraPosition(camera),
+        .lightPosition = glm::vec3(0.0f, 0.0f, -earthToSunDistance),
+        .lightColor = glm::vec3(1.0f),
+    };
 
     while (engine->running) {
+        scene.cameraPosition = EngineGetCameraPosition(camera);
+
         // Camera movement
         if (EngineIsKeyDown(GLFW_KEY_W))  engine_move_forwards();
         if (EngineIsKeyDown(GLFW_KEY_S))  engine_move_backwards();
@@ -127,24 +140,78 @@ int main()
         if (EngineIsKeyDown(GLFW_KEY_Q))  engine_roll_left();
         if (EngineIsKeyDown(GLFW_KEY_E))  engine_roll_right();
 
+        static float earthRotationX = 0.0f;
+        static float earthRotationY = 0.0f;
+
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        {
+            ImGui::Begin("Debug Menu");
+            ImGui::SliderFloat("Latitude", &earthRotationX, -180.0f, 180.0f);
+            ImGui::SliderFloat("Longitude", &earthRotationY, -180.0f, 180.0f);
+            ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 5.0f);
+            ImGui::SliderFloat("Specular Strength", &scene.specularStrength, 0.0f, 5.0f);
+            ImGui::SliderFloat("Specular Shininess", &scene.specularShininess, 0.0f, 512.0f);
+            ImGui::SliderFloat3("Time of day (UTC)", glm::value_ptr(scene.lightPosition), -earthToSunDistance, earthToSunDistance);
+            ImGui::SliderFloat3("Sun Color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
+//            ImGui::SliderFloat("Camera Speed", EngineGetSetSpeed())
+            ImGui::End();
+
+
+            static bool o = true;
+            glm::vec2 moonPos = EngineWorldToScreen(EngineGetPosition(moon));
+            const ImGuiWindowFlags flags = ImGuiWindowFlags_None |
+                                           ImGuiWindowFlags_NoInputs |
+                                           ImGuiWindowFlags_NoDecoration |
+                                           ImGuiWindowFlags_NoBackground |
+                                           ImGuiWindowFlags_NoSavedSettings |
+                                           ImGuiWindowFlags_AlwaysAutoResize;
+
+
+            ImGui::SetNextWindowPos(ImVec2(moonPos.x, moonPos.y));
+
+            ImGui::Begin("text0", &o, flags);
+            ImGui::Text("Moon");
+            ImGui::Text("%f AU", AUDistance(EngineGetPosition(moon), EngineGetCameraPosition(camera)));
+            ImGui::End();
+
+            glm::vec2 satellitePos = EngineWorldToScreen(EngineGetPosition(satellite));
+            ImGui::SetNextWindowPos(ImVec2(satellitePos.x, satellitePos.y));
+            ImGui::Begin("text1", &o, flags);
+            ImGui::TextColored(ImVec4(0.52f, 0.79f, 0.91f, 1.0f), "ISS");
+//            ImGui::Text("%f AU", AUDistance(EngineGetPosition(satellite), EngineGetCameraPosition(camera)));
+            ImGui::End();
+
+            ImGui::Render();
+        }
+
+
+
         // Update entities
         const float time = engine->uptime;
 
         { // Sun
-            //EngineTranslate(sun, CircularTransform(sun, time, -10.0f, earthToSunDistance));
-            EngineTranslate(sun, { 0.0f, 0.0f, earthToSunDistance});
+            //EngineTranslate(sun, CircularTransform(sun, sunRotation, 1.0f, earthToSunDistance));
+            EngineTranslate(sun, scene.lightPosition);
             EngineScale(sun, sunRadius);
             EngineRotate(sun, 0.0f, {0.0f, 1.0f, 0.0f});
         }
         { // Earth
             EngineTranslate(earth, {0.0f, 0.0f, 0.0f});
             EngineScale(earth, earthRadius);
-            EngineRotate(earth, time, {0.0f, 1.0f, 0.0f});
+            EngineRotate(earth, earthRotationX, {1.0f, 0.0f, 0.0f});
+            EngineRotate(earth, earthRotationY, {0.0f, 1.0f, 0.0f});
         }
         { // Moon
             EngineTranslate(moon, CircularTransform(moon, time, -15.0f, earthToMoonDistance));
             EngineScale(moon, moonRadius);
             EngineRotate(moon, 0.0f, {0.0f, 1.0f, 0.0f});
+        }
+
+        { // Satellite
+            EngineTranslate(satellite, london);
+            //EngineScale(satellite, 5000.0f);
         }
 
 
@@ -154,18 +221,18 @@ int main()
         EngineRender(moon);
         EngineRenderSkybox(space);
 
+
+        EngineRender(satellite);
+
+
+
         // Render User Interface
         RenderMenuBar();
         RenderOverlay();
 
         // Initialize scene
-        EngineScene scene{};
-        scene.ambientStrength   = 0.05f;
-        scene.specularStrength  = 0.2f;
-        scene.specularShininess = 128.0f;
-        scene.cameraPosition    = EngineGetCameraPosition(camera);
-        scene.lightPosition     = EngineGetPosition(sun) / 2.0f;
-        scene.lightColor        = glm::vec3(1.0f, 1.0f, 1.0f);
+
+
 
         EngineRender(scene);
 

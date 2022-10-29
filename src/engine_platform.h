@@ -69,7 +69,7 @@ EntityModel* EngineLoadModel(const char* path);
 
 // Loads a texture file from the filesystem and returns a pointer to that
 // texture image.
-EntityTexture* EngineLoadTexture(const char* path);
+EntityTexture* EngineLoadTexture(const char* path, VkFormat format);
 
 // Creates an entity which is an object that is rendered onto the screen.
 // Each entity has a pointer to a vertex buffer that describes the
@@ -109,13 +109,12 @@ void EngineScale(EntityInstance* e, const glm::vec3& scale);
 glm::vec3 EngineGetPosition(const EntityInstance* e);
 
 
-
-// Window
-glm::vec2 GetWindowSize();
+// For a given position in world space (X, Y, Z), the function will return the
+// 2D screen coordinate. Often used for display a user interface that follows
+// objects in the world.
+glm::vec2 EngineWorldToScreen(const glm::vec3& position, const glm::vec2& offset = glm::vec2(0.0f));
 
 // Camera
-glm::mat4 get_camera_projection();
-glm::mat4 get_camera_view();
-glm::vec3 EngineGetCameraPosition(const EngineCamera* camera);
+glm::vec3 EngineGetCameraPosition(const EngineCamera*);
 
 #endif
