@@ -3,8 +3,7 @@
 
 #include "event.hpp"
 
-class KeyEvent : public Event
-{
+class KeyEvent : public Event {
 public:
     int GetKeyCode() const { return m_KeyCode; }
 
@@ -18,8 +17,7 @@ private:
 };
 
 
-class KeyPressedEvent : public KeyEvent
-{
+class KeyPressedEvent : public KeyEvent {
 public:
     KeyPressedEvent(int keycode)
         : KeyEvent(keycode)
@@ -28,8 +26,7 @@ public:
     EVENT_CLASS_TYPE(KeyPressedEvent);
 };
 
-class KeyReleasedEvent : public KeyEvent
-{
+class KeyReleasedEvent : public KeyEvent {
 public:
     KeyReleasedEvent(int keycode)
         : KeyEvent(keycode)

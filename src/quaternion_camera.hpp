@@ -1,8 +1,7 @@
 #ifndef MYENGINE_QUATERNION_CAMERA_HPP
 #define MYENGINE_QUATERNION_CAMERA_HPP
 
-struct QuatCamera
-{
+struct QuatCamera {
     glm::vec3 position;
     glm::vec3 front_vector;
     glm::vec3 right_vector;

@@ -9,21 +9,18 @@ constexpr int frames_in_flight = 2;
 
 struct EntityInstance;
 
-enum class BufferMode
-{
+enum class BufferMode {
     Double = 2,
     Triple = 3
 };
 
-enum class VSyncMode
-{
+enum class VSyncMode {
     Disabled = VK_PRESENT_MODE_IMMEDIATE_KHR,
     Enabled  = VK_PRESENT_MODE_FIFO_KHR
 };
 
 
-struct device_context
-{
+struct device_context {
     VkPhysicalDevice gpu;
     VkDevice device;
 
@@ -34,15 +31,13 @@ struct device_context
     uint32_t present_index;
 };
 
-struct RendererSubmitContext
-{
+struct RendererSubmitContext {
     VkFence         Fence;
     VkCommandPool   CmdPool;
     VkCommandBuffer CmdBuffer;
 };
 
-struct RendererContext
-{
+struct RendererContext {
     const Window* window;
 
     VkInstance instance;
@@ -55,8 +50,7 @@ struct RendererContext
     VkDescriptorPool pool;
 };
 
-struct ImageBuffer
-{
+struct ImageBuffer {
     VkImage       handle;
     VkImageView   view;
     VmaAllocation allocation;
@@ -64,14 +58,12 @@ struct ImageBuffer
     VkFormat      format;
 };
 
-struct Buffer
-{
+struct Buffer {
     VkBuffer buffer;
     VmaAllocation allocation;
 };
 
-struct Swapchain
-{
+struct Swapchain {
     BufferMode buffering_mode;
     VSyncMode  sync_mode;
 
@@ -84,8 +76,7 @@ struct Swapchain
 };
 
 
-struct Frame
-{
+struct Frame {
     VkCommandPool cmd_pool;
     VkCommandBuffer cmd_buffer;
 
@@ -97,14 +88,12 @@ struct Frame
     VkSemaphore released_semaphore;
 };
 
-struct ShaderCompiler
-{
+struct ShaderCompiler {
     shaderc_compiler_t compiler;
     shaderc_compile_options_t options;
 };
 
-struct RenderPassInfo
-{
+struct RenderPassInfo {
     uint32_t color_attachment_count;
     VkFormat color_attachment_format;
 
@@ -121,22 +110,19 @@ struct RenderPassInfo
     VkSampleCountFlagBits sample_count;
 };
 
-struct RenderPass
-{
+struct RenderPass {
     VkRenderPass handle;
 
     std::vector<VkFramebuffer> framebuffers;
 };
 
-struct Shader
-{
+struct Shader {
     VkShaderModule handle;
     VkShaderStageFlagBits type;
 };
 
 
-struct PipelineInfo
-{
+struct PipelineInfo {
     std::vector<VkDescriptorSetLayout> descriptor_layouts;
     uint32_t push_constant_size;
     uint32_t binding_layout_size;
@@ -148,33 +134,28 @@ struct PipelineInfo
     VkCullModeFlags cull_mode;
 };
 
-struct Pipeline
-{
+struct Pipeline {
     VkPipelineLayout layout;
     VkPipeline handle;
 };
 
 
-struct EntityModel
-{
+struct EntityModel {
     Buffer   vertex_buffer;
     Buffer   index_buffer;
     uint32_t index_count;
 };
 
-struct EntityTexture
-{
+struct EntityTexture {
     ImageBuffer image;
 };
 
-struct uniform_buffer
-{
+struct uniform_buffer {
     Buffer buffer;
 };
 
 
-struct Vertex
-{
+struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 uv;

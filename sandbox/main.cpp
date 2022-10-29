@@ -4,8 +4,7 @@
 #include "ui.hpp"
 
 /*
-glm::vec3 sphere_translation(float radius, float latitude, float longitude)
-{
+glm::vec3 sphere_translation(float radius, float latitude, float longitude) {
     const float lat = glm::radians(latitude);
     const float lon = glm::radians(longitude);
 
@@ -17,8 +16,7 @@ glm::vec3 sphere_translation(float radius, float latitude, float longitude)
 }
 */
 
-glm::vec3 cartesian(float radius, float latitude, float longitude, float elevation = 0.0f)
-{
+glm::vec3 cartesian(float radius, float latitude, float longitude, float elevation = 0.0f) {
     const float lat = glm::radians(latitude);
     const float lon = glm::radians(longitude);
 
@@ -36,8 +34,7 @@ glm::vec3 cartesian(float radius, float latitude, float longitude, float elevati
     return { x, y, z };
 }
 
-glm::vec2 geographic(float radius, const glm::vec3& position)
-{
+glm::vec2 geographic(float radius, const glm::vec3& position) {
     // If using WGS-84 coordinates
 #if 0
     const float latitude = glm::asin(position.z / radius);
@@ -50,8 +47,7 @@ glm::vec2 geographic(float radius, const glm::vec3& position)
     return { glm::degrees(latitude), glm::degrees(longitude) };
 }
 
-glm::vec3 CircularTransform(EntityInstance* e, float angle, float freq, float radius)
-{
+glm::vec3 CircularTransform(EntityInstance* e, float angle, float freq, float radius) {
     const glm::vec3& position = EngineGetPosition(e);
 
     const float radians = glm::radians(angle * freq);
@@ -63,8 +59,7 @@ glm::vec3 CircularTransform(EntityInstance* e, float angle, float freq, float ra
     return glm::vec3(x, y, z);
 }
 
-glm::vec3 CircularTransform(const glm::vec3& pos, float angle, float freq, float radius)
-{
+glm::vec3 CircularTransform(const glm::vec3& pos, float angle, float freq, float radius) {
     const float radians = glm::radians(angle * freq);
 
     const float x = glm::cos(radians) * radius;
@@ -74,8 +69,7 @@ glm::vec3 CircularTransform(const glm::vec3& pos, float angle, float freq, float
     return pos + glm::vec3(x, y, z);
 }
 
-float AUDistance(const glm::vec3& a, const glm::vec3& b)
-{
+float AUDistance(const glm::vec3& a, const glm::vec3& b) {
     float d = glm::pow(glm::pow(b.x - a.x, 2.0f) +
                        glm::pow(b.y - a.y, 2.0f) +
                        glm::pow(b.z - a.z, 2.0f),
@@ -85,8 +79,7 @@ float AUDistance(const glm::vec3& a, const glm::vec3& b)
 }
 
 
-int main()
-{
+int main() {
     Engine* engine = EngineStart("3D Earth Satellite Visualizer");
 
 

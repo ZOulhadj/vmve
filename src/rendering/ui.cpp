@@ -4,8 +4,7 @@
 #include "vulkan_renderer.hpp"
 
 
-ImGuiContext* CreateUserInterface(VkRenderPass renderPass)
-{
+ImGuiContext* CreateUserInterface(VkRenderPass renderPass) {
     ImGuiContext* context = nullptr;
     const RendererContext* rc   = GetRendererContext();
 
@@ -51,8 +50,7 @@ ImGuiContext* CreateUserInterface(VkRenderPass renderPass)
     return context;
 }
 
-void DestroyUserInterface(ImGuiContext* context)
-{
+void DestroyUserInterface(ImGuiContext* context) {
     if (!context)
         return;
 

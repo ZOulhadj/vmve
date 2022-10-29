@@ -3,14 +3,12 @@
 
 #include "event.hpp"
 
-class WindowClosedEvent : public Event
-{
+class WindowClosedEvent : public Event {
 public:
     EVENT_CLASS_TYPE(WindowClosedEvent);
 };
 
-class WindowResizedEvent : public Event
-{
+class WindowResizedEvent : public Event {
 public:
     WindowResizedEvent(uint32_t width, uint32_t height)
         : m_Width(width), m_Height(height)

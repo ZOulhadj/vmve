@@ -19,8 +19,7 @@ struct EntityTexture;
 struct EntityInstance;
 struct EngineCamera;
 
-struct Engine
-{
+struct Engine {
     // Statistics
     bool  running;
     float uptime;
@@ -37,8 +36,7 @@ struct Engine
 //
 // Padding is equally important and hence the usage of the "alignas" keyword.
 //
-struct EngineScene
-{
+struct EngineScene {
     float ambientStrength;
     float specularStrength;
     float specularShininess;

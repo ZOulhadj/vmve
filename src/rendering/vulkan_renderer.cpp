@@ -19,8 +19,7 @@ static ShaderCompiler g_shader_compiler{};
 static uint32_t current_frame = 0;
 
 
-static VkInstance CreateInstance(uint32_t version, const char* app_name, const std::vector<const char*>& layers)
-{
+static VkInstance CreateInstance(uint32_t version, const char* app_name, const std::vector<const char*>& layers) {
     VkInstance instance{};
 
     // create vulkan instance
@@ -57,8 +56,7 @@ static VkInstance CreateInstance(uint32_t version, const char* app_name, const s
     return instance;
 }
 
-static VkSurfaceKHR CreateSurface(VkInstance instance, GLFWwindow* window)
-{
+static VkSurfaceKHR CreateSurface(VkInstance instance, GLFWwindow* window) {
     VkSurfaceKHR surface{};
 
     VkCheck(glfwCreateWindowSurface(instance, window, nullptr, &surface));
@@ -69,8 +67,7 @@ static VkSurfaceKHR CreateSurface(VkInstance instance, GLFWwindow* window)
 static device_context CreateDevice(VkInstance instance, 
                               VkSurfaceKHR surface,
                               VkPhysicalDeviceFeatures features, 
-                              const std::vector<const char*>& extensions)
-{
+                              const std::vector<const char*>& extensions) {
     struct gpu_info {
         VkPhysicalDevice gpu;
         uint32_t graphics_index, present_index;
@@ -214,8 +211,7 @@ static device_context CreateDevice(VkInstance instance,
     return device;
 }
 
-static VmaAllocator CreateAllocator(VkInstance instance, uint32_t version, VkPhysicalDevice gpu, VkDevice device)
-{
+static VmaAllocator CreateAllocator(VkInstance instance, uint32_t version, VkPhysicalDevice gpu, VkDevice device) {
     VmaAllocator allocator{};
 
     VmaAllocatorCreateInfo allocator_info{};
@@ -236,8 +232,7 @@ static RendererContext* CreateRendererContext(uint32_t version,
                                                  const std::vector<const char*>& requested_layers,
                                                  const std::vector<const char*>& requested_extensions,
                                                  const VkPhysicalDeviceFeatures requested_gpu_features,
-                                                 const Window* window)
-{
+                                                 const Window* window) {
     RendererContext* context = (RendererContext*)malloc(sizeof(RendererContext));
 
     context->window = window;
@@ -251,8 +246,7 @@ static RendererContext* CreateRendererContext(uint32_t version,
 }
 
 // Deallocates/frees memory allocated by the renderer context.
-static void DestroyRendererContext(RendererContext* rc)
-{
+static void DestroyRendererContext(RendererContext* rc) {
     if (!rc)
         return;
 
@@ -264,8 +258,7 @@ static void DestroyRendererContext(RendererContext* rc)
     free(rc);
 }
 
-static RendererSubmitContext* CreateSubmitContext()
-{
+static RendererSubmitContext* CreateSubmitContext() {
     auto context = new RendererSubmitContext();
 
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
@@ -288,8 +281,7 @@ static RendererSubmitContext* CreateSubmitContext()
     return context;
 }
 
-static void DestroySubmitContext(RendererSubmitContext* context)
-{
+static void DestroySubmitContext(RendererSubmitContext* context) {
     vkFreeCommandBuffers(g_rc->device.device, context->CmdPool, 1, &context->CmdBuffer);
     vkDestroyCommandPool(g_rc->device.device, context->CmdPool, nullptr);
     vkDestroyFence(g_rc->device.device, context->Fence, nullptr);
@@ -299,8 +291,7 @@ static void DestroySubmitContext(RendererSubmitContext* context)
 
 // A function that executes a command directly on the GPU. This is most often
 // used for copying data from staging buffers into GPU local buffers.
-void SubmitToGPU(const std::function<void()>& submit_func)
-{
+void SubmitToGPU(const std::function<void()>& submit_func) {
     const RendererSubmitContext* context = g_rc->submit;
 
     VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
@@ -329,13 +320,11 @@ void SubmitToGPU(const std::function<void()>& submit_func)
     VkCheck(vkResetCommandPool(g_rc->device.device, context->CmdPool, 0));
 }
 
-Swapchain& GetSwapchain()
-{
+Swapchain& GetSwapchain() {
     return g_swapchain;
 }
 
-static VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect)
-{
+static VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect) {
     VkImageView view{};
 
     VkImageViewCreateInfo imageViewInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
@@ -356,8 +345,7 @@ static VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspe
 static ImageBuffer CreateImage(VkFormat format,
                                 VkExtent2D extent,
                                 VkImageUsageFlags usage,
-                                VkImageAspectFlags aspect)
-{
+                                VkImageAspectFlags aspect) {
     ImageBuffer image{};
 
     VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
@@ -383,23 +371,20 @@ static ImageBuffer CreateImage(VkFormat format,
     return image;
 }
 
-void DestroyImage(ImageBuffer* image)
-{
+void DestroyImage(ImageBuffer* image) {
     vkDestroyImageView(g_rc->device.device, image->view, nullptr);
     vmaDestroyImage(g_rc->allocator, image->handle, image->allocation);
 }
 
 // Maps/Fills an existing buffer with data.
-void SetBufferData(Buffer* buffer, void* data, uint32_t size)
-{
+void SetBufferData(Buffer* buffer, void* data, uint32_t size) {
     void* allocation{};
     VkCheck(vmaMapMemory(g_rc->allocator, buffer->allocation, &allocation));
     std::memcpy(allocation, data, size);
     vmaUnmapMemory(g_rc->allocator, buffer->allocation);
 }
 
-Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type)
-{
+Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type) {
     Buffer buffer{};
 
     VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
@@ -423,8 +408,7 @@ Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type)
 // Creates and fills a buffer that is CPU accessible. A staging
 // buffer is most often used as a temporary buffer when copying
 // data from the CPU to the GPU.
-static Buffer CreateStagingBuffer(void* data, uint32_t size)
-{
+static Buffer CreateStagingBuffer(void* data, uint32_t size) {
     Buffer buffer{};
 
     VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
@@ -450,8 +434,7 @@ static Buffer CreateStagingBuffer(void* data, uint32_t size)
 
 // Creates an empty buffer on the GPU that will need to be filled by
 // calling SubmitToGPU.
-static Buffer CreateGPUBuffer(uint32_t size, VkBufferUsageFlags type)
-{
+static Buffer CreateGPUBuffer(uint32_t size, VkBufferUsageFlags type) {
     Buffer buffer{};
 
     VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
@@ -473,8 +456,7 @@ static Buffer CreateGPUBuffer(uint32_t size, VkBufferUsageFlags type)
 }
 
 // Deallocates a buffer.
-void DestroyBuffer(Buffer& buffer)
-{
+void DestroyBuffer(Buffer& buffer) {
     vmaDestroyBuffer(g_rc->allocator, buffer.buffer, buffer.allocation);
 }
 
@@ -485,8 +467,7 @@ void DestroyBuffer(Buffer& buffer)
 // like to be created. It's important to remember that this is a request
 // and not guaranteed as the hardware may not support that number
 // of images.
-static Swapchain CreateSwapchain(BufferMode buffering_mode, VSyncMode sync_mode)
-{
+static Swapchain CreateSwapchain(BufferMode buffering_mode, VSyncMode sync_mode) {
     Swapchain swapchain{};
 
     // get surface properties
@@ -563,8 +544,7 @@ static Swapchain CreateSwapchain(BufferMode buffering_mode, VSyncMode sync_mode)
     return swapchain;
 }
 
-static void DestroySwapchain(Swapchain& swapchain)
-{
+static void DestroySwapchain(Swapchain& swapchain) {
     DestroyImage(&swapchain.depth_image);
 
     for (auto& image : swapchain.images) {
@@ -592,8 +572,7 @@ static void RebuildSwapchain(Swapchain& swapchain)
 */
 
 
-VkSampler CreateSampler(VkFilter filtering, uint32_t anisotropic_level)
-{
+VkSampler CreateSampler(VkFilter filtering, uint32_t anisotropic_level) {
     VkSampler sampler{};
     
     // get the maximum supported anisotropic filtering level
@@ -628,13 +607,11 @@ VkSampler CreateSampler(VkFilter filtering, uint32_t anisotropic_level)
     return sampler;
 }
 
-void DestroySampler(VkSampler sampler)
-{
+void DestroySampler(VkSampler sampler) {
     vkDestroySampler(g_rc->device.device, sampler, nullptr);
 }
 
-static void CreateFrameBarriers()
-{
+static void CreateFrameBarriers() {
     VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
     pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     pool_info.queueFamilyIndex = g_rc->device.graphics_index;
@@ -663,8 +640,7 @@ static void CreateFrameBarriers()
     }
 }
 
-static void DestroyFrameBarriers()
-{
+static void DestroyFrameBarriers() {
     for (auto& gFrame : g_frames) {
         vkDestroySemaphore(g_rc->device.device, gFrame.released_semaphore, nullptr);
         vkDestroySemaphore(g_rc->device.device, gFrame.acquired_semaphore, nullptr);
@@ -677,8 +653,7 @@ static void DestroyFrameBarriers()
     }
 }
 
-static void CreateShaderCompiler()
-{
+static void CreateShaderCompiler() {
     // todo(zak): Check for potential initialization errors.
     g_shader_compiler.compiler = shaderc_compiler_initialize();
     g_shader_compiler.options  = shaderc_compile_options_initialize();
@@ -686,14 +661,12 @@ static void CreateShaderCompiler()
     shaderc_compile_options_set_optimization_level(g_shader_compiler.options, shaderc_optimization_level_performance);
 }
 
-static void DestroyShaderCompiler()
-{
+static void DestroyShaderCompiler() {
     shaderc_compile_options_release(g_shader_compiler.options);
     shaderc_compiler_release(g_shader_compiler.compiler);
 }
 
-static Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
-{
+static Shader CreateShader(VkShaderStageFlagBits type, const std::string& code) {
     Shader shader{};
 
     shaderc_compilation_result_t result;
@@ -724,26 +697,22 @@ static Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
     return shader;
 }
 
-Shader CreateVertexShader(const std::string& code)
-{
+Shader CreateVertexShader(const std::string& code) {
     return CreateShader(VK_SHADER_STAGE_VERTEX_BIT, code);
 }
 
-Shader CreateFragmentShader(const std::string& code)
-{
+Shader CreateFragmentShader(const std::string& code) {
     return CreateShader(VK_SHADER_STAGE_FRAGMENT_BIT, code);
 }
 
 
-void DestroyShader(Shader& shader)
-{
+void DestroyShader(Shader& shader) {
     vkDestroyShaderModule(g_rc->device.device, shader.handle, nullptr);
 }
 
 static std::vector<VkFramebuffer> CreateFramebuffers(VkRenderPass renderPass, 
                                                      const std::vector<ImageBuffer>& color_attachments,
-                                                     const std::vector<ImageBuffer>& depth_attachments)
-{
+                                                     const std::vector<ImageBuffer>& depth_attachments) {
     // Each swapchain image has a corresponding framebuffer that will contain views into image
     // buffers.
     //
@@ -772,16 +741,14 @@ static std::vector<VkFramebuffer> CreateFramebuffers(VkRenderPass renderPass,
     return framebuffers;
 };
 
-static void DestroyFramebuffers(std::vector<VkFramebuffer>& framebuffers)
-{
+static void DestroyFramebuffers(std::vector<VkFramebuffer>& framebuffers) {
     for (auto& framebuffer : framebuffers) {
         vkDestroyFramebuffer(g_rc->device.device, framebuffer, nullptr);
     }
 }
 
 RenderPass CreateRenderPass(const RenderPassInfo& info, const std::vector<ImageBuffer>& color_attachments,
-                            const std::vector<ImageBuffer>& depth_attachments)
-{
+                            const std::vector<ImageBuffer>& depth_attachments) {
     RenderPass target{};
 
     // Create renderpass
@@ -861,16 +828,14 @@ RenderPass CreateRenderPass(const RenderPassInfo& info, const std::vector<ImageB
     return target;
 }
 
-void DestroyRenderPass(RenderPass& renderPass)
-{
+void DestroyRenderPass(RenderPass& renderPass) {
     DestroyFramebuffers(renderPass.framebuffers);
 
     vkDestroyRenderPass(g_rc->device.device, renderPass.handle, nullptr);
 }
 
 
-static VkDescriptorPool CreateDescriptorPool(const std::vector<VkDescriptorPoolSize>& sizes, uint32_t max_sets)
-{
+static VkDescriptorPool CreateDescriptorPool(const std::vector<VkDescriptorPoolSize>& sizes, uint32_t max_sets) {
     VkDescriptorPool pool{};
     
     VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
@@ -883,8 +848,7 @@ static VkDescriptorPool CreateDescriptorPool(const std::vector<VkDescriptorPoolS
     return pool;
 }
 
-VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings)
-{
+VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings) {
     VkDescriptorSetLayout layout{};
 
     VkDescriptorSetLayoutCreateInfo descriptor_layout_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
@@ -896,8 +860,7 @@ VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSe
     return layout;
 }
 
-std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout, uint32_t frames)
-{
+std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout, uint32_t frames) {
     std::vector<VkDescriptorSet> descriptor_sets(frames);
 
     for (auto& descriptor_set : descriptor_sets) {
@@ -913,8 +876,7 @@ std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout
     return descriptor_sets;
 }
 
-VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout)
-{
+VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout) {
     VkDescriptorSet descriptor_set{};
 
     VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
@@ -927,8 +889,7 @@ VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout)
     return descriptor_set;
 }
 
-Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass)
-{
+Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass) {
     Pipeline pipeline{};
 
     // push constant
@@ -1086,8 +1047,7 @@ Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass
 }
 
 
-void DestroyPipeline(Pipeline& pipeline)
-{
+void DestroyPipeline(Pipeline& pipeline) {
     vkDestroyPipeline(g_rc->device.device, pipeline.handle, nullptr);
     vkDestroyPipelineLayout(g_rc->device.device, pipeline.layout, nullptr);
 }
@@ -1099,8 +1059,7 @@ void DestroyPipeline(Pipeline& pipeline)
 
 
 
-static void GetNextImage(Swapchain& swapchain)
-{
+static void GetNextImage(Swapchain& swapchain) {
     // Wait for the GPU to finish all work before getting the next image
     VkCheck(vkWaitForFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence, true, UINT64_MAX));
 
@@ -1129,8 +1088,7 @@ static void GetNextImage(Swapchain& swapchain)
 
 // Submits a request to the GPU to start performing the actual computation needed
 // to render an image.
-static void SubmitImage(const Frame& frame)
-{
+static void SubmitImage(const Frame& frame) {
     const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submit_info.waitSemaphoreCount   = 1;
@@ -1146,8 +1104,7 @@ static void SubmitImage(const Frame& frame)
 }
 
 // Displays the newly finished rendered swapchain image onto the window
-static void PresentImage(Swapchain& swapchain)
-{
+static void PresentImage(Swapchain& swapchain) {
     VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores    = &g_frames[current_frame].released_semaphore;
@@ -1169,8 +1126,7 @@ static void PresentImage(Swapchain& swapchain)
     current_frame = (current_frame + 1) % frames_in_flight;
 }
 
-static void BeginFrame(Swapchain& swapchain, const Frame& frame)
-{
+static void BeginFrame(Swapchain& swapchain, const Frame& frame) {
     GetNextImage(swapchain);
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
@@ -1197,16 +1153,14 @@ static void BeginFrame(Swapchain& swapchain, const Frame& frame)
     vkCmdSetScissor(frame.cmd_buffer, 0, 1, &scissor);
 }
 
-static void EndFrame(Swapchain& swapchain, const Frame& frame)
-{
+static void EndFrame(Swapchain& swapchain, const Frame& frame) {
     VkCheck(vkEndCommandBuffer(frame.cmd_buffer));
 
     SubmitImage(frame);
     PresentImage(swapchain);
 }
 
-RendererContext* CreateRenderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode)
-{
+RendererContext* CreateRenderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode) {
     const std::vector<const char*> layers {
         "VK_LAYER_KHRONOS_validation",
 #if defined(_WIN32)
@@ -1254,8 +1208,7 @@ RendererContext* CreateRenderer(const Window* window, BufferMode buffering_mode,
     return g_rc;
 }
 
-void DestroyRenderer(RendererContext* context)
-{
+void DestroyRenderer(RendererContext* context) {
     vkDestroyDescriptorPool(g_rc->device.device, g_rc->pool, nullptr);
 
     DestroyShaderCompiler();
@@ -1265,8 +1218,7 @@ void DestroyRenderer(RendererContext* context)
     DestroyRendererContext(g_rc);
 }
 
-RendererContext* GetRendererContext()
-{
+RendererContext* GetRendererContext() {
     return g_rc;
 }
 
@@ -1288,8 +1240,7 @@ RendererContext* GetRendererContext()
 //}
 
 
-EntityModel* CreateVertexBuffer(void* v, int vs, void* i, int is)
-{
+EntityModel* CreateVertexBuffer(void* v, int vs, void* i, int is) {
     auto r = new EntityModel();
 
     // Create a temporary "staging" buffer that will be used to copy the data
@@ -1321,8 +1272,7 @@ EntityModel* CreateVertexBuffer(void* v, int vs, void* i, int is)
     return r;
 }
 
-EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
-{
+EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format) {
     auto buffer = new EntityTexture();
 
     Buffer staging_buffer = CreateStagingBuffer(texture, width * height * 4);
@@ -1398,8 +1348,7 @@ EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint3
     return buffer;
 }
 
-void BindVertexBuffer(const EntityModel* buffer)
-{
+void BindVertexBuffer(const EntityModel* buffer) {
     const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
 
     const VkDeviceSize offset{ 0 };
@@ -1407,28 +1356,23 @@ void BindVertexBuffer(const EntityModel* buffer)
     vkCmdBindIndexBuffer(cmd_buffer, buffer->index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
 }
 
-uint32_t GetCurrentFrame()
-{
+uint32_t GetCurrentFrame() {
     return current_frame;
 }
 
-void BeginFrame()
-{
+void BeginFrame() {
     BeginFrame(g_swapchain, g_frames[current_frame]);
 }
 
-void EndFrame()
-{
+void EndFrame() {
     EndFrame(g_swapchain, g_frames[current_frame]);
 }
 
-VkCommandBuffer GetCommandBuffer()
-{
+VkCommandBuffer GetCommandBuffer() {
     return g_frames[current_frame].cmd_buffer;
 }
 
-void BeginRenderPass(RenderPass& renderPass)
-{
+void BeginRenderPass(RenderPass& renderPass) {
     const VkClearValue clear_color = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
     const VkClearValue clear_depth = { 0.0f, 0 };
     const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
@@ -1443,21 +1387,18 @@ void BeginRenderPass(RenderPass& renderPass)
     vkCmdBeginRenderPass(g_frames[current_frame].cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void EndRenderPass()
-{
+void EndRenderPass() {
     vkCmdEndRenderPass(g_frames[current_frame].cmd_buffer);
 }
 
-void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descriptorSets)
-{
+void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descriptorSets) {
     const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
 
     vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets[current_frame], 0, nullptr);
 }
 
-void Render(EntityInstance* e, Pipeline& pipeline)
-{
+void Render(EntityInstance* e, Pipeline& pipeline) {
     const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
 
 

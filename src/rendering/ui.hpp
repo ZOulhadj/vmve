@@ -4,8 +4,7 @@
 
 #include "../events/event.hpp"
 
-struct GUI
-{
+struct GUI {
     EventFunc EventCallback;
 };
 

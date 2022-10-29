@@ -4,8 +4,7 @@
 struct EntityModel;
 struct EntityTexture;
 
-struct EntityInstance
-{
+struct EntityInstance {
     glm::mat4 modelMatrix;
     glm::vec3 position;
 

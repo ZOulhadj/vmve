@@ -3,8 +3,7 @@
 
 #include "event.hpp"
 
-class MouseButtonEvent : public Event
-{
+class MouseButtonEvent : public Event {
 public:
     int GetButtonCode() const { return m_ButtonCode; }
 
@@ -17,8 +16,7 @@ private:
     int m_ButtonCode;
 };
 
-class MouseButtonPressedEvent : public MouseButtonEvent
-{
+class MouseButtonPressedEvent : public MouseButtonEvent {
 public:
     MouseButtonPressedEvent(int buttonCode)
         : MouseButtonEvent(buttonCode)
@@ -27,8 +25,7 @@ public:
     EVENT_CLASS_TYPE(MouseButtonPressedEvent);
 };
 
-class MouseButtonReleasedEvent : public MouseButtonEvent
-{
+class MouseButtonReleasedEvent : public MouseButtonEvent {
 public:
     MouseButtonReleasedEvent(int buttonCode)
         : MouseButtonEvent(buttonCode)
@@ -38,8 +35,7 @@ public:
 };
 
 
-class MouseMovedEvent : public Event
-{
+class MouseMovedEvent : public Event {
 public:
     MouseMovedEvent(double x, double y)
         : m_XPos(x), m_YPos(y)
@@ -54,26 +50,22 @@ private:
     double m_YPos;
 };
 
-class MouseEnteredEvent : public Event
-{
+class MouseEnteredEvent : public Event {
 public:
     EVENT_CLASS_TYPE(MouseEnteredEvent);
 };
 
-class MouseLeftEvent : public Event
-{
+class MouseLeftEvent : public Event {
 public:
     EVENT_CLASS_TYPE(MouseLeftEvent);
 };
 
-class MouseScrolledUpEvent : public Event
-{
+class MouseScrolledUpEvent : public Event {
 public:
     EVENT_CLASS_TYPE(MouseScrolledUpEvent);
 };
 
-class MouseScrolledDownEvent : public Event
-{
+class MouseScrolledDownEvent : public Event {
 public:
     EVENT_CLASS_TYPE(MouseScrolledDownEvent);
 };

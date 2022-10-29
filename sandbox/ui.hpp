@@ -1,14 +1,12 @@
 #ifndef SANDBOX_UI_HPP
 #define SANDBOX_UI_HPP
 
-void RenderMenuBar()
-{
+void RenderMenuBar() {
 
 }
 
 
-void RenderOverlay()
-{
+void RenderOverlay() {
 
 }
 

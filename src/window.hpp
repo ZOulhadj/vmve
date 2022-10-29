@@ -4,8 +4,7 @@
 #include "events/event.hpp"
 
 
-struct Window
-{
+struct Window {
     GLFWwindow* handle;
     const char* name;
     uint32_t width;

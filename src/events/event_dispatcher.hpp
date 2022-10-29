@@ -3,16 +3,14 @@
 
 #include "event.hpp"
 
-class EventDispatcher
-{
+class EventDispatcher {
 public:
     EventDispatcher(Event& e)
         : m_Event(e)
     {}
 
     template <typename T>
-    bool Dispatch(std::function<bool(T&)> func)
-    {
+    bool Dispatch(std::function<bool(T&)> func) {
         if (m_Event.GetType() != T::GetStaticType())
             return false;
 
