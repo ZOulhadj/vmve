@@ -116,11 +116,11 @@ struct RenderPass {
     std::vector<VkFramebuffer> framebuffers;
 };
 
+
 struct Shader {
     VkShaderModule handle;
     VkShaderStageFlagBits type;
 };
-
 
 struct PipelineInfo {
     std::vector<VkDescriptorSetLayout> descriptor_layouts;

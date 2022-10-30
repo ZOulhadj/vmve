@@ -1282,12 +1282,6 @@ EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint3
                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                  VK_IMAGE_ASPECT_COLOR_BIT);
 
-    buffer->sampler = CreateSampler(VK_FILTER_LINEAR, 16);
-    buffer->descriptor.sampler = buffer->sampler;
-    buffer->descriptor.imageView = buffer->image.view;
-    buffer->descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-
     // Upload texture data into GPU memory by doing a layout transition
     SubmitToGPU([&]() {
         // todo: barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -1407,13 +1401,13 @@ void Render(EntityModel* model, EntityInstance* instance, Pipeline& pipeline) {
     const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
 
 
-    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &e->descriptorSet, 0, nullptr);
+    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &instance->descriptorSet, 0, nullptr);
 
 
     glm::mat4 modelMatrix = glm::mat4(1.0f);
     modelMatrix = glm::translate(modelMatrix, instance->position);
     modelMatrix = glm::rotate(modelMatrix, glm::radians(0.0f), instance->rotation);
-    modelMatrix = glm::scale(modelMatrix, instance->scale);
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(instance->scale));
 
 
     vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &modelMatrix);

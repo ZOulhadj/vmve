@@ -28,8 +28,9 @@ static ImGuiContext* guiContext   = nullptr;
 RenderPass geometryPass{};
 RenderPass guiPass{};
 
-Pipeline earthPipeline{};
-Pipeline planetPipeline{};
+//Pipeline earthPipeline{};
+//Pipeline planetPipeline{};
+Pipeline basicPipeline{};
 Pipeline skyspherePipeline{};
 Pipeline wireframePipeline{};
 
@@ -57,6 +58,10 @@ static VkDescriptorSetLayout gGlobalDescriptorSetLayout;
 // hold the resources for projection view matrix, scene lighting etc. The reason
 // why this is an array is so that each frame has its own descriptor set.
 static std::vector<VkDescriptorSet> gGlobalDescriptorSets;
+
+
+
+static VkDescriptorSetLayout gObjectDescriptorLayout;
 
 // The resources that will be part of the global descriptor set
 static std::vector<Buffer> gCameraBuffer;
@@ -139,21 +144,19 @@ Engine* EngineStart(const char* name) {
 
     const std::vector<VkDescriptorSetLayoutBinding> global_layout {
         { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
-        { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
-        { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT } // texture sampler
+        { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT |
+                                                   VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
     };
 
     gGlobalDescriptorSetLayout = CreateDescriptorSetLayout(global_layout);
-    gGlobalDescriptorSets = AllocateDescriptorSets(gGlobalDescriptorSetLayout, frames_in_flight);
+    gGlobalDescriptorSets      = AllocateDescriptorSets(gGlobalDescriptorSetLayout, frames_in_flight);
 
     // temp here: create the global descriptor resources
-    gCameraBuffer.resize(frames_in_flight);
-    gSceneBuffer.resize(frames_in_flight);
-
     for (std::size_t i = 0; i < frames_in_flight; ++i) {
-        gCameraBuffer[i] = CreateBuffer(sizeof(ViewProjection), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-        gSceneBuffer[i] = CreateBuffer(sizeof(EngineScene), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        gCameraBuffer.push_back(CreateBuffer(sizeof(ViewProjection), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
+        gSceneBuffer.push_back(CreateBuffer(sizeof(EngineScene), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
     }
+
 
     for (std::size_t i = 0; i < gGlobalDescriptorSets.size(); ++i) {
         VkDescriptorBufferInfo view_proj_ubo{};
@@ -186,7 +189,12 @@ Engine* EngineStart(const char* name) {
         vkUpdateDescriptorSets(gRenderer->device.device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
     }
 
+    // Per object material descriptor set
+    const std::vector<VkDescriptorSetLayoutBinding> perObjectLayout {
+        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+    };
 
+    gObjectDescriptorLayout = CreateDescriptorSetLayout(perObjectLayout);
 
 
     const std::vector<VkFormat> binding_format{
@@ -197,7 +205,7 @@ Engine* EngineStart(const char* name) {
     };
 
     PipelineInfo info{};
-    info.descriptor_layouts = {gGlobalDescriptorSetLayout };
+    info.descriptor_layouts = { gGlobalDescriptorSetLayout, gObjectDescriptorLayout };
     info.push_constant_size = sizeof(glm::mat4);
     info.binding_layout_size = sizeof(Vertex);
     info.binding_format = binding_format;
@@ -205,14 +213,9 @@ Engine* EngineStart(const char* name) {
     info.depth_testing = true;
     info.cull_mode = VK_CULL_MODE_BACK_BIT;
 
-
     {
-        info.shaders = {earthVS, earthFS};
-        earthPipeline = CreatePipeline(info, geometryPass);
-    }
-    {
-        info.shaders = {objectVS, objectFS };
-        planetPipeline = CreatePipeline(info, geometryPass);
+        info.shaders = { objectVS, objectFS };
+        basicPipeline = CreatePipeline(info, geometryPass);
     }
     {
         info.shaders = { skysphereVS, skysphereFS };
@@ -290,12 +293,13 @@ void EngineStop() {
     }
 
 
+    vkDestroyDescriptorSetLayout(gRenderer->device.device, gObjectDescriptorLayout, nullptr);
     vkDestroyDescriptorSetLayout(gRenderer->device.device, gGlobalDescriptorSetLayout, nullptr);
 
 
     DestroyPipeline(wireframePipeline);
     DestroyPipeline(skyspherePipeline);
-    DestroyPipeline(planetPipeline);
+    DestroyPipeline(basicPipeline);
     DestroyRenderPass(geometryPass);
 
 
@@ -345,8 +349,8 @@ void EngineRender(const EngineScene& scene) {
         BeginRenderPass(geometryPass);
 
         BindPipeline(skyspherePipeline, gGlobalDescriptorSets);
-        BindVertexBuffer(gSkyboxModel);
-        Render(gSkyboxModel, gSkybox, skyspherePipeline);
+        //BindVertexBuffer(gSkyboxModel);
+        //Render(gSkyboxModel, gSkybox, skyspherePipeline);
 
 
         //BindPipeline(earthPipeline, gGlobalDescriptorSets);
@@ -354,7 +358,7 @@ void EngineRender(const EngineScene& scene) {
         //Render(nullptr, earthPipeline);
 
 
-        BindPipeline(planetPipeline, gGlobalDescriptorSets);
+        BindPipeline(basicPipeline, gGlobalDescriptorSets);
 
 
         // A map structure is used to bind a vertex buffer (key) and then
@@ -612,6 +616,12 @@ EntityTexture* EngineLoadTexture(const char* path, VkFormat format) {
     // Store texture data into GPU memory.
     buffer = CreateTextureBuffer(texture, width, height, format);
 
+    buffer->sampler = CreateSampler(VK_FILTER_LINEAR, 16);
+    buffer->descriptor.sampler = buffer->sampler;
+    buffer->descriptor.imageView = buffer->image.view;
+    buffer->descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+
     gTextures.push_back(buffer);
 
     // Now that the texture data has been copied into GPU memory we can safely
@@ -621,7 +631,9 @@ EntityTexture* EngineLoadTexture(const char* path, VkFormat format) {
     return buffer;
 }
 
-EntityInstance* EngineCreateEntity(const glm::vec3& position,
+EntityInstance* EngineCreateEntity(EntityModel* model,
+                                   EntityTexture* texture,
+                                   const glm::vec3& position,
                                    const glm::vec3& rotation,
                                    float scale) {
     auto e = new EntityInstance();
@@ -629,18 +641,20 @@ EntityInstance* EngineCreateEntity(const glm::vec3& position,
     e->position = position;
     e->rotation = rotation;
     e->scale    = scale;
+    e->model = model;
+    e->texture = texture;
+    e->descriptorSet = AllocateDescriptorSet(gObjectDescriptorLayout);
 
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = gGlobalDescriptorSets;
-    write.dstBinding = 2;
+    write.dstSet = e->descriptorSet;
+    write.dstBinding = 0;
     write.dstArrayElement = 0;
     write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     write.descriptorCount = 1;
-    write.pImageInfo = &image_info;
+    write.pImageInfo = &e->texture->descriptor;
 
-    vkUpdateDescriptorSets(gRenderer->device.device, U32(writes.size()), writes.data(), 0, nullptr);
-
+    vkUpdateDescriptorSets(gRenderer->device.device, 1, &write, 0, nullptr);
 #if 0
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

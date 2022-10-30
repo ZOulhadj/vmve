@@ -153,16 +153,17 @@ int main() {
     // Load textures
     EntityTexture* sunTexture   = EngineLoadTexture("assets/textures/sun/sun.jpg", VK_FORMAT_R8G8B8A8_SRGB);
     EntityTexture* earthTexture         = EngineLoadTexture("assets/textures/earth/albedo.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-    EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
-    EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg", VK_FORMAT_R8G8B8A8_UNORM);
     EntityTexture* moonTexture  = EngineLoadTexture("assets/textures/moon/moon.jpg", VK_FORMAT_R8G8B8A8_SRGB);
     EntityTexture* spaceTexture = EngineLoadTexture("assets/textures/skysphere/space.jpg", VK_FORMAT_R8G8B8A8_SRGB);
 
+    //EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
+    //EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg", VK_FORMAT_R8G8B8A8_UNORM);
+
     // Create entity instances
-    EntityInstance* sun   = EngineCreateEntity({}, {}, sunRadius);
-    EntityInstance* earth = EngineCreateEntity({}, {}, earthRadius);
-    EntityInstance* moon  = EngineCreateEntity({}, {}, moonRadius);
-    EntityInstance* space = EngineCreateEntity();
+    EntityInstance* sun   = EngineCreateEntity(sphere, sunTexture, {}, {}, sunRadius);
+    EntityInstance* earth = EngineCreateEntity(sphere, earthTexture, {}, {}, earthRadius);
+    EntityInstance* moon  = EngineCreateEntity(sphere, moonTexture, {}, {}, moonRadius);
+    EntityInstance* space = EngineCreateEntity(icosphere, spaceTexture, {}, {}, 1.0f);
 
     std::vector<EntityInstance*> satellites;
 
@@ -170,7 +171,7 @@ int main() {
 
 
     for (std::size_t i = 0; i < 10; ++i) {
-        satellites.push_back(EngineCreateEntity());
+        satellites.push_back(EngineCreateEntity(cube, sunTexture));
     }
 
     //glm::vec3 london = cartesian(earthRadius + iss_altitude, 46.636375, -173.238388);
@@ -309,7 +310,7 @@ int main() {
 
 
 
-        EngineRender(scene);
+            EngineRender(scene);
 
     }
 

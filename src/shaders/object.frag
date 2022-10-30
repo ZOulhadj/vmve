@@ -16,7 +16,7 @@ layout(binding = 1) uniform scene_ubo
     vec3 lightColor;
 } scene;
 
-layout(binding = 2) uniform sampler2D albedoTexture;
+layout(set = 1, binding = 0) uniform sampler2D albedoTexture;
 
 void main()
 {

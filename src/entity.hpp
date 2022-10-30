@@ -1,12 +1,18 @@
 #ifndef MYENGINE_ENTITY_HPP
 #define MYENGINE_ENTITY_HPP
 
+struct EntityModel;
+struct EntityTexture;
+
 struct EntityInstance {
     glm::vec3 position;
     glm::vec3 rotation;
     float     scale;
 
-    //uint32_t textureIndex;
+    EntityModel* model;
+    EntityTexture* texture;
+
+    VkDescriptorSet descriptorSet;
 };
 
 void Translate(EntityInstance* e, const glm::vec3& position);
