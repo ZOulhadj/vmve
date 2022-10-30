@@ -49,12 +49,14 @@
 
 #include <stb_image.h>
 
-#include <tiny_obj_loader.h>
-
+//#include <tiny_obj_loader.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+
+
+#include <nlohmann/json.hpp>
 
 
 #undef CreateWindow

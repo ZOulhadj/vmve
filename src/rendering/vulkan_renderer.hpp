@@ -148,6 +148,8 @@ struct EntityModel {
 
 struct EntityTexture {
     ImageBuffer image;
+    VkSampler sampler;
+    VkDescriptorImageInfo descriptor;
 };
 
 struct uniform_buffer {
@@ -219,6 +221,6 @@ void EndRenderPass();
 
 void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
 
-void Render(EntityInstance* e, Pipeline& pipeline);
+void Render(EntityModel* model, EntityInstance* instance, Pipeline& pipeline);
 
 #endif

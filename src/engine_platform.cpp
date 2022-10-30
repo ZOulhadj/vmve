@@ -28,20 +28,21 @@ static ImGuiContext* guiContext   = nullptr;
 RenderPass geometryPass{};
 RenderPass guiPass{};
 
-Pipeline geometryPipeline{};
+Pipeline earthPipeline{};
+Pipeline planetPipeline{};
 Pipeline skyspherePipeline{};
 Pipeline wireframePipeline{};
 
 
-
 // Globally allocated resources where creation/deletion is managed by the engine.
-static std::vector<EntityModel*> gVertexBuffers;
+static std::vector<EntityModel*> gModels;
 static std::vector<EntityTexture*> gTextures;
+static std::vector<EntityInstance*> gEntities;
 
-static std::vector<EntityInstance*> gEntities;         // Keeps track of entities so that they can be cleaned up
-static std::map<const EntityModel*, std::vector<EntityInstance*>> gEntitiesRender; // Which entities we will render for the current frame.
-
+static EntityModel* gSkyboxModel = nullptr;
 static EntityInstance* gSkybox = nullptr;
+
+
 
 static QuatCamera gCamera;
 
@@ -49,23 +50,18 @@ static QuatCamera gCamera;
 // This is a global descriptor set that will be used for all draw calls and
 // will contain descriptors such as a projection view matrix, global scene
 // information including lighting.
-static VkDescriptorSetLayout gSceneDescriptorLayout;
+static VkDescriptorSetLayout gGlobalDescriptorSetLayout;
 
 // This is the actual descriptor set/collection that will hold the descriptors
 // also known as resources. Since this is the global descriptor set, this will 
 // hold the resources for projection view matrix, scene lighting etc. The reason
 // why this is an array is so that each frame has its own descriptor set.
-static std::vector<VkDescriptorSet> gSceneDescriptorSets;
+static std::vector<VkDescriptorSet> gGlobalDescriptorSets;
 
 // The resources that will be part of the global descriptor set
 static std::vector<Buffer> gCameraBuffer;
 static std::vector<Buffer> gSceneBuffer;
 
-
-// A global texture sampler
-VkSampler g_sampler;
-
-static VkDescriptorSetLayout gObjectDescriptorLayout;
 
 struct ViewProjection {
     glm::mat4 view;
@@ -121,38 +117,34 @@ Engine* EngineStart(const char* name) {
 
 
     // Load shaders text files
-    std::string geometryVSCode  = LoadTextFile("src/shaders/geometry.vert");
-    std::string geometryFSCode  = LoadTextFile("src/shaders/geometry.frag");
+    std::string objectVSCode  = LoadTextFile("src/shaders/object.vert");
+    std::string objectFSCode  = LoadTextFile("src/shaders/object.frag");
+    std::string earthVSCode  = LoadTextFile("src/shaders/earth.vert");
+    std::string earthFSCode  = LoadTextFile("src/shaders/earth.frag");
     std::string skysphereVSCode = LoadTextFile("src/shaders/skysphere.vert");
     std::string skysphereFSCode = LoadTextFile("src/shaders/skysphere.frag");
     std::string lightingVSCode  = LoadTextFile("src/shaders/lighting.vert");
     std::string lightingFSCode  = LoadTextFile("src/shaders/lighting.frag");
 
     // Compile text shaders into Vulkan binary shader modules
-    Shader geometryVS  = CreateVertexShader(geometryVSCode);
-    Shader geometryFS  = CreateFragmentShader(geometryFSCode);
+    Shader objectVS  = CreateVertexShader(objectVSCode);
+    Shader objectFS  = CreateFragmentShader(objectFSCode);
+    Shader earthVS  = CreateVertexShader(earthVSCode);
+    Shader earthFS  = CreateFragmentShader(earthFSCode);
     Shader skysphereVS = CreateVertexShader(skysphereVSCode);
     Shader skysphereFS = CreateFragmentShader(skysphereFSCode);
     Shader lightingVS  = CreateVertexShader(lightingVSCode);
     Shader lightingFS  = CreateFragmentShader(lightingFSCode);
 
 
-    const std::vector<VkDescriptorSetLayoutBinding> global_layout{
-            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
-            { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
+    const std::vector<VkDescriptorSetLayoutBinding> global_layout {
+        { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
+        { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
+        { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT } // texture sampler
     };
 
-    const std::vector<VkDescriptorSetLayoutBinding> per_object_layout{
-            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
-            { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
-            { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
-            { 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }, // image sampler
-    };
-
-    gSceneDescriptorLayout = CreateDescriptorSetLayout(global_layout);
-    gSceneDescriptorSets = AllocateDescriptorSets(gSceneDescriptorLayout, frames_in_flight);
-
-    gObjectDescriptorLayout = CreateDescriptorSetLayout(per_object_layout);
+    gGlobalDescriptorSetLayout = CreateDescriptorSetLayout(global_layout);
+    gGlobalDescriptorSets = AllocateDescriptorSets(gGlobalDescriptorSetLayout, frames_in_flight);
 
     // temp here: create the global descriptor resources
     gCameraBuffer.resize(frames_in_flight);
@@ -162,9 +154,8 @@ Engine* EngineStart(const char* name) {
         gCameraBuffer[i] = CreateBuffer(sizeof(ViewProjection), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         gSceneBuffer[i] = CreateBuffer(sizeof(EngineScene), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     }
-    g_sampler = CreateSampler(VK_FILTER_LINEAR, 16);
 
-    for (std::size_t i = 0; i < gSceneDescriptorSets.size(); ++i) {
+    for (std::size_t i = 0; i < gGlobalDescriptorSets.size(); ++i) {
         VkDescriptorBufferInfo view_proj_ubo{};
         view_proj_ubo.buffer = gCameraBuffer[i].buffer;
         view_proj_ubo.offset = 0;
@@ -177,7 +168,7 @@ Engine* EngineStart(const char* name) {
 
         std::array<VkWriteDescriptorSet, 2> descriptor_writes{};
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = gSceneDescriptorSets[i];
+        descriptor_writes[0].dstSet = gGlobalDescriptorSets[i];
         descriptor_writes[0].dstBinding = 0;
         descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -185,7 +176,7 @@ Engine* EngineStart(const char* name) {
         descriptor_writes[0].pBufferInfo = &view_proj_ubo;
 
         descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[1].dstSet = gSceneDescriptorSets[i];
+        descriptor_writes[1].dstSet = gGlobalDescriptorSets[i];
         descriptor_writes[1].dstBinding = 1;
         descriptor_writes[1].dstArrayElement = 0;
         descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -206,17 +197,22 @@ Engine* EngineStart(const char* name) {
     };
 
     PipelineInfo info{};
-    info.descriptor_layouts = { gSceneDescriptorLayout, gObjectDescriptorLayout };
+    info.descriptor_layouts = {gGlobalDescriptorSetLayout };
     info.push_constant_size = sizeof(glm::mat4);
     info.binding_layout_size = sizeof(Vertex);
     info.binding_format = binding_format;
-
     info.wireframe = false;
     info.depth_testing = true;
     info.cull_mode = VK_CULL_MODE_BACK_BIT;
+
+
     {
-        info.shaders = { geometryVS, geometryFS };
-        geometryPipeline = CreatePipeline(info, geometryPass);
+        info.shaders = {earthVS, earthFS};
+        earthPipeline = CreatePipeline(info, geometryPass);
+    }
+    {
+        info.shaders = {objectVS, objectFS };
+        planetPipeline = CreatePipeline(info, geometryPass);
     }
     {
         info.shaders = { skysphereVS, skysphereFS };
@@ -225,7 +221,7 @@ Engine* EngineStart(const char* name) {
         skyspherePipeline = CreatePipeline(info, geometryPass);
     }
     {
-        info.shaders = { geometryVS, geometryFS };
+        info.shaders = {objectVS, objectFS };
         info.wireframe = true;
         info.depth_testing = true;
         info.cull_mode = VK_CULL_MODE_BACK_BIT;
@@ -237,8 +233,10 @@ Engine* EngineStart(const char* name) {
     DestroyShader(lightingVS);
     DestroyShader(skysphereFS);
     DestroyShader(skysphereVS);
-    DestroyShader(geometryFS);
-    DestroyShader(geometryVS);
+    DestroyShader(earthFS);
+    DestroyShader(earthVS);
+    DestroyShader(objectFS);
+    DestroyShader(objectVS);
 
     guiContext = CreateUserInterface(guiPass.handle);
 
@@ -256,13 +254,15 @@ void EngineStop() {
 
 
     // Free all entities created by the client
-    for (auto& map : gEntitiesRender) {
-        for (auto& entity : map.second)
-            delete entity;
+//    for (auto& map : gEntitiesRender) {
+//        for (auto& entity : map.second)
+//            delete entity;
+//
+//        delete map.first;
+//    }
 
-        delete map.first;
-    }
-
+    for (auto& entity : gEntities)
+        delete entity;
     gEntities.clear();
 
 
@@ -275,28 +275,27 @@ void EngineStop() {
     gTextures.clear();
 
     // Free all render resources that may have been allocated by the client
-    for (auto& r : gVertexBuffers) {
+    for (auto& r : gModels) {
         DestroyBuffer(r->index_buffer);
         DestroyBuffer(r->vertex_buffer);
 
         delete r;
     }
-    gVertexBuffers.clear();
+    gModels.clear();
 
 
-    DestroySampler(g_sampler);
     for (std::size_t i = 0; i < frames_in_flight; ++i) {
         DestroyBuffer(gSceneBuffer[i]);
         DestroyBuffer(gCameraBuffer[i]);
     }
 
-    vkDestroyDescriptorSetLayout(gRenderer->device.device, gObjectDescriptorLayout, nullptr);
-    vkDestroyDescriptorSetLayout(gRenderer->device.device, gSceneDescriptorLayout, nullptr);
+
+    vkDestroyDescriptorSetLayout(gRenderer->device.device, gGlobalDescriptorSetLayout, nullptr);
 
 
     DestroyPipeline(wireframePipeline);
     DestroyPipeline(skyspherePipeline);
-    DestroyPipeline(geometryPipeline);
+    DestroyPipeline(planetPipeline);
     DestroyRenderPass(geometryPass);
 
 
@@ -345,24 +344,29 @@ void EngineRender(const EngineScene& scene) {
         // This is the geometry pass which is where all geometry data is rendered first.
         BeginRenderPass(geometryPass);
 
-        BindPipeline(skyspherePipeline, gSceneDescriptorSets);
-        BindVertexBuffer(gSkybox->model);
-        Render(gSkybox, skyspherePipeline);
+        BindPipeline(skyspherePipeline, gGlobalDescriptorSets);
+        BindVertexBuffer(gSkyboxModel);
+        Render(gSkyboxModel, gSkybox, skyspherePipeline);
 
 
-        BindPipeline(geometryPipeline, gSceneDescriptorSets);
+        //BindPipeline(earthPipeline, gGlobalDescriptorSets);
+        //BindVertexBuffer(nullptr);
+        //Render(nullptr, earthPipeline);
+
+
+        BindPipeline(planetPipeline, gGlobalDescriptorSets);
 
 
         // A map structure is used to bind a vertex buffer (key) and then
         // the entities (values) are looped over. This reduces the number of
         // vertex bindings required as we bind a buffer one by one.
-        for (const auto& i : gEntitiesRender) {
-            BindVertexBuffer(i.first);
-
-            for (const auto& entity : i.second)
-                Render(entity, geometryPipeline);
-        }
-        gEntitiesRender.clear();
+//        for (const auto& i : gEntitiesRender) {
+//            BindVertexBuffer(i.first);
+//
+//            for (const auto& entity : i.second)
+//                Render(entity, planetPipeline);
+//        }
+//        gEntitiesRender.clear();
 
         EndRenderPass();
 
@@ -564,15 +568,12 @@ EntityModel* EngineLoadModel(const char* path) {
     buffer = CreateVertexBuffer(vertices.data(), sizeof(Vertex) * vertices.size(),
                                 indices.data(), sizeof(unsigned int) * indices.size());
 
-    gVertexBuffers.push_back(buffer);
+    gModels.push_back(buffer);
 #else
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate |
-                                                   aiProcess_CalcTangentSpace |
-                                                   aiProcess_PreTransformVertices
-
-                                                   );
+                                                   aiProcess_CalcTangentSpace);
 
     if (!scene) {
         printf("Failed to load model at path: %s\n", path);
@@ -587,7 +588,7 @@ EntityModel* EngineLoadModel(const char* path) {
     buffer = CreateVertexBuffer(vertices.data(), sizeof(Vertex) * vertices.size(),
                                 indices.data(), sizeof(uint32_t) * indices.size());
 
-    gVertexBuffers.push_back(buffer);
+    gModels.push_back(buffer);
 #endif
 
 
@@ -620,20 +621,27 @@ EntityTexture* EngineLoadTexture(const char* path, VkFormat format) {
     return buffer;
 }
 
-EntityInstance* EngineCreateEntity(const EntityModel* model,
-                                   const EntityTexture* texture,
-                                   const EntityTexture* bump,
-                                   const EntityTexture* spec) {
+EntityInstance* EngineCreateEntity(const glm::vec3& position,
+                                   const glm::vec3& rotation,
+                                   float scale) {
     auto e = new EntityInstance();
- 
-    e->modelMatrix   = glm::mat4(1.0f);
-    e->position      = glm::vec3(0.0f);
-    e->model         = model;
-    e->texture       = texture;
-    e->bump          = bump;
-    e->spec          = spec;
-    e->descriptorSet = AllocateDescriptorSet(gObjectDescriptorLayout);
 
+    e->position = position;
+    e->rotation = rotation;
+    e->scale    = scale;
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = gGlobalDescriptorSets;
+    write.dstBinding = 2;
+    write.dstArrayElement = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write.descriptorCount = 1;
+    write.pImageInfo = &image_info;
+
+    vkUpdateDescriptorSets(gRenderer->device.device, U32(writes.size()), writes.data(), 0, nullptr);
+
+#if 0
     VkDescriptorImageInfo image_info{};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_info.imageView = e->texture->image.view;
@@ -674,8 +682,7 @@ EntityInstance* EngineCreateEntity(const EntityModel* model,
     writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     writes[2].descriptorCount = 1;
     writes[2].pImageInfo = &spec_image_info;
-
-    vkUpdateDescriptorSets(gRenderer->device.device, U32(writes.size()), writes.data(), 0, nullptr);
+#endif
 
     gEntities.push_back(e);
 
@@ -731,7 +738,7 @@ void engine_roll_right() {
 
 
 void EngineRender(EntityInstance* e) {
-    gEntitiesRender[e->model].push_back(e);
+    //gEntitiesRender[e->model].push_back(e);
 }
 
 void EngineRenderSkybox(EntityInstance* e) {
@@ -771,4 +778,8 @@ glm::vec2 EngineWorldToScreen(const glm::vec3& position, const glm::vec2& offset
 
 glm::vec3 EngineGetCameraPosition(const EngineCamera*) {
     return gCamera.position;
+}
+
+std::string EngineLoadTextFile(std::string_view path) {
+    return LoadTextFile(path);
 }

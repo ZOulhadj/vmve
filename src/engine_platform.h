@@ -74,10 +74,9 @@ EntityTexture* EngineLoadTexture(const char* path, VkFormat format);
 // object that is being represented. A model matrix is also part of
 // an entity that describes the full transformation including position,
 // rotation and scale in the world.
-EntityInstance* EngineCreateEntity(const EntityModel* model,
-                                   const EntityTexture* texture,
-                                   const EntityTexture* bump,
-                                   const EntityTexture* spec);
+EntityInstance* EngineCreateEntity(const glm::vec3& position = glm::vec3(0.0f),
+                                   const glm::vec3& rotation = glm::vec3(0.0f),
+                                   float scale = 1.0f);
 
 
 EngineCamera* EngineCreateCamera(const glm::vec3& position, float fovy, float speed);
@@ -114,5 +113,8 @@ glm::vec2 EngineWorldToScreen(const glm::vec3& position, const glm::vec2& offset
 
 // Camera
 glm::vec3 EngineGetCameraPosition(const EngineCamera*);
+
+
+std::string EngineLoadTextFile(std::string_view path);
 
 #endif

@@ -3,6 +3,29 @@
 #include "constants.hpp"
 #include "ui.hpp"
 
+
+struct SatelliteData {
+    std::string name;
+    std::string id;
+    std::string classification;
+    std::string epoch;
+
+    float meanMotion;
+    float eccentrcity;
+    float inclination;
+    float raOfASCNode;
+    float argOfPericenter;
+    float meanAnomaly;
+    float bStar;
+    float meanMotionDot;
+    float meanMotionDDot;
+
+    int ephemerisType;
+    int noradCatID;
+    int elementSetNumber;
+    int revAtEpoch;
+};
+
 /*
 glm::vec3 sphere_translation(float radius, float latitude, float longitude) {
     const float lat = glm::radians(latitude);
@@ -78,37 +101,81 @@ float AUDistance(const glm::vec3& a, const glm::vec3& b) {
     return d / earthToSunDistance;
 }
 
+static std::vector<SatelliteData> LoadSatelliteData(const char* path)
+{
+    std::ifstream dataFile(path);
+    using json = nlohmann::json;
+    json satelliteData = json::parse(dataFile);
+
+    std::vector<SatelliteData> data(satelliteData.size());
+
+    for (std::size_t i = 0; i < data.size(); ++i) {
+        const auto& v = satelliteData[i];
+
+        SatelliteData d{};
+        d.name             = v["OBJECT_NAME"];
+        d.id               = v["OBJECT_ID"];
+        d.classification   = v["CLASSIFICATION_TYPE"];
+        d.epoch            = v["EPOCH"];
+
+        d.eccentrcity      = v["ECCENTRICITY"];
+        d.inclination      = v["INCLINATION"];
+        d.raOfASCNode      = v["RA_OF_ASC_NODE"];
+        d.argOfPericenter  = v["ARG_OF_PERICENTER"];
+        d.meanAnomaly      = v["MEAN_ANOMALY"];
+        d.bStar            = v["BSTAR"];
+        d.meanMotionDot    = v["MEAN_MOTION_DOT"];
+        d.meanMotionDDot   = v["MEAN_MOTION_DDOT"];
+
+        d.ephemerisType    = v["EPHEMERIS_TYPE"];
+        d.noradCatID       = v["NORAD_CAT_ID"];
+        d.elementSetNumber = v["ELEMENT_SET_NO"];
+        d.revAtEpoch       = v["REV_AT_EPOCH"];
+
+        data[i] = d;
+    }
+
+
+    return data;
+}
 
 int main() {
     Engine* engine = EngineStart("3D Earth Satellite Visualizer");
 
+    // Parse satellite data file
+    std::vector<SatelliteData> satelliteData = LoadSatelliteData("assets/satellite2.json");
 
-    // Create global application resources
+    // Load models
     EntityModel* icosphere = EngineLoadModel("assets/icosphere.obj");
-    EntityModel* sphere    = EngineLoadModel("assets/sphere_hp.obj");
+    EntityModel* sphere    = EngineLoadModel("assets/sphere.obj");
     EntityModel* cube      = EngineLoadModel("assets/iss.obj");
 
+    // Load textures
     EntityTexture* sunTexture   = EngineLoadTexture("assets/textures/sun/sun.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-
     EntityTexture* earthTexture         = EngineLoadTexture("assets/textures/earth/albedo.jpg", VK_FORMAT_R8G8B8A8_SRGB);
     EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
     EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg", VK_FORMAT_R8G8B8A8_UNORM);
-
     EntityTexture* moonTexture  = EngineLoadTexture("assets/textures/moon/moon.jpg", VK_FORMAT_R8G8B8A8_SRGB);
     EntityTexture* spaceTexture = EngineLoadTexture("assets/textures/skysphere/space.jpg", VK_FORMAT_R8G8B8A8_SRGB);
 
-    // Construct entity instances
-    EntityInstance* sun   = EngineCreateEntity(sphere, sunTexture, earthNormalTexture, earthSpecularTexture);
-    EntityInstance* earth = EngineCreateEntity(sphere, earthTexture, earthNormalTexture, earthSpecularTexture);
-    EntityInstance* moon  = EngineCreateEntity(sphere, moonTexture, earthNormalTexture, earthSpecularTexture);
-    EntityInstance* space = EngineCreateEntity(icosphere, spaceTexture, earthNormalTexture, earthSpecularTexture);
+    // Create entity instances
+    EntityInstance* sun   = EngineCreateEntity({}, {}, sunRadius);
+    EntityInstance* earth = EngineCreateEntity({}, {}, earthRadius);
+    EntityInstance* moon  = EngineCreateEntity({}, {}, moonRadius);
+    EntityInstance* space = EngineCreateEntity();
+
+    std::vector<EntityInstance*> satellites;
 
 
-    EntityInstance* satellite = EngineCreateEntity(cube, moonTexture, earthNormalTexture, earthSpecularTexture);
+
+
+    for (std::size_t i = 0; i < 10; ++i) {
+        satellites.push_back(EngineCreateEntity());
+    }
 
     //glm::vec3 london = cartesian(earthRadius + iss_altitude, 46.636375, -173.238388);
     glm::vec3 london = cartesian(earthRadius, 0.0f, 0.0f, iss_altitude);
-    EngineCamera* camera = EngineCreateCamera(london, 60.0f, cameraSpeed * 100.0f);
+    EngineCamera* camera = EngineCreateCamera(london, 60.0f, lightSpeed / 200.0f);
 
 
     EngineScene scene {
@@ -120,7 +187,12 @@ int main() {
         .lightColor = glm::vec3(1.0f),
     };
 
+
     while (engine->running) {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
         scene.cameraPosition = EngineGetCameraPosition(camera);
 
         // Camera movement
@@ -133,56 +205,44 @@ int main() {
         if (EngineIsKeyDown(GLFW_KEY_Q))  engine_roll_left();
         if (EngineIsKeyDown(GLFW_KEY_E))  engine_roll_right();
 
-        static float earthRotationX = 0.0f;
-        static float earthRotationY = 0.0f;
-
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        {
-            ImGui::Begin("Debug Menu");
-            ImGui::SliderFloat("Latitude", &earthRotationX, -180.0f, 180.0f);
-            ImGui::SliderFloat("Longitude", &earthRotationY, -180.0f, 180.0f);
-            ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 5.0f);
-            ImGui::SliderFloat("Specular Strength", &scene.specularStrength, 0.0f, 5.0f);
-            ImGui::SliderFloat("Specular Shininess", &scene.specularShininess, 0.0f, 512.0f);
-            ImGui::SliderFloat3("Time of day (UTC)", glm::value_ptr(scene.lightPosition), -earthToSunDistance, earthToSunDistance);
-            ImGui::SliderFloat3("Sun Color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
-//            ImGui::SliderFloat("Camera Speed", EngineGetSetSpeed())
-            ImGui::End();
-
-
-            static bool o = true;
-            glm::vec2 moonPos = EngineWorldToScreen(EngineGetPosition(moon));
-            const ImGuiWindowFlags flags = ImGuiWindowFlags_None |
-                                           ImGuiWindowFlags_NoInputs |
-                                           ImGuiWindowFlags_NoDecoration |
-                                           ImGuiWindowFlags_NoBackground |
-                                           ImGuiWindowFlags_NoSavedSettings |
-                                           ImGuiWindowFlags_AlwaysAutoResize;
-
-
-            ImGui::SetNextWindowPos(ImVec2(moonPos.x, moonPos.y));
-
-            ImGui::Begin("text0", &o, flags);
-            ImGui::Text("Moon");
-            ImGui::Text("%f AU", AUDistance(EngineGetPosition(moon), EngineGetCameraPosition(camera)));
-            ImGui::End();
-
-            glm::vec2 satellitePos = EngineWorldToScreen(EngineGetPosition(satellite));
-            ImGui::SetNextWindowPos(ImVec2(satellitePos.x, satellitePos.y));
-            ImGui::Begin("text1", &o, flags);
-            ImGui::TextColored(ImVec4(0.52f, 0.79f, 0.91f, 1.0f), "ISS");
-//            ImGui::Text("%f AU", AUDistance(EngineGetPosition(satellite), EngineGetCameraPosition(camera)));
-            ImGui::End();
-
-            ImGui::Render();
-        }
-
-
 
         // Update entities
         const float time = engine->uptime;
+
+        static float earthRotationX = 0.0f;
+        static float earthRotationY = 0.0f;
+
+
+        ImGui::Begin("Debug Menu");
+        ImGui::SliderFloat("Latitude", &earthRotationX, -180.0f, 180.0f);
+        ImGui::SliderFloat("Longitude", &earthRotationY, -180.0f, 180.0f);
+        ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 5.0f);
+        ImGui::SliderFloat("Specular Strength", &scene.specularStrength, 0.0f, 5.0f);
+        ImGui::SliderFloat("Specular Shininess", &scene.specularShininess, 0.0f, 512.0f);
+        ImGui::SliderFloat3("Time of day (UTC)", glm::value_ptr(scene.lightPosition), -earthToSunDistance, earthToSunDistance);
+        ImGui::SliderFloat3("Sun Color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
+//            ImGui::SliderFloat("Camera Speed", EngineGetSetSpeed())
+        ImGui::End();
+
+
+        static bool o = true;
+        glm::vec2 moonPos = EngineWorldToScreen(EngineGetPosition(moon));
+        const ImGuiWindowFlags flags = ImGuiWindowFlags_None |
+                                       ImGuiWindowFlags_NoInputs |
+                                       ImGuiWindowFlags_NoDecoration |
+                                       ImGuiWindowFlags_NoBackground |
+                                       ImGuiWindowFlags_NoSavedSettings |
+                                       ImGuiWindowFlags_AlwaysAutoResize;
+
+
+        ImGui::SetNextWindowPos(ImVec2(moonPos.x, moonPos.y));
+
+        ImGui::Begin("text0", &o, flags);
+        ImGui::Text("Moon");
+        ImGui::Text("%f AU", AUDistance(EngineGetPosition(moon), EngineGetCameraPosition(camera)));
+        ImGui::End();
+
+
 
         { // Sun
             //EngineTranslate(sun, CircularTransform(sun, sunRotation, 1.0f, earthToSunDistance));
@@ -203,25 +263,47 @@ int main() {
         }
 
         { // Satellite
-            EngineTranslate(satellite, london);
+            //EngineTranslate(satellite, london);
             //EngineScale(satellite, 5000.0f);
+            for (std::size_t i = 0; i < 10; ++i) {
+                EngineTranslate(satellites[i], CircularTransform(satellites[i], time * i + 1 * 200.0f, 1.0f, earthRadius + iss_altitude));
+                //EngineTranslate(satellites[i], { london.x + ((i + 1) * 500000), london.y, london.z + ((i + 1) * 500000)});
+                EngineScale(satellites[i], 50000.0f);
+                EngineRender(satellites[i]);
+
+
+                glm::vec2 satellitePos = EngineWorldToScreen(EngineGetPosition(satellites[i]));
+                ImGui::SetNextWindowPos(ImVec2(satellitePos.x, satellitePos.y));
+                ImGui::Begin(std::string("text1" + std::to_string(i)).c_str(), &o, flags);
+
+                ImGui::TextColored(ImVec4(0.52f, 0.79f, 0.91f, 1.0f), satelliteData[i].name.c_str());
+//            ImGui::Text("%f AU", AUDistance(EngineGetPosition(satellite), EngineGetCameraPosition(camera)));
+                ImGui::End();
+            }
         }
 
 
         // Rendering
+        EngineRenderSkybox(space);
+
         EngineRender(sun);
         EngineRender(earth);
         EngineRender(moon);
-        EngineRenderSkybox(space);
 
 
-        EngineRender(satellite);
+
+
 
 
 
         // Render User Interface
         RenderMenuBar();
         RenderOverlay();
+
+        ImGui::Render();
+
+
+
 
         // Initialize scene
 

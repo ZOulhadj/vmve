@@ -1282,6 +1282,11 @@ EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint3
                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                  VK_IMAGE_ASPECT_COLOR_BIT);
 
+    buffer->sampler = CreateSampler(VK_FILTER_LINEAR, 16);
+    buffer->descriptor.sampler = buffer->sampler;
+    buffer->descriptor.imageView = buffer->image.view;
+    buffer->descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
 
     // Upload texture data into GPU memory by doing a layout transition
     SubmitToGPU([&]() {
@@ -1398,14 +1403,20 @@ void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descri
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets[current_frame], 0, nullptr);
 }
 
-void Render(EntityInstance* e, Pipeline& pipeline) {
+void Render(EntityModel* model, EntityInstance* instance, Pipeline& pipeline) {
     const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
 
 
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &e->descriptorSet, 0, nullptr);
-    vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &e->modelMatrix);
-    vkCmdDrawIndexed(cmd_buffer, e->model->index_count, 1, 0, 0, 0);
 
-    // Reset the entity transform matrix after being rendered.
-    e->modelMatrix = glm::mat4(1.0f);
+
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    modelMatrix = glm::translate(modelMatrix, instance->position);
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(0.0f), instance->rotation);
+    modelMatrix = glm::scale(modelMatrix, instance->scale);
+
+
+    vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &modelMatrix);
+    vkCmdDrawIndexed(cmd_buffer, model->index_count, 1, 0, 0, 0);
+
 }
