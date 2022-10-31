@@ -59,3 +59,7 @@ void DestroyUserInterface(ImGuiContext* context) {
 
     ImGui::DestroyContext(context);
 }
+
+void RenderUI() {
+    ImGui::Render();
+}

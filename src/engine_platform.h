@@ -93,19 +93,27 @@ void engine_move_down();
 void engine_roll_left();
 void engine_roll_right();
 
-void EngineRender(const EngineScene& scene);
-
-// This function submits work to the GPU to execute. In other words, rendering
-// an object onto the screen.
-void EngineRender(EntityInstance* e);
-
-void EngineRenderSkybox(EntityInstance* e);
 
 void EngineTranslate(EntityInstance* e, const glm::vec3& position);
 void EngineRotate(EntityInstance* e, float deg, const glm::vec3& axis);
 void EngineScale(EntityInstance* e, float scale);
 void EngineScale(EntityInstance* e, const glm::vec3& scale);
 glm::vec3 EngineGetPosition(const EntityInstance* e);
+
+
+
+void EngineBegin();
+void EngineEnd();
+
+void EngineRenderSkybox(EntityInstance* e);
+
+// This function submits work to the GPU to execute. In other words, rendering
+// an object onto the screen.
+void EngineRender(EntityInstance* e);
+
+void EngineRenderUI();
+
+void EngineSubmit(const EngineScene& scene);
 
 
 // For a given position in world space (X, Y, Z), the function will return the

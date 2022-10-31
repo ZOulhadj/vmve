@@ -5,9 +5,7 @@ struct EntityModel;
 struct EntityTexture;
 
 struct EntityInstance {
-    glm::vec3 position;
-    glm::vec3 rotation;
-    float     scale;
+    glm::mat4 matrix;
 
     EntityModel* model;
     EntityTexture* texture;

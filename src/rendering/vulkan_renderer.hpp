@@ -208,7 +208,7 @@ EntityModel* CreateVertexBuffer(void* v, int vs, void* i, int is);
 EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format);
 void DestroyImage(ImageBuffer* image);
 
-void BindVertexBuffer(const EntityModel* buffer);
+void BindVertexBuffer(const EntityModel* model);
 
 uint32_t GetCurrentFrame();
 void BeginFrame();
@@ -221,6 +221,6 @@ void EndRenderPass();
 
 void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
 
-void Render(EntityModel* model, EntityInstance* instance, Pipeline& pipeline);
+void Render(EntityInstance* instance, Pipeline& pipeline);
 
 #endif

@@ -12,4 +12,6 @@ struct GUI {
 ImGuiContext* CreateUserInterface(VkRenderPass renderPass);
 void DestroyUserInterface(ImGuiContext* context);
 
+void RenderUI();
+
 #endif

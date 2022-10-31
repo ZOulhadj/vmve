@@ -40,7 +40,9 @@ static std::vector<EntityModel*> gModels;
 static std::vector<EntityTexture*> gTextures;
 static std::vector<EntityInstance*> gEntities;
 
-static EntityModel* gSkyboxModel = nullptr;
+// The entities we will render for the current frame.
+static std::map<const EntityModel*, std::vector<EntityInstance*>> gEntitiesRender;
+
 static EntityInstance* gSkybox = nullptr;
 
 
@@ -272,6 +274,7 @@ void EngineStop() {
     // Free all textures load from the client
     for (auto& texture : gTextures) {
         DestroyImage(&texture->image);
+        DestroySampler(texture->sampler);
 
         delete texture;
     }
@@ -311,8 +314,11 @@ void EngineStop() {
     DestroyWindow(gWindow);
 }
 
+void EngineRenderUI() {
+    RenderUI();
+}
 
-void EngineRender(const EngineScene& scene) {
+void EngineBegin() {
     // Calculate the delta time between previous and current frame. This
     // allows for frame dependent systems such as movement and translation
     // to run at the same speed no matter the time difference between two
@@ -330,6 +336,19 @@ void EngineRender(const EngineScene& scene) {
     ++gEngine->elapsedFrames;
 
 
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+}
+
+void EngineEnd() {
+    ImGui::EndFrame();
+
+
+    UpdateWindow(gWindow);
+}
+
+void EngineSubmit(const EngineScene& scene) {
     UpdateCamera(gCamera);
 
     // copy data into uniform buffer
@@ -349,14 +368,8 @@ void EngineRender(const EngineScene& scene) {
         BeginRenderPass(geometryPass);
 
         BindPipeline(skyspherePipeline, gGlobalDescriptorSets);
-        //BindVertexBuffer(gSkyboxModel);
-        //Render(gSkyboxModel, gSkybox, skyspherePipeline);
-
-
-        //BindPipeline(earthPipeline, gGlobalDescriptorSets);
-        //BindVertexBuffer(nullptr);
-        //Render(nullptr, earthPipeline);
-
+        BindVertexBuffer(gSkybox->model);
+        Render(gSkybox, skyspherePipeline);
 
         BindPipeline(basicPipeline, gGlobalDescriptorSets);
 
@@ -364,13 +377,13 @@ void EngineRender(const EngineScene& scene) {
         // A map structure is used to bind a vertex buffer (key) and then
         // the entities (values) are looped over. This reduces the number of
         // vertex bindings required as we bind a buffer one by one.
-//        for (const auto& i : gEntitiesRender) {
-//            BindVertexBuffer(i.first);
-//
-//            for (const auto& entity : i.second)
-//                Render(entity, planetPipeline);
-//        }
-//        gEntitiesRender.clear();
+        for (const auto& i : gEntitiesRender) {
+            BindVertexBuffer(i.first);
+
+            for (const auto& entity : i.second)
+                Render(entity, basicPipeline);
+        }
+        gEntitiesRender.clear();
 
         EndRenderPass();
 
@@ -383,9 +396,9 @@ void EngineRender(const EngineScene& scene) {
             ImGui_ImplVulkan_RenderDrawData(data, GetCommandBuffer());
         EndRenderPass();
     }
-    EndFrame();
 
-    UpdateWindow(gWindow);
+
+    EndFrame();
 }
 
 
@@ -638,9 +651,7 @@ EntityInstance* EngineCreateEntity(EntityModel* model,
                                    float scale) {
     auto e = new EntityInstance();
 
-    e->position = position;
-    e->rotation = rotation;
-    e->scale    = scale;
+    e->matrix = glm::mat4(1.0f);
     e->model = model;
     e->texture = texture;
     e->descriptorSet = AllocateDescriptorSet(gObjectDescriptorLayout);
@@ -655,48 +666,6 @@ EntityInstance* EngineCreateEntity(EntityModel* model,
     write.pImageInfo = &e->texture->descriptor;
 
     vkUpdateDescriptorSets(gRenderer->device.device, 1, &write, 0, nullptr);
-#if 0
-    VkDescriptorImageInfo image_info{};
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = e->texture->image.view;
-    image_info.sampler = g_sampler;
-
-    VkDescriptorImageInfo bump_image_info{};
-    bump_image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    bump_image_info.imageView = e->bump->image.view;
-    bump_image_info.sampler = g_sampler;
-
-    VkDescriptorImageInfo spec_image_info{};
-    spec_image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    spec_image_info.imageView = e->spec->image.view;
-    spec_image_info.sampler = g_sampler;
-
-    std::array<VkWriteDescriptorSet, 3> writes{};
-
-    writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writes[0].dstSet = e->descriptorSet;
-    writes[0].dstBinding = 0;
-    writes[0].dstArrayElement = 0;
-    writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    writes[0].descriptorCount = 1;
-    writes[0].pImageInfo = &image_info;
-
-    writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writes[1].dstSet = e->descriptorSet;
-    writes[1].dstBinding = 1;
-    writes[1].dstArrayElement = 0;
-    writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    writes[1].descriptorCount = 1;
-    writes[1].pImageInfo = &bump_image_info;
-
-    writes[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writes[2].dstSet = e->descriptorSet;
-    writes[2].dstBinding = 2;
-    writes[2].dstArrayElement = 0;
-    writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    writes[2].descriptorCount = 1;
-    writes[2].pImageInfo = &spec_image_info;
-#endif
 
     gEntities.push_back(e);
 
@@ -752,7 +721,7 @@ void engine_roll_right() {
 
 
 void EngineRender(EntityInstance* e) {
-    //gEntitiesRender[e->model].push_back(e);
+    gEntitiesRender[e->model].push_back(e);
 }
 
 void EngineRenderSkybox(EntityInstance* e) {

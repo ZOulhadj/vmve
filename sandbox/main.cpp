@@ -165,18 +165,10 @@ int main() {
     EntityInstance* moon  = EngineCreateEntity(sphere, moonTexture, {}, {}, moonRadius);
     EntityInstance* space = EngineCreateEntity(icosphere, spaceTexture, {}, {}, 1.0f);
 
-    std::vector<EntityInstance*> satellites;
-
-
-
-
-    for (std::size_t i = 0; i < 10; ++i) {
-        satellites.push_back(EngineCreateEntity(cube, sunTexture));
-    }
 
     //glm::vec3 london = cartesian(earthRadius + iss_altitude, 46.636375, -173.238388);
     glm::vec3 london = cartesian(earthRadius, 0.0f, 0.0f, iss_altitude);
-    EngineCamera* camera = EngineCreateCamera(london, 60.0f, lightSpeed / 200.0f);
+    EngineCamera* camera = EngineCreateCamera({ 0.0f, 0.0f, -earthRadius * 2.0f}, 60.0f, lightSpeed / 200.0f);
 
 
     EngineScene scene {
@@ -190,9 +182,7 @@ int main() {
 
 
     while (engine->running) {
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        EngineBegin();
 
         scene.cameraPosition = EngineGetCameraPosition(camera);
 
@@ -237,7 +227,6 @@ int main() {
 
 
         ImGui::SetNextWindowPos(ImVec2(moonPos.x, moonPos.y));
-
         ImGui::Begin("text0", &o, flags);
         ImGui::Text("Moon");
         ImGui::Text("%f AU", AUDistance(EngineGetPosition(moon), EngineGetCameraPosition(camera)));
@@ -263,54 +252,22 @@ int main() {
             EngineRotate(moon, 0.0f, {0.0f, 1.0f, 0.0f});
         }
 
-        { // Satellite
-            //EngineTranslate(satellite, london);
-            //EngineScale(satellite, 5000.0f);
-            for (std::size_t i = 0; i < 10; ++i) {
-                EngineTranslate(satellites[i], CircularTransform(satellites[i], time * i + 1 * 200.0f, 1.0f, earthRadius + iss_altitude));
-                //EngineTranslate(satellites[i], { london.x + ((i + 1) * 500000), london.y, london.z + ((i + 1) * 500000)});
-                EngineScale(satellites[i], 50000.0f);
-                EngineRender(satellites[i]);
-
-
-                glm::vec2 satellitePos = EngineWorldToScreen(EngineGetPosition(satellites[i]));
-                ImGui::SetNextWindowPos(ImVec2(satellitePos.x, satellitePos.y));
-                ImGui::Begin(std::string("text1" + std::to_string(i)).c_str(), &o, flags);
-
-                ImGui::TextColored(ImVec4(0.52f, 0.79f, 0.91f, 1.0f), satelliteData[i].name.c_str());
-//            ImGui::Text("%f AU", AUDistance(EngineGetPosition(satellite), EngineGetCameraPosition(camera)));
-                ImGui::End();
-            }
-        }
-
 
         // Rendering
         EngineRenderSkybox(space);
-
-        EngineRender(sun);
+        //EngineRender(sun);
         EngineRender(earth);
-        EngineRender(moon);
+        //EngineRender(moon);
+
+
+        EngineRenderUI();
 
 
 
 
 
-
-
-        // Render User Interface
-        RenderMenuBar();
-        RenderOverlay();
-
-        ImGui::Render();
-
-
-
-
-        // Initialize scene
-
-
-
-            EngineRender(scene);
+        EngineSubmit(scene);
+        EngineEnd();
 
     }
 

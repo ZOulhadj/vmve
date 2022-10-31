@@ -1126,40 +1126,6 @@ static void PresentImage(Swapchain& swapchain) {
     current_frame = (current_frame + 1) % frames_in_flight;
 }
 
-static void BeginFrame(Swapchain& swapchain, const Frame& frame) {
-    GetNextImage(swapchain);
-
-    VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    VkCheck(vkResetCommandBuffer(frame.cmd_buffer, 0));
-    VkCheck(vkBeginCommandBuffer(frame.cmd_buffer, &begin_info));
-
-    const VkExtent2D extent = { swapchain.images[0].extent };
-
-    VkViewport viewport{};
-    viewport.x        = 0.0f;
-    viewport.y        = 0.0f;
-    viewport.width    = static_cast<float>(extent.width);
-    viewport.height   = static_cast<float>(extent.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
-    scissor.extent = extent;
-
-    vkCmdSetViewport(frame.cmd_buffer, 0, 1, &viewport);
-    vkCmdSetScissor(frame.cmd_buffer, 0, 1, &scissor);
-}
-
-static void EndFrame(Swapchain& swapchain, const Frame& frame) {
-    VkCheck(vkEndCommandBuffer(frame.cmd_buffer));
-
-    SubmitImage(frame);
-    PresentImage(swapchain);
-}
-
 RendererContext* CreateRenderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode) {
     const std::vector<const char*> layers {
         "VK_LAYER_KHRONOS_validation",
@@ -1347,12 +1313,12 @@ EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint3
     return buffer;
 }
 
-void BindVertexBuffer(const EntityModel* buffer) {
+void BindVertexBuffer(const EntityModel* model) {
     const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
 
     const VkDeviceSize offset{ 0 };
-    vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &buffer->vertex_buffer.buffer, &offset);
-    vkCmdBindIndexBuffer(cmd_buffer, buffer->index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
+    vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &model->vertex_buffer.buffer, &offset);
+    vkCmdBindIndexBuffer(cmd_buffer, model->index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
 }
 
 uint32_t GetCurrentFrame() {
@@ -1360,11 +1326,42 @@ uint32_t GetCurrentFrame() {
 }
 
 void BeginFrame() {
-    BeginFrame(g_swapchain, g_frames[current_frame]);
+    GetNextImage(g_swapchain);
+
+    Frame& frame = g_frames[current_frame];
+
+    VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    VkCheck(vkResetCommandBuffer(frame.cmd_buffer, 0));
+    VkCheck(vkBeginCommandBuffer(frame.cmd_buffer, &begin_info));
+
+    const VkExtent2D extent = { g_swapchain.images[0].extent };
+
+    VkViewport viewport{};
+    viewport.x        = 0.0f;
+    viewport.y        = 0.0f;
+    viewport.width    = static_cast<float>(extent.width);
+    viewport.height   = static_cast<float>(extent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = extent;
+
+    vkCmdSetViewport(frame.cmd_buffer, 0, 1, &viewport);
+    vkCmdSetScissor(frame.cmd_buffer, 0, 1, &scissor);
+
 }
 
 void EndFrame() {
-    EndFrame(g_swapchain, g_frames[current_frame]);
+    Frame& frame = g_frames[current_frame];
+
+    VkCheck(vkEndCommandBuffer(frame.cmd_buffer));
+
+    SubmitImage(frame);
+    PresentImage(g_swapchain);
 }
 
 VkCommandBuffer GetCommandBuffer() {
@@ -1397,20 +1394,12 @@ void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descri
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets[current_frame], 0, nullptr);
 }
 
-void Render(EntityModel* model, EntityInstance* instance, Pipeline& pipeline) {
+void Render(EntityInstance* instance, Pipeline& pipeline) {
     const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
 
-
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &instance->descriptorSet, 0, nullptr);
+    vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance->matrix);
+    vkCmdDrawIndexed(cmd_buffer, instance->model->index_count, 1, 0, 0, 0);
 
-
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
-    modelMatrix = glm::translate(modelMatrix, instance->position);
-    modelMatrix = glm::rotate(modelMatrix, glm::radians(0.0f), instance->rotation);
-    modelMatrix = glm::scale(modelMatrix, glm::vec3(instance->scale));
-
-
-    vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &modelMatrix);
-    vkCmdDrawIndexed(cmd_buffer, model->index_count, 1, 0, 0, 0);
-
+    instance->matrix = glm::mat4(1.0f);
 }

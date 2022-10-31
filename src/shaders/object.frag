@@ -20,25 +20,23 @@ layout(set = 1, binding = 0) uniform sampler2D albedoTexture;
 
 void main()
 {
+    vec3 norm = normalize(vertex_normal);
 
     // Get pixel colors for each texture map
     vec3 albedo   = texture(albedoTexture, texture_coord).rgb;
-
-
-    // Global properties
-    vec3 lightDir   = normalize(scene.lightPosition - vertex_position);
-    vec3 viewDir    = normalize(scene.cameraPosition - vertex_position);
-    vec3 reflectDir = reflect(-lightDir, vertex_normal);
-    vec3 halfwayDir = normalize(lightDir + viewDir);
 
     // ambient
     vec3 ambientResult = scene.ambientStrength * albedo;
 
     // diffuse
-    vec3 diffuseResult = max(dot(lightDir, vertex_normal), 0.0) * albedo;
+    vec3 lightDir   = normalize(scene.lightPosition - vertex_position);
+    float difference = max(dot(norm, lightDir), 0.0);
+    vec3 diffuseResult = difference * albedo * scene.lightColor;
 
     // specular
-    float spec          = pow(max(dot(vertex_normal, halfwayDir), 0.0), scene.specularShininess);
+    vec3 viewDir    = normalize(scene.cameraPosition - vertex_position);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec          = pow(max(dot(norm, reflectDir), 0.0), scene.specularShininess);
     vec3 specularResult = scene.specularStrength * spec * scene.lightColor;
 
 
