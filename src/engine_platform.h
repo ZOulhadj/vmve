@@ -75,10 +75,7 @@ EntityTexture* EngineLoadTexture(const char* path, VkFormat format);
 // an entity that describes the full transformation including position,
 // rotation and scale in the world.
 EntityInstance* EngineCreateEntity(EntityModel* model,
-                                   EntityTexture* texture,
-                                   const glm::vec3& position = glm::vec3(0.0f),
-                                   const glm::vec3& rotation = glm::vec3(0.0f),
-                                   float scale = 1.0f);
+                                   EntityTexture* texture);
 
 
 EngineCamera* EngineCreateCamera(const glm::vec3& position, float fovy, float speed);

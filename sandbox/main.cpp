@@ -148,7 +148,7 @@ int main() {
     // Load models
     EntityModel* icosphere = EngineLoadModel("assets/icosphere.obj");
     EntityModel* sphere    = EngineLoadModel("assets/sphere.obj");
-    EntityModel* cube      = EngineLoadModel("assets/iss.obj");
+    //EntityModel* cube      = EngineLoadModel("assets/iss.obj");
 
     // Load textures
     EntityTexture* sunTexture   = EngineLoadTexture("assets/textures/sun/sun.jpg", VK_FORMAT_R8G8B8A8_SRGB);
@@ -160,10 +160,20 @@ int main() {
     //EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg", VK_FORMAT_R8G8B8A8_UNORM);
 
     // Create entity instances
-    EntityInstance* sun   = EngineCreateEntity(sphere, sunTexture, {}, {}, sunRadius);
-    EntityInstance* earth = EngineCreateEntity(sphere, earthTexture, {}, {}, earthRadius);
-    EntityInstance* moon  = EngineCreateEntity(sphere, moonTexture, {}, {}, moonRadius);
-    EntityInstance* space = EngineCreateEntity(icosphere, spaceTexture, {}, {}, 1.0f);
+    EntityInstance* sun   = EngineCreateEntity(sphere, sunTexture);
+    EntityInstance* earth = EngineCreateEntity(sphere, earthTexture);
+    EntityInstance* moon  = EngineCreateEntity(sphere, moonTexture);
+    EntityInstance* space = EngineCreateEntity(icosphere, spaceTexture);
+
+
+
+    // Create satellite instanced data
+    //std::vector<EntityInstance*> satellites;
+    //for (int i = 0; i < 50; ++i)
+    //    satellites.push_back(EngineCreateEntity(icosphere, moonTexture));
+
+
+
 
 
     //glm::vec3 london = cartesian(earthRadius + iss_altitude, 46.636375, -173.238388);
@@ -255,9 +265,9 @@ int main() {
 
         // Rendering
         EngineRenderSkybox(space);
-        //EngineRender(sun);
+        EngineRender(sun);
         EngineRender(earth);
-        //EngineRender(moon);
+        EngineRender(moon);
 
 
         EngineRenderUI();

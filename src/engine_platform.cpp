@@ -644,11 +644,7 @@ EntityTexture* EngineLoadTexture(const char* path, VkFormat format) {
     return buffer;
 }
 
-EntityInstance* EngineCreateEntity(EntityModel* model,
-                                   EntityTexture* texture,
-                                   const glm::vec3& position,
-                                   const glm::vec3& rotation,
-                                   float scale) {
+EntityInstance* EngineCreateEntity(EntityModel* model, EntityTexture* texture) {
     auto e = new EntityInstance();
 
     e->matrix = glm::mat4(1.0f);
