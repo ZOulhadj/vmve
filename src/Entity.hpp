@@ -1,8 +1,10 @@
 #ifndef MYENGINE_ENTITY_HPP
 #define MYENGINE_ENTITY_HPP
 
-struct EntityModel;
-struct EntityTexture;
+
+#include "Renderer/VertexArray.hpp"
+#include "Renderer/Texture.hpp"
+
 
 struct EntityInstance {
     glm::mat4 matrix;
@@ -12,6 +14,10 @@ struct EntityInstance {
 
     VkDescriptorSet descriptorSet;
 };
+
+
+EntityInstance* CreateEntity(EntityModel* model, EntityTexture* texture, VkDescriptorSetLayout layout);
+void DestroyEntity(EntityInstance* instance);
 
 void Translate(EntityInstance* e, const glm::vec3& position);
 void Rotate(EntityInstance* e, float deg, const glm::vec3& axis);

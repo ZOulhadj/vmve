@@ -1,7 +1,7 @@
 #ifndef MYENGINE_MOUSEEVENT_HPP
 #define MYENGINE_MOUSEEVENT_HPP
 
-#include "event.hpp"
+#include "Event.hpp"
 
 class MouseButtonEvent : public Event {
 public:

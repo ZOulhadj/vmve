@@ -1,7 +1,7 @@
 #ifndef MYENGINE_KEYEVENT_HPP
 #define MYENGINE_KEYEVENT_HPP
 
-#include "event.hpp"
+#include "Event.hpp"
 
 class KeyEvent : public Event {
 public:

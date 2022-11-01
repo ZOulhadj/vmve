@@ -72,26 +72,24 @@ static bool HasExtensions(std::string_view name, const std::vector<VkExtensionPr
 // A helper function that returns the size in bytes of a particular format
 // based on the number of components and data type.
 static uint32_t FormatToSize(VkFormat format) {
+    uint32_t size = 0;
+
     switch (format) {
-    case VK_FORMAT_R32G32_SFLOAT:       return 2 * sizeof(float);
-    case VK_FORMAT_R32G32B32_SFLOAT:    return 3 * sizeof(float);
-    case VK_FORMAT_R32G32B32A32_SFLOAT: return 4 * sizeof(float);
+    case VK_FORMAT_R32G32_SFLOAT:
+        size = 2 * sizeof(float);
+        break;
+    case VK_FORMAT_R32G32B32_SFLOAT:
+        size = 3 * sizeof(float);
+        break;
+    case VK_FORMAT_R32G32B32A32_SFLOAT:
+        size = 4 * sizeof(float);
+        break;
+    default:
+        size = 0;
+        break;
     }
 
-    return 0;
-}
-
-static shaderc_shader_kind ConvertShaderType(VkShaderStageFlagBits type) {
-    switch (type) {
-    case VK_SHADER_STAGE_VERTEX_BIT: return shaderc_vertex_shader;
-    case VK_SHADER_STAGE_FRAGMENT_BIT: return shaderc_fragment_shader;
-    case VK_SHADER_STAGE_COMPUTE_BIT: return shaderc_compute_shader;
-    case VK_SHADER_STAGE_GEOMETRY_BIT: return shaderc_geometry_shader;
-    case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: return shaderc_tess_control_shader;
-    case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: return shaderc_tess_evaluation_shader;
-    }
-
-    return shaderc_glsl_infer_from_source;
+    return size;
 }
 
 

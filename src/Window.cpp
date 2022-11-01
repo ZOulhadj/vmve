@@ -1,8 +1,8 @@
-#include "window.hpp"
+#include "Window.hpp"
 
-#include "events/window_event.hpp"
-#include "events/key_event.hpp"
-#include "events/mouse_event.hpp"
+#include "events/WindowEvent.hpp"
+#include "events/KeyEvent.hpp"
+#include "events/MouseEvent.hpp"
 
 
 

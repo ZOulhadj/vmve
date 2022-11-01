@@ -1,12 +1,13 @@
-#include "ui.hpp"
+#include "UI.hpp"
 
-#include "common.hpp"
-#include "vulkan_renderer.hpp"
+#include "Common.hpp"
+#include "Renderer.hpp"
 
 
 ImGuiContext* CreateUserInterface(VkRenderPass renderPass) {
     ImGuiContext* context = nullptr;
-    const RendererContext* rc   = GetRendererContext();
+
+    const RendererContext* rc = GetRendererContext();
 
     IMGUI_CHECKVERSION();
     context = ImGui::CreateContext();
@@ -43,7 +44,7 @@ ImGuiContext* CreateUserInterface(VkRenderPass renderPass) {
 
 
     // Submit ImGui fonts to the GPU in order to be used during rendering.
-    SubmitToGPU([&] { ImGui_ImplVulkan_CreateFontsTexture(rc->submit->CmdBuffer); });
+    SubmitToGPU([&] { ImGui_ImplVulkan_CreateFontsTexture(rc->submit.CmdBuffer); });
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 

@@ -1,7 +1,7 @@
 #ifndef MYENGINE_WINDOWEVENT_HPP
 #define MYENGINE_WINDOWEVENT_HPP
 
-#include "event.hpp"
+#include "Event.hpp"
 
 class WindowClosedEvent : public Event {
 public:

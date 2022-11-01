@@ -1,13 +1,18 @@
 #ifndef MYENGINE_VULKAN_RENDERER_HPP
 #define MYENGINE_VULKAN_RENDERER_HPP
 
-#include "../window.hpp"
+#include "../Window.hpp"
 
+
+#include "RendererContext.hpp"
+#include "Buffer.hpp"
+
+#include "../Entity.hpp"
 
 constexpr int frames_in_flight = 2;
 
 
-struct EntityInstance;
+//struct EntityInstance;
 
 enum class BufferMode {
     Double = 2,
@@ -19,49 +24,6 @@ enum class VSyncMode {
     Enabled  = VK_PRESENT_MODE_FIFO_KHR
 };
 
-
-struct device_context {
-    VkPhysicalDevice gpu;
-    VkDevice device;
-
-    VkQueue graphics_queue;
-    uint32_t graphics_index;
-
-    VkQueue present_queue;
-    uint32_t present_index;
-};
-
-struct RendererSubmitContext {
-    VkFence         Fence;
-    VkCommandPool   CmdPool;
-    VkCommandBuffer CmdBuffer;
-};
-
-struct RendererContext {
-    const Window* window;
-
-    VkInstance instance;
-    VkSurfaceKHR surface;
-    device_context device;
-    VmaAllocator allocator;
-
-    RendererSubmitContext* submit;
-
-    VkDescriptorPool pool;
-};
-
-struct ImageBuffer {
-    VkImage       handle;
-    VkImageView   view;
-    VmaAllocation allocation;
-    VkExtent2D    extent;
-    VkFormat      format;
-};
-
-struct Buffer {
-    VkBuffer buffer;
-    VmaAllocation allocation;
-};
 
 struct Swapchain {
     BufferMode buffering_mode;
@@ -88,10 +50,6 @@ struct Frame {
     VkSemaphore released_semaphore;
 };
 
-struct ShaderCompiler {
-    shaderc_compiler_t compiler;
-    shaderc_compile_options_t options;
-};
 
 struct RenderPassInfo {
     uint32_t color_attachment_count;
@@ -117,11 +75,6 @@ struct RenderPass {
 };
 
 
-struct Shader {
-    VkShaderModule handle;
-    VkShaderStageFlagBits type;
-};
-
 struct PipelineInfo {
     std::vector<VkDescriptorSetLayout> descriptor_layouts;
     uint32_t push_constant_size;
@@ -140,62 +93,30 @@ struct Pipeline {
 };
 
 
-struct EntityModel {
-    Buffer   vertex_buffer;
-    Buffer   index_buffer;
-    uint32_t index_count;
-};
+//
+//struct uniform_buffer {
+//    Buffer buffer;
+//};
+//
 
-struct EntityTexture {
-    ImageBuffer image;
-    VkSampler sampler;
-    VkDescriptorImageInfo descriptor;
-};
-
-struct uniform_buffer {
-    Buffer buffer;
-};
-
-
-struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 uv;
-
-    glm::vec3 tangent;
-    glm::vec3 biTangent;
-
-    // Due to the previous variable being a vec2 this means the struct is not
-    // aligned in memory. Adding an extra dummy variable for padding will ensure
-    // that the vertex buffers can be tightly packed. TODO: Should revisit this.
-    //float padding;
-};
 
 
 RendererContext* CreateRenderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode);
 void DestroyRenderer(RendererContext* context);
 
 RendererContext* GetRendererContext();
+VkCommandBuffer GetCommandBuffer();
 
-void SubmitToGPU(const std::function<void()>& submit_func);
 
 Swapchain& GetSwapchain();
-VkSampler CreateSampler(VkFilter filtering, uint32_t anisotropic_level);
-void DestroySampler(VkSampler sampler);
+
 
 VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
 std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout, uint32_t frames);
 VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout);
-void SetBufferData(Buffer* buffer, void* data, uint32_t size);
-Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type);
-void DestroyBuffer(Buffer& buffer);
 
 //void update_renderer_size(VulkanRenderer& renderer, uint32_t width, uint32_t height);
 
-
-Shader CreateVertexShader(const std::string& code);
-Shader CreateFragmentShader(const std::string& code);
-void DestroyShader(Shader& shader);
 
 RenderPass CreateRenderPass(const RenderPassInfo& info, const std::vector<ImageBuffer>& color_attachments,
                             const std::vector<ImageBuffer>& depth_attachments);
@@ -204,17 +125,12 @@ void DestroyRenderPass(RenderPass& renderPass);
 Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass);
 void DestroyPipeline(Pipeline& pipeline);
 
-EntityModel* CreateVertexBuffer(void* v, int vs, void* i, int is);
-EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format);
-void DestroyImage(ImageBuffer* image);
-
-void BindVertexBuffer(const EntityModel* model);
 
 uint32_t GetCurrentFrame();
 void BeginFrame();
 void EndFrame();
 
-VkCommandBuffer GetCommandBuffer();
+
 
 void BeginRenderPass(RenderPass& renderPass);
 void EndRenderPass();

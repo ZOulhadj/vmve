@@ -1,6 +1,12 @@
 #ifndef MYENGINE_QUATERNION_CAMERA_HPP
 #define MYENGINE_QUATERNION_CAMERA_HPP
 
+
+struct ViewProjection {
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
 struct QuatCamera {
     glm::vec3 position;
     glm::vec3 front_vector;
@@ -21,10 +27,8 @@ struct QuatCamera {
     float fov;
 
     float near;
-    //float far;
 
-    glm::mat4 view;
-    glm::mat4 proj;
+    ViewProjection viewProj;
 
 
     float cursor_x;

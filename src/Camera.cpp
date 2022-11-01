@@ -1,4 +1,4 @@
-#include "quaternion_camera.hpp"
+#include "Camera.hpp"
 
 
 // Reversed Z infinite perspective
@@ -23,19 +23,19 @@ QuatCamera CreateCamera(const glm::vec3& position, float fov, float speed) {
     QuatCamera camera{};
     camera.position    = position;
     camera.orientation = glm::quat(1, 0, 0, 0);
-    camera.width = 1280.0f;
-    camera.height = 720.0f;
+    camera.width       = 1280.0f;
+    camera.height      = 720.0f;
     camera.speed       = speed;
     camera.view_speed  = 0.1f;
     camera.roll_speed  = 180.0f;
     camera.roll        = 0.0f;
     camera.fov         = fov;
     camera.near        = 0.1f;
-    camera.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
-    camera.proj = InfinitePerspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
+    camera.viewProj.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
+    camera.viewProj.proj = InfinitePerspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
 
     // Required if using Vulkan (left-handed coordinate-system)
-    camera.proj[1][1] *= -1.0;
+    camera.viewProj.proj[1][1] *= -1.0;
 
     return camera;
 }
@@ -72,16 +72,16 @@ void UpdateCamera(QuatCamera& camera) {
     camera.orientation = (pitch * yaw * roll) * camera.orientation;
 
     // Create the view and projection matrices
-    camera.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
+    camera.viewProj.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
 
     // Build final camera transform matrix
     camera.roll      = 0.0f;
 }
 
 void update_projection(QuatCamera& camera) {
-    camera.proj = InfinitePerspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
+    camera.viewProj.proj = InfinitePerspective(glm::radians(camera.fov), camera.width, camera.height, camera.near);
     // Required if using Vulkan (left-handed coordinate-system)
-    camera.proj[1][1] *= -1.0;
+    camera.viewProj.proj[1][1] *= -1.0;
 }
 
 void UpdateCameraProjection(QuatCamera& camera, uint32_t width, uint32_t height) {

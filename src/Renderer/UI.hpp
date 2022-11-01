@@ -2,7 +2,7 @@
 #define MYENGINE_UI_HPP
 
 
-#include "../events/event.hpp"
+#include "../Events/Event.hpp"
 
 struct GUI {
     EventFunc EventCallback;

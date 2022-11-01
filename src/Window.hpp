@@ -1,7 +1,7 @@
 #ifndef MYENGINE_WINDOW_HPP
 #define MYENGINE_WINDOW_HPP
 
-#include "events/event.hpp"
+#include "Events/Event.hpp"
 
 
 struct Window {
