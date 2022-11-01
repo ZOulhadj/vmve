@@ -6,17 +6,17 @@
 #include "Buffer.hpp"
 
 
-struct EntityTexture {
+struct TextureBuffer {
     ImageBuffer image;
     VkSampler sampler;
     VkDescriptorImageInfo descriptor;
 };
 
 
-EntityTexture* LoadTexture(const char* path, VkFormat format);
+TextureBuffer LoadTexture(const char* path, VkFormat format);
 
-EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format);
-void DestroyTextureBuffer(EntityTexture* texture);
+TextureBuffer CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format);
+void DestroyTextureBuffer(TextureBuffer& texture);
 
 VkSampler CreateSampler(VkFilter filtering, uint32_t anisotropic_level);
 void DestroySampler(VkSampler sampler);

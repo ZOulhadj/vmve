@@ -1,10 +1,9 @@
 // Engine header files section
-
 #include "../src/Window.hpp"
 #include "../src/Renderer/Common.hpp"
 #include "../src/Renderer/Renderer.hpp"
 #include "../src/Renderer/UI.hpp"
-
+#include "../src/Input.hpp"
 #include "../src/Camera.hpp"
 #include "../src/Entity.hpp"
 #include "../src/Model.hpp"
@@ -25,6 +24,7 @@
 // Application specific header files
 #include "Constants.hpp"
 #include "UI.hpp"
+
 
 
 struct SatelliteData {
@@ -49,18 +49,6 @@ struct SatelliteData {
     int revAtEpoch;
 };
 
-/*
-glm::vec3 sphere_translation(float radius, float latitude, float longitude) {
-    const float lat = glm::radians(latitude);
-    const float lon = glm::radians(longitude);
-
-    const float x = radius * glm::cos(lat) * glm::cos(lon);
-    const float y = radius * glm::sin(lat);
-    const float z = radius * glm::cos(lat) * sin(lon);
-
-    return { x, y, z };
-}
-*/
 
 glm::vec3 cartesian(float radius, float latitude, float longitude, float elevation = 0.0f) {
     const float lat = glm::radians(latitude);
@@ -93,7 +81,7 @@ glm::vec2 geographic(float radius, const glm::vec3& position) {
     return { glm::degrees(latitude), glm::degrees(longitude) };
 }
 
-glm::vec3 CircularTransform(EntityInstance* e, float angle, float freq, float radius) {
+glm::vec3 CircularTransform(EntityInstance& e, float angle, float freq, float radius) {
     const glm::vec3& position = GetPosition(e);
 
     const float radians = glm::radians(angle * freq);
@@ -126,9 +114,10 @@ float AUDistance(const glm::vec3& a, const glm::vec3& b) {
 
 static std::vector<SatelliteData> LoadSatelliteData(const char* path)
 {
-    std::ifstream dataFile(path);
+    std::string file = LoadTextFile(path);
+
     using json = nlohmann::json;
-    json satelliteData = json::parse(dataFile);
+    json satelliteData = json::parse(file);
 
     std::vector<SatelliteData> data(satelliteData.size());
 
@@ -161,19 +150,6 @@ static std::vector<SatelliteData> LoadSatelliteData(const char* path)
 
     return data;
 }
-
-
-
-glm::vec2 WorldToScreen(Window* window, QuatCamera& camera, const glm::vec3& position, const glm::vec2& offset = glm::vec2(0.0f)) {
-    const glm::vec2 windowSize = glm::vec2(window->width, window->height);
-
-    const glm::vec4 clip   = camera.viewProj.proj * camera.viewProj.view * glm::vec4(position, 1.0);
-    const glm::vec3 ndc    = clip.xyz() / clip.w;
-    const glm::vec2 screen = ((ndc.xy() + 1.0f) / 2.0f) * windowSize + offset;
-
-    return screen;
-}
-
 
 
 
@@ -315,7 +291,6 @@ int main(int argc, char** argv) {
         gSceneBuffer.push_back(CreateBuffer(sizeof(EngineScene), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
     }
 
-
     for (std::size_t i = 0; i < gGlobalDescriptorSets.size(); ++i) {
         VkDescriptorBufferInfo view_proj_ubo{};
         view_proj_ubo.buffer = gCameraBuffer[i].buffer;
@@ -349,7 +324,7 @@ int main(int argc, char** argv) {
 
     // Per object material descriptor set
     const std::vector<VkDescriptorSetLayoutBinding> perObjectLayout {
-            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
     };
 
     gObjectDescriptorLayout = CreateDescriptorSetLayout(perObjectLayout);
@@ -410,39 +385,29 @@ int main(int argc, char** argv) {
 
 
 
+
     // Parse satellite data file
     std::vector<SatelliteData> satelliteData = LoadSatelliteData("assets/satellite2.json");
 
     // Load models
-    EntityModel* icosphere = LoadModel("assets/icosphere.obj");
-    EntityModel* sphere    = LoadModel("assets/sphere.obj");
+    VertexArray icosphere = LoadModel("assets/icosphere.obj");
+    VertexArray sphere    = LoadModel("assets/sphere.obj");
     //EntityModel* cube      = EngineLoadModel("assets/iss.obj");
 
     // Load textures
-    EntityTexture* sunTexture   = LoadTexture("assets/textures/sun/sun.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-    EntityTexture* earthTexture = LoadTexture("assets/textures/earth/albedo.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-    EntityTexture* moonTexture  = LoadTexture("assets/textures/moon/moon.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-    EntityTexture* spaceTexture = LoadTexture("assets/textures/skysphere/space.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+    TextureBuffer sunTexture   = LoadTexture("assets/textures/sun/sun.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+    TextureBuffer earthTexture = LoadTexture("assets/textures/earth/albedo.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+    TextureBuffer moonTexture  = LoadTexture("assets/textures/moon/moon.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+    TextureBuffer spaceTexture = LoadTexture("assets/textures/skysphere/space.jpg", VK_FORMAT_R8G8B8A8_SRGB);
 
     //EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
     //EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg", VK_FORMAT_R8G8B8A8_UNORM);
 
     // Create entity instances
-    EntityInstance* sun   = CreateEntity(sphere, sunTexture, gObjectDescriptorLayout);
-    EntityInstance* earth = CreateEntity(sphere, earthTexture, gObjectDescriptorLayout);
-    EntityInstance* moon  = CreateEntity(sphere, moonTexture, gObjectDescriptorLayout);
-    EntityInstance* space = CreateEntity(icosphere, spaceTexture, gObjectDescriptorLayout);
-
-
-
-    // Create satellite instanced data
-    //std::vector<EntityInstance*> satellites;
-    //for (int i = 0; i < 50; ++i)
-    //    satellites.push_back(EngineCreateEntity(icosphere, moonTexture));
-
-
-
-
+    EntityInstance sun   = CreateEntity(sphere, sunTexture, gObjectDescriptorLayout);
+    EntityInstance earth = CreateEntity(sphere, earthTexture, gObjectDescriptorLayout);
+    EntityInstance moon  = CreateEntity(sphere, moonTexture, gObjectDescriptorLayout);
+    EntityInstance space = CreateEntity(icosphere, spaceTexture, gObjectDescriptorLayout);
 
 
     //glm::vec3 london = cartesian(earthRadius + iss_altitude, 46.636375, -173.238388);
@@ -484,38 +449,31 @@ int main(int argc, char** argv) {
         ++elapsedFrames;
 
 
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
 
         scene.cameraPosition = camera.position;
 
         // Camera movement
-//        if (EngineIsKeyDown(GLFW_KEY_W))  engine_move_forwards();
-//        if (EngineIsKeyDown(GLFW_KEY_S))  engine_move_backwards();
-//        if (EngineIsKeyDown(GLFW_KEY_A))  engine_move_left();
-//        if (EngineIsKeyDown(GLFW_KEY_D))  engine_move_right();
-//        if (EngineIsKeyDown(GLFW_KEY_SPACE))  engine_move_up();
-//        if (EngineIsKeyDown(GLFW_KEY_LEFT_CONTROL)) engine_move_down();
-//        if (EngineIsKeyDown(GLFW_KEY_Q))  engine_roll_left();
-//        if (EngineIsKeyDown(GLFW_KEY_E))  engine_roll_right();
-
+        float cameraSpeed = camera.speed * deltaTime;
+        if (IsKeyDown(GLFW_KEY_W))
+            camera.position += camera.front_vector * cameraSpeed;
+        if (IsKeyDown(GLFW_KEY_S))
+            camera.position -= camera.front_vector * cameraSpeed;
+        if (IsKeyDown(GLFW_KEY_A))
+            camera.position -= camera.right_vector * cameraSpeed;
+        if (IsKeyDown(GLFW_KEY_D))
+            camera.position += camera.right_vector * cameraSpeed;
+        if (IsKeyDown(GLFW_KEY_SPACE))
+            camera.position += camera.up_vector * cameraSpeed;
+        if (IsKeyDown(GLFW_KEY_LEFT_CONTROL))
+            camera.position -= camera.up_vector * cameraSpeed;
+        if (IsKeyDown(GLFW_KEY_Q))
+            camera.roll -= camera.roll_speed * deltaTime;
+        if (IsKeyDown(GLFW_KEY_E))
+            camera.roll += camera.roll_speed * deltaTime;
 
         // Update entities
         static float earthRotationX = 0.0f;
         static float earthRotationY = 0.0f;
-
-
-        ImGui::Begin("Debug Menu");
-        ImGui::SliderFloat("Latitude", &earthRotationX, -180.0f, 180.0f);
-        ImGui::SliderFloat("Longitude", &earthRotationY, -180.0f, 180.0f);
-        ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 5.0f);
-        ImGui::SliderFloat("Specular Strength", &scene.specularStrength, 0.0f, 5.0f);
-        ImGui::SliderFloat("Specular Shininess", &scene.specularShininess, 0.0f, 512.0f);
-        ImGui::SliderFloat3("Time of day (UTC)", glm::value_ptr(scene.lightPosition), -earthToSunDistance, earthToSunDistance);
-        ImGui::SliderFloat3("Sun Color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
-//            ImGui::SliderFloat("Camera Speed", EngineGetSetSpeed())
-        ImGui::End();
 
 
 
@@ -554,7 +512,7 @@ int main(int argc, char** argv) {
 
             // Render skysphere
             BindPipeline(skyspherePipeline, gGlobalDescriptorSets);
-            BindVertexArray(space->model);
+            BindVertexArray(icosphere);
             Render(space, skyspherePipeline);
 
 
@@ -567,26 +525,46 @@ int main(int argc, char** argv) {
 
 
 
-            static bool o = true;
-            glm::vec2 moonPos = WorldToScreen(window, camera, GetPosition(moon));
-            const ImGuiWindowFlags flags = ImGuiWindowFlags_None |
-                                           ImGuiWindowFlags_NoInputs |
-                                           ImGuiWindowFlags_NoDecoration |
-                                           ImGuiWindowFlags_NoBackground |
-                                           ImGuiWindowFlags_NoSavedSettings |
-                                           ImGuiWindowFlags_AlwaysAutoResize;
 
-            ImGui::SetNextWindowPos(ImVec2(moonPos.x, moonPos.y));
-            ImGui::Begin("text0", &o, flags);
-            ImGui::Text("Moon");
-            ImGui::Text("%f AU", AUDistance(GetPosition(moon), camera.position));
-            ImGui::Text("%f, %f", moonPos.x, moonPos.y);
-            ImGui::End();
+            ImGui_ImplVulkan_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            {
+                ImGui::Begin("Debug Menu");
+                ImGui::SliderFloat("Latitude", &earthRotationX, -180.0f, 180.0f);
+                ImGui::SliderFloat("Longitude", &earthRotationY, -180.0f, 180.0f);
+                ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 5.0f);
+                ImGui::SliderFloat("Specular Strength", &scene.specularStrength, 0.0f, 5.0f);
+                ImGui::SliderFloat("Specular Shininess", &scene.specularShininess, 0.0f, 512.0f);
+                ImGui::SliderFloat3("Time of day (UTC)", glm::value_ptr(scene.lightPosition), -earthToSunDistance,
+                                    earthToSunDistance);
+                ImGui::SliderFloat3("Sun Color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
+//            ImGui::SliderFloat("Camera Speed", EngineGetSetSpeed())
+                ImGui::End();
 
+                static bool o = true;
+                glm::vec2 moonPos = WorldToScreen(window, camera, GetPosition(moon));
+                const ImGuiWindowFlags flags = ImGuiWindowFlags_None |
+                                               ImGuiWindowFlags_NoInputs |
+                                               ImGuiWindowFlags_NoDecoration |
+                                               ImGuiWindowFlags_NoBackground |
+                                               ImGuiWindowFlags_NoSavedSettings |
+                                               ImGuiWindowFlags_AlwaysAutoResize;
 
+                ImGui::SetNextWindowPos(ImVec2(moonPos.x, moonPos.y));
+                ImGui::Begin("text0", &o, flags);
+                ImGui::Text("Moon");
+                ImGui::Text("%f AU", AUDistance(GetPosition(moon), camera.position));
+                ImGui::Text("%f, %f", moonPos.x, moonPos.y);
+                ImGui::End();
 
-            RenderUI();
+                RenderUI();
+            }
             ImGui::EndFrame();
+
+
+
+
 
             EndRenderPass();
 
@@ -607,49 +585,51 @@ int main(int argc, char** argv) {
 
 
 
-    // Begin the engine shutdown process
+
+
+
+
+
+
+
+
+
+
+    // Wait until all GPU commands have finished
     VkCheck(vkDeviceWaitIdle(renderer->device.device));
 
 
-    // Free application resources
-    DestroyEntity(space);
-    DestroyEntity(moon);
-    DestroyEntity(earth);
-    DestroyEntity(sun);
-
+    // Destroy resources
     DestroyTextureBuffer(spaceTexture);
     DestroyTextureBuffer(moonTexture);
     DestroyTextureBuffer(earthTexture);
     DestroyTextureBuffer(sunTexture);
-
 
     DestroyVertexArray(sphere);
     DestroyVertexArray(icosphere);
 
 
 
-
-
-
+    // Destroy rendering resources
     for (std::size_t i = 0; i < frames_in_flight; ++i) {
         DestroyBuffer(gSceneBuffer[i]);
         DestroyBuffer(gCameraBuffer[i]);
     }
+    gSceneBuffer.clear();
+    gCameraBuffer.clear();
 
-    vkDestroyDescriptorSetLayout(renderer->device.device, gObjectDescriptorLayout, nullptr);
-    vkDestroyDescriptorSetLayout(renderer->device.device, gGlobalDescriptorSetLayout, nullptr);
-
+    DestroyDescriptorSetLayout(gObjectDescriptorLayout);
+    DestroyDescriptorSetLayout(gGlobalDescriptorSetLayout);
 
     DestroyPipeline(wireframePipeline);
     DestroyPipeline(skyspherePipeline);
     DestroyPipeline(basicPipeline);
     DestroyRenderPass(geometryPass);
-
-
     DestroyRenderPass(guiPass);
 
-    DestroyUserInterface(uiContext);
 
+    // Destroy core systems
+    DestroyUserInterface(uiContext);
     DestroyRenderer(renderer);
     DestroyWindow(window);
 
@@ -658,10 +638,12 @@ int main(int argc, char** argv) {
 }
 
 
-void EngineRenderUI() {
-    RenderUI();
-}
 
+
+
+
+
+// TODO: Event system stuff
 static bool Press(KeyPressedEvent& event) {
     return true;
 }
@@ -713,43 +695,3 @@ static void EngineEventCallback(Event& event) {
     dispatcher.Dispatch<WindowResizedEvent>(Resize);
     dispatcher.Dispatch<WindowClosedEvent>(Close);
 }
-
-//void engine_move_forwards() {
-//    const float speed  = gCamera.speed * gEngine->deltaTime;
-//    gCamera.position += gCamera.front_vector * speed;
-//}
-//
-//void engine_move_backwards() {
-//    const float speed  = gCamera.speed * gEngine->deltaTime;
-//    gCamera.position -= gCamera.front_vector * speed;
-//}
-//
-//void engine_move_left() {
-//    const float speed  = gCamera.speed * gEngine->deltaTime;
-//    gCamera.position -= gCamera.right_vector * speed;
-//}
-//
-//void engine_move_right() {
-//    const float speed  = gCamera.speed * gEngine->deltaTime;
-//    gCamera.position += gCamera.right_vector * speed;
-//}
-//
-//void engine_move_up() {
-//    const float speed  = gCamera.speed * gEngine->deltaTime;
-//    gCamera.position += gCamera.up_vector * speed;
-//}
-//
-//void engine_move_down() {
-//    const float speed  = gCamera.speed * gEngine->deltaTime;
-//    gCamera.position -= gCamera.up_vector * speed;
-//}
-//
-//void engine_roll_left() {
-//    const float roll_speed = gCamera.roll_speed * gEngine->deltaTime;
-//    gCamera.roll         -= roll_speed;
-//}
-//
-//void engine_roll_right() {
-//    const float roll_speed = gCamera.roll_speed * gEngine->deltaTime;
-//    gCamera.roll         += roll_speed;
-//}

@@ -9,20 +9,19 @@
 struct EntityInstance {
     glm::mat4 matrix;
 
-    EntityModel* model;
-    EntityTexture* texture;
+    const VertexArray* model;
+    const TextureBuffer* texture;
 
     VkDescriptorSet descriptorSet;
 };
 
 
-EntityInstance* CreateEntity(EntityModel* model, EntityTexture* texture, VkDescriptorSetLayout layout);
-void DestroyEntity(EntityInstance* instance);
+EntityInstance CreateEntity(VertexArray& model, TextureBuffer& texture, VkDescriptorSetLayout layout);
 
-void Translate(EntityInstance* e, const glm::vec3& position);
-void Rotate(EntityInstance* e, float deg, const glm::vec3& axis);
-void Scale(EntityInstance* e, float scale);
-void Scale(EntityInstance* e, const glm::vec3& axis);
-glm::vec3 GetPosition(const EntityInstance* e);
+void Translate(EntityInstance& e, const glm::vec3& position);
+void Rotate(EntityInstance& e, float deg, const glm::vec3& axis);
+void Scale(EntityInstance& e, float scale);
+void Scale(EntityInstance& e, const glm::vec3& axis);
+glm::vec3 GetPosition(const EntityInstance& e);
 
 #endif

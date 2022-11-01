@@ -3,9 +3,8 @@
 
 #include "Renderer.hpp"
 
-EntityModel* CreateVertexArray(void* v, int vs, void* i, int is) {
-    auto r = new EntityModel();
-
+VertexArray CreateVertexArray(void* v, int vs, void* i, int is) {
+    VertexArray vertexArray{};
 
     const RendererContext* rc = GetRendererContext();
 
@@ -15,9 +14,9 @@ EntityModel* CreateVertexArray(void* v, int vs, void* i, int is) {
     Buffer vertexStagingBuffer = CreateStagingBuffer(v, vs);
     Buffer indexStagingBuffer  = CreateStagingBuffer(i, is);
 
-    r->vertex_buffer = CreateGPUBuffer(vs, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    r->index_buffer  = CreateGPUBuffer(is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    r->index_count   = is / sizeof(uint32_t); // todo: Maybe be unsafe for a hard coded type.
+    vertexArray.vertex_buffer = CreateGPUBuffer(vs, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vertexArray.index_buffer  = CreateGPUBuffer(is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    vertexArray.index_count   = is / sizeof(uint32_t); // todo: Maybe be unsafe for a hard coded type.
 
     // Upload data to the GPU
     SubmitToGPU([&] {
@@ -25,9 +24,9 @@ EntityModel* CreateVertexArray(void* v, int vs, void* i, int is) {
         vertex_copy_info.size = vs;
         index_copy_info.size = is;
 
-        vkCmdCopyBuffer(rc->submit.CmdBuffer, vertexStagingBuffer.buffer, r->vertex_buffer.buffer, 1,
+        vkCmdCopyBuffer(rc->submit.CmdBuffer, vertexStagingBuffer.buffer, vertexArray.vertex_buffer.buffer, 1,
                         &vertex_copy_info);
-        vkCmdCopyBuffer(rc->submit.CmdBuffer, indexStagingBuffer.buffer, r->index_buffer.buffer, 1,
+        vkCmdCopyBuffer(rc->submit.CmdBuffer, indexStagingBuffer.buffer, vertexArray.index_buffer.buffer, 1,
                         &index_copy_info);
     });
 
@@ -36,21 +35,19 @@ EntityModel* CreateVertexArray(void* v, int vs, void* i, int is) {
     DestroyBuffer(indexStagingBuffer);
     DestroyBuffer(vertexStagingBuffer);
 
-    return r;
+    return vertexArray;
 }
 
-void DestroyVertexArray(EntityModel* model) {
-    DestroyBuffer(model->index_buffer);
-    DestroyBuffer(model->vertex_buffer);
-
-    delete model;
+void DestroyVertexArray(VertexArray& vertexArray) {
+    DestroyBuffer(vertexArray.index_buffer);
+    DestroyBuffer(vertexArray.vertex_buffer);
 }
 
-void BindVertexArray(const EntityModel* model) {
+void BindVertexArray(const VertexArray& vertexArray) {
     const VkCommandBuffer& cmd_buffer = GetCommandBuffer();
 
     const VkDeviceSize offset{ 0 };
-    vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &model->vertex_buffer.buffer, &offset);
-    vkCmdBindIndexBuffer(cmd_buffer, model->index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
+    vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &vertexArray.vertex_buffer.buffer, &offset);
+    vkCmdBindIndexBuffer(cmd_buffer, vertexArray.index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
 }
 

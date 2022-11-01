@@ -81,8 +81,8 @@ static void ProcessModel(std::vector<Vertex>& vertices, std::vector<uint32_t>& i
 
 }
 
-EntityModel* LoadModel(const char* path) {
-    EntityModel* buffer = nullptr;
+VertexArray LoadModel(const char* path) {
+    VertexArray buffer = {};
 
     Assimp::Importer importer;
 
@@ -91,7 +91,7 @@ EntityModel* LoadModel(const char* path) {
 
     if (!scene) {
         printf("Failed to load model at path: %s\n", path);
-        return nullptr;
+        return {};
     }
 
     std::vector<Vertex> vertices;

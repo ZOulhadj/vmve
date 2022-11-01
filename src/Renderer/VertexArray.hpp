@@ -4,15 +4,15 @@
 
 #include "Buffer.hpp"
 
-struct EntityModel {
+struct VertexArray {
     Buffer   vertex_buffer;
     Buffer   index_buffer;
     uint32_t index_count;
 };
 
-EntityModel* CreateVertexArray(void* v, int vs, void* i, int is);
-void DestroyVertexArray(EntityModel* model);
+VertexArray CreateVertexArray(void* v, int vs, void* i, int is);
+void DestroyVertexArray(VertexArray& vertexArray);
 
-void BindVertexArray(const EntityModel* model);
+void BindVertexArray(const VertexArray& vertexArray);
 
 #endif

@@ -1,12 +1,14 @@
 #include "Input.hpp"
 
+#include "Renderer/Renderer.hpp"
 
 bool IsKeyDown(int keycode) {
-    //const int state = glfwGetKey(gWindow->handle, keycode);
+    // HACK: The renderer has a pointer to the window which we can use for now.
+    const RendererContext* rc = GetRendererContext();
 
-    //return state == GLFW_PRESS;
+    const int state = glfwGetKey(rc->window->handle, keycode);
 
-    return false;
+    return state == GLFW_PRESS;
 }
 
 bool IsMouseButtonDown(int buttoncode) {

@@ -112,6 +112,7 @@ Swapchain& GetSwapchain();
 
 
 VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
+void DestroyDescriptorSetLayout(VkDescriptorSetLayout layout);
 std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout, uint32_t frames);
 VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout);
 
@@ -137,6 +138,6 @@ void EndRenderPass();
 
 void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
 
-void Render(EntityInstance* instance, Pipeline& pipeline);
+void Render(EntityInstance& instance, Pipeline& pipeline);
 
 #endif

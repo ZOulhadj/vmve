@@ -5,8 +5,8 @@
 
 #include "Renderer.hpp"
 
-EntityTexture* LoadTexture(const char* path, VkFormat format) {
-    EntityTexture* buffer = nullptr;
+TextureBuffer LoadTexture(const char* path, VkFormat format) {
+    TextureBuffer buffer{};
 
     // Load the texture from the file system.
     int width, height, channels;
@@ -16,16 +16,16 @@ EntityTexture* LoadTexture(const char* path, VkFormat format) {
 
         stbi_image_free(texture);
 
-        return nullptr;
+        return {};
     }
 
     // Store texture data into GPU memory.
     buffer = CreateTextureBuffer(texture, width, height, format);
 
-    buffer->sampler = CreateSampler(VK_FILTER_LINEAR, 16);
-    buffer->descriptor.sampler = buffer->sampler;
-    buffer->descriptor.imageView = buffer->image.view;
-    buffer->descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    buffer.sampler = CreateSampler(VK_FILTER_LINEAR, 16);
+    buffer.descriptor.sampler = buffer.sampler;
+    buffer.descriptor.imageView = buffer.image.view;
+    buffer.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     // Now that the texture data has been copied into GPU memory we can safely
     // delete that texture from the CPU.
@@ -35,17 +35,15 @@ EntityTexture* LoadTexture(const char* path, VkFormat format) {
 }
 
 
-EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format) {
-    auto buffer = new EntityTexture();
+TextureBuffer CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format) {
+    TextureBuffer buffer{};
 
     const RendererContext* rc = GetRendererContext();
 
     Buffer staging_buffer = CreateStagingBuffer(texture, width * height * 4);
 
-    buffer->image = CreateImage(format,
-                                {width, height},
-                                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                VK_IMAGE_ASPECT_COLOR_BIT);
+    buffer.image = CreateImage(format, {width, height}, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                               VK_IMAGE_ASPECT_COLOR_BIT);
 
     // Upload texture data into GPU memory by doing a layout transition
     SubmitToGPU([&]() {
@@ -55,7 +53,7 @@ EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint3
         VkImageMemoryBarrier imageBarrier_toTransfer{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
         imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        imageBarrier_toTransfer.image = buffer->image.handle;
+        imageBarrier_toTransfer.image = buffer.image.handle;
         imageBarrier_toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         imageBarrier_toTransfer.subresourceRange.baseMipLevel = 0;
         imageBarrier_toTransfer.subresourceRange.levelCount = 1;
@@ -86,7 +84,7 @@ EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint3
         //copy the buffer into the image
         vkCmdCopyBufferToImage(rc->submit.CmdBuffer,
                                staging_buffer.buffer,
-                               buffer->image.handle,
+                               buffer.image.handle,
                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
 
@@ -111,11 +109,9 @@ EntityTexture* CreateTextureBuffer(unsigned char* texture, uint32_t width, uint3
     return buffer;
 }
 
-void DestroyTextureBuffer(EntityTexture* texture) {
-    DestroyImage(&texture->image);
-    DestroySampler(texture->sampler);
-
-    delete texture;
+void DestroyTextureBuffer(TextureBuffer& texture) {
+    DestroyImage(texture.image);
+    DestroySampler(texture.sampler);
 }
 
 VkSampler CreateSampler(VkFilter filtering, uint32_t anisotropic_level) {

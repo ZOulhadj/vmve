@@ -89,7 +89,7 @@ static Swapchain CreateSwapchain(BufferMode buffering_mode, VSyncMode sync_mode)
         ImageBuffer& image = swapchain.images[i];
 
         image.handle = color_images[i];
-        image.view   = create_image_view(image.handle, swapchain_info.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+        image.view   = CreateImageView(image.handle, swapchain_info.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
         image.format = swapchain_info.imageFormat;
         image.extent = swapchain_info.imageExtent;
     }
@@ -104,7 +104,7 @@ static Swapchain CreateSwapchain(BufferMode buffering_mode, VSyncMode sync_mode)
 }
 
 static void DestroySwapchain(Swapchain& swapchain) {
-    DestroyImage(&swapchain.depth_image);
+    DestroyImage(swapchain.depth_image);
 
     for (auto& image : swapchain.images) {
         vkDestroyImageView(g_rc->device.device, image.view, nullptr);
@@ -309,6 +309,10 @@ VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSe
     VkCheck(vkCreateDescriptorSetLayout(g_rc->device.device, &descriptor_layout_info, nullptr, &layout));
 
     return layout;
+}
+
+void DestroyDescriptorSetLayout(VkDescriptorSetLayout layout) {
+    vkDestroyDescriptorSetLayout(g_rc->device.device, layout, nullptr);
 }
 
 std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout, uint32_t frames) {
@@ -705,12 +709,12 @@ void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descri
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets[current_frame], 0, nullptr);
 }
 
-void Render(EntityInstance* instance, Pipeline& pipeline) {
+void Render(EntityInstance& instance, Pipeline& pipeline) {
     const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
 
-    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &instance->descriptorSet, 0, nullptr);
-    vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance->matrix);
-    vkCmdDrawIndexed(cmd_buffer, instance->model->index_count, 1, 0, 0, 0);
+    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &instance.descriptorSet, 0, nullptr);
+    vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
+    vkCmdDrawIndexed(cmd_buffer, instance.model->index_count, 1, 0, 0, 0);
 
-    instance->matrix = glm::mat4(1.0f);
+    instance.matrix = glm::mat4(1.0f);
 }

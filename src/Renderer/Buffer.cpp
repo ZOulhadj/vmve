@@ -132,7 +132,7 @@ void DestroyBuffer(Buffer& buffer) {
 }
 
 
-VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect) {
+VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect) {
     VkImageView view{};
 
     const RendererContext* rc = GetRendererContext();
@@ -173,17 +173,17 @@ ImageBuffer CreateImage(VkFormat format, VkExtent2D extent, VkImageUsageFlags us
 
     VkCheck(vmaCreateImage(rc->allocator, &imageInfo, &allocInfo, &image.handle, &image.allocation, nullptr));
 
-    image.view   = create_image_view(image.handle, format, aspect);
+    image.view   = CreateImageView(image.handle, format, aspect);
     image.format = format;
     image.extent = extent;
 
     return image;
 }
 
-void DestroyImage(ImageBuffer* image) {
+void DestroyImage(ImageBuffer& image) {
     const RendererContext* rc = GetRendererContext();
 
-    vkDestroyImageView(rc->device.device, image->view, nullptr);
-    vmaDestroyImage(rc->allocator, image->handle, image->allocation);
+    vkDestroyImageView(rc->device.device, image.view, nullptr);
+    vmaDestroyImage(rc->allocator, image.handle, image.allocation);
 }
 
