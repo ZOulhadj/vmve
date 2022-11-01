@@ -600,7 +600,7 @@ RendererContext* CreateRenderer(const Window* window, BufferMode buffering_mode,
     };
 
 
-    g_rc        = CreateRendererContext(VK_API_VERSION_1_2, layers, extensions, features, window);
+    g_rc        = CreateRendererContext(VK_API_VERSION_1_0, layers, extensions, features, window);
     g_swapchain = CreateSwapchain(buffering_mode, sync_mode);
 
     CreateFrameBarriers();

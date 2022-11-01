@@ -7,7 +7,7 @@ project(my_engine
 ###############################
 #       Compiler Options      #
 ###############################
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 ###############################
@@ -43,7 +43,7 @@ add_executable(${PROJECT_NAME}
         "sandbox/Main.cpp"
 
         # engine source
-        "src/window.cpp"
+        "src/Window.cpp"
         "src/Camera.cpp"
         "src/Entity.cpp"
         "src/Input.cpp"

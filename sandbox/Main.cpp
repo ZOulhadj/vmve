@@ -256,14 +256,14 @@ int main(int argc, char** argv) {
 
 
     // Load shaders text files
-    std::string objectVSCode  = LoadTextFile("src/shaders/object.vert");
-    std::string objectFSCode  = LoadTextFile("src/shaders/object.frag");
-    std::string earthVSCode  = LoadTextFile("src/shaders/earth.vert");
-    std::string earthFSCode  = LoadTextFile("src/shaders/earth.frag");
-    std::string skysphereVSCode = LoadTextFile("src/shaders/skysphere.vert");
-    std::string skysphereFSCode = LoadTextFile("src/shaders/skysphere.frag");
-    std::string lightingVSCode  = LoadTextFile("src/shaders/lighting.vert");
-    std::string lightingFSCode  = LoadTextFile("src/shaders/lighting.frag");
+    std::string objectVSCode  = LoadTextFile("src/Shaders/object.vert");
+    std::string objectFSCode  = LoadTextFile("src/Shaders/object.frag");
+    std::string earthVSCode  = LoadTextFile("src/Shaders/earth.vert");
+    std::string earthFSCode  = LoadTextFile("src/Shaders/earth.frag");
+    std::string skysphereVSCode = LoadTextFile("src/Shaders/skysphere.vert");
+    std::string skysphereFSCode = LoadTextFile("src/Shaders/skysphere.frag");
+    std::string lightingVSCode  = LoadTextFile("src/Shaders/lighting.vert");
+    std::string lightingFSCode  = LoadTextFile("src/Shaders/lighting.frag");
 
     // Compile text shaders into Vulkan binary shader modules
     Shader objectVS  = CreateVertexShader(objectVSCode);
@@ -531,6 +531,7 @@ int main(int argc, char** argv) {
             ImGui::NewFrame();
             {
                 ImGui::Begin("Debug Menu");
+                ImGui::Text("Delta Time: %f", deltaTime);
                 ImGui::SliderFloat("Latitude", &earthRotationX, -180.0f, 180.0f);
                 ImGui::SliderFloat("Longitude", &earthRotationY, -180.0f, 180.0f);
                 ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 5.0f);

@@ -83,7 +83,6 @@ static Device CreateDevice(VkInstance instance,
         VkPhysicalDeviceProperties gpu_properties{};
         vkGetPhysicalDeviceProperties(gpus[i], &gpu_properties);
 
-
         features_supported = HasRequiredFeatures(gpus[i], features);
 
         // Queue families are a group of queues that together perform specific
@@ -131,22 +130,27 @@ static Device CreateDevice(VkInstance instance,
         return {};
     }
 
+    // todo: Here we should query for a GPU.
     // If we only have a single suitable GPU then there is no need to do further filtering
     // and thus, we can simply return that one GPU we do have.
-    if (suitable_gpus.size() == 1) {
-        const gpu_info& info = suitable_gpus[0];
+//    if (suitable_gpus.size() == 1) {
+//        const gpu_info& info = suitable_gpus[0];
+//
+//        device.gpu = info.gpu;
+//        device.graphics_index = info.graphics_index;
+//        device.present_index = info.present_index;
+//    } else {
+//        // If however, we have multiple GPU's then we have and choose which one we
+//        // actually want to use. We always prefer to use a dedicated GPU over an
+//        // integrated one.
+//        assert("todo: multiple GPU checks has not been implemented.");
+//    }
 
-        device.gpu = info.gpu;
-        device.graphics_index = info.graphics_index;
-        device.present_index = info.present_index;
-    } else {
-        // If however, we have multiple GPU's then we have and choose which one we
-        // actually want to use. We always prefer to use a dedicated GPU over an
-        // integrated one.
-        assert("todo: multiple GPU checks has not been implemented.");
-    }
+    const gpu_info& info = suitable_gpus[0];
 
-
+    device.gpu = info.gpu;
+    device.graphics_index = info.graphics_index;
+    device.present_index = info.present_index;
 
 
     // create a logical device from a physical device
