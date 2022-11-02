@@ -5,4 +5,8 @@
 bool IsKeyDown(int keycode);
 bool IsMouseButtonDown(int buttoncode);
 
+
+glm::vec2 GetMousePosition();
+
+
 #endif

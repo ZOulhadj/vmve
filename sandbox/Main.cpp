@@ -49,23 +49,37 @@ struct SatelliteData {
     int revAtEpoch;
 };
 
-
-glm::vec3 cartesian(float radius, float latitude, float longitude, float elevation = 0.0f) {
+// Converts from a geodetic coordinate system to an earth centered cartesian
+// coordinate system. The geodetic system is a combination of latitude, longitude
+// and height.
+//
+// Note that this function returns the X, Y and Z values in the earth centered system.
+// Assuming you are facing prime meridian, X points backwards, Y points to the right
+// and Z points up.
+glm::vec3 GeodeticToEcef(float radius, float latitude, float longitude, float height = 0.0f) {
     const float lat = glm::radians(latitude);
     const float lon = glm::radians(longitude);
 
-    // If using WGS-84 coordinates
-#if 0
-    const float x = (radius + elevation) * glm::cos(lat) * glm::cos(lon);
-    const float y = (radius + elevation) * glm::cos(lat) * glm::sin(lon);
-    const float z = (radius + elevation) * glm::sin(lat);
-#else
-    const float x = (radius + elevation) * glm::cos(lat) * glm::cos(lon);
-    const float y = (radius + elevation) * glm::sin(lat);
-    const float z = (radius + elevation) * glm::cos(lat) * glm::sin(lon);
-#endif
+    const float x = (radius + height) * glm::cos(lat) * glm::cos(lon);
+    const float y = (radius + height) * glm::cos(lat) * glm::sin(lon);
+    const float z = (radius + height) * glm::sin(lat);
 
     return { x, y, z };
+}
+
+glm::vec2 CartesianToGeodetic(const glm::vec3& position, float radius) {
+    // todo: Returns incorrect values. Might be due to coordinate system conversions.
+    const float longitude = glm::atan(position.y / position.x);
+    const float p    = glm::sqrt(glm::pow(position.x, 2) + glm::pow(position.y, 2));
+    const float latitude  = glm::atan(p / position.z);
+
+    return { glm::degrees(latitude), glm::degrees(longitude) };
+}
+
+// Small helper function to convert from an Earth Centric coordinate system
+// X back, Y right and Z up to your typical Cartesian X right, Y up and Z forward
+glm::vec3 EcefToCartesian(const glm::vec3& ecefPosition) {
+    return { ecefPosition.y, ecefPosition.z, -ecefPosition.x };
 }
 
 glm::vec2 geographic(float radius, const glm::vec3& position) {
@@ -211,9 +225,8 @@ static void EngineEventCallback(Event& event);
 
 
 bool running = true;
-float uptime  = 0.0f;
 float deltaTime = 0.0f;
-float elapsedFrames = 0.0f;
+
 
 int main(int argc, char** argv) {
     Window* window =  CreateWindow(APPLICATION_NAME, APPLICATION_WIDTH, APPLICATION_HEIGHT);
@@ -396,9 +409,9 @@ int main(int argc, char** argv) {
 
     // Load textures
     TextureBuffer sunTexture   = LoadTexture("assets/textures/sun/sun.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-    TextureBuffer earthTexture = LoadTexture("assets/textures/earth/albedo.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+    TextureBuffer earthTexture = LoadTexture("assets/textures/earth/albedo_2k.jpg", VK_FORMAT_R8G8B8A8_SRGB);
     TextureBuffer moonTexture  = LoadTexture("assets/textures/moon/moon.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-    TextureBuffer spaceTexture = LoadTexture("assets/textures/skysphere/space.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+    TextureBuffer spaceTexture = LoadTexture("assets/textures/skysphere/space_1k.jpg", VK_FORMAT_R8G8B8A8_SRGB);
 
     //EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
     //EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg", VK_FORMAT_R8G8B8A8_UNORM);
@@ -410,10 +423,13 @@ int main(int argc, char** argv) {
     EntityInstance space = CreateEntity(icosphere, spaceTexture, gObjectDescriptorLayout);
 
 
-    //glm::vec3 london = cartesian(earthRadius + iss_altitude, 46.636375, -173.238388);
-    glm::vec3 london = cartesian(earthRadius, 0.0f, 0.0f, iss_altitude);
-    QuatCamera camera = CreateCamera({ 0.0f, 0.0f, -earthRadius * 2.0f}, 60.0f, lightSpeed / 200.0f);
+    // london -> 51.5072, -0.1276
+    // sydney -> -33.865143, 151.2093
 
+    glm::vec3 posReal = GeodeticToEcef(earthRadius, 51.5072, -0.1276, iss_altitude * 10.0f);
+    glm::vec3 pos     = EcefToCartesian(posReal);
+    //QuatCamera camera = CreateCamera({ 0.0f, 0.0f, -earthRadius * 2.0f}, 60.0f, lightSpeed / 200.0f);
+    QuatCamera camera = CreateCamera(pos, 60.0f, lightSpeed / 200.0f);
 
     EngineScene scene {
         .ambientStrength = 0.05f,
@@ -426,29 +442,20 @@ int main(int argc, char** argv) {
 
 
     running       = true;
-    uptime        = 0.0f;
     deltaTime     = 0.0f;
-    elapsedFrames = 0.0f;
-
-
+    float uptime  = 0.0f;
     while (running) {
         // Calculate the delta time between previous and current frame. This
         // allows for frame dependent systems such as movement and translation
         // to run at the same speed no matter the time difference between two
         // frames.
-        static clock_t lastTime;
-        const clock_t currentTime = clock();
-        deltaTime = ((float)currentTime - (float)lastTime) / CLOCKS_PER_SEC;
-        lastTime  = currentTime;
+        // todo: replace glfwGetTime() with C++ chrono
+        static float lastTime;
+        float currentTime = (float)glfwGetTime();
+        deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
 
-        uptime += deltaTime;
-
-        // todo: This may not be the most accurate way of calculating frames.
-        // todo: Maybe this value should be obtained by the GPU since it runs
-        // todo: separately from the CPU.
-        ++elapsedFrames;
-
-
+        uptime += (float)glfwGetTime();
 
         scene.cameraPosition = camera.position;
 
@@ -472,8 +479,8 @@ int main(int argc, char** argv) {
             camera.roll += camera.roll_speed * deltaTime;
 
         // Update entities
-        static float earthRotationX = 0.0f;
-        static float earthRotationY = 0.0f;
+        static float earthLatitudeRot = 0.0f;
+        static float earthLongitudeRot = -90.0f;
 
 
 
@@ -486,16 +493,17 @@ int main(int argc, char** argv) {
         { // Earth
             Translate(earth, {0.0f, 0.0f, 0.0f});
             Scale(earth, earthRadius);
-            Rotate(earth, earthRotationX, {1.0f, 0.0f, 0.0f});
-            Rotate(earth, earthRotationY, {0.0f, 1.0f, 0.0f});
+            Rotate(earth, earthLatitudeRot, {1.0f, 0.0f, 0.0f});
+            Rotate(earth, earthLongitudeRot, {0.0f, 1.0f, 0.0f});
         }
         { // Moon
-            Translate(moon, CircularTransform(moon, uptime, -15.0f, earthToMoonDistance));
+            Translate(moon, CircularTransform(moon, uptime, .2f, earthToMoonDistance));
             Scale(moon, moonRadius);
             Rotate(moon, 0.0f, {0.0f, 1.0f, 0.0f});
         }
 
-
+        glm::vec2 cursorPos = GetMousePosition();
+        UpdateCameraView(camera, cursorPos.x, cursorPos.y);
         UpdateCamera(camera);
 
         // copy data into uniform buffer
@@ -532,15 +540,20 @@ int main(int argc, char** argv) {
             {
                 ImGui::Begin("Debug Menu");
                 ImGui::Text("Delta Time: %f", deltaTime);
-                ImGui::SliderFloat("Latitude", &earthRotationX, -180.0f, 180.0f);
-                ImGui::SliderFloat("Longitude", &earthRotationY, -180.0f, 180.0f);
+                ImGui::SliderFloat("Latitude", &earthLatitudeRot, -180.0f, 180.0f);
+                ImGui::SliderFloat("Longitude", &earthLongitudeRot, -180.0f, 180.0f);
                 ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 5.0f);
                 ImGui::SliderFloat("Specular Strength", &scene.specularStrength, 0.0f, 5.0f);
                 ImGui::SliderFloat("Specular Shininess", &scene.specularShininess, 0.0f, 512.0f);
                 ImGui::SliderFloat3("Time of day (UTC)", glm::value_ptr(scene.lightPosition), -earthToSunDistance,
                                     earthToSunDistance);
                 ImGui::SliderFloat3("Sun Color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
-//            ImGui::SliderFloat("Camera Speed", EngineGetSetSpeed())
+
+                glm::vec2 c = CartesianToGeodetic(camera.position, earthRadius);
+                ImGui::Text("Latitude: %.2f", c.x);
+                ImGui::Text("Longitude: %.2f", c.y);
+
+
                 ImGui::End();
 
                 static bool o = true;

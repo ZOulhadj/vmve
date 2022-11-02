@@ -14,3 +14,15 @@ bool IsKeyDown(int keycode) {
 bool IsMouseButtonDown(int buttoncode) {
     return false;
 }
+
+glm::vec2 GetMousePosition()
+{
+    // HACK: The renderer has a pointer to the window which we can use for now.
+    const RendererContext* rc = GetRendererContext();
+
+    double x, y;
+    glfwGetCursorPos(rc->window->handle, &x, &y);
+
+
+    return { x, y };
+}
