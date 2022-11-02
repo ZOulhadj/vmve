@@ -715,6 +715,4 @@ void Render(EntityInstance& instance, Pipeline& pipeline) {
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &instance.descriptorSet, 0, nullptr);
     vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
     vkCmdDrawIndexed(cmd_buffer, instance.model->index_count, 1, 0, 0, 0);
-
-    instance.matrix = glm::mat4(1.0f);
 }

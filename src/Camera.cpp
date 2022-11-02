@@ -27,7 +27,7 @@ QuatCamera CreateCamera(const glm::vec3& position, float fov, float speed) {
     camera.height      = 720.0f;
     camera.speed       = speed;
     camera.view_speed  = 0.1f;
-    camera.roll_speed  = 180.0f;
+    camera.roll_speed  = 45.0f;
     camera.roll        = 0.0f;
     camera.fov         = fov;
     camera.near        = 0.1f;

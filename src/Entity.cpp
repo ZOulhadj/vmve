@@ -27,11 +27,14 @@ EntityInstance CreateEntity(VertexArray& model, TextureBuffer& texture, VkDescri
 }
 
 void Translate(EntityInstance& e, const glm::vec3& position) {
+    // todo: temp matrix reset
+    e.matrix = glm::mat4(1.0f);
+
     e.matrix = glm::translate(e.matrix, position);
 }
 
-void Rotate(EntityInstance& e, float deg, const glm::vec3& axis) {
-    e.matrix = glm::rotate(e.matrix, glm::radians(deg), axis);
+void Rotate(EntityInstance& e, float degrees, const glm::vec3& axis) {
+    e.matrix = glm::rotate(e.matrix, glm::radians(degrees), axis);
 }
 
 void Scale(EntityInstance& e, float scale) {
@@ -43,5 +46,5 @@ void Scale(EntityInstance& e, const glm::vec3& axis) {
 }
 
 glm::vec3 GetPosition(const EntityInstance& e) {
-    return e.matrix[3];
+    return { e.matrix[3].x, e.matrix[3].y, e.matrix[3].z };
 }

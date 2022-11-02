@@ -82,39 +82,45 @@ glm::vec3 EcefToCartesian(const glm::vec3& ecefPosition) {
     return { ecefPosition.y, ecefPosition.z, -ecefPosition.x };
 }
 
-glm::vec2 geographic(float radius, const glm::vec3& position) {
-    // If using WGS-84 coordinates
-#if 0
-    const float latitude = glm::asin(position.z / radius);
-    const float longitude = glm::atan(position.y, position.x);
-#else
-    const float latitude = glm::asin(position.y / radius);
-    const float longitude = glm::atan(position.z, position.x);
-#endif
 
-    return { glm::degrees(latitude), glm::degrees(longitude) };
+// Calculates the distance between two geographic positions
+float GeodeticDistance(glm::vec2& geodetic1, glm::vec2& geodetic2, float radius)
+{
+    const auto pi = glm::pi<float>();
+
+    float x = glm::pow(glm::sin(((geodetic2.x - geodetic1.x) * pi / 180.0f) / 2.0f), 2.0f);
+    float y = glm::cos(geodetic1.x * pi / 180.0f) * glm::cos(geodetic2.x * pi / 180.0f);
+    float z = glm::pow(glm::sin(((geodetic2.y - geodetic1.y) * pi / 180.0f) / 2.0f), 2.0f);
+    float a = x + y * z;
+    float c = 2.0f * glm::atan(glm::sqrt(a) / glm::sqrt(1.0f - a));
+
+    return radius * c; // in meters
 }
 
-glm::vec3 CircularTransform(EntityInstance& e, float angle, float freq, float radius) {
-    const glm::vec3& position = GetPosition(e);
+//
+//glm::vec2 geographic(float radius, const glm::vec3& position) {
+//    // If using WGS-84 coordinates
+//#if 0
+//    const float latitude = glm::asin(position.z / radius);
+//    const float longitude = glm::atan(position.y, position.x);
+//#else
+//    const float latitude = glm::asin(position.y / radius);
+//    const float longitude = glm::atan(position.z, position.x);
+//#endif
+//
+//    return { glm::degrees(latitude), glm::degrees(longitude) };
+//}
+//
 
-    const float radians = glm::radians(angle * freq);
 
-    const float x = glm::cos(radians) * radius;
-    const float y = position.y;
-    const float z = glm::sin(radians) * radius;
+glm::vec3 CircularTransform(const glm::vec3& center, float degrees, float radius) {
+    const float radians = glm::radians(degrees);
 
-    return glm::vec3(x, y, z);
-}
+    const float x = glm::sin(radians) * radius;
+    const float y = 0.0f;
+    const float z = glm::cos(radians) * radius;
 
-glm::vec3 CircularTransform(const glm::vec3& pos, float angle, float freq, float radius) {
-    const float radians = glm::radians(angle * freq);
-
-    const float x = glm::cos(radians) * radius;
-    const float y = pos.y;
-    const float z = glm::sin(radians) * radius;
-
-    return pos + glm::vec3(x, y, z);
+    return center + glm::vec3{ x, y, z };
 }
 
 float AUDistance(const glm::vec3& a, const glm::vec3& b) {
@@ -411,7 +417,7 @@ int main(int argc, char** argv) {
     TextureBuffer sunTexture   = LoadTexture("assets/textures/sun/sun.jpg", VK_FORMAT_R8G8B8A8_SRGB);
     TextureBuffer earthTexture = LoadTexture("assets/textures/earth/albedo_2k.jpg", VK_FORMAT_R8G8B8A8_SRGB);
     TextureBuffer moonTexture  = LoadTexture("assets/textures/moon/moon.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-    TextureBuffer spaceTexture = LoadTexture("assets/textures/skysphere/space_1k.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+    TextureBuffer spaceTexture = LoadTexture("assets/textures/skysphere/black.jpg", VK_FORMAT_R8G8B8A8_SRGB);
 
     //EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
     //EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg", VK_FORMAT_R8G8B8A8_UNORM);
@@ -455,24 +461,24 @@ int main(int argc, char** argv) {
         deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
-        uptime += (float)glfwGetTime();
+        uptime += deltaTime;
 
         scene.cameraPosition = camera.position;
 
         // Camera movement
-        float cameraSpeed = camera.speed * deltaTime;
+        float dt = camera.speed * deltaTime;
         if (IsKeyDown(GLFW_KEY_W))
-            camera.position += camera.front_vector * cameraSpeed;
+            camera.position += camera.front_vector * dt;
         if (IsKeyDown(GLFW_KEY_S))
-            camera.position -= camera.front_vector * cameraSpeed;
+            camera.position -= camera.front_vector * dt;
         if (IsKeyDown(GLFW_KEY_A))
-            camera.position -= camera.right_vector * cameraSpeed;
+            camera.position -= camera.right_vector * dt;
         if (IsKeyDown(GLFW_KEY_D))
-            camera.position += camera.right_vector * cameraSpeed;
+            camera.position += camera.right_vector * dt;
         if (IsKeyDown(GLFW_KEY_SPACE))
-            camera.position += camera.up_vector * cameraSpeed;
+            camera.position += camera.up_vector * dt;
         if (IsKeyDown(GLFW_KEY_LEFT_CONTROL))
-            camera.position -= camera.up_vector * cameraSpeed;
+            camera.position -= camera.up_vector * dt;
         if (IsKeyDown(GLFW_KEY_Q))
             camera.roll -= camera.roll_speed * deltaTime;
         if (IsKeyDown(GLFW_KEY_E))
@@ -497,9 +503,9 @@ int main(int argc, char** argv) {
             Rotate(earth, earthLongitudeRot, {0.0f, 1.0f, 0.0f});
         }
         { // Moon
-            Translate(moon, CircularTransform(moon, uptime, .2f, earthToMoonDistance));
+            Translate(moon, CircularTransform({ 0.0f, 0.0f, 0.0f }, 5.0f * uptime, earthToMoonDistance));
             Scale(moon, moonRadius);
-            Rotate(moon, 0.0f, {0.0f, 1.0f, 0.0f});
+            Rotate(moon, 50.0f * uptime, {0.0f, 1.0f, 0.0f});
         }
 
         glm::vec2 cursorPos = GetMousePosition();
