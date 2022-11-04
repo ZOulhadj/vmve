@@ -56,9 +56,9 @@ struct SatelliteData {
 // Note that this function returns the X, Y and Z values in the earth centered system.
 // Assuming you are facing prime meridian, X points backwards, Y points to the right
 // and Z points up.
-glm::vec3 GeodeticToEcef(float radius, float latitude, float longitude, float height = 0.0f) {
-    const float lat = glm::radians(latitude);
-    const float lon = glm::radians(longitude);
+glm::vec3 GeodeticToEcef(float radius, const glm::vec2& coords, float height = 0.0f) {
+    const float lat = glm::radians(coords.x);
+    const float lon = glm::radians(coords.y);
 
     const float x = (radius + height) * glm::cos(lat) * glm::cos(lon);
     const float y = (radius + height) * glm::cos(lat) * glm::sin(lon);
@@ -131,6 +131,34 @@ float AUDistance(const glm::vec3& a, const glm::vec3& b) {
 
     return d / earthToSunDistance;
 }
+
+
+static void HandleInput(QuatCamera& camera, float deltaTime) {
+    float dt = camera.speed * deltaTime;
+    if (IsKeyDown(GLFW_KEY_W))
+        camera.position += camera.front_vector * dt;
+    if (IsKeyDown(GLFW_KEY_S))
+        camera.position -= camera.front_vector * dt;
+    if (IsKeyDown(GLFW_KEY_A))
+        camera.position -= camera.right_vector * dt;
+    if (IsKeyDown(GLFW_KEY_D))
+        camera.position += camera.right_vector * dt;
+    if (IsKeyDown(GLFW_KEY_SPACE))
+        camera.position += camera.up_vector * dt;
+    if (IsKeyDown(GLFW_KEY_LEFT_CONTROL))
+        camera.position -= camera.up_vector * dt;
+    if (IsKeyDown(GLFW_KEY_Q))
+        camera.roll -= camera.roll_speed * deltaTime;
+    if (IsKeyDown(GLFW_KEY_E))
+        camera.roll += camera.roll_speed * deltaTime;
+}
+
+
+
+
+
+
+
 
 static std::vector<SatelliteData> LoadSatelliteData(const char* path)
 {
@@ -231,11 +259,11 @@ static void EngineEventCallback(Event& event);
 
 
 bool running = true;
-float deltaTime = 0.0f;
+float uptime = 0.0f;
 
 
 int main(int argc, char** argv) {
-    Window* window =  CreateWindow(APPLICATION_NAME, APPLICATION_WIDTH, APPLICATION_HEIGHT);
+    Window* window = create_window(APPLICATION_NAME, APPLICATION_WIDTH, APPLICATION_HEIGHT);
     window->EventCallback = EngineEventCallback;
 
     RendererContext* renderer = CreateRenderer(window, BufferMode::Triple, VSyncMode::Enabled);
@@ -411,7 +439,7 @@ int main(int argc, char** argv) {
     // Load models
     VertexArray icosphere = LoadModel("assets/icosphere.obj");
     VertexArray sphere    = LoadModel("assets/sphere.obj");
-    //EntityModel* cube      = EngineLoadModel("assets/iss.obj");
+    VertexArray cube      = LoadModel("assets/cube.obj");
 
     // Load textures
     TextureBuffer sunTexture   = LoadTexture("assets/textures/sun/sun.jpg", VK_FORMAT_R8G8B8A8_SRGB);
@@ -427,12 +455,14 @@ int main(int argc, char** argv) {
     EntityInstance earth = CreateEntity(sphere, earthTexture, gObjectDescriptorLayout);
     EntityInstance moon  = CreateEntity(sphere, moonTexture, gObjectDescriptorLayout);
     EntityInstance space = CreateEntity(icosphere, spaceTexture, gObjectDescriptorLayout);
+    EntityInstance point = CreateEntity(cube, sunTexture, gObjectDescriptorLayout);
 
-
-    // london -> 51.5072, -0.1276
+    glm::vec2 london = glm::vec2(51.5072, -0.1276);
+    glm::vec2 paris  = glm::vec2(48.8566, 2.3522);
+    glm::vec2 oslo   = glm::vec2(59.911491, 10.757933);
     // sydney -> -33.865143, 151.2093
 
-    glm::vec3 posReal = GeodeticToEcef(earthRadius, 51.5072, -0.1276, iss_altitude * 10.0f);
+    glm::vec3 posReal = GeodeticToEcef(earthRadius, london, iss_altitude * 10.0f);
     glm::vec3 pos     = EcefToCartesian(posReal);
     //QuatCamera camera = CreateCamera({ 0.0f, 0.0f, -earthRadius * 2.0f}, 60.0f, lightSpeed / 200.0f);
     QuatCamera camera = CreateCamera(pos, 60.0f, lightSpeed / 200.0f);
@@ -447,48 +477,26 @@ int main(int argc, char** argv) {
     };
 
 
-    running       = true;
-    deltaTime     = 0.0f;
-    float uptime  = 0.0f;
+    running = true;
+    uptime  = 0.0f;
+
     while (running) {
-        // Calculate the delta time between previous and current frame. This
-        // allows for frame dependent systems such as movement and translation
-        // to run at the same speed no matter the time difference between two
-        // frames.
-        // todo: replace glfwGetTime() with C++ chrono
-        static float lastTime;
-        float currentTime = (float)glfwGetTime();
-        deltaTime = currentTime - lastTime;
-        lastTime = currentTime;
+        float deltaTime = GetDeltaTime();
 
         uptime += deltaTime;
-
         scene.cameraPosition = camera.position;
 
-        // Camera movement
-        float dt = camera.speed * deltaTime;
-        if (IsKeyDown(GLFW_KEY_W))
-            camera.position += camera.front_vector * dt;
-        if (IsKeyDown(GLFW_KEY_S))
-            camera.position -= camera.front_vector * dt;
-        if (IsKeyDown(GLFW_KEY_A))
-            camera.position -= camera.right_vector * dt;
-        if (IsKeyDown(GLFW_KEY_D))
-            camera.position += camera.right_vector * dt;
-        if (IsKeyDown(GLFW_KEY_SPACE))
-            camera.position += camera.up_vector * dt;
-        if (IsKeyDown(GLFW_KEY_LEFT_CONTROL))
-            camera.position -= camera.up_vector * dt;
-        if (IsKeyDown(GLFW_KEY_Q))
-            camera.roll -= camera.roll_speed * deltaTime;
-        if (IsKeyDown(GLFW_KEY_E))
-            camera.roll += camera.roll_speed * deltaTime;
+        // Input and camera
+        HandleInput(camera, deltaTime);
+        glm::vec2 cursorPos = GetMousePosition();
+        //UpdateCameraView(camera, cursorPos.x, cursorPos.y);
+        UpdateCamera(camera);
+
+
 
         // Update entities
         static float earthLatitudeRot = 0.0f;
         static float earthLongitudeRot = -90.0f;
-
-
 
         { // Sun
             //EngineTranslate(sun, CircularTransform(sun, sunRotation, 1.0f, earthToSunDistance));
@@ -505,19 +513,25 @@ int main(int argc, char** argv) {
         { // Moon
             Translate(moon, CircularTransform({ 0.0f, 0.0f, 0.0f }, 5.0f * uptime, earthToMoonDistance));
             Scale(moon, moonRadius);
-            Rotate(moon, 50.0f * uptime, {0.0f, 1.0f, 0.0f});
+            //Rotate(moon, 50.0f * uptime, {0.0f, 1.0f, 0.0f});
         }
 
-        glm::vec2 cursorPos = GetMousePosition();
-        UpdateCameraView(camera, cursorPos.x, cursorPos.y);
-        UpdateCamera(camera);
+
+        {
+            glm::vec3 pointPos = EcefToCartesian(GeodeticToEcef(earthRadius, london));
+            float distanceZ = glm::abs(pointPos.z);
+            float distanceX = glm::abs(pointPos.x);
+            Translate(point, pointPos + CircularTransform({ 0.0f, 0.0f, 0.0f }, earthLongitudeRot, distanceX));
+            Translate(point, pointPos + CircularTransform({ 0.0f, 0.0f, 0.0f }, earthLatitudeRot, distanceZ));
+            Scale(point, 50000.0f);
+        }
+
+
 
         // copy data into uniform buffer
         uint32_t frame = GetCurrentFrame();
-
         SetBufferData(&gCameraBuffer[frame], &camera.viewProj, sizeof(ViewProjection));
-        SetBufferData(&gSceneBuffer[frame], (void*)&scene, sizeof(EngineScene));
-
+        SetBufferData(&gSceneBuffer[frame], &scene, sizeof(EngineScene));
 
         BeginFrame();
         {
@@ -537,6 +551,8 @@ int main(int argc, char** argv) {
             Render(earth, basicPipeline);
             Render(moon, basicPipeline);
 
+            BindVertexArray(cube);
+            Render(point, basicPipeline);
 
 
 
@@ -563,11 +579,13 @@ int main(int argc, char** argv) {
                 ImGui::End();
 
                 static bool o = true;
+
                 glm::vec2 moonPos = WorldToScreen(window, camera, GetPosition(moon));
+                glm::vec2 pointPos = WorldToScreen(window, camera, GetPosition(point));
+
                 const ImGuiWindowFlags flags = ImGuiWindowFlags_None |
                                                ImGuiWindowFlags_NoInputs |
                                                ImGuiWindowFlags_NoDecoration |
-                                               ImGuiWindowFlags_NoBackground |
                                                ImGuiWindowFlags_NoSavedSettings |
                                                ImGuiWindowFlags_AlwaysAutoResize;
 
@@ -575,7 +593,12 @@ int main(int argc, char** argv) {
                 ImGui::Begin("text0", &o, flags);
                 ImGui::Text("Moon");
                 ImGui::Text("%f AU", AUDistance(GetPosition(moon), camera.position));
-                ImGui::Text("%f, %f", moonPos.x, moonPos.y);
+                ImGui::End();
+
+                ImGui::SetNextWindowPos(ImVec2(pointPos.x, pointPos.y));
+                ImGui::Begin("text1", &o, flags);
+                ImGui::Text("Point");
+
                 ImGui::End();
 
                 RenderUI();
@@ -599,7 +622,7 @@ int main(int argc, char** argv) {
         }
         EndFrame();
 
-        UpdateWindow(window);
+        update_window(window);
 
     }
 
@@ -625,6 +648,7 @@ int main(int argc, char** argv) {
     DestroyTextureBuffer(earthTexture);
     DestroyTextureBuffer(sunTexture);
 
+    DestroyVertexArray(cube);
     DestroyVertexArray(sphere);
     DestroyVertexArray(icosphere);
 
@@ -651,7 +675,7 @@ int main(int argc, char** argv) {
     // Destroy core systems
     DestroyUserInterface(uiContext);
     DestroyRenderer(renderer);
-    DestroyWindow(window);
+    destroy_window(window);
 
 
     return 0;

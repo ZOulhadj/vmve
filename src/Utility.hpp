@@ -15,7 +15,19 @@ std::string LoadTextFile(std::string_view path) {
     return buffer.str();
 }
 
+// Calculates the delta time between previous and current frame. This
+// allows for frame dependent systems such as movement and translation
+// to run at the same speed no matter the time difference between two
+// frames.
+float GetDeltaTime() {
+    // todo: replace glfwGetTime() with C++ chrono
+    static float lastTime;
+    float currentTime = (float)glfwGetTime();
+    float deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
 
+    return deltaTime;
+}
 
 // For a given world-space position this function converts that into a screen-space
 // local coordinate. In other words, it returns a position on the screen of
