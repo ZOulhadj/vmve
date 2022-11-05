@@ -285,6 +285,7 @@ int main(int argc, char** argv) {
     glm::vec3 objectScale = glm::vec3(1.0f);
 
     while (running) {
+
         float deltaTime = GetDeltaTime();
 
         uptime += deltaTime;
@@ -308,13 +309,11 @@ int main(int argc, char** argv) {
             BindVertexArray(icosphere);
             Render(skybox, skyspherePipeline);
 
-
             BindPipeline(basicPipeline, g_global_descriptor_sets);
             BindVertexArray(plane);
             Translate(ground, { 0.0f, 0.0f, 0.0f });
             Scale(ground, {500.0f, 0.0f, 500.0f});
             Render(ground, basicPipeline);
-
 
             BindVertexArray(model);
             Translate(car, objectTranslation);
@@ -458,8 +457,10 @@ static bool Resize(WindowResizedEvent& event) {
 
     resize_framebuffers_color_and_depth(geometry_pass, geometry_framebuffers, { event.GetWidth(), event.GetHeight() });
     geometry_size = { event.GetWidth(), event.GetHeight() };
-    //resize_framebuffer(guiPass, false, event.GetWidth(), event.GetHeight());
-    //printf("%d %d\n", event.GetWidth(), event.GetHeight());
+
+    resize_framebuffers_color(ui_pass, ui_framebuffers, { event.GetWidth(), event.GetHeight() });
+    ui_size = { event.GetWidth(), event.GetHeight() };
+
 
     return true;
 }

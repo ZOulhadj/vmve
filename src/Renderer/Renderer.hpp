@@ -128,6 +128,7 @@ void destroy_framebuffers(std::vector<VkFramebuffer>& framebuffers);
 
 
 void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent);
+void resize_framebuffers_color(VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent);
 
 
 Pipeline create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass);

@@ -461,12 +461,14 @@ std::vector<VkFramebuffer> create_framebuffers_color_and_depth(VkRenderPass rend
 }
 
 void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent) {
-    vkDeviceWaitIdle(g_rc->device.device);
-
     DestroyFramebuffers(framebuffers);
     framebuffers = create_framebuffers_color_and_depth(render_pass, extent);
 }
 
+void resize_framebuffers_color(VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent) {
+    DestroyFramebuffers(framebuffers);
+    framebuffers = create_framebuffers_color(render_pass, extent);
+}
 
 
 VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<VkDescriptorSetLayoutBinding>& bindings) {
@@ -735,7 +737,7 @@ bool BeginFrame() {
                                             nullptr,
                                             &currentImage);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         RebuildSwapchain(g_swapchain);
 
         return false;
