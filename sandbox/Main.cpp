@@ -361,7 +361,20 @@ int main(int argc, char** argv) {
                 }
                 ImGui::EndMainMenuBar();
 
-
+                // TODO: This is a small snippet related to rendering a frame
+                // TODO: to ImGui as a texture. This can then be used as a viewport.
+//                std::vector<VkDescriptorSet> m_Dset;
+//
+//                m_Dset.resize(m_ViewportImageViews.size());
+//                for (uint32_t i = 0; i < m_ViewportImageViews.size(); i++)
+//                    m_Dset[i] = ImGui_ImplVulkan_AddTexture(m_TextureSampler, m_ViewportImageViews[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+//
+//                ImGui::Begin("Viewport");
+//
+//                ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+//                ImGui::Image(m_Dset[currentFrame], ImVec2{viewportPanelSize.x, viewportPanelSize.y});
+//
+//                ImGui::End();
                 ImGui::Begin("Object Window");
 
                 ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
