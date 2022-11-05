@@ -7,7 +7,7 @@
 
 
 // Loads a plain text file from the filesytem.
-std::string LoadTextFile(std::string_view path) {
+std::string load_text_file(std::string_view path) {
     std::ifstream file(path.data());
     std::stringstream buffer;
     buffer << file.rdbuf();

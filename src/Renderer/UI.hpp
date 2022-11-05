@@ -9,7 +9,7 @@ struct GUI {
 };
 
 
-ImGuiContext* CreateUserInterface(VkRenderPass renderPass);
+ImGuiContext* create_user_interface(VkRenderPass renderPass);
 void DestroyUserInterface(ImGuiContext* context);
 
 void RenderUI();

@@ -19,121 +19,12 @@
 
 #include "../src/Vertex.hpp"
 
-
-
 // Application specific header files
 #include "Constants.hpp"
 #include "UI.hpp"
 
 
-
-struct SatelliteData {
-    std::string name;
-    std::string id;
-    std::string classification;
-    std::string epoch;
-
-    float meanMotion;
-    float eccentrcity;
-    float inclination;
-    float raOfASCNode;
-    float argOfPericenter;
-    float meanAnomaly;
-    float bStar;
-    float meanMotionDot;
-    float meanMotionDDot;
-
-    int ephemerisType;
-    int noradCatID;
-    int elementSetNumber;
-    int revAtEpoch;
-};
-
-// Converts from a geodetic coordinate system to an earth centered cartesian
-// coordinate system. The geodetic system is a combination of latitude, longitude
-// and height.
-//
-// Note that this function returns the X, Y and Z values in the earth centered system.
-// Assuming you are facing prime meridian, X points backwards, Y points to the right
-// and Z points up.
-glm::vec3 GeodeticToEcef(float radius, const glm::vec2& coords, float height = 0.0f) {
-    const float lat = glm::radians(coords.x);
-    const float lon = glm::radians(coords.y);
-
-    const float x = (radius + height) * glm::cos(lat) * glm::cos(lon);
-    const float y = (radius + height) * glm::cos(lat) * glm::sin(lon);
-    const float z = (radius + height) * glm::sin(lat);
-
-    return { x, y, z };
-}
-
-glm::vec2 CartesianToGeodetic(const glm::vec3& position, float radius) {
-    // todo: Returns incorrect values. Might be due to coordinate system conversions.
-    const float longitude = glm::atan(position.y / position.x);
-    const float p    = glm::sqrt(glm::pow(position.x, 2) + glm::pow(position.y, 2));
-    const float latitude  = glm::atan(p / position.z);
-
-    return { glm::degrees(latitude), glm::degrees(longitude) };
-}
-
-// Small helper function to convert from an Earth Centric coordinate system
-// X back, Y right and Z up to your typical Cartesian X right, Y up and Z forward
-glm::vec3 EcefToCartesian(const glm::vec3& ecefPosition) {
-    return { ecefPosition.y, ecefPosition.z, -ecefPosition.x };
-}
-
-
-// Calculates the distance between two geographic positions
-float GeodeticDistance(glm::vec2& geodetic1, glm::vec2& geodetic2, float radius)
-{
-    const auto pi = glm::pi<float>();
-
-    float x = glm::pow(glm::sin(((geodetic2.x - geodetic1.x) * pi / 180.0f) / 2.0f), 2.0f);
-    float y = glm::cos(geodetic1.x * pi / 180.0f) * glm::cos(geodetic2.x * pi / 180.0f);
-    float z = glm::pow(glm::sin(((geodetic2.y - geodetic1.y) * pi / 180.0f) / 2.0f), 2.0f);
-    float a = x + y * z;
-    float c = 2.0f * glm::atan(glm::sqrt(a) / glm::sqrt(1.0f - a));
-
-    return radius * c; // in meters
-}
-
-//
-//glm::vec2 geographic(float radius, const glm::vec3& position) {
-//    // If using WGS-84 coordinates
-//#if 0
-//    const float latitude = glm::asin(position.z / radius);
-//    const float longitude = glm::atan(position.y, position.x);
-//#else
-//    const float latitude = glm::asin(position.y / radius);
-//    const float longitude = glm::atan(position.z, position.x);
-//#endif
-//
-//    return { glm::degrees(latitude), glm::degrees(longitude) };
-//}
-//
-
-
-glm::vec3 CircularTransform(const glm::vec3& center, float degrees, float radius) {
-    const float radians = glm::radians(degrees);
-
-    const float x = glm::sin(radians) * radius;
-    const float y = 0.0f;
-    const float z = glm::cos(radians) * radius;
-
-    return center + glm::vec3{ x, y, z };
-}
-
-float AUDistance(const glm::vec3& a, const glm::vec3& b) {
-    float d = glm::pow(glm::pow(b.x - a.x, 2.0f) +
-                       glm::pow(b.y - a.y, 2.0f) +
-                       glm::pow(b.z - a.z, 2.0f),
-                       0.5f);
-
-    return d / earthToSunDistance;
-}
-
-
-static void HandleInput(QuatCamera& camera, float deltaTime) {
+static void handle_input(QuatCamera& camera, float deltaTime) {
     float dt = camera.speed * deltaTime;
     if (IsKeyDown(GLFW_KEY_W))
         camera.position += camera.front_vector * dt;
@@ -147,64 +38,20 @@ static void HandleInput(QuatCamera& camera, float deltaTime) {
         camera.position += camera.up_vector * dt;
     if (IsKeyDown(GLFW_KEY_LEFT_CONTROL))
         camera.position -= camera.up_vector * dt;
-    if (IsKeyDown(GLFW_KEY_Q))
-        camera.roll -= camera.roll_speed * deltaTime;
-    if (IsKeyDown(GLFW_KEY_E))
-        camera.roll += camera.roll_speed * deltaTime;
+//    if (IsKeyDown(GLFW_KEY_Q))
+//        camera.roll -= camera.roll_speed * deltaTime;
+//    if (IsKeyDown(GLFW_KEY_E))
+//        camera.roll += camera.roll_speed * deltaTime;
 }
 
+VkRenderPass geometry_pass = nullptr;
+std::vector<VkFramebuffer> geometry_framebuffers;
+VkExtent2D geometry_size = { 1280, 720 };
 
+VkRenderPass ui_pass = nullptr;
+std::vector<VkFramebuffer> ui_framebuffers;
+VkExtent2D ui_size = { 1280, 720 };
 
-
-
-
-
-
-static std::vector<SatelliteData> LoadSatelliteData(const char* path)
-{
-    std::string file = LoadTextFile(path);
-
-    using json = nlohmann::json;
-    json satelliteData = json::parse(file);
-
-    std::vector<SatelliteData> data(satelliteData.size());
-
-    for (std::size_t i = 0; i < data.size(); ++i) {
-        const auto& v = satelliteData[i];
-
-        SatelliteData d{};
-        d.name             = v["OBJECT_NAME"];
-        d.id               = v["OBJECT_ID"];
-        d.classification   = v["CLASSIFICATION_TYPE"];
-        d.epoch            = v["EPOCH"];
-
-        d.eccentrcity      = v["ECCENTRICITY"];
-        d.inclination      = v["INCLINATION"];
-        d.raOfASCNode      = v["RA_OF_ASC_NODE"];
-        d.argOfPericenter  = v["ARG_OF_PERICENTER"];
-        d.meanAnomaly      = v["MEAN_ANOMALY"];
-        d.bStar            = v["BSTAR"];
-        d.meanMotionDot    = v["MEAN_MOTION_DOT"];
-        d.meanMotionDDot   = v["MEAN_MOTION_DDOT"];
-
-        d.ephemerisType    = v["EPHEMERIS_TYPE"];
-        d.noradCatID       = v["NORAD_CAT_ID"];
-        d.elementSetNumber = v["ELEMENT_SET_NO"];
-        d.revAtEpoch       = v["REV_AT_EPOCH"];
-
-        data[i] = d;
-    }
-
-
-    return data;
-}
-
-
-
-
-
-RenderPass geometryPass{};
-RenderPass guiPass{};
 
 Pipeline basicPipeline{};
 Pipeline skyspherePipeline{};
@@ -213,21 +60,21 @@ Pipeline wireframePipeline{};
 // This is a global descriptor set that will be used for all draw calls and
 // will contain descriptors such as a projection view matrix, global scene
 // information including lighting.
-static VkDescriptorSetLayout gGlobalDescriptorSetLayout;
+static VkDescriptorSetLayout g_global_descriptor_set_layout;
 
 // This is the actual descriptor set/collection that will hold the descriptors
 // also known as resources. Since this is the global descriptor set, this will
 // hold the resources for projection view matrix, scene lighting etc. The reason
 // why this is an array is so that each frame has its own descriptor set.
-static std::vector<VkDescriptorSet> gGlobalDescriptorSets;
+static std::vector<VkDescriptorSet> g_global_descriptor_sets;
 
 
 
-static VkDescriptorSetLayout gObjectDescriptorLayout;
+static VkDescriptorSetLayout g_object_descriptor_layout;
 
 // The resources that will be part of the global descriptor set
-static std::vector<Buffer> gCameraBuffer;
-static std::vector<Buffer> gSceneBuffer;
+static std::vector<Buffer> g_camera_buffer;
+static std::vector<Buffer> g_scene_buffer;
 
 
 // Global scene information that will be accessed by the shaders to perform
@@ -238,7 +85,7 @@ static std::vector<Buffer> gSceneBuffer;
 //
 // Padding is equally important and hence the usage of the "alignas" keyword.
 //
-struct EngineScene {
+struct engine_scene {
     float ambientStrength;
     float specularStrength;
     float specularShininess;
@@ -249,11 +96,11 @@ struct EngineScene {
 };
 
 
-static void EngineEventCallback(Event& event);
+static void event_callback(Event& event);
 
 
 
-#define APPLICATION_NAME   "3D Earth Visualiser"
+#define APPLICATION_NAME   "Vulkan 3D Model Viewer and Importer"
 #define APPLICATION_WIDTH  1280
 #define APPLICATION_HEIGHT 720
 
@@ -264,63 +111,37 @@ float uptime = 0.0f;
 
 int main(int argc, char** argv) {
     Window* window = create_window(APPLICATION_NAME, APPLICATION_WIDTH, APPLICATION_HEIGHT);
-    window->EventCallback = EngineEventCallback;
+    window->event_callback = event_callback;
 
-    RendererContext* renderer = CreateRenderer(window, BufferMode::Triple, VSyncMode::Enabled);
-
-
-
-    {
-        RenderPassInfo info{};
-        info.color_attachment_count = 1;
-        info.color_attachment_format = VK_FORMAT_B8G8R8A8_SRGB;
-        info.depth_attachment_count = 1;
-        info.depth_attachment_format = VK_FORMAT_D32_SFLOAT;
-        info.sample_count = VK_SAMPLE_COUNT_1_BIT;
-        info.load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        info.store_op = VK_ATTACHMENT_STORE_OP_STORE;
-        info.initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-        info.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        info.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    RendererContext* renderer = create_renderer(window, BufferMode::Triple,
+                                                VSyncMode::Enabled);
 
 
-        geometryPass = CreateRenderPass(info, GetSwapchain().images, { GetSwapchain().depth_image });
-    }
+    geometry_pass = create_color_render_pass();
+    geometry_framebuffers = create_framebuffers_color_and_depth(geometry_pass, geometry_size);
 
-    {
-        RenderPassInfo info{};
-        info.color_attachment_count = 1;
-        info.color_attachment_format = VK_FORMAT_B8G8R8A8_SRGB;
-        info.sample_count = VK_SAMPLE_COUNT_1_BIT;
-        info.load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
-        info.store_op = VK_ATTACHMENT_STORE_OP_STORE;
-        info.initial_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        info.final_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        info.reference_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        guiPass = CreateRenderPass(info, GetSwapchain().images, {});
-    }
-
+    ui_pass = create_ui_render_pass();
+    ui_framebuffers = create_framebuffers_color(ui_pass, ui_size);
 
     // Load shaders text files
-    std::string objectVSCode  = LoadTextFile("src/Shaders/object.vert");
-    std::string objectFSCode  = LoadTextFile("src/Shaders/object.frag");
-    std::string earthVSCode  = LoadTextFile("src/Shaders/earth.vert");
-    std::string earthFSCode  = LoadTextFile("src/Shaders/earth.frag");
-    std::string skysphereVSCode = LoadTextFile("src/Shaders/skysphere.vert");
-    std::string skysphereFSCode = LoadTextFile("src/Shaders/skysphere.frag");
-    std::string lightingVSCode  = LoadTextFile("src/Shaders/lighting.vert");
-    std::string lightingFSCode  = LoadTextFile("src/Shaders/lighting.frag");
+    std::string objectVSCode  = load_text_file("src/Shaders/object.vert");
+    std::string objectFSCode  = load_text_file("src/Shaders/object.frag");
+    std::string earthVSCode  = load_text_file("src/Shaders/earth.vert");
+    std::string earthFSCode  = load_text_file("src/Shaders/earth.frag");
+    std::string skysphereVSCode = load_text_file("src/Shaders/skysphere.vert");
+    std::string skysphereFSCode = load_text_file("src/Shaders/skysphere.frag");
+    std::string lightingVSCode  = load_text_file("src/Shaders/lighting.vert");
+    std::string lightingFSCode  = load_text_file("src/Shaders/lighting.frag");
 
     // Compile text shaders into Vulkan binary shader modules
-    Shader objectVS  = CreateVertexShader(objectVSCode);
-    Shader objectFS  = CreateFragmentShader(objectFSCode);
-    Shader earthVS  = CreateVertexShader(earthVSCode);
-    Shader earthFS  = CreateFragmentShader(earthFSCode);
-    Shader skysphereVS = CreateVertexShader(skysphereVSCode);
-    Shader skysphereFS = CreateFragmentShader(skysphereFSCode);
-    Shader lightingVS  = CreateVertexShader(lightingVSCode);
-    Shader lightingFS  = CreateFragmentShader(lightingFSCode);
+    Shader objectVS  = create_vertex_shader(objectVSCode);
+    Shader objectFS  = create_fragment_shader(objectFSCode);
+    Shader earthVS  = create_vertex_shader(earthVSCode);
+    Shader earthFS  = create_fragment_shader(earthFSCode);
+    Shader skysphereVS = create_vertex_shader(skysphereVSCode);
+    Shader skysphereFS = create_fragment_shader(skysphereFSCode);
+    Shader lightingVS  = create_vertex_shader(lightingVSCode);
+    Shader lightingFS  = create_fragment_shader(lightingFSCode);
 
 
     const std::vector<VkDescriptorSetLayoutBinding> global_layout {
@@ -329,29 +150,32 @@ int main(int argc, char** argv) {
                                                        VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
     };
 
-    gGlobalDescriptorSetLayout = CreateDescriptorSetLayout(global_layout);
-    gGlobalDescriptorSets      = AllocateDescriptorSets(gGlobalDescriptorSetLayout, frames_in_flight);
+    g_global_descriptor_set_layout = create_descriptor_set_layout(global_layout);
+    g_global_descriptor_sets      = allocate_descriptor_sets(
+            g_global_descriptor_set_layout, frames_in_flight);
 
     // temp here: create the global descriptor resources
     for (std::size_t i = 0; i < frames_in_flight; ++i) {
-        gCameraBuffer.push_back(CreateBuffer(sizeof(ViewProjection), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
-        gSceneBuffer.push_back(CreateBuffer(sizeof(EngineScene), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
+        g_camera_buffer.push_back(create_buffer(sizeof(view_projection),
+                                                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
+        g_scene_buffer.push_back(create_buffer(sizeof(engine_scene),
+                                               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
     }
 
-    for (std::size_t i = 0; i < gGlobalDescriptorSets.size(); ++i) {
+    for (std::size_t i = 0; i < g_global_descriptor_sets.size(); ++i) {
         VkDescriptorBufferInfo view_proj_ubo{};
-        view_proj_ubo.buffer = gCameraBuffer[i].buffer;
+        view_proj_ubo.buffer = g_camera_buffer[i].buffer;
         view_proj_ubo.offset = 0;
         view_proj_ubo.range = VK_WHOLE_SIZE; // or sizeof(struct)
 
         VkDescriptorBufferInfo scene_ubo_info{};
-        scene_ubo_info.buffer = gSceneBuffer[i].buffer;
+        scene_ubo_info.buffer = g_scene_buffer[i].buffer;
         scene_ubo_info.offset = 0;
         scene_ubo_info.range = VK_WHOLE_SIZE; // or sizeof(struct)
 
         std::array<VkWriteDescriptorSet, 2> descriptor_writes{};
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = gGlobalDescriptorSets[i];
+        descriptor_writes[0].dstSet = g_global_descriptor_sets[i];
         descriptor_writes[0].dstBinding = 0;
         descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -359,7 +183,7 @@ int main(int argc, char** argv) {
         descriptor_writes[0].pBufferInfo = &view_proj_ubo;
 
         descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[1].dstSet = gGlobalDescriptorSets[i];
+        descriptor_writes[1].dstSet = g_global_descriptor_sets[i];
         descriptor_writes[1].dstBinding = 1;
         descriptor_writes[1].dstArrayElement = 0;
         descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -370,11 +194,11 @@ int main(int argc, char** argv) {
     }
 
     // Per object material descriptor set
-    const std::vector<VkDescriptorSetLayoutBinding> perObjectLayout {
+    const std::vector<VkDescriptorSetLayoutBinding> per_object_layout {
         { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
     };
 
-    gObjectDescriptorLayout = CreateDescriptorSetLayout(perObjectLayout);
+    g_object_descriptor_layout = create_descriptor_set_layout(per_object_layout);
 
 
     const std::vector<VkFormat> binding_format{
@@ -385,7 +209,7 @@ int main(int argc, char** argv) {
     };
 
     PipelineInfo info{};
-    info.descriptor_layouts = { gGlobalDescriptorSetLayout, gObjectDescriptorLayout };
+    info.descriptor_layouts = {g_global_descriptor_set_layout, g_object_descriptor_layout };
     info.push_constant_size = sizeof(glm::mat4);
     info.binding_layout_size = sizeof(Vertex);
     info.binding_format = binding_format;
@@ -395,90 +219,70 @@ int main(int argc, char** argv) {
 
     {
         info.shaders = { objectVS, objectFS };
-        basicPipeline = CreatePipeline(info, geometryPass);
+        basicPipeline = create_pipeline(info, geometry_pass);
     }
     {
         info.shaders = { skysphereVS, skysphereFS };
         info.depth_testing = false;
         info.cull_mode = VK_CULL_MODE_FRONT_BIT;
-        skyspherePipeline = CreatePipeline(info, geometryPass);
+        skyspherePipeline = create_pipeline(info, geometry_pass);
     }
     {
         info.shaders = {objectVS, objectFS };
         info.wireframe = true;
         info.depth_testing = true;
         info.cull_mode = VK_CULL_MODE_BACK_BIT;
-        wireframePipeline = CreatePipeline(info, geometryPass);
+        wireframePipeline = create_pipeline(info, geometry_pass);
     }
 
     // Delete all individual shaders since they are now part of the various pipelines
-    DestroyShader(lightingFS);
-    DestroyShader(lightingVS);
-    DestroyShader(skysphereFS);
-    DestroyShader(skysphereVS);
-    DestroyShader(earthFS);
-    DestroyShader(earthVS);
-    DestroyShader(objectFS);
-    DestroyShader(objectVS);
+    destroy_shader(lightingFS);
+    destroy_shader(lightingVS);
+    destroy_shader(skysphereFS);
+    destroy_shader(skysphereVS);
+    destroy_shader(earthFS);
+    destroy_shader(earthVS);
+    destroy_shader(objectFS);
+    destroy_shader(objectVS);
 
 
-
-    ImGuiContext* uiContext = CreateUserInterface(guiPass.handle);
-
+    ImGuiContext* uiContext = create_user_interface(ui_pass);
 
 
-
-
-
-
-
-
-    // Parse satellite data file
-    std::vector<SatelliteData> satelliteData = LoadSatelliteData("assets/satellite2.json");
-
-    // Load models
+    // Built-in resources
+    VertexArray plane     = LoadModel("assets/plane.obj");
     VertexArray icosphere = LoadModel("assets/icosphere.obj");
-    VertexArray sphere    = LoadModel("assets/sphere.obj");
-    VertexArray cube      = LoadModel("assets/cube.obj");
+    TextureBuffer groundTexture = LoadTexture("assets/textures/plane.jpg", VK_FORMAT_B8G8R8A8_SRGB);
+    TextureBuffer skysphere = LoadTexture("assets/textures/skysphere.jpg", VK_FORMAT_B8G8R8A8_SRGB);
+    EntityInstance skybox = CreateEntity(icosphere, skysphere, g_object_descriptor_layout);
+    EntityInstance ground = CreateEntity(plane, groundTexture, g_object_descriptor_layout);
 
-    // Load textures
-    TextureBuffer sunTexture   = LoadTexture("assets/textures/sun/sun.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-    TextureBuffer earthTexture = LoadTexture("assets/textures/earth/albedo_2k.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-    TextureBuffer moonTexture  = LoadTexture("assets/textures/moon/moon.jpg", VK_FORMAT_R8G8B8A8_SRGB);
-    TextureBuffer spaceTexture = LoadTexture("assets/textures/skysphere/black.jpg", VK_FORMAT_R8G8B8A8_SRGB);
 
-    //EntityTexture* earthNormalTexture   = EngineLoadTexture("assets/textures/earth/normal.jpg", VK_FORMAT_R8G8B8A8_UNORM);
-    //EntityTexture* earthSpecularTexture = EngineLoadTexture("assets/textures/earth/specular.jpg", VK_FORMAT_R8G8B8A8_UNORM);
+    // User loaded resources
+    VertexArray model = LoadModel("assets/bike.obj");
+    EntityInstance car = CreateEntity(model, skysphere, g_object_descriptor_layout);
 
-    // Create entity instances
-    EntityInstance sun   = CreateEntity(sphere, sunTexture, gObjectDescriptorLayout);
-    EntityInstance earth = CreateEntity(sphere, earthTexture, gObjectDescriptorLayout);
-    EntityInstance moon  = CreateEntity(sphere, moonTexture, gObjectDescriptorLayout);
-    EntityInstance space = CreateEntity(icosphere, spaceTexture, gObjectDescriptorLayout);
-    EntityInstance point = CreateEntity(cube, sunTexture, gObjectDescriptorLayout);
 
-    glm::vec2 london = glm::vec2(51.5072, -0.1276);
-    glm::vec2 paris  = glm::vec2(48.8566, 2.3522);
-    glm::vec2 oslo   = glm::vec2(59.911491, 10.757933);
-    // sydney -> -33.865143, 151.2093
 
-    glm::vec3 posReal = GeodeticToEcef(earthRadius, london, iss_altitude * 10.0f);
-    glm::vec3 pos     = EcefToCartesian(posReal);
-    //QuatCamera camera = CreateCamera({ 0.0f, 0.0f, -earthRadius * 2.0f}, 60.0f, lightSpeed / 200.0f);
-    QuatCamera camera = CreateCamera(pos, 60.0f, lightSpeed / 200.0f);
+    QuatCamera camera = CreateCamera({ 0.0f, 4.0f, -4.0f }, 60.0f, 100.0f);
 
-    EngineScene scene {
+    engine_scene scene {
         .ambientStrength = 0.05f,
         .specularStrength = 0.15f,
         .specularShininess = 128.0f,
         .cameraPosition = camera.position,
-        .lightPosition = glm::vec3(0.0f, 0.0f, -earthToSunDistance),
+        .lightPosition = glm::vec3(0.0f, 20.0f, 0.0f),
         .lightColor = glm::vec3(1.0f),
     };
 
 
     running = true;
     uptime  = 0.0f;
+
+
+    glm::vec3 objectTranslation = glm::vec3(0.0f);
+    glm::vec3 objectRotation = glm::vec3(0.0f);
+    glm::vec3 objectScale = glm::vec3(1.0f);
 
     while (running) {
         float deltaTime = GetDeltaTime();
@@ -487,154 +291,91 @@ int main(int argc, char** argv) {
         scene.cameraPosition = camera.position;
 
         // Input and camera
-        HandleInput(camera, deltaTime);
+        handle_input(camera, deltaTime);
         glm::vec2 cursorPos = GetMousePosition();
         //UpdateCameraView(camera, cursorPos.x, cursorPos.y);
         UpdateCamera(camera);
 
 
-
-        // Update entities
-        static float earthLatitudeRot = 0.0f;
-        static float earthLongitudeRot = -90.0f;
-
-        { // Sun
-            //EngineTranslate(sun, CircularTransform(sun, sunRotation, 1.0f, earthToSunDistance));
-            Translate(sun, scene.lightPosition);
-            Scale(sun, sunRadius);
-            Rotate(sun, 0.0f, {0.0f, 1.0f, 0.0f});
-        }
-        { // Earth
-            Translate(earth, {0.0f, 0.0f, 0.0f});
-            Scale(earth, earthRadius);
-            Rotate(earth, earthLatitudeRot, {1.0f, 0.0f, 0.0f});
-            Rotate(earth, earthLongitudeRot, {0.0f, 1.0f, 0.0f});
-        }
-        { // Moon
-            Translate(moon, CircularTransform({ 0.0f, 0.0f, 0.0f }, 5.0f * uptime, earthToMoonDistance));
-            Scale(moon, moonRadius);
-            //Rotate(moon, 50.0f * uptime, {0.0f, 1.0f, 0.0f});
-        }
-
-
-        {
-            glm::vec3 pointPos = EcefToCartesian(GeodeticToEcef(earthRadius, london));
-            float distanceZ = glm::abs(pointPos.z);
-            float distanceX = glm::abs(pointPos.x);
-            Translate(point, pointPos + CircularTransform({ 0.0f, 0.0f, 0.0f }, earthLongitudeRot, distanceX));
-            Translate(point, pointPos + CircularTransform({ 0.0f, 0.0f, 0.0f }, earthLatitudeRot, distanceZ));
-            Scale(point, 50000.0f);
-        }
-
-
-
         // copy data into uniform buffer
         uint32_t frame = GetCurrentFrame();
-        SetBufferData(&gCameraBuffer[frame], &camera.viewProj, sizeof(ViewProjection));
-        SetBufferData(&gSceneBuffer[frame], &scene, sizeof(EngineScene));
+        SetBufferData(&g_camera_buffer[frame], &camera.viewProj, sizeof(view_projection));
+        SetBufferData(&g_scene_buffer[frame], &scene, sizeof(engine_scene));
 
-        BeginFrame();
-        {
-            BeginRenderPass(geometryPass);
-
-
-            // Render skysphere
-            BindPipeline(skyspherePipeline, gGlobalDescriptorSets);
+        if (BeginFrame()) {
+            BeginRenderPass(geometry_pass, geometry_framebuffers, geometry_size);
+            BindPipeline(skyspherePipeline, g_global_descriptor_sets);
             BindVertexArray(icosphere);
-            Render(space, skyspherePipeline);
+            Render(skybox, skyspherePipeline);
 
 
-            // Render entities in the world
-            BindPipeline(basicPipeline, gGlobalDescriptorSets);
-            BindVertexArray(sphere);
-            Render(sun, basicPipeline);
-            Render(earth, basicPipeline);
-            Render(moon, basicPipeline);
-
-            BindVertexArray(cube);
-            Render(point, basicPipeline);
+            BindPipeline(basicPipeline, g_global_descriptor_sets);
+            BindVertexArray(plane);
+            Translate(ground, { 0.0f, 0.0f, 0.0f });
+            Scale(ground, {500.0f, 0.0f, 500.0f});
+            Render(ground, basicPipeline);
 
 
+            BindVertexArray(model);
+            Translate(car, objectTranslation);
+            Rotate(car, objectRotation);
+            Scale(car, objectScale);
+            Render(car, basicPipeline);
+
+
+            EndRenderPass();
+
+
+
+            // The second pass is called the lighting pass and is where the renderer will perform
+            // lighting calculations based on the entire frame. This two-step process is called
+            // deferred rendering.
+            BeginRenderPass(ui_pass, ui_framebuffers, ui_size);
 
             ImGui_ImplVulkan_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
             {
-                ImGui::Begin("Debug Menu");
-                ImGui::Text("Delta Time: %f", deltaTime);
-                ImGui::SliderFloat("Latitude", &earthLatitudeRot, -180.0f, 180.0f);
-                ImGui::SliderFloat("Longitude", &earthLongitudeRot, -180.0f, 180.0f);
-                ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 5.0f);
-                ImGui::SliderFloat("Specular Strength", &scene.specularStrength, 0.0f, 5.0f);
-                ImGui::SliderFloat("Specular Shininess", &scene.specularShininess, 0.0f, 512.0f);
-                ImGui::SliderFloat3("Time of day (UTC)", glm::value_ptr(scene.lightPosition), -earthToSunDistance,
-                                    earthToSunDistance);
-                ImGui::SliderFloat3("Sun Color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
+                ImGui::BeginMainMenuBar();
+                if (ImGui::BeginMenu("File")) {
+                    RenderFileMenu();
 
-                glm::vec2 c = CartesianToGeodetic(camera.position, earthRadius);
-                ImGui::Text("Latitude: %.2f", c.x);
-                ImGui::Text("Longitude: %.2f", c.y);
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMainMenuBar();
 
 
-                ImGui::End();
 
-                static bool o = true;
 
-                glm::vec2 moonPos = WorldToScreen(window, camera, GetPosition(moon));
-                glm::vec2 pointPos = WorldToScreen(window, camera, GetPosition(point));
 
-                const ImGuiWindowFlags flags = ImGuiWindowFlags_None |
-                                               ImGuiWindowFlags_NoInputs |
-                                               ImGuiWindowFlags_NoDecoration |
-                                               ImGuiWindowFlags_NoSavedSettings |
-                                               ImGuiWindowFlags_AlwaysAutoResize;
 
-                ImGui::SetNextWindowPos(ImVec2(moonPos.x, moonPos.y));
-                ImGui::Begin("text0", &o, flags);
-                ImGui::Text("Moon");
-                ImGui::Text("%f AU", AUDistance(GetPosition(moon), camera.position));
-                ImGui::End();
 
-                ImGui::SetNextWindowPos(ImVec2(pointPos.x, pointPos.y));
-                ImGui::Begin("text1", &o, flags);
-                ImGui::Text("Point");
+                ImGui::Begin("Object Window");
+
+                ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
+                ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
+                ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
 
                 ImGui::End();
 
-                RenderUI();
+
+                ImGui::ShowDemoWindow();
             }
             ImGui::EndFrame();
 
 
-
-
+            RenderUI();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), GetCommandBuffer());
 
             EndRenderPass();
 
-            // The second pass is called the lighting pass and is where the renderer will perform
-            // lighting calculations based on the entire frame. This two-step process is called
-            // deferred rendering.
-
-            BeginRenderPass(guiPass);
-            if (ImDrawData* data = ImGui::GetDrawData())
-                ImGui_ImplVulkan_RenderDrawData(data, GetCommandBuffer());
-            EndRenderPass();
+            EndFrame();
         }
-        EndFrame();
 
         update_window(window);
-
     }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -642,34 +383,34 @@ int main(int argc, char** argv) {
     VkCheck(vkDeviceWaitIdle(renderer->device.device));
 
 
-    // Destroy resources
-    DestroyTextureBuffer(spaceTexture);
-    DestroyTextureBuffer(moonTexture);
-    DestroyTextureBuffer(earthTexture);
-    DestroyTextureBuffer(sunTexture);
+    DestroyVertexArray(model);
 
-    DestroyVertexArray(cube);
-    DestroyVertexArray(sphere);
+    DestroyTextureBuffer(skysphere);
+    DestroyTextureBuffer(groundTexture);
     DestroyVertexArray(icosphere);
-
+    DestroyVertexArray(plane);
 
 
     // Destroy rendering resources
     for (std::size_t i = 0; i < frames_in_flight; ++i) {
-        DestroyBuffer(gSceneBuffer[i]);
-        DestroyBuffer(gCameraBuffer[i]);
+        DestroyBuffer(g_scene_buffer[i]);
+        DestroyBuffer(g_camera_buffer[i]);
     }
-    gSceneBuffer.clear();
-    gCameraBuffer.clear();
+    g_scene_buffer.clear();
+    g_camera_buffer.clear();
 
-    DestroyDescriptorSetLayout(gObjectDescriptorLayout);
-    DestroyDescriptorSetLayout(gGlobalDescriptorSetLayout);
+    DestroyDescriptorSetLayout(g_object_descriptor_layout);
+    DestroyDescriptorSetLayout(g_global_descriptor_set_layout);
 
     DestroyPipeline(wireframePipeline);
     DestroyPipeline(skyspherePipeline);
     DestroyPipeline(basicPipeline);
-    DestroyRenderPass(geometryPass);
-    DestroyRenderPass(guiPass);
+
+    destroy_framebuffers(geometry_framebuffers);
+    destroy_render_pass(geometry_pass);
+
+    destroy_framebuffers(ui_framebuffers);
+    destroy_render_pass(ui_pass);
 
 
     // Destroy core systems
@@ -693,15 +434,11 @@ static bool Press(KeyPressedEvent& event) {
 }
 
 static bool ButtonPress(MouseButtonPressedEvent& event) {
-    ImGuiIO& io = ImGui::GetIO();
-    io.MouseDown[event.GetButtonCode()] = true;
 
     return true;
 }
 
 static bool ButtonRelease(MouseButtonReleasedEvent& event) {
-    ImGuiIO& io = ImGui::GetIO();
-    io.MouseDown[event.GetButtonCode()] = false;
 
     return true;
 }
@@ -716,8 +453,13 @@ static bool MouseMove(MouseMovedEvent& event) {
 static bool Resize(WindowResizedEvent& event) {
     //UpdateCameraProjection(gCamera, event.GetWidth(), event.GetHeight());
 
-    // todo: update renderer size
-    //UpdateRendererSize();
+
+    //resize_swapchain(event.GetWidth(), event.GetHeight());
+
+    resize_framebuffers_color_and_depth(geometry_pass, geometry_framebuffers, { event.GetWidth(), event.GetHeight() });
+    geometry_size = { event.GetWidth(), event.GetHeight() };
+    //resize_framebuffer(guiPass, false, event.GetWidth(), event.GetHeight());
+    //printf("%d %d\n", event.GetWidth(), event.GetHeight());
 
     return true;
 }
@@ -729,7 +471,7 @@ static bool Close(WindowClosedEvent& event) {
 }
 
 
-static void EngineEventCallback(Event& event) {
+static void event_callback(Event& event) {
     EventDispatcher dispatcher(event);
 
     dispatcher.Dispatch<KeyPressedEvent>(Press);

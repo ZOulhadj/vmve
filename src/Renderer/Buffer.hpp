@@ -15,7 +15,7 @@ struct ImageBuffer {
     VkFormat      format;
 };
 
-Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type);
+Buffer create_buffer(uint32_t size, VkBufferUsageFlags type);
 Buffer CreateStagingBuffer(void* data, uint32_t size);
 Buffer CreateGPUBuffer(uint32_t size, VkBufferUsageFlags type);
 

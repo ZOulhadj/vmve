@@ -3,7 +3,7 @@
 #include "Common.hpp"
 #include "Renderer.hpp"
 
-Buffer CreateBuffer(uint32_t size, VkBufferUsageFlags type) {
+Buffer create_buffer(uint32_t size, VkBufferUsageFlags type) {
     Buffer buffer{};
 
 

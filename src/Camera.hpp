@@ -2,7 +2,7 @@
 #define MYENGINE_QUATERNION_CAMERA_HPP
 
 
-struct ViewProjection {
+struct view_projection {
     glm::mat4 view;
     glm::mat4 proj;
 };
@@ -28,7 +28,7 @@ struct QuatCamera {
 
     float near;
 
-    ViewProjection viewProj;
+    view_projection viewProj;
 
 
     float cursor_x;

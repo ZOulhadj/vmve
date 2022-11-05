@@ -14,9 +14,9 @@ struct Shader {
 
 ShaderCompiler CreateShaderCompiler();
 void DestroyShaderCompiler(ShaderCompiler& compiler);
-Shader CreateVertexShader(const std::string& code);
-Shader CreateFragmentShader(const std::string& code);
-void DestroyShader(Shader& shader);
+Shader create_vertex_shader(const std::string& code);
+Shader create_fragment_shader(const std::string& code);
+void destroy_shader(Shader& shader);
 
 
 #endif

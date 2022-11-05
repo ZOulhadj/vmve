@@ -87,6 +87,8 @@ VertexArray LoadModel(const char* path) {
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate |
+                                                   aiProcess_OptimizeGraph |
+                                                   aiProcess_OptimizeMeshes |
                                                    aiProcess_CalcTangentSpace);
 
     if (!scene) {

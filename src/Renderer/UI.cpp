@@ -4,7 +4,7 @@
 #include "Renderer.hpp"
 
 
-ImGuiContext* CreateUserInterface(VkRenderPass renderPass) {
+ImGuiContext* create_user_interface(VkRenderPass renderPass) {
     ImGuiContext* context = nullptr;
 
     const RendererContext* rc = GetRendererContext();
@@ -13,6 +13,7 @@ ImGuiContext* CreateUserInterface(VkRenderPass renderPass) {
     context = ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     //io.IniFilename = nullptr;
     /*if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
         printf("Failed to load required font for ImGui.\n");
@@ -21,7 +22,7 @@ ImGuiContext* CreateUserInterface(VkRenderPass renderPass) {
 
     ImGui::StyleColorsDark();
 
-    if (!ImGui_ImplGlfw_InitForVulkan(rc->window->handle, false))
+    if (!ImGui_ImplGlfw_InitForVulkan(rc->window->handle, true))
         return nullptr;
 
     ImGui_ImplVulkan_InitInfo init_info{};

@@ -15,7 +15,7 @@ static void WindowCloseCallback(GLFWwindow* window) {
     Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     WindowClosedEvent e;
-    ptr->EventCallback(e);
+    ptr->event_callback(e);
 }
 
 static void WindowResizeCallback(GLFWwindow* window, int width, int height) {
@@ -30,7 +30,7 @@ static void WindowFramebufferResizeCallback(GLFWwindow* window, int width, int h
     ptr->height = height;
 
     WindowResizedEvent e(width, height);
-    ptr->EventCallback(e);
+    ptr->event_callback(e);
 }
 
 static void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -38,13 +38,13 @@ static void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int act
 
     if (action == GLFW_PRESS) {
         KeyPressedEvent e(key);
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     } else if (action == GLFW_REPEAT) {
         KeyPressedEvent e(key);
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     } else if (action == GLFW_RELEASE) {
         KeyReleasedEvent e(key);
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     }
 }
 
@@ -53,13 +53,13 @@ static void WindowMouseButtonCallback(GLFWwindow* window, int button, int action
 
     if (action == GLFW_PRESS) {
         MouseButtonPressedEvent e(button);
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     } else if (action == GLFW_REPEAT) {
         MouseButtonPressedEvent e(button);
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     } else if (action == GLFW_RELEASE) {
         MouseButtonReleasedEvent e(button);
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     }
 }
 
@@ -68,10 +68,10 @@ static void WindowMouseScrollCallback(GLFWwindow* window, double xoffset, double
 
     if (yoffset == 1.0) {
         MouseScrolledUpEvent e;
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     } else if (yoffset == -1.0) {
         MouseScrolledDownEvent e;
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     }
 }
 
@@ -79,7 +79,7 @@ static void WindowCursorPosCallback(GLFWwindow* window, double xpos, double ypos
     Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     MouseMovedEvent e(xpos, ypos);
-    ptr->EventCallback(e);
+    ptr->event_callback(e);
 }
 
 static void WindowCursorEnterCallback(GLFWwindow* window, int entered) {
@@ -87,10 +87,10 @@ static void WindowCursorEnterCallback(GLFWwindow* window, int entered) {
 
     if (entered) {
         MouseEnteredEvent e;
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     } else {
         MouseLeftEvent e;
-        ptr->EventCallback(e);
+        ptr->event_callback(e);
     }
 }
 

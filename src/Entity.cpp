@@ -37,12 +37,18 @@ void Rotate(EntityInstance& e, float degrees, const glm::vec3& axis) {
     e.matrix = glm::rotate(e.matrix, glm::radians(degrees), axis);
 }
 
+void Rotate(EntityInstance& e, const glm::vec3& axis) {
+    e.matrix = glm::rotate(e.matrix, glm::radians(axis.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    e.matrix = glm::rotate(e.matrix, glm::radians(axis.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    e.matrix = glm::rotate(e.matrix, glm::radians(axis.z), glm::vec3(0.0f, 0.0f, 1.0f));
+}
+
 void Scale(EntityInstance& e, float scale) {
     e.matrix = glm::scale(e.matrix, glm::vec3(scale));
 }
 
 void Scale(EntityInstance& e, const glm::vec3& axis) {
-    //e->scale = axis;
+    e.matrix = glm::scale(e.matrix, axis);
 }
 
 glm::vec3 GetPosition(const EntityInstance& e) {

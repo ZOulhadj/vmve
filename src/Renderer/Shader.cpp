@@ -89,17 +89,17 @@ Shader CreateShader(VkShaderStageFlagBits type, const std::string& code) {
 }
 
 
-void DestroyShader(Shader& shader) {
+void destroy_shader(Shader& shader) {
     const RendererContext* rc = GetRendererContext();
 
     vkDestroyShaderModule(rc->device.device, shader.handle, nullptr);
 }
 
-Shader CreateVertexShader(const std::string& code) {
+Shader create_vertex_shader(const std::string& code) {
     return CreateShader(VK_SHADER_STAGE_VERTEX_BIT, code);
 }
 
-Shader CreateFragmentShader(const std::string& code) {
+Shader create_fragment_shader(const std::string& code) {
     return CreateShader(VK_SHADER_STAGE_FRAGMENT_BIT, code);
 }
 

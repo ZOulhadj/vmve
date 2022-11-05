@@ -3,6 +3,8 @@
 #include "Common.hpp"
 
 static RendererContext* g_rc  = nullptr;
+static BufferMode g_buffering{};
+static VSyncMode g_vsync{};
 
 static Swapchain g_swapchain{};
 
@@ -15,37 +17,57 @@ static std::vector<Frame> g_frames;
 // frame and image index often are the same but is not guaranteed.
 static uint32_t current_frame = 0;
 
+static uint32_t currentImage = 0;
 
 
 Swapchain& GetSwapchain() {
     return g_swapchain;
 }
 
+static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface) {
+    if (surface.currentExtent.width != std::numeric_limits<uint32_t>::max())
+        return surface.currentExtent;
+
+    int width, height;
+    glfwGetFramebufferSize(g_rc->window->handle, &width, &height);
+
+    VkExtent2D actualExtent { U32(width), U32(height) };
+
+    actualExtent.width = std::clamp(actualExtent.width,
+                                    surface.minImageExtent.width,
+                                    surface.maxImageExtent.width);
+
+    actualExtent.height = std::clamp(actualExtent.height,
+                                     surface.minImageExtent.height,
+                                     surface.maxImageExtent.height);
+
+    return actualExtent;
+}
+
+
 // Creates a swapchain which is a collection of images that will be used for
 // rendering. When called, you must specify the number of images you would
 // like to be created. It's important to remember that this is a request
 // and not guaranteed as the hardware may not support that number
 // of images.
-static Swapchain CreateSwapchain(BufferMode buffering_mode, VSyncMode sync_mode) {
+static Swapchain CreateSwapchain() {
     Swapchain swapchain{};
 
     // get surface properties
     VkSurfaceCapabilitiesKHR surface_properties {};
     VkCheck(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(g_rc->device.gpu, g_rc->surface, &surface_properties));
 
-    // todo: fix resolution for high density displays
-
     VkSwapchainCreateInfoKHR swapchain_info { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
     swapchain_info.surface               = g_rc->surface;
-    swapchain_info.minImageCount         = static_cast<uint32_t>(buffering_mode);
+    swapchain_info.minImageCount         = U32(g_buffering);
     swapchain_info.imageFormat           = VK_FORMAT_B8G8R8A8_SRGB;
     swapchain_info.imageColorSpace       = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-    swapchain_info.imageExtent           = surface_properties.currentExtent;
+    swapchain_info.imageExtent           = get_surface_size(surface_properties);
     swapchain_info.imageArrayLayers      = 1;
     swapchain_info.imageUsage            = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_info.preTransform          = surface_properties.currentTransform;
     swapchain_info.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swapchain_info.presentMode           = static_cast<VkPresentModeKHR>(sync_mode);
+    swapchain_info.presentMode           = static_cast<VkPresentModeKHR>(g_vsync);
     swapchain_info.clipped               = true;
 
     // Specify how the swapchain should manage images if we have different rendering 
@@ -64,9 +86,6 @@ static Swapchain CreateSwapchain(BufferMode buffering_mode, VSyncMode sync_mode)
 
 
     VkCheck(vkCreateSwapchainKHR(g_rc->device.device, &swapchain_info, nullptr, &swapchain.handle));
-
-    swapchain.buffering_mode = buffering_mode;
-    swapchain.sync_mode = sync_mode;
 
     // Get the image handles from the newly created swapchain. The number of
     // images that we get is guaranteed to be at least the minimum image count
@@ -114,21 +133,21 @@ static void DestroySwapchain(Swapchain& swapchain) {
     vkDestroySwapchainKHR(g_rc->device.device, swapchain.handle, nullptr);
 }
 
-/*
+static void RebuildSwapchain(Swapchain& swapchain) {
+    // Check if the window is minimized and if so then wait here.
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(g_rc->window->handle, &width, &height);
 
-static void RebuildSwapchain(Swapchain& swapchain)
-{
-    VkCheck(vkDeviceWaitIdle(gRc->device));
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(g_rc->window->handle, &width, &height);
+        glfwWaitEvents();
+    }
 
-    // todo(zak): minimizing
+    VkCheck(vkDeviceWaitIdle(g_rc->device.device));
 
-    // DestroyFramebuffers();
-    destroy_swapchain(swapchain);
-
-    gSwapchain = create_swapchain(swapchain.bufferMode, swapchain.vsyncMode);
-    //CreateFramebuffers();
+    DestroySwapchain(swapchain);
+    swapchain = CreateSwapchain();
 }
-*/
 
 static void CreateFrameBarriers() {
     VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
@@ -174,9 +193,7 @@ static void DestroyFrameBarriers() {
 
 
 
-static std::vector<VkFramebuffer> CreateFramebuffers(VkRenderPass renderPass, 
-                                                     const std::vector<ImageBuffer>& color_attachments,
-                                                     const std::vector<ImageBuffer>& depth_attachments) {
+static std::vector<VkFramebuffer> CreateFramebuffers(VkRenderPass renderPass, bool depth, uint32_t width, uint32_t height) {
     // Each swapchain image has a corresponding framebuffer that will contain views into image
     // buffers.
     //
@@ -185,18 +202,18 @@ static std::vector<VkFramebuffer> CreateFramebuffers(VkRenderPass renderPass,
 
     // Create framebuffers with attachments.
     for (std::size_t i = 0; i < g_swapchain.images.size(); ++i) {
-        std::vector<VkImageView> attachments { color_attachments[i].view };
+        std::vector<VkImageView> attachments { g_swapchain.images[i].view };
        
         
-        if (!depth_attachments.empty())
+        if (depth)
             attachments.push_back(g_swapchain.depth_image.view);
 
         VkFramebufferCreateInfo framebuffer_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         framebuffer_info.renderPass = renderPass;
         framebuffer_info.attachmentCount = U32(attachments.size());
         framebuffer_info.pAttachments = attachments.data();
-        framebuffer_info.width = color_attachments[i].extent.width;
-        framebuffer_info.height = color_attachments[i].extent.height;
+        framebuffer_info.width = g_swapchain.images[0].extent.width;
+        framebuffer_info.height = g_swapchain.images[0].extent.height;
         framebuffer_info.layers = 1;
 
         VkCheck(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info, nullptr, &framebuffers[i]));
@@ -209,10 +226,11 @@ static void DestroyFramebuffers(std::vector<VkFramebuffer>& framebuffers) {
     for (auto& framebuffer : framebuffers) {
         vkDestroyFramebuffer(g_rc->device.device, framebuffer, nullptr);
     }
+    framebuffers.clear();
 }
 
-RenderPass CreateRenderPass(const RenderPassInfo& info, const std::vector<ImageBuffer>& color_attachments,
-                            const std::vector<ImageBuffer>& depth_attachments) {
+RenderPass create_render_pass(const RenderPassInfo& info, const std::vector<ImageBuffer>& color_attachments,
+                              const std::vector<ImageBuffer>& depth_attachments) {
     RenderPass target{};
 
     // Create renderpass
@@ -285,21 +303,173 @@ RenderPass CreateRenderPass(const RenderPassInfo& info, const std::vector<ImageB
 
     VkCheck(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr, &target.handle));
 
-
-    // Create framebuffers
-    target.framebuffers = CreateFramebuffers(target.handle, color_attachments, depth_attachments);
+    VkExtent2D extent = color_attachments[0].extent;
+    target.framebuffers = CreateFramebuffers(target.handle, info.depth_attachment_count, extent.width, extent.height);
+    target.extent = extent;
 
     return target;
 }
 
-void DestroyRenderPass(RenderPass& renderPass) {
-    DestroyFramebuffers(renderPass.framebuffers);
-
-    vkDestroyRenderPass(g_rc->device.device, renderPass.handle, nullptr);
+void destroy_render_pass(VkRenderPass render_pass) {
+    vkDestroyRenderPass(g_rc->device.device, render_pass, nullptr);
+}
+void destroy_framebuffers(std::vector<VkFramebuffer>& framebuffers) {
+    for (auto& framebuffer : framebuffers) {
+        vkDestroyFramebuffer(g_rc->device.device, framebuffer, nullptr);
+    }
+    framebuffers.clear();
 }
 
 
-VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings) {
+VkRenderPass create_color_render_pass() {
+    VkRenderPass render_pass{};
+
+    std::vector<VkAttachmentDescription> attachments(2);
+
+    // color attachment
+    attachments[0].format = VK_FORMAT_B8G8R8A8_SRGB;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // color reference
+    VkAttachmentReference color_reference{};
+    color_reference.attachment = 0;
+    color_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // Depth attachment
+    attachments[1].format = VK_FORMAT_D32_SFLOAT;
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    // Depth reference
+    VkAttachmentReference depth_reference{};
+    depth_reference.attachment = 1;
+    depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_reference;
+    subpass.pDepthStencilAttachment = &depth_reference;
+
+    VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+    render_pass_info.attachmentCount = U32(attachments.size());
+    render_pass_info.pAttachments = attachments.data();
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
+
+    VkCheck(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr, &render_pass));
+
+    return render_pass;
+}
+
+VkRenderPass create_ui_render_pass() {
+    VkRenderPass render_pass{};
+
+    std::vector<VkAttachmentDescription> attachments(1);
+
+    // color attachment
+    attachments[0].format = VK_FORMAT_B8G8R8A8_SRGB;
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // color reference
+    VkAttachmentReference color_reference{};
+    color_reference.attachment = 0;
+    color_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_reference;
+
+    VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+    render_pass_info.attachmentCount = U32(attachments.size());
+    render_pass_info.pAttachments = attachments.data();
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+
+    VkCheck(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr, &render_pass));
+
+    return render_pass;
+}
+std::vector<VkFramebuffer> create_framebuffers_color(VkRenderPass render_pass, VkExtent2D extent) {
+    std::vector<VkFramebuffer> framebuffers(g_swapchain.images.size());
+
+    // Create framebuffers with attachments.
+    for (std::size_t i = 0; i < g_swapchain.images.size(); ++i) {
+        std::vector<VkImageView> attachments { g_swapchain.images[i].view };
+
+        VkFramebufferCreateInfo framebuffer_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+        framebuffer_info.renderPass = render_pass;
+        framebuffer_info.attachmentCount = 1;
+        framebuffer_info.pAttachments = &g_swapchain.images[i].view;
+        framebuffer_info.width = extent.width;
+        framebuffer_info.height = extent.height;
+        framebuffer_info.layers = 1;
+
+        VkCheck(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info, nullptr, &framebuffers[i]));
+    }
+
+    return framebuffers;
+}
+
+std::vector<VkFramebuffer> create_framebuffers_color_and_depth(VkRenderPass render_pass, VkExtent2D extent) {
+    std::vector<VkFramebuffer> framebuffers(g_swapchain.images.size());
+
+    // Create framebuffers with attachments.
+    for (std::size_t i = 0; i < g_swapchain.images.size(); ++i) {
+        std::vector<VkImageView> attachments { g_swapchain.images[i].view, g_swapchain.depth_image.view };
+
+        VkFramebufferCreateInfo framebuffer_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+        framebuffer_info.renderPass = render_pass;
+        framebuffer_info.attachmentCount = U32(attachments.size());
+        framebuffer_info.pAttachments = attachments.data();
+        framebuffer_info.width = extent.width;
+        framebuffer_info.height = extent.height;
+        framebuffer_info.layers = 1;
+
+        VkCheck(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info, nullptr, &framebuffers[i]));
+    }
+
+    return framebuffers;
+}
+
+void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent) {
+    vkDeviceWaitIdle(g_rc->device.device);
+
+    DestroyFramebuffers(framebuffers);
+    framebuffers = create_framebuffers_color_and_depth(render_pass, extent);
+}
+
+
+
+VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<VkDescriptorSetLayoutBinding>& bindings) {
     VkDescriptorSetLayout layout{};
 
     VkDescriptorSetLayoutCreateInfo descriptor_layout_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
@@ -315,7 +485,7 @@ void DestroyDescriptorSetLayout(VkDescriptorSetLayout layout) {
     vkDestroyDescriptorSetLayout(g_rc->device.device, layout, nullptr);
 }
 
-std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout, uint32_t frames) {
+std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout, uint32_t frames) {
     std::vector<VkDescriptorSet> descriptor_sets(frames);
 
     for (auto& descriptor_set : descriptor_sets) {
@@ -344,7 +514,7 @@ VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout) {
     return descriptor_set;
 }
 
-Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass) {
+Pipeline create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass) {
     Pipeline pipeline{};
 
     // push constant
@@ -488,7 +658,7 @@ Pipeline CreatePipeline(PipelineInfo& pipelineInfo, const RenderPass& renderPass
     graphics_pipeline_info.pColorBlendState    = &color_blend_state_info;
     graphics_pipeline_info.pDynamicState       = &dynamic_state_info;
     graphics_pipeline_info.layout              = pipeline.layout;
-    graphics_pipeline_info.renderPass          = renderPass.handle;
+    graphics_pipeline_info.renderPass          = render_pass;
     graphics_pipeline_info.subpass             = 0;
 
     VkCheck(vkCreateGraphicsPipelines(g_rc->device.device,
@@ -508,80 +678,7 @@ void DestroyPipeline(Pipeline& pipeline) {
 }
 
 
-
-
-
-
-
-
-static void GetNextImage(Swapchain& swapchain) {
-    // Wait for the GPU to finish all work before getting the next image
-    VkCheck(vkWaitForFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence, true, UINT64_MAX));
-
-    // Keep attempting to acquire the next frame.
-    VkResult result = vkAcquireNextImageKHR(g_rc->device.device,
-                                            swapchain.handle,
-                                            UINT64_MAX,
-                                            g_frames[current_frame].acquired_semaphore,
-                                            nullptr,
-                                            &swapchain.currentImage);
-    while (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        //RebuildSwapchain(swapchain);
-
-        result = vkAcquireNextImageKHR(g_rc->device.device,
-                                       swapchain.handle,
-                                       UINT64_MAX,
-                                       g_frames[current_frame].acquired_semaphore,
-                                       nullptr,
-                                       &swapchain.currentImage);
-
-    }
-
-    // reset fence when about to submit work to the GPU
-    VkCheck(vkResetFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence));
-}
-
-// Submits a request to the GPU to start performing the actual computation needed
-// to render an image.
-static void SubmitImage(const Frame& frame) {
-    const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-    submit_info.waitSemaphoreCount   = 1;
-    submit_info.pWaitSemaphores      = &frame.acquired_semaphore;
-    submit_info.pWaitDstStageMask    = &wait_stage;
-    submit_info.commandBufferCount   = 1;
-    submit_info.pCommandBuffers      = &frame.cmd_buffer;
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores    = &frame.released_semaphore;
-
-
-    VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, frame.submit_fence));
-}
-
-// Displays the newly finished rendered swapchain image onto the window
-static void PresentImage(Swapchain& swapchain) {
-    VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
-    present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores    = &g_frames[current_frame].released_semaphore;
-    present_info.swapchainCount     = 1;
-    present_info.pSwapchains        = &swapchain.handle;
-    present_info.pImageIndices      = &swapchain.currentImage;
-    present_info.pResults           = nullptr;
-
-    // request the GPU to present the rendered image onto the screen
-    const VkResult result = vkQueuePresentKHR(g_rc->device.graphics_queue, &present_info);
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        //RebuildSwapchain(swapchain);
-        return;
-    }
-
-    // Once the image has been shown onto the window, we can move onto the next
-    // frame, and so we increment the frame index.
-    current_frame = (current_frame + 1) % frames_in_flight;
-}
-
-RendererContext* CreateRenderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode) {
+RendererContext* create_renderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode) {
     const std::vector<const char*> layers {
         "VK_LAYER_KHRONOS_validation",
 #if defined(_WIN32)
@@ -601,7 +698,10 @@ RendererContext* CreateRenderer(const Window* window, BufferMode buffering_mode,
 
 
     g_rc        = CreateRendererContext(VK_API_VERSION_1_0, layers, extensions, features, window);
-    g_swapchain = CreateSwapchain(buffering_mode, sync_mode);
+    g_buffering = buffering_mode;
+    g_vsync     = sync_mode;
+
+    g_swapchain = CreateSwapchain();
 
     CreateFrameBarriers();
 
@@ -619,29 +719,34 @@ RendererContext* GetRendererContext() {
     return g_rc;
 }
 
-//void update_renderer_size(VulkanRenderer& renderer, uint32_t width, uint32_t height)
-//{
-//    vk_check(vkDeviceWaitIdle(g_rc->device.device));
-//
-//    destroy_swapchain(g_swapchain);
-//    g_swapchain = create_swapchain(BufferMode::Triple, VSyncMode::Disabled);
-//
-//    destroy_framebuffers(renderer.guiPass.framebuffers);
-//    destroy_framebuffers(renderer.geometryPass.framebuffers);
-//
-//    renderer.geometryPass.framebuffers = create_framebuffers(renderer.geometryPass.handle,
-//                                                                   g_swapchain.images,
-//                                                                   { g_swapchain.depth_image });
-//    renderer.guiPass.framebuffers = create_framebuffers(renderer.guiPass.handle,
-//                                                                   g_swapchain.images, {});
-//}
-
 uint32_t GetCurrentFrame() {
     return current_frame;
 }
 
-void BeginFrame() {
-    GetNextImage(g_swapchain);
+bool BeginFrame() {
+    // Wait for the GPU to finish all work before getting the next image
+    VkCheck(vkWaitForFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence, VK_TRUE, UINT64_MAX));
+
+    // Keep attempting to acquire the next frame.
+    VkResult result = vkAcquireNextImageKHR(g_rc->device.device,
+                                            g_swapchain.handle,
+                                            UINT64_MAX,
+                                            g_frames[current_frame].acquired_semaphore,
+                                            nullptr,
+                                            &currentImage);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        RebuildSwapchain(g_swapchain);
+
+        return false;
+    }
+
+    // reset fence when about to submit work to the GPU
+    VkCheck(vkResetFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence));
+
+
+
+
 
     Frame& frame = g_frames[current_frame];
 
@@ -668,6 +773,7 @@ void BeginFrame() {
     vkCmdSetViewport(frame.cmd_buffer, 0, 1, &viewport);
     vkCmdSetScissor(frame.cmd_buffer, 0, 1, &scissor);
 
+    return true;
 }
 
 void EndFrame() {
@@ -675,23 +781,60 @@ void EndFrame() {
 
     VkCheck(vkEndCommandBuffer(frame.cmd_buffer));
 
-    SubmitImage(frame);
-    PresentImage(g_swapchain);
+    const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    submit_info.waitSemaphoreCount   = 1;
+    submit_info.pWaitSemaphores      = &frame.acquired_semaphore;
+    submit_info.pWaitDstStageMask    = &wait_stage;
+    submit_info.commandBufferCount   = 1;
+    submit_info.pCommandBuffers      = &frame.cmd_buffer;
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores    = &frame.released_semaphore;
+
+
+    VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, frame.submit_fence));
+
+
+
+
+
+    VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores    = &g_frames[current_frame].released_semaphore;
+    present_info.swapchainCount     = 1;
+    present_info.pSwapchains        = &g_swapchain.handle;
+    present_info.pImageIndices      = &currentImage;
+    present_info.pResults           = nullptr;
+
+    // request the GPU to present the rendered image onto the screen
+    VkResult result = vkQueuePresentKHR(g_rc->device.graphics_queue, &present_info);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        RebuildSwapchain(g_swapchain);
+    }
+
+    // Once the image has been shown onto the window, we can move onto the next
+    // frame, and so we increment the frame index.
+    current_frame = (current_frame + 1) % frames_in_flight;
 }
 
 VkCommandBuffer GetCommandBuffer() {
     return g_frames[current_frame].cmd_buffer;
 }
 
-void BeginRenderPass(RenderPass& renderPass) {
+void BeginRenderPass(VkRenderPass render_pass, const std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent) {
     const VkClearValue clear_color = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
     const VkClearValue clear_depth = { 0.0f, 0 };
     const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
 
+    VkRect2D render_area{};
+    render_area.offset = { 0, 0 };
+    render_area.extent = extent;
+
     VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    renderPassInfo.renderPass = renderPass.handle;
-    renderPassInfo.framebuffer = renderPass.framebuffers[g_swapchain.currentImage];
-    renderPassInfo.renderArea = {{ 0, 0 }, g_swapchain.images[0].extent }; // todo
+    renderPassInfo.renderPass = render_pass;
+    renderPassInfo.framebuffer = framebuffers[currentImage];
+    renderPassInfo.renderArea = render_area;
     renderPassInfo.clearValueCount = 2;
     renderPassInfo.pClearValues = clear_buffers;
 

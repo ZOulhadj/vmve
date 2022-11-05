@@ -20,6 +20,7 @@ EntityInstance CreateEntity(VertexArray& model, TextureBuffer& texture, VkDescri
 
 void Translate(EntityInstance& e, const glm::vec3& position);
 void Rotate(EntityInstance& e, float deg, const glm::vec3& axis);
+void Rotate(EntityInstance& e, const glm::vec3& axis);
 void Scale(EntityInstance& e, float scale);
 void Scale(EntityInstance& e, const glm::vec3& axis);
 glm::vec3 GetPosition(const EntityInstance& e);

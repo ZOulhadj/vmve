@@ -10,7 +10,7 @@ struct Window {
     uint32_t    width;
     uint32_t    height;
 
-    EventFunc  EventCallback;
+    EventFunc  event_callback;
 };
 
 // Initialized the GLFW library and creates a window. Window callbacks send

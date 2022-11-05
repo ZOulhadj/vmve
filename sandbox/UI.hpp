@@ -10,7 +10,31 @@ void RenderOverlay() {
 
 }
 
+void RenderFileMenu() {
+    if (ImGui::Button("Load Model..."))
+        ImGui::OpenPopup("filesystem");
 
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    if (ImGui::BeginPopupModal("filesystem")) {
+        ImGui::Text("This is some example text.");
+
+        if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+        ImGui::SetItemDefaultFocus();
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+
+
+        ImGui::EndPopup();
+    }
+
+
+
+
+    ImGui::MenuItem("Settings");
+    ImGui::MenuItem("Exit");
+}
 //void RenderGUI()
 //{
 //    ImGui_ImplVulkan_NewFrame();
