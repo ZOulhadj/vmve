@@ -19,7 +19,7 @@ std::string load_text_file(std::string_view path) {
 // allows for frame dependent systems such as movement and translation
 // to run at the same speed no matter the time difference between two
 // frames.
-float GetDeltaTime() {
+float get_delta_time() {
     // todo: replace glfwGetTime() with C++ chrono
     static float lastTime;
     float currentTime = (float)glfwGetTime();

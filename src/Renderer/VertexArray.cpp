@@ -32,18 +32,18 @@ VertexArray CreateVertexArray(void* v, int vs, void* i, int is) {
 
 
     // We can now free the staging buffer memory as it is no longer required
-    DestroyBuffer(indexStagingBuffer);
-    DestroyBuffer(vertexStagingBuffer);
+    destroy_buffer(indexStagingBuffer);
+    destroy_buffer(vertexStagingBuffer);
 
     return vertexArray;
 }
 
-void DestroyVertexArray(VertexArray& vertexArray) {
-    DestroyBuffer(vertexArray.index_buffer);
-    DestroyBuffer(vertexArray.vertex_buffer);
+void destroy_vertex_array(VertexArray& vertexArray) {
+    destroy_buffer(vertexArray.index_buffer);
+    destroy_buffer(vertexArray.vertex_buffer);
 }
 
-void BindVertexArray(const VertexArray& vertexArray) {
+void bind_vertex_array(const VertexArray& vertexArray) {
     const VkCommandBuffer& cmd_buffer = GetCommandBuffer();
 
     const VkDeviceSize offset{ 0 };

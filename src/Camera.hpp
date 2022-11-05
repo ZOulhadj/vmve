@@ -39,10 +39,10 @@ struct QuatCamera {
 QuatCamera CreateCamera(const glm::vec3& position, float fov, float speed);
 
 void UpdateCameraView(QuatCamera& camera, float cursor_x, float cursor_y);
-void UpdateCamera(QuatCamera& camera);
+void update_camera(QuatCamera& camera);
 
 void update_projection(QuatCamera& camera);
-void UpdateCameraProjection(QuatCamera& camera, uint32_t width, uint32_t height);
+void set_camera_projection(QuatCamera& camera, uint32_t width, uint32_t height);
 
 
 #endif

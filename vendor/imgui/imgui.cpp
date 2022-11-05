@@ -272,7 +272,7 @@ CODE
 
         // Render dear imgui, swap buffers
         // (You want to try calling EndFrame/Render as late as you can, to be able to use Dear ImGui in your own game rendering code)
-        ImGui::EndFrame();
+        ImGui::end_frame();
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
         MyImGuiRenderFunction(draw_data);
@@ -5305,7 +5305,7 @@ void ImGui::EndFrame()
     ImGuiContext& g = *GImGui;
     IM_ASSERT(g.Initialized);
 
-    // Don't process EndFrame() multiple times.
+    // Don't process end_frame() multiple times.
     if (g.FrameCountEnded == g.FrameCount)
         return;
     IM_ASSERT(g.WithinFrameScope && "Forgot to call ImGui::NewFrame()?");
@@ -6628,7 +6628,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
     const ImGuiStyle& style = g.Style;
     IM_ASSERT(name != NULL && name[0] != '\0');     // Window name required
     IM_ASSERT(g.WithinFrameScope);                  // Forgot to call ImGui::NewFrame()
-    IM_ASSERT(g.FrameCountEnded != g.FrameCount);   // Called ImGui::Render() or ImGui::EndFrame() and haven't called ImGui::NewFrame() again yet
+    IM_ASSERT(g.FrameCountEnded != g.FrameCount);   // Called ImGui::Render() or ImGui::end_frame() and haven't called ImGui::NewFrame() again yet
 
     // Find or create
     ImGuiWindow* window = FindWindowByName(name);
@@ -8912,7 +8912,7 @@ void ImGui::UpdateInputEvents(bool trickle_fast_inputs)
 
     // Clear buttons state when focus is lost
     // - this is useful so e.g. releasing Alt after focus loss on Alt-Tab doesn't trigger the Alt menu toggle.
-    // - we clear in EndFrame() and not now in order allow application/user code polling this flag
+    // - we clear in end_frame() and not now in order allow application/user code polling this flag
     //   (e.g. custom backend may want to clear additional data, custom widgets may want to react with a "canceling" event).
     if (g.IO.AppFocusLost)
         g.IO.ClearInputKeys();
@@ -8990,7 +8990,7 @@ static void ImGui::ErrorCheckNewFrameSanityChecks()
     // (We pass an error message in the assert expression to make it visible to programmers who are not using a debugger, as most assert handlers display their argument)
     IM_ASSERT(g.Initialized);
     IM_ASSERT((g.IO.DeltaTime > 0.0f || g.FrameCount == 0)              && "Need a positive DeltaTime!");
-    IM_ASSERT((g.FrameCount == 0 || g.FrameCountEnded == g.FrameCount)  && "Forgot to call Render() or EndFrame() at the end of the previous frame?");
+    IM_ASSERT((g.FrameCount == 0 || g.FrameCountEnded == g.FrameCount)  && "Forgot to call Render() or end_frame() at the end of the previous frame?");
     IM_ASSERT(g.IO.DisplaySize.x >= 0.0f && g.IO.DisplaySize.y >= 0.0f  && "Invalid DisplaySize value!");
     IM_ASSERT(g.IO.Fonts->IsBuilt()                                     && "Font Atlas not built! Make sure you called ImGui_ImplXXXX_NewFrame() function for renderer backend, which should call io.Fonts->GetTexDataAsRGBA32() / GetTexDataAsAlpha8()");
     IM_ASSERT(g.Style.CurveTessellationTol > 0.0f                       && "Invalid style setting!");
@@ -9023,7 +9023,7 @@ static void ImGui::ErrorCheckNewFrameSanityChecks()
     {
         if ((g.IO.BackendFlags & ImGuiBackendFlags_PlatformHasViewports) && (g.IO.BackendFlags & ImGuiBackendFlags_RendererHasViewports))
         {
-            IM_ASSERT((g.FrameCount == 0 || g.FrameCount == g.FrameCountPlatformEnded) && "Forgot to call UpdatePlatformWindows() in main loop after EndFrame()? Check examples/ applications for reference.");
+            IM_ASSERT((g.FrameCount == 0 || g.FrameCount == g.FrameCountPlatformEnded) && "Forgot to call UpdatePlatformWindows() in main loop after end_frame()? Check examples/ applications for reference.");
             IM_ASSERT(g.PlatformIO.Platform_CreateWindow  != NULL && "Platform init didn't install handlers?");
             IM_ASSERT(g.PlatformIO.Platform_DestroyWindow != NULL && "Platform init didn't install handlers?");
             IM_ASSERT(g.PlatformIO.Platform_GetWindowPos  != NULL && "Platform init didn't install handlers?");
@@ -9057,7 +9057,7 @@ static void ImGui::ErrorCheckEndFrameSanityChecks()
 {
     ImGuiContext& g = *GImGui;
 
-    // Verify that io.KeyXXX fields haven't been tampered with. Key mods should not be modified between NewFrame() and EndFrame()
+    // Verify that io.KeyXXX fields haven't been tampered with. Key mods should not be modified between NewFrame() and end_frame()
     // One possible reason leading to this assert is that your backends update inputs _AFTER_ NewFrame().
     // It is known that when some modal native windows called mid-frame takes focus away, some backends such as GLFW will
     // send key release events mid-frame. This would normally trigger this assertion and lead to sheared inputs.
@@ -9067,7 +9067,7 @@ static void ImGui::ErrorCheckEndFrameSanityChecks()
     IM_ASSERT((key_mods == 0 || g.IO.KeyMods == key_mods) && "Mismatching io.KeyCtrl/io.KeyShift/io.KeyAlt/io.KeySuper vs io.KeyMods");
     IM_UNUSED(key_mods);
 
-    // [EXPERIMENTAL] Recover from errors: You may call this yourself before EndFrame().
+    // [EXPERIMENTAL] Recover from errors: You may call this yourself before end_frame().
     //ErrorCheckEndFrameRecover();
 
     // Report when there is a mismatch of Begin/BeginChild vs End/EndChild calls. Important: Remember that the Begin/BeginChild API requires you
@@ -9090,7 +9090,7 @@ static void ImGui::ErrorCheckEndFrameSanityChecks()
 }
 
 // Experimental recovery from incorrect usage of BeginXXX/EndXXX/PushXXX/PopXXX calls.
-// Must be called during or before EndFrame().
+// Must be called during or before end_frame().
 // This is generally flawed as we are not necessarily End/Popping things in the right order.
 // FIXME: Can't recover from inside BeginTabItem/EndTabItem yet.
 // FIXME: Can't recover from interleaved BeginTabBar/Begin
@@ -11118,7 +11118,7 @@ static ImVec2 ImGui::NavCalcPreferredRefPos()
     else
     {
         // When navigation is active and mouse is disabled, pick a position around the bottom left of the currently navigated item
-        // Take account of upcoming scrolling (maybe set mouse pos should be done in EndFrame?)
+        // Take account of upcoming scrolling (maybe set mouse pos should be done in end_frame?)
         ImRect rect_rel = WindowRectRelToAbs(window, window->NavRectRel[g.NavLayer]);
         if (window->LastFrameActive != g.FrameCount && (window->ScrollTarget.x != FLT_MAX || window->ScrollTarget.y != FLT_MAX))
         {
@@ -11564,7 +11564,7 @@ void ImGui::NavMoveRequestApplyResult()
 // Process NavCancel input (to close a popup, get back to parent, clear focus)
 // FIXME: In order to support e.g. Escape to clear a selection we'll need:
 // - either to store the equivalent of ActiveIdUsingKeyInputMask for a FocusScope and test for it.
-// - either to move most/all of those tests to the epilogue/end functions of the scope they are dealing with (e.g. exit child window in EndChild()) or in EndFrame(), to allow an earlier intercept
+// - either to move most/all of those tests to the epilogue/end functions of the scope they are dealing with (e.g. exit child window in EndChild()) or in end_frame(), to allow an earlier intercept
 static void ImGui::NavUpdateCancelRequest()
 {
     ImGuiContext& g = *GImGui;
@@ -11997,7 +11997,7 @@ static const char* GetFallbackWindowNameForWindowingList(ImGuiWindow* window)
     return "(Untitled)";
 }
 
-// Overlay displayed when using CTRL+TAB. Called by EndFrame().
+// Overlay displayed when using CTRL+TAB. Called by end_frame().
 void ImGui::NavUpdateWindowingOverlay()
 {
     ImGuiContext& g = *GImGui;
@@ -12746,7 +12746,7 @@ void ImGui::LoadIniSettingsFromMemory(const char* ini_data, size_t ini_size)
 {
     ImGuiContext& g = *GImGui;
     IM_ASSERT(g.Initialized);
-    //IM_ASSERT(!g.WithinFrameScope && "Cannot be called between NewFrame() and EndFrame()");
+    //IM_ASSERT(!g.WithinFrameScope && "Cannot be called between NewFrame() and end_frame()");
     //IM_ASSERT(g.SettingsLoaded == false && g.FrameCount == 0);
 
     // For user convenience, we allow passing a non zero-terminated string (hence the ini_size parameter).
@@ -13652,12 +13652,12 @@ void ImGui::WindowSyncOwnedViewport(ImGuiWindow* window, ImGuiWindow* parent_win
         window->Viewport->ParentViewportId = g.IO.ConfigViewportsNoDefaultParent ? 0 : IMGUI_VIEWPORT_DEFAULT_ID;
 }
 
-// Called by user at the end of the main loop, after EndFrame()
+// Called by user at the end of the main loop, after end_frame()
 // This will handle the creation/update of all OS windows via function defined in the ImGuiPlatformIO api.
 void ImGui::UpdatePlatformWindows()
 {
     ImGuiContext& g = *GImGui;
-    IM_ASSERT(g.FrameCountEnded == g.FrameCount && "Forgot to call Render() or EndFrame() before UpdatePlatformWindows()?");
+    IM_ASSERT(g.FrameCountEnded == g.FrameCount && "Forgot to call Render() or end_frame() before UpdatePlatformWindows()?");
     IM_ASSERT(g.FrameCountPlatformEnded < g.FrameCount);
     g.FrameCountPlatformEnded = g.FrameCount;
     if (!(g.ConfigFlagsCurrFrame & ImGuiConfigFlags_ViewportsEnable))
@@ -13971,7 +13971,7 @@ void ImGui::DestroyPlatformWindows()
 //    | BeginDockableDragDropTarget()
 //    | - DockNodePreviewDockRender()
 //-----------------------------------------------------------------------------
-// - EndFrame()
+// - end_frame()
 //    | DockContextEndFrame()
 //-----------------------------------------------------------------------------
 
@@ -15409,7 +15409,7 @@ static void ImGui::DockNodeUpdate(ImGuiDockNode* node)
             // But we still it bring it to the front of display. There's no way to choose this precise behavior via window flags.
             // One simple case to ponder if: window A has a toggle to create windows B/C/D. Dock B/C/D together, clear the toggle and enable it again.
             // When reappearing B/C/D will request focus and be moved to the top of the display pile, but they are not linked to the dock host window
-            // during the frame they appear. The dock host window would keep its old display order, and the sorting in EndFrame would move B/C/D back
+            // during the frame they appear. The dock host window would keep its old display order, and the sorting in end_frame would move B/C/D back
             // after the dock host window, losing their top-most status.
             if (node->HostWindow->Appearing)
                 BringWindowToDisplayFront(node->HostWindow);
@@ -16047,7 +16047,7 @@ bool ImGui::DockNodeCalcDropRectsAndTestMousePos(const ImRect& parent, ImGuiDir 
     {
         //hs_w = ImFloor(ImClamp(parent_smaller_axis - hs_for_central_nodes * 4.0f, g.FontSize * 0.5f, g.FontSize * 8.0f));
         //hs_h = ImFloor(hs_w * 0.15f);
-        //off = ImVec2(ImFloor(parent.GetWidth() * 0.5f - GetFrameHeightWithSpacing() * 1.4f - hs_h), ImFloor(parent.GetHeight() * 0.5f - GetFrameHeightWithSpacing() * 1.4f - hs_h));
+        //off = ImVec2(ImFloor(parent.get_width() * 0.5f - GetFrameHeightWithSpacing() * 1.4f - hs_h), ImFloor(parent.get_height() * 0.5f - GetFrameHeightWithSpacing() * 1.4f - hs_h));
         hs_w = ImFloor(hs_for_central_nodes * 1.50f);
         hs_h = ImFloor(hs_for_central_nodes * 0.80f);
         off = ImVec2(ImFloor(parent.GetWidth() * 0.5f - hs_h), ImFloor(parent.GetHeight() * 0.5f - hs_h));

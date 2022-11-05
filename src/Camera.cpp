@@ -45,7 +45,7 @@ void UpdateCameraView(QuatCamera& camera, float cursor_x, float cursor_y) {
     camera.cursor_y = cursor_y;
 }
 
-void UpdateCamera(QuatCamera& camera) {
+void update_camera(QuatCamera& camera) {
     // todo(zak): Need to fix unwanted roll when rotating
     // Get the mouse offsets
     static float last_x = 0.0f;
@@ -84,6 +84,6 @@ void update_projection(QuatCamera& camera) {
     camera.viewProj.proj[1][1] *= -1.0;
 }
 
-void UpdateCameraProjection(QuatCamera& camera, uint32_t width, uint32_t height) {
+void set_camera_projection(QuatCamera& camera, uint32_t width, uint32_t height) {
     update_projection(camera);
 }

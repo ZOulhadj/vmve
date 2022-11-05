@@ -52,7 +52,7 @@ ImGuiContext* create_user_interface(VkRenderPass renderPass) {
     return context;
 }
 
-void DestroyUserInterface(ImGuiContext* context) {
+void destroy_user_interface(ImGuiContext* context) {
     if (!context)
         return;
 
@@ -62,6 +62,6 @@ void DestroyUserInterface(ImGuiContext* context) {
     ImGui::DestroyContext(context);
 }
 
-void RenderUI() {
+void render_ui() {
     ImGui::Render();
 }

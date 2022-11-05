@@ -6,7 +6,7 @@ bool IsKeyDown(int keycode);
 bool IsMouseButtonDown(int buttoncode);
 
 
-glm::vec2 GetMousePosition();
+glm::vec2 get_mouse_position();
 
 
 #endif

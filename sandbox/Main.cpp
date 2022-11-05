@@ -76,6 +76,7 @@ static VkDescriptorSetLayout g_object_descriptor_layout;
 static std::vector<Buffer> g_camera_buffer;
 static std::vector<Buffer> g_scene_buffer;
 
+QuatCamera camera{};
 
 // Global scene information that will be accessed by the shaders to perform
 // various computations. The order of the variables cannot be changed! This
@@ -100,7 +101,7 @@ static void event_callback(Event& event);
 
 
 
-#define APPLICATION_NAME   "Vulkan 3D Model Viewer and Importer"
+#define APPLICATION_NAME   "Vulkan 3D Model Viewer and Exporter"
 #define APPLICATION_WIDTH  1280
 #define APPLICATION_HEIGHT 720
 
@@ -250,21 +251,25 @@ int main(int argc, char** argv) {
 
 
     // Built-in resources
-    VertexArray plane     = LoadModel("assets/plane.obj");
-    VertexArray icosphere = LoadModel("assets/icosphere.obj");
-    TextureBuffer groundTexture = LoadTexture("assets/textures/plane.jpg", VK_FORMAT_B8G8R8A8_SRGB);
-    TextureBuffer skysphere = LoadTexture("assets/textures/skysphere.jpg", VK_FORMAT_B8G8R8A8_SRGB);
-    EntityInstance skybox = CreateEntity(icosphere, skysphere, g_object_descriptor_layout);
-    EntityInstance ground = CreateEntity(plane, groundTexture, g_object_descriptor_layout);
+    VertexArray plane     = load_model("assets/plane.obj");
+    VertexArray icosphere = load_model("assets/icosphere.obj");
+    TextureBuffer groundTexture = load_texture("assets/textures/plane.jpg",
+                                               VK_FORMAT_B8G8R8A8_SRGB);
+    TextureBuffer skysphere = load_texture("assets/textures/skysphere.jpg",
+                                           VK_FORMAT_B8G8R8A8_SRGB);
+    EntityInstance skybox = create_entity(icosphere, skysphere,
+                                          g_object_descriptor_layout);
+    EntityInstance ground = create_entity(plane, groundTexture,
+                                          g_object_descriptor_layout);
 
 
     // User loaded resources
-    VertexArray model = LoadModel("assets/bike.obj");
-    EntityInstance car = CreateEntity(model, skysphere, g_object_descriptor_layout);
+    VertexArray model = load_model("assets/model.obj");
+    EntityInstance car = create_entity(model, skysphere,
+                                       g_object_descriptor_layout);
 
 
-
-    QuatCamera camera = CreateCamera({ 0.0f, 4.0f, -4.0f }, 60.0f, 100.0f);
+    camera = CreateCamera({ 0.0f, 4.0f, -4.0f }, 60.0f, 100.0f);
 
     engine_scene scene {
         .ambientStrength = 0.05f,
@@ -286,50 +291,63 @@ int main(int argc, char** argv) {
 
     while (running) {
 
-        float deltaTime = GetDeltaTime();
+        float deltaTime = get_delta_time();
 
         uptime += deltaTime;
         scene.cameraPosition = camera.position;
 
         // Input and camera
         handle_input(camera, deltaTime);
-        glm::vec2 cursorPos = GetMousePosition();
+        glm::vec2 cursorPos = get_mouse_position();
         //UpdateCameraView(camera, cursorPos.x, cursorPos.y);
-        UpdateCamera(camera);
+        update_camera(camera);
 
 
         // copy data into uniform buffer
         uint32_t frame = GetCurrentFrame();
-        SetBufferData(&g_camera_buffer[frame], &camera.viewProj, sizeof(view_projection));
-        SetBufferData(&g_scene_buffer[frame], &scene, sizeof(engine_scene));
+        set_buffer_data(&g_camera_buffer[frame], &camera.viewProj,
+                        sizeof(view_projection));
+        set_buffer_data(&g_scene_buffer[frame], &scene, sizeof(engine_scene));
 
         if (BeginFrame()) {
-            BeginRenderPass(geometry_pass, geometry_framebuffers, geometry_size);
+            // Geometry Pass
+            // -----------------------------------------------------------------
+            //
+
+            begin_render_pass(geometry_pass, geometry_framebuffers,
+                              geometry_size);
+
+            // Render the background skysphere
             BindPipeline(skyspherePipeline, g_global_descriptor_sets);
-            BindVertexArray(icosphere);
+            bind_vertex_array(icosphere);
             Render(skybox, skyspherePipeline);
 
+
+            // Render the ground where all the models will be on top of
             BindPipeline(basicPipeline, g_global_descriptor_sets);
-            BindVertexArray(plane);
+            bind_vertex_array(plane);
             Translate(ground, { 0.0f, 0.0f, 0.0f });
             Scale(ground, {500.0f, 0.0f, 500.0f});
             Render(ground, basicPipeline);
 
-            BindVertexArray(model);
+
+            // Render the actual model loaded in by the user
+            bind_vertex_array(model);
             Translate(car, objectTranslation);
             Rotate(car, objectRotation);
             Scale(car, objectScale);
             Render(car, basicPipeline);
 
 
-            EndRenderPass();
+            end_render_pass();
 
 
+            // User interface Pass
+            // -----------------------------------------------------------------
+            //
 
-            // The second pass is called the lighting pass and is where the renderer will perform
-            // lighting calculations based on the entire frame. This two-step process is called
-            // deferred rendering.
-            BeginRenderPass(ui_pass, ui_framebuffers, ui_size);
+
+            begin_render_pass(ui_pass, ui_framebuffers, ui_size);
 
             ImGui_ImplVulkan_NewFrame();
             ImGui_ImplGlfw_NewFrame();
@@ -337,16 +355,11 @@ int main(int argc, char** argv) {
             {
                 ImGui::BeginMainMenuBar();
                 if (ImGui::BeginMenu("File")) {
-                    RenderFileMenu();
+                    render_file_menu();
 
                     ImGui::EndMenu();
                 }
                 ImGui::EndMainMenuBar();
-
-
-
-
-
 
 
                 ImGui::Begin("Object Window");
@@ -363,14 +376,15 @@ int main(int argc, char** argv) {
             ImGui::EndFrame();
 
 
-            RenderUI();
+            render_ui();
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
             ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), GetCommandBuffer());
 
-            EndRenderPass();
+            end_render_pass();
 
-            EndFrame();
+
+            end_frame();
         }
 
         update_window(window);
@@ -382,28 +396,28 @@ int main(int argc, char** argv) {
     VkCheck(vkDeviceWaitIdle(renderer->device.device));
 
 
-    DestroyVertexArray(model);
+    destroy_vertex_array(model);
 
-    DestroyTextureBuffer(skysphere);
-    DestroyTextureBuffer(groundTexture);
-    DestroyVertexArray(icosphere);
-    DestroyVertexArray(plane);
+    destroy_texture_buffer(skysphere);
+    destroy_texture_buffer(groundTexture);
+    destroy_vertex_array(icosphere);
+    destroy_vertex_array(plane);
 
 
     // Destroy rendering resources
     for (std::size_t i = 0; i < frames_in_flight; ++i) {
-        DestroyBuffer(g_scene_buffer[i]);
-        DestroyBuffer(g_camera_buffer[i]);
+        destroy_buffer(g_scene_buffer[i]);
+        destroy_buffer(g_camera_buffer[i]);
     }
     g_scene_buffer.clear();
     g_camera_buffer.clear();
 
-    DestroyDescriptorSetLayout(g_object_descriptor_layout);
-    DestroyDescriptorSetLayout(g_global_descriptor_set_layout);
+    destroy_descriptor_set_layout(g_object_descriptor_layout);
+    destroy_descriptor_set_layout(g_global_descriptor_set_layout);
 
-    DestroyPipeline(wireframePipeline);
-    DestroyPipeline(skyspherePipeline);
-    DestroyPipeline(basicPipeline);
+    destroy_pipeline(wireframePipeline);
+    destroy_pipeline(skyspherePipeline);
+    destroy_pipeline(basicPipeline);
 
     destroy_framebuffers(geometry_framebuffers);
     destroy_render_pass(geometry_pass);
@@ -413,8 +427,8 @@ int main(int argc, char** argv) {
 
 
     // Destroy core systems
-    DestroyUserInterface(uiContext);
-    DestroyRenderer(renderer);
+    destroy_user_interface(uiContext);
+    destroy_renderer(renderer);
     destroy_window(window);
 
 
@@ -443,23 +457,22 @@ static bool ButtonRelease(MouseButtonReleasedEvent& event) {
 }
 
 static bool MouseMove(MouseMovedEvent& event) {
-    //UpdateCameraView(gCamera, event.GetX(), event.GetY());
+    //UpdateCameraView(camera, event.GetX(), event.GetY());
 
     return true;
 }
 
 
 static bool Resize(WindowResizedEvent& event) {
-    //UpdateCameraProjection(gCamera, event.GetWidth(), event.GetHeight());
+    //set_camera_projection(camera, event.get_width(), event.get_height());
 
+    resize_framebuffers_color_and_depth(geometry_pass, geometry_framebuffers, {
+            event.get_width(), event.get_height() });
+    geometry_size = {event.get_width(), event.get_height() };
 
-    //resize_swapchain(event.GetWidth(), event.GetHeight());
-
-    resize_framebuffers_color_and_depth(geometry_pass, geometry_framebuffers, { event.GetWidth(), event.GetHeight() });
-    geometry_size = { event.GetWidth(), event.GetHeight() };
-
-    resize_framebuffers_color(ui_pass, ui_framebuffers, { event.GetWidth(), event.GetHeight() });
-    ui_size = { event.GetWidth(), event.GetHeight() };
+    resize_framebuffers_color(ui_pass, ui_framebuffers, {event.get_width(),
+                                                         event.get_height() });
+    ui_size = {event.get_width(), event.get_height() };
 
 
     return true;

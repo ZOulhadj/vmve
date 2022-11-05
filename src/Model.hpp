@@ -4,6 +4,6 @@
 
 #include "Renderer/VertexArray.hpp"
 
-VertexArray LoadModel(const char* path);
+VertexArray load_model(const char* path);
 
 #endif

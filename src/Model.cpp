@@ -81,7 +81,7 @@ static void ProcessModel(std::vector<Vertex>& vertices, std::vector<uint32_t>& i
 
 }
 
-VertexArray LoadModel(const char* path) {
+VertexArray load_model(const char* path) {
     VertexArray buffer = {};
 
     Assimp::Importer importer;

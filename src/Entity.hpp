@@ -16,7 +16,7 @@ struct EntityInstance {
 };
 
 
-EntityInstance CreateEntity(VertexArray& model, TextureBuffer& texture, VkDescriptorSetLayout layout);
+EntityInstance create_entity(VertexArray& model, TextureBuffer& texture, VkDescriptorSetLayout layout);
 
 void Translate(EntityInstance& e, const glm::vec3& position);
 void Rotate(EntityInstance& e, float deg, const glm::vec3& axis);

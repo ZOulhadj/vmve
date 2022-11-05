@@ -428,7 +428,7 @@ std::vector<VkFramebuffer> create_framebuffers_color(VkRenderPass render_pass, V
         VkFramebufferCreateInfo framebuffer_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         framebuffer_info.renderPass = render_pass;
         framebuffer_info.attachmentCount = 1;
-        framebuffer_info.pAttachments = &g_swapchain.images[i].view;
+        framebuffer_info.pAttachments = attachments.data();
         framebuffer_info.width = extent.width;
         framebuffer_info.height = extent.height;
         framebuffer_info.layers = 1;
@@ -461,11 +461,13 @@ std::vector<VkFramebuffer> create_framebuffers_color_and_depth(VkRenderPass rend
 }
 
 void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent) {
+    vkDeviceWaitIdle(g_rc->device.device);
     DestroyFramebuffers(framebuffers);
     framebuffers = create_framebuffers_color_and_depth(render_pass, extent);
 }
 
 void resize_framebuffers_color(VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent) {
+    vkDeviceWaitIdle(g_rc->device.device);
     DestroyFramebuffers(framebuffers);
     framebuffers = create_framebuffers_color(render_pass, extent);
 }
@@ -483,7 +485,7 @@ VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<VkDescripto
     return layout;
 }
 
-void DestroyDescriptorSetLayout(VkDescriptorSetLayout layout) {
+void destroy_descriptor_set_layout(VkDescriptorSetLayout layout) {
     vkDestroyDescriptorSetLayout(g_rc->device.device, layout, nullptr);
 }
 
@@ -674,7 +676,7 @@ Pipeline create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass) {
 }
 
 
-void DestroyPipeline(Pipeline& pipeline) {
+void destroy_pipeline(Pipeline& pipeline) {
     vkDestroyPipeline(g_rc->device.device, pipeline.handle, nullptr);
     vkDestroyPipelineLayout(g_rc->device.device, pipeline.layout, nullptr);
 }
@@ -710,7 +712,7 @@ RendererContext* create_renderer(const Window* window, BufferMode buffering_mode
     return g_rc;
 }
 
-void DestroyRenderer(RendererContext* context) {
+void destroy_renderer(RendererContext* context) {
     DestroyFrameBarriers();
     DestroySwapchain(g_swapchain);
 
@@ -778,7 +780,7 @@ bool BeginFrame() {
     return true;
 }
 
-void EndFrame() {
+void end_frame() {
     Frame& frame = g_frames[current_frame];
 
     VkCheck(vkEndCommandBuffer(frame.cmd_buffer));
@@ -824,7 +826,7 @@ VkCommandBuffer GetCommandBuffer() {
     return g_frames[current_frame].cmd_buffer;
 }
 
-void BeginRenderPass(VkRenderPass render_pass, const std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent) {
+void begin_render_pass(VkRenderPass render_pass, const std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent) {
     const VkClearValue clear_color = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
     const VkClearValue clear_depth = { 0.0f, 0 };
     const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
@@ -843,7 +845,7 @@ void BeginRenderPass(VkRenderPass render_pass, const std::vector<VkFramebuffer>&
     vkCmdBeginRenderPass(g_frames[current_frame].cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void EndRenderPass() {
+void end_render_pass() {
     vkCmdEndRenderPass(g_frames[current_frame].cmd_buffer);
 }
 

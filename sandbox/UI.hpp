@@ -10,7 +10,7 @@ void RenderOverlay() {
 
 }
 
-void RenderFileMenu() {
+void render_file_menu() {
     if (ImGui::Button("Load Model..."))
         ImGui::OpenPopup("filesystem");
 

@@ -2,7 +2,7 @@
 
 #include "Renderer/Renderer.hpp"
 
-EntityInstance CreateEntity(VertexArray& model, TextureBuffer& texture, VkDescriptorSetLayout layout) {
+EntityInstance create_entity(VertexArray& model, TextureBuffer& texture, VkDescriptorSetLayout layout) {
     EntityInstance instance{};
 
     const RendererContext* rc = GetRendererContext();

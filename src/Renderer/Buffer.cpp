@@ -28,7 +28,7 @@ Buffer create_buffer(uint32_t size, VkBufferUsageFlags type) {
 }
 
 // Maps/Fills an existing buffer with data.
-void SetBufferData(Buffer* buffer, void* data, uint32_t size) {
+void set_buffer_data(Buffer* buffer, void* data, uint32_t size) {
     const RendererContext* rc = GetRendererContext();
 
     void* allocation{};
@@ -62,7 +62,7 @@ Buffer CreateStagingBuffer(void* data, uint32_t size) {
                             &buffer.allocation,
                             nullptr));
 
-    SetBufferData(&buffer, data, size);
+    set_buffer_data(&buffer, data, size);
 
     return buffer;
 }
@@ -125,7 +125,7 @@ void SubmitToGPU(const std::function<void()>& submit_func) {
 
 
 
-void DestroyBuffer(Buffer& buffer) {
+void destroy_buffer(Buffer& buffer) {
     const RendererContext* rc = GetRendererContext();
 
     vmaDestroyBuffer(rc->allocator, buffer.buffer, buffer.allocation);

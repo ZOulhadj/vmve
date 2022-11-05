@@ -98,7 +98,7 @@ struct Pipeline {
 
 
 RendererContext* create_renderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode);
-void DestroyRenderer(RendererContext* context);
+void destroy_renderer(RendererContext* context);
 
 RendererContext* GetRendererContext();
 VkCommandBuffer GetCommandBuffer();
@@ -107,7 +107,7 @@ VkCommandBuffer GetCommandBuffer();
 Swapchain& GetSwapchain();
 
 VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
-void DestroyDescriptorSetLayout(VkDescriptorSetLayout layout);
+void destroy_descriptor_set_layout(VkDescriptorSetLayout layout);
 std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout, uint32_t frames);
 VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout);
 
@@ -132,17 +132,17 @@ void resize_framebuffers_color(VkRenderPass render_pass, std::vector<VkFramebuff
 
 
 Pipeline create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass);
-void DestroyPipeline(Pipeline& pipeline);
+void destroy_pipeline(Pipeline& pipeline);
 
 
 uint32_t GetCurrentFrame();
 bool BeginFrame();
-void EndFrame();
+void end_frame();
 
 
 
-void BeginRenderPass(VkRenderPass render_pass, const std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent);
-void EndRenderPass();
+void begin_render_pass(VkRenderPass render_pass, const std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent);
+void end_render_pass();
 
 void BindPipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
 

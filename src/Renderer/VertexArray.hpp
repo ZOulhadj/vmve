@@ -11,8 +11,8 @@ struct VertexArray {
 };
 
 VertexArray CreateVertexArray(void* v, int vs, void* i, int is);
-void DestroyVertexArray(VertexArray& vertexArray);
+void destroy_vertex_array(VertexArray& vertexArray);
 
-void BindVertexArray(const VertexArray& vertexArray);
+void bind_vertex_array(const VertexArray& vertexArray);
 
 #endif

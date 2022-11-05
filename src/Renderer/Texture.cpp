@@ -5,7 +5,7 @@
 
 #include "Renderer.hpp"
 
-TextureBuffer LoadTexture(const char* path, VkFormat format) {
+TextureBuffer load_texture(const char* path, VkFormat format) {
     TextureBuffer buffer{};
 
     // Load the texture from the file system.
@@ -104,12 +104,12 @@ TextureBuffer CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32
 
     });
 
-    DestroyBuffer(staging_buffer);
+    destroy_buffer(staging_buffer);
 
     return buffer;
 }
 
-void DestroyTextureBuffer(TextureBuffer& texture) {
+void destroy_texture_buffer(TextureBuffer& texture) {
     DestroyImage(texture.image);
     DestroySampler(texture.sampler);
 }
