@@ -23,7 +23,6 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glm)
 add_subdirectory(vendor/vma)
-add_subdirectory(vendor/tiny_obj_loader)
 add_subdirectory(vendor/assimp)
 
 set(IMGUI_SRC
@@ -81,6 +80,5 @@ target_link_libraries(${PROJECT_NAME}
         Vulkan::Vulkan
         shaderc_shared
         VulkanMemoryAllocator
-        tinyobjloader
         assimp
         )
