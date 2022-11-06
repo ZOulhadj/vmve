@@ -120,8 +120,8 @@ RenderPass create_render_pass(const RenderPassInfo& info, const std::vector<imag
 // TEMP CODE
 VkRenderPass create_color_render_pass();
 VkRenderPass create_ui_render_pass();
-std::vector<VkFramebuffer> create_framebuffers_color(VkRenderPass render_pass, VkExtent2D extent);
-std::vector<VkFramebuffer> create_framebuffers_color_and_depth(VkRenderPass render_pass, VkExtent2D extent);
+std::vector<VkFramebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent);
+std::vector<VkFramebuffer> create_geometry_framebuffers(VkRenderPass render_pass, VkExtent2D extent);
 
 void destroy_render_pass(VkRenderPass render_pass);
 void destroy_framebuffers(std::vector<VkFramebuffer>& framebuffers);

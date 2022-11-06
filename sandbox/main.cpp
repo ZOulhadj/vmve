@@ -2,6 +2,7 @@
 #include "../src/window.hpp"
 #include "../src/renderer/common.hpp"
 #include "../src/renderer/renderer.hpp"
+
 #include "../src/renderer/ui.hpp"
 #include "../src/input.hpp"
 #include "../src/camera.hpp"
@@ -132,10 +133,12 @@ int main(int argc, char** argv) {
 
 
     geometry_pass = create_color_render_pass();
-    geometry_framebuffers = create_framebuffers_color_and_depth(geometry_pass, geometry_size);
+    geometry_framebuffers = create_geometry_framebuffers(geometry_pass,
+                                                         geometry_size);
+
 
     ui_pass = create_ui_render_pass();
-    ui_framebuffers = create_framebuffers_color(ui_pass, ui_size);
+    ui_framebuffers = create_ui_framebuffers(ui_pass, ui_size);
 
     // Load shaders text files
     std::string objectVSCode  = load_text_file("src/shaders/object.vert");
@@ -395,85 +398,77 @@ int main(int argc, char** argv) {
                 ImGui::SetNextWindowPos(viewport->WorkPos);
                 ImGui::SetNextWindowSize(viewport->WorkSize);
                 ImGui::SetNextWindowViewport(viewport->ID);
-
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
                 ImGui::Begin("DockSpace", &opt_open, window_flags);
                 ImGui::PopStyleVar();
                 ImGui::PopStyleVar(2);
-
                 ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
-                static auto first_time = true;
-                if (first_time)
-                {
-                    first_time = false;
 
+                if (ImGui::BeginMenuBar()) {
+                    if (ImGui::BeginMenu("File")) {
+                        render_file_menu();
+
+                        ImGui::EndMenu();
+                    }
+
+                    if (ImGui::BeginMenu("Options")) {
+
+
+                        if (ImGui::MenuItem("Flag: NoSplit",                "", (dockspace_flags & ImGuiDockNodeFlags_NoSplit) != 0))                 { dockspace_flags ^= ImGuiDockNodeFlags_NoSplit; }
+                        if (ImGui::MenuItem("Flag: NoResize",               "", (dockspace_flags & ImGuiDockNodeFlags_NoResize) != 0))                { dockspace_flags ^= ImGuiDockNodeFlags_NoResize; }
+                        if (ImGui::MenuItem("Flag: NoDockingInCentralNode", "", (dockspace_flags & ImGuiDockNodeFlags_NoDockingInCentralNode) != 0))  { dockspace_flags ^= ImGuiDockNodeFlags_NoDockingInCentralNode; }
+                        if (ImGui::MenuItem("Flag: AutoHideTabBar",         "", (dockspace_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0))          { dockspace_flags ^= ImGuiDockNodeFlags_AutoHideTabBar; }
+
+                        ImGui::EndMenu();
+                    }
+
+
+                    ImGui::EndMenuBar();
+                }
+
+
+
+
+
+
+
+
+
+
+
+                if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr) {
                     ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
                     ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
                     ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
 
-                    // split the dockspace into 2 nodes -- DockBuilderSplitNode takes in the following args in the following order
-                    //   window ID to split, direction, fraction (between 0 and 1), the final two setting let's us choose which id we want (which ever one we DON'T set as NULL, will be returned by the function)
-                    //                                                              out_id_at_dir is the id of the node in the direction we specified earlier, out_id_at_opposite_dir is in the opposite direction
                     auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
                     auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, nullptr, &dockspace_id);
                     auto dock_id_right = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.2f, nullptr, &dockspace_id);
-                    auto dock_id_viewport = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Up, 0.2f, nullptr, &dockspace_id);
-
+                    //auto dock_id_viewport = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Up, 1.0f, nullptr, &dockspace_id);
 
                     // we now dock our windows into the docking node we made above
-                    ImGui::DockBuilderDockWindow("Down", dock_id_down);
                     ImGui::DockBuilderDockWindow("Left", dock_id_left);
                     ImGui::DockBuilderDockWindow("Right", dock_id_right);
-                    ImGui::DockBuilderDockWindow("Viewport", dock_id_viewport);
+                    ImGui::DockBuilderDockWindow("Down", dock_id_down);
+                    //ImGui::DockBuilderDockWindow("Viewport", dock_id_viewport);
                     ImGui::DockBuilderFinish(dockspace_id);
                 }
-
                 ImGui::End();
 
-
-
-
-
-
-
-
-
-
-//
-//                if (ImGui::BeginMenuBar()) {
-//                    if (ImGui::BeginMenu("File")) {
-//                        render_file_menu();
-//
-//                        ImGui::EndMenu();
-//                    }
-//
-//                    if (ImGui::BeginMenu("Options")) {
-//
-//
-//                        if (ImGui::MenuItem("Flag: NoSplit",                "", (dockspace_flags & ImGuiDockNodeFlags_NoSplit) != 0))                 { dockspace_flags ^= ImGuiDockNodeFlags_NoSplit; }
-//                        if (ImGui::MenuItem("Flag: NoResize",               "", (dockspace_flags & ImGuiDockNodeFlags_NoResize) != 0))                { dockspace_flags ^= ImGuiDockNodeFlags_NoResize; }
-//                        if (ImGui::MenuItem("Flag: NoDockingInCentralNode", "", (dockspace_flags & ImGuiDockNodeFlags_NoDockingInCentralNode) != 0))  { dockspace_flags ^= ImGuiDockNodeFlags_NoDockingInCentralNode; }
-//                        if (ImGui::MenuItem("Flag: AutoHideTabBar",         "", (dockspace_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0))          { dockspace_flags ^= ImGuiDockNodeFlags_AutoHideTabBar; }
-//
-//                        ImGui::EndMenu();
-//                    }
-//
-//
-//                    ImGui::EndMenuBar();
-//                }
 //
 
-                const ImGuiWindowFlags docking_flags = ImGuiWindowFlags_NoMove |
-                                                       ImGuiWindowFlags_NoTitleBar |
-                                                       ImGuiWindowFlags_NoScrollbar |
-                                                       ImGuiWindowFlags_NoResize;
+                const ImGuiWindowFlags docking_flags = ImGuiWindowFlags_NoDecoration;
 
-                ImGuiWindowFlags viewport_flags = ImGuiWindowFlags_NoDecoration;
+                ImGuiWindowFlags viewport_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground;
 
                 static bool o = true;
+
+                ImGui::Begin("Down", &o, docking_flags);
+                ImGui::Text("Hello, down!");
+                ImGui::End();
 
                 ImGui::Begin("Left", &o, docking_flags);
                 ImGui::Text("Hello, left!");
@@ -485,10 +480,6 @@ int main(int argc, char** argv) {
                 ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
                 ImGui::End();
 
-                ImGui::Begin("Down", &o, docking_flags);
-                ImGui::Text("Hello, down!");
-                ImGui::End();
-
 
                 ImGui::Begin("Viewport", &o, viewport_flags);
                 ImGui::Text("Rendering...");
@@ -496,18 +487,15 @@ int main(int argc, char** argv) {
 //
 //                // TODO: This is a small snippet related to rendering a frame
 //                // TODO: to ImGui as a texture. This can then be used as a viewport.
-////                std::vector<VkDescriptorSet> m_Dset;
-////
-////                m_Dset.resize(m_ViewportImageViews.size());
-////                for (uint32_t i = 0; i < m_ViewportImageViews.size(); i++)
-////                    m_Dset[i] = ImGui_ImplVulkan_AddTexture(m_TextureSampler, m_ViewportImageViews[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-////
-////                ImGui::Begin("Viewport");
-////
-////                ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-////                ImGui::Image(m_Dset[currentFrame], ImVec2{viewportPanelSize.x, viewportPanelSize.y});
-////
-////                ImGui::End();
+//                std::vector<VkDescriptorSet> m_Dset(2);
+//                for (uint32_t i = 0; i < m_Dset.size(); i++)
+//                    m_Dset[i] = ImGui_ImplVulkan_AddTexture(skysphere.sampler, geometry_framebuffers[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+//
+//                ImGui::Begin("Viewport", &o, viewport_flags);
+//                ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+//                ImGui::Image(m_Dset[get_current_frame()], ImVec2{viewportPanelSize.x, viewportPanelSize.y});
+//
+//                ImGui::End();
 
 //
 //

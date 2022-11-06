@@ -436,7 +436,7 @@ VkRenderPass create_ui_render_pass() {
 
     return render_pass;
 }
-std::vector<VkFramebuffer> create_framebuffers_color(VkRenderPass render_pass, VkExtent2D extent) {
+std::vector<VkFramebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent) {
     std::vector<VkFramebuffer> framebuffers(g_swapchain.images.size());
 
     // Create framebuffers with attachments.
@@ -458,7 +458,7 @@ std::vector<VkFramebuffer> create_framebuffers_color(VkRenderPass render_pass, V
     return framebuffers;
 }
 
-std::vector<VkFramebuffer> create_framebuffers_color_and_depth(VkRenderPass render_pass, VkExtent2D extent) {
+std::vector<VkFramebuffer> create_geometry_framebuffers(VkRenderPass render_pass, VkExtent2D extent) {
     std::vector<VkFramebuffer> framebuffers(g_swapchain.images.size());
 
     // Create framebuffers with attachments.
@@ -483,13 +483,13 @@ std::vector<VkFramebuffer> create_framebuffers_color_and_depth(VkRenderPass rend
 void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent) {
     vkDeviceWaitIdle(g_rc->device.device);
     DestroyFramebuffers(framebuffers);
-    framebuffers = create_framebuffers_color_and_depth(render_pass, extent);
+    framebuffers = create_geometry_framebuffers(render_pass, extent);
 }
 
 void resize_framebuffers_color(VkRenderPass render_pass, std::vector<VkFramebuffer>& framebuffers, VkExtent2D extent) {
     vkDeviceWaitIdle(g_rc->device.device);
     DestroyFramebuffers(framebuffers);
-    framebuffers = create_framebuffers_color(render_pass, extent);
+    framebuffers = create_ui_framebuffers(render_pass, extent);
 }
 
 
