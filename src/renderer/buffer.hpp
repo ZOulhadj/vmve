@@ -25,8 +25,9 @@ void submit_to_gpu(const std::function<void()>& submit_func);
 void set_buffer_data(buffer_t* buffer, void* data, uint32_t size);
 void destroy_buffer(buffer_t& buffer);
 
-VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect);
-image_buffer_t create_image(VkFormat format, VkExtent2D extent, VkImageUsageFlags usage, VkImageAspectFlags aspect);
+VkImageView create_image_view(VkImage image, VkFormat format, VkImageUsageFlagBits usage);
+image_buffer_t create_image(VkFormat format, VkExtent2D extent, VkImageUsageFlagBits usage);
 void destroy_image(image_buffer_t& image);
+void destroy_images(std::vector<image_buffer_t>& images);
 
 #endif

@@ -58,10 +58,6 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-
-#include <nlohmann/json.hpp>
-
-
 #undef CreateWindow
 
 #if defined(_MSC_VER)

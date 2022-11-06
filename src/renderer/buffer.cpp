@@ -134,16 +134,29 @@ void destroy_buffer(buffer_t& buffer) {
 }
 
 
-VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect) {
+VkImageView create_image_view(VkImage image, VkFormat format, VkImageUsageFlagBits usage) {
     VkImageView view{};
 
     const renderer_context_t* rc = get_renderer_context();
+
+
+    // Select aspect mask based on image format
+    VkImageAspectFlags aspect_flags = 0;
+    // todo: VK_IMAGE_USAGE_TRANSFER_DST_BIT was only added because of texture creation
+    // todo: This need to be looked at again.
+    if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT || usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) {
+        aspect_flags = VK_IMAGE_ASPECT_COLOR_BIT;
+    } else if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+        aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+
+    assert(aspect_flags > 0);
 
     VkImageViewCreateInfo imageViewInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
     imageViewInfo.image    = image;
     imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     imageViewInfo.format   = format;
-    imageViewInfo.subresourceRange.aspectMask = aspect;
+    imageViewInfo.subresourceRange.aspectMask = aspect_flags;
     imageViewInfo.subresourceRange.baseMipLevel = 0;
     imageViewInfo.subresourceRange.levelCount = 1;
     imageViewInfo.subresourceRange.baseArrayLayer = 0;
@@ -155,7 +168,7 @@ VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags
     return view;
 }
 
-image_buffer_t create_image(VkFormat format, VkExtent2D extent, VkImageUsageFlags usage, VkImageAspectFlags aspect) {
+image_buffer_t create_image(VkFormat format, VkExtent2D extent, VkImageUsageFlagBits usage) {
     image_buffer_t image{};
 
     const renderer_context_t* rc = get_renderer_context();
@@ -168,7 +181,7 @@ image_buffer_t create_image(VkFormat format, VkExtent2D extent, VkImageUsageFlag
     imageInfo.arrayLayers = 1;
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = usage;
+    imageInfo.usage = usage | VK_IMAGE_USAGE_SAMPLED_BIT;
 
     VmaAllocationCreateInfo allocInfo{};
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -178,7 +191,7 @@ image_buffer_t create_image(VkFormat format, VkExtent2D extent, VkImageUsageFlag
             vmaCreateImage(rc->allocator, &imageInfo, &allocInfo, &image.handle,
                            &image.allocation, nullptr));
 
-    image.view   = create_image_view(image.handle, format, aspect);
+    image.view   = create_image_view(image.handle, format, usage);
     image.format = format;
     image.extent = extent;
 
@@ -190,5 +203,10 @@ void destroy_image(image_buffer_t& image) {
 
     vkDestroyImageView(rc->device.device, image.view, nullptr);
     vmaDestroyImage(rc->allocator, image.handle, image.allocation);
+}
+
+void destroy_images(std::vector<image_buffer_t>& images) {
+    for (auto& image : images)
+        destroy_image(image);
 }
 

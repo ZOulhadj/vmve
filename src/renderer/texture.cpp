@@ -22,7 +22,7 @@ TextureBuffer load_texture(const char* path, VkFormat format) {
     // Store texture data into GPU memory.
     buffer = CreateTextureBuffer(texture, width, height, format);
 
-    buffer.sampler = CreateSampler(VK_FILTER_LINEAR, 16);
+    buffer.sampler = create_sampler(VK_FILTER_LINEAR, 16);
     buffer.descriptor.sampler = buffer.sampler;
     buffer.descriptor.imageView = buffer.image.view;
     buffer.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -42,10 +42,7 @@ TextureBuffer CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32
 
     buffer_t staging_buffer = create_staging_buffer(texture, width * height * 4);
 
-    buffer.image = create_image(format, {width, height},
-                                VK_IMAGE_USAGE_SAMPLED_BIT |
-                                VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                VK_IMAGE_ASPECT_COLOR_BIT);
+    buffer.image = create_image(format, {width, height}, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     // Upload texture data into GPU memory by doing a layout transition
     submit_to_gpu([&]() {
@@ -117,10 +114,10 @@ TextureBuffer CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32
 
 void destroy_texture_buffer(TextureBuffer& texture) {
     destroy_image(texture.image);
-    DestroySampler(texture.sampler);
+    destroy_sampler(texture.sampler);
 }
 
-VkSampler CreateSampler(VkFilter filtering, uint32_t anisotropic_level) {
+VkSampler create_sampler(VkFilter filtering, uint32_t anisotropic_level) {
     VkSampler sampler{};
 
     const renderer_context_t* rc = get_renderer_context();
@@ -158,7 +155,7 @@ VkSampler CreateSampler(VkFilter filtering, uint32_t anisotropic_level) {
     return sampler;
 }
 
-void DestroySampler(VkSampler sampler) {
+void destroy_sampler(VkSampler sampler) {
     const renderer_context_t* rc = get_renderer_context();
 
     vkDestroySampler(rc->device.device, sampler, nullptr);

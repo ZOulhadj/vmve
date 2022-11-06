@@ -2,6 +2,8 @@
 #include "../src/window.hpp"
 #include "../src/renderer/common.hpp"
 #include "../src/renderer/renderer.hpp"
+#include "../src/renderer/buffer.hpp"
+#include "../src/renderer/texture.hpp"
 
 #include "../src/renderer/ui.hpp"
 #include "../src/input.hpp"
@@ -59,12 +61,21 @@ static void handle_input(camera_t& camera, float deltaTime) {
 }
 
 VkRenderPass geometry_pass = nullptr;
-std::vector<VkFramebuffer> geometry_framebuffers;
-VkExtent2D geometry_size = { 1280, 720 };
+std::vector<Framebuffer> geometry_framebuffers;
+
+
+
+
+VkSampler sampler;
+std::vector<image_buffer_t> albedo_image(3);
+image_buffer_t depth_image{};
+VkRenderPass render_pass = nullptr;
+std::vector<Framebuffer> framebuffers;
+
+
 
 VkRenderPass ui_pass = nullptr;
-std::vector<VkFramebuffer> ui_framebuffers;
-VkExtent2D ui_size = { 1280, 720 };
+std::vector<Framebuffer> ui_framebuffers;
 
 
 Pipeline basicPipeline{};
@@ -133,33 +144,52 @@ int main(int argc, char** argv) {
 
 
     geometry_pass = create_color_render_pass();
-    geometry_framebuffers = create_geometry_framebuffers(geometry_pass,
-                                                         geometry_size);
-
+    geometry_framebuffers = create_geometry_framebuffers(geometry_pass, { 1280, 720 });
 
     ui_pass = create_ui_render_pass();
-    ui_framebuffers = create_ui_framebuffers(ui_pass, ui_size);
+    ui_framebuffers = create_ui_framebuffers(ui_pass, { 1280, 720 });
+
+
+
+    /////////////////////////////
+    // Work-in-progress code (Render to texture)
+
+
+    sampler = create_sampler(VK_FILTER_LINEAR, 16);
+
+    for (auto& image : albedo_image)
+        image = create_image(VK_FORMAT_B8G8R8A8_SRGB, { 1280, 720 }, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    depth_image  = create_image(VK_FORMAT_D32_SFLOAT, { 1280, 720 }, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+    render_pass  = create_render_pass();
+    framebuffers = create_framebuffers(render_pass, albedo_image, depth_image);
+
+
+    destroy_framebuffers(framebuffers);
+    destroy_render_pass(render_pass);
+
+    destroy_image(depth_image);
+    destroy_images(albedo_image);
+
+    destroy_sampler(sampler);
+
+    //////////////////////////////
+
+
+
 
     // Load shaders text files
     std::string objectVSCode  = load_text_file("src/shaders/object.vert");
     std::string objectFSCode  = load_text_file("src/shaders/object.frag");
-    std::string earthVSCode  = load_text_file("src/shaders/earth.vert");
-    std::string earthFSCode  = load_text_file("src/shaders/earth.frag");
     std::string skysphereVSCode = load_text_file("src/shaders/skysphere.vert");
     std::string skysphereFSCode = load_text_file("src/shaders/skysphere.frag");
-    std::string lightingVSCode  = load_text_file("src/shaders/lighting.vert");
-    std::string lightingFSCode  = load_text_file("src/shaders/lighting.frag");
+
 
     // Compile text shaders into Vulkan binary shader modules
     shader objectVS  = create_vertex_shader(objectVSCode);
     shader objectFS  = create_fragment_shader(objectFSCode);
-    shader earthVS  = create_vertex_shader(earthVSCode);
-    shader earthFS  = create_fragment_shader(earthFSCode);
     shader skysphereVS = create_vertex_shader(skysphereVSCode);
     shader skysphereFS = create_fragment_shader(skysphereFSCode);
-    shader lightingVS  = create_vertex_shader(lightingVSCode);
-    shader lightingFS  = create_fragment_shader(lightingFSCode);
-
 
     const std::vector<VkDescriptorSetLayoutBinding> global_layout {
             { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
@@ -253,12 +283,8 @@ int main(int argc, char** argv) {
     }
 
     // Delete all individual shaders since they are now part of the various pipelines
-    destroy_shader(lightingFS);
-    destroy_shader(lightingVS);
     destroy_shader(skysphereFS);
     destroy_shader(skysphereVS);
-    destroy_shader(earthFS);
-    destroy_shader(earthVS);
     destroy_shader(objectFS);
     destroy_shader(objectVS);
 
@@ -330,8 +356,7 @@ int main(int argc, char** argv) {
             // -----------------------------------------------------------------
             //
 
-            begin_render_pass(geometry_pass, geometry_framebuffers,
-                              geometry_size);
+            begin_render_pass(geometry_pass, geometry_framebuffers);
 
             // Render the background skysphere
             bind_pipeline(skyspherePipeline, g_global_descriptor_sets);
@@ -363,7 +388,7 @@ int main(int argc, char** argv) {
             //
 
 
-            begin_render_pass(ui_pass, ui_framebuffers, ui_size);
+            begin_render_pass(ui_pass, ui_framebuffers);
 
             ImGui_ImplVulkan_NewFrame();
             ImGui_ImplGlfw_NewFrame();
@@ -585,14 +610,10 @@ static bool MouseMove(MouseMovedEvent& event) {
 static bool Resize(WindowResizedEvent& event) {
     //set_camera_projection(camera, event.get_width(), event.get_height());
 
-    resize_framebuffers_color_and_depth(geometry_pass, geometry_framebuffers, {
-            event.get_width(), event.get_height() });
-    geometry_size = {event.get_width(), event.get_height() };
+    VkExtent2D extent = { event.get_width(), event.get_height() };
 
-    resize_framebuffers_color(ui_pass, ui_framebuffers, {event.get_width(),
-                                                         event.get_height() });
-    ui_size = {event.get_width(), event.get_height() };
-
+    resize_framebuffers_color_and_depth(geometry_pass, geometry_framebuffers, extent);
+    resize_framebuffers_color(ui_pass, ui_framebuffers, extent);
 
     return true;
 }
