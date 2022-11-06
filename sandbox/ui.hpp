@@ -14,6 +14,9 @@ void render_file_menu() {
     if (ImGui::Button("Load Model..."))
         ImGui::OpenPopup("filesystem");
 
+    if (ImGui::Button("Export Model..."))
+        ImGui::OpenPopup("filesystem");
+
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 

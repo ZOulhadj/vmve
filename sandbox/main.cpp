@@ -430,15 +430,6 @@ int main(int argc, char** argv) {
                 }
 
 
-
-
-
-
-
-
-
-
-
                 if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr) {
                     ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
                     ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
