@@ -102,7 +102,8 @@ void destroy_render_pass(VkRenderPass render_pass);
 void destroy_framebuffers(std::vector<Framebuffer>& framebuffers);
 
 
-void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, VkExtent2D extent);
+void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, image_buffer_t& images,
+                                         image_buffer_t& depth);
 void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, VkExtent2D extent);
 
 

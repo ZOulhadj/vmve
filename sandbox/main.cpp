@@ -60,8 +60,8 @@ static void handle_input(camera_t& camera, float deltaTime) {
 //        camera.roll += camera.roll_speed * deltaTime;
 }
 
-VkRenderPass geometry_pass = nullptr;
-std::vector<Framebuffer> geometry_framebuffers;
+//VkRenderPass geometry_pass = nullptr;
+//std::vector<Framebuffer> geometry_framebuffers;
 
 
 
@@ -71,7 +71,7 @@ image_buffer_t albedo_image{};
 image_buffer_t depth_image{};
 VkRenderPass render_pass = nullptr;
 std::vector<Framebuffer> framebuffers;
-
+std::vector<VkDescriptorSet> m_Dset(2);
 
 
 VkRenderPass ui_pass = nullptr;
@@ -137,15 +137,11 @@ int main(int argc, char** argv) {
     window_t* window = create_window(APPLICATION_NAME, APPLICATION_WIDTH, APPLICATION_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_context_t* renderer = create_renderer(window, BufferMode::Double,
-                                                   VSyncMode::Enabled);
+    renderer_context_t* renderer = create_renderer(window, BufferMode::Double, VSyncMode::Enabled);
 
 
-    geometry_pass = create_color_render_pass();
-    geometry_framebuffers = create_geometry_framebuffers(geometry_pass, { 1280, 720 });
-
-    ui_pass = create_ui_render_pass();
-    ui_framebuffers = create_ui_framebuffers(ui_pass, { 1280, 720 });
+    //geometry_pass = create_color_render_pass();
+    //geometry_framebuffers = create_geometry_framebuffers(geometry_pass, { 1280, 720 });
 
 
 
@@ -153,8 +149,7 @@ int main(int argc, char** argv) {
     // Work-in-progress code (Render to texture)
 
 
-    sampler = create_sampler(VK_FILTER_LINEAR, 16);
-
+    sampler = create_sampler(VK_FILTER_NEAREST, 16);
 
     albedo_image = create_image(VK_FORMAT_B8G8R8A8_SRGB, { 1280, 720 }, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     depth_image  = create_image(VK_FORMAT_D32_SFLOAT, { 1280, 720 }, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -162,14 +157,16 @@ int main(int argc, char** argv) {
     render_pass  = create_render_pass();
     framebuffers = create_framebuffers(render_pass, albedo_image, depth_image);
 
-
-
     //////////////////////////////
 
-
+    ui_pass = create_ui_render_pass();
+    ui_framebuffers = create_ui_framebuffers(ui_pass, { 1280, 720 });
 
 
     // Load shaders text files
+//    std::string offscreenQuadVSCode = load_text_file("src/shaders/quad.vert");
+//    std::string offscreenQuadFSCode = load_text_file("src/shaders/quad.frag");
+
     std::string objectVSCode  = load_text_file("src/shaders/object.vert");
     std::string objectFSCode  = load_text_file("src/shaders/object.frag");
     std::string skysphereVSCode = load_text_file("src/shaders/skysphere.vert");
@@ -177,6 +174,9 @@ int main(int argc, char** argv) {
 
 
     // Compile text shaders into Vulkan binary shader modules
+//    shader quadVS  = create_vertex_shader(offscreenQuadVSCode);
+//    shader quadFS  = create_fragment_shader(offscreenQuadFSCode);
+
     shader objectVS  = create_vertex_shader(objectVSCode);
     shader objectFS  = create_fragment_shader(objectFSCode);
     shader skysphereVS = create_vertex_shader(skysphereVSCode);
@@ -252,23 +252,26 @@ int main(int argc, char** argv) {
 
     {
         info.shaders = { objectVS, objectFS };
-        basicPipeline = create_pipeline(info, geometry_pass);
+        basicPipeline = create_pipeline(info, render_pass);
     }
     {
         info.shaders = { skysphereVS, skysphereFS };
         info.depth_testing = false;
         info.cull_mode = VK_CULL_MODE_FRONT_BIT;
-        skyspherePipeline = create_pipeline(info, geometry_pass);
+        skyspherePipeline = create_pipeline(info, render_pass);
     }
     {
         info.shaders = {objectVS, objectFS };
         info.wireframe = true;
         info.depth_testing = true;
         info.cull_mode = VK_CULL_MODE_BACK_BIT;
-        wireframePipeline = create_pipeline(info, geometry_pass);
+        wireframePipeline = create_pipeline(info, render_pass);
     }
 
     // Delete all individual shaders since they are now part of the various pipelines
+//    destroy_shader(quadFS);
+//    destroy_shader(quadVS);
+
     destroy_shader(skysphereFS);
     destroy_shader(skysphereVS);
     destroy_shader(objectFS);
@@ -276,6 +279,9 @@ int main(int argc, char** argv) {
 
 
     ImGuiContext* uiContext = create_user_interface(ui_pass);
+
+    for (auto& i : m_Dset)
+        i = ImGui_ImplVulkan_AddTexture(sampler, albedo_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
     // Built-in resources
@@ -340,8 +346,7 @@ int main(int argc, char** argv) {
             // Geometry Pass
             // -----------------------------------------------------------------
             //
-
-            VkCommandBuffer cmd_buffer = begin_viewport_render_pass(geometry_pass, geometry_framebuffers);
+            VkCommandBuffer cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
             {
                 // Render the background skysphere
                 bind_pipeline(cmd_buffer, skyspherePipeline, g_global_descriptor_sets);
@@ -460,46 +465,37 @@ int main(int argc, char** argv) {
 
 //
 
-                    const ImGuiWindowFlags docking_flags = ImGuiWindowFlags_NoDecoration;
+                    const ImGuiWindowFlags docking_flags = ImGuiWindowFlags_None;
+                    const ImGuiWindowFlags viewport_flags = ImGuiWindowFlags_None;
+                    static bool open = true;
 
-                    ImGuiWindowFlags viewport_flags = ImGuiWindowFlags_NoDecoration;
-
-                    static bool o = true;
-
-                    ImGui::Begin("Down", &o, docking_flags);
+                    ImGui::Begin("Down", &open, docking_flags);
                     ImGui::Text("Hello, down!");
                     ImGui::End();
 
-                    ImGui::Begin("Left", &o, docking_flags);
+                    ImGui::Begin("Left", &open, docking_flags);
                     ImGui::Text("Hello, left!");
                     ImGui::End();
 
-                    ImGui::Begin("Right", &o, docking_flags);
+                    ImGui::Begin("Right", &open, docking_flags);
                     ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
                     ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
                     ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
                     ImGui::End();
 
 
-                    std::vector<VkDescriptorSet> m_Dset(2);
-                    for (auto& i : m_Dset)
-                        i = ImGui_ImplVulkan_AddTexture(sampler, albedo_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                    ImGui::Begin("Viewport", &o, viewport_flags);
+                    ImGui::Begin("Viewport", &open, viewport_flags);
                     ImGui::PopStyleVar(2);
                     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
                     ImGui::Image(m_Dset[currentImage], ImVec2{viewportPanelSize.x, viewportPanelSize.y});
+
+
                     ImGui::End();
 
                     ImGui::ShowDemoWindow();
 
-
-
-
-
-//                ImGui::ShowDemoWindow();
                 }
                 ImGui::EndFrame();
 
@@ -559,8 +555,8 @@ int main(int argc, char** argv) {
 
 
 
-    destroy_framebuffers(geometry_framebuffers);
-    destroy_render_pass(geometry_pass);
+    //destroy_framebuffers(geometry_framebuffers);
+    //destroy_render_pass(geometry_pass);
 
     destroy_framebuffers(ui_framebuffers);
     destroy_render_pass(ui_pass);
@@ -604,12 +600,23 @@ static bool MouseMove(MouseMovedEvent& event) {
 
 
 static bool Resize(WindowResizedEvent& event) {
-    //set_camera_projection(camera, event.get_width(), event.get_height());
+    set_camera_projection(camera, event.get_width(), event.get_height());
 
-    VkExtent2D extent = { event.get_width(), event.get_height() };
+    VkExtent2D extent = {event.get_width(), event.get_height()};
 
-    resize_framebuffers_color_and_depth(geometry_pass, geometry_framebuffers, extent);
+    destroy_image(albedo_image);
+    destroy_image(depth_image);
+    albedo_image = create_image(VK_FORMAT_B8G8R8A8_SRGB, extent, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    depth_image = create_image(VK_FORMAT_D32_SFLOAT, extent, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+    resize_framebuffers_color_and_depth(render_pass, framebuffers, albedo_image, depth_image);
     resize_framebuffers_color(ui_pass, ui_framebuffers, extent);
+
+
+    for (auto& i: m_Dset) {
+        ImGui_ImplVulkan_RemoveTexture(i);
+        i = ImGui_ImplVulkan_AddTexture(sampler, albedo_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
 
     return true;
 }

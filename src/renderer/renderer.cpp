@@ -322,7 +322,7 @@ VkRenderPass create_ui_render_pass() {
     attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     // color reference
@@ -335,11 +335,22 @@ VkRenderPass create_ui_render_pass() {
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_reference;
 
+    // todo: added here for some reason
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0; // or VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
     render_pass_info.attachmentCount = u32(attachments.size());
     render_pass_info.pAttachments = attachments.data();
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
 
     vk_check(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr,
                                 &render_pass));
@@ -434,18 +445,18 @@ VkRenderPass create_render_pass() {
 
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
-    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
     dependencies[1].srcSubpass = 0;
     dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 
@@ -496,10 +507,11 @@ std::vector<Framebuffer> create_framebuffers(VkRenderPass render_pass,
     return framebuffers;
 }
 
-void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, VkExtent2D extent) {
+void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, image_buffer_t& images,
+                                         image_buffer_t& depth) {
     vkDeviceWaitIdle(g_rc->device.device);
     destroy_framebuffers(framebuffers);
-    framebuffers = create_geometry_framebuffers(render_pass, extent);
+    framebuffers = create_framebuffers(render_pass, images, depth);
 }
 
 void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, VkExtent2D extent) {
@@ -873,8 +885,8 @@ VkCommandBuffer begin_viewport_render_pass(VkRenderPass render_pass, const std::
 
     VkRect2D render_area{};
     render_area.offset = { 0, 0 };
-    render_area.extent.width = (uint32_t)viewport.width;
-    render_area.extent.height = (uint32_t)viewport.height;
+    render_area.extent.width  = framebuffers[currentImage].extent.width;
+    render_area.extent.height = framebuffers[currentImage].extent.height;
 
     VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
     renderPassInfo.renderPass = render_pass;
@@ -914,20 +926,18 @@ VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector
     vkCmdSetScissor(ui_cmd_buffer, 0, 1, &scissor);
 
     const VkClearValue clear_color = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
-    const VkClearValue clear_depth = { 0.0f, 0 };
-    const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
 
     VkRect2D render_area{};
     render_area.offset = { 0, 0 };
-    render_area.extent.width = (uint32_t)viewport.width;
-    render_area.extent.height = (uint32_t)viewport.height;
+    render_area.extent.width = framebuffers[currentImage].extent.width;
+    render_area.extent.height = framebuffers[currentImage].extent.height;
 
     VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
     renderPassInfo.renderPass = render_pass;
     renderPassInfo.framebuffer = framebuffers[currentImage].handle;
     renderPassInfo.renderArea = render_area;
-    renderPassInfo.clearValueCount = 2;
-    renderPassInfo.pClearValues = clear_buffers;
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clear_color;
 
     vkCmdBeginRenderPass(ui_cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
