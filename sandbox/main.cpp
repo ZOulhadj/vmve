@@ -603,7 +603,6 @@ static bool Close(WindowClosedEvent& event) {
     return true;
 }
 
-
 static void event_callback(Event& event) {
     EventDispatcher dispatcher(event);
 
