@@ -4804,10 +4804,10 @@ void ImGui::NewFrame()
     // Update keyboard input state
     UpdateKeyboardInputs();
 
-    //IM_ASSERT(g.IO.KeyCtrl == IsKeyDown(ImGuiKey_LeftCtrl) || IsKeyDown(ImGuiKey_RightCtrl));
-    //IM_ASSERT(g.IO.KeyShift == IsKeyDown(ImGuiKey_LeftShift) || IsKeyDown(ImGuiKey_RightShift));
-    //IM_ASSERT(g.IO.KeyAlt == IsKeyDown(ImGuiKey_LeftAlt) || IsKeyDown(ImGuiKey_RightAlt));
-    //IM_ASSERT(g.IO.KeySuper == IsKeyDown(ImGuiKey_LeftSuper) || IsKeyDown(ImGuiKey_RightSuper));
+    //IM_ASSERT(g.IO.KeyCtrl == IsKeyDown(ImGuiKey_LeftCtrl) || is_key_down(ImGuiKey_RightCtrl));
+    //IM_ASSERT(g.IO.KeyShift == IsKeyDown(ImGuiKey_LeftShift) || is_key_down(ImGuiKey_RightShift));
+    //IM_ASSERT(g.IO.KeyAlt == IsKeyDown(ImGuiKey_LeftAlt) || is_key_down(ImGuiKey_RightAlt));
+    //IM_ASSERT(g.IO.KeySuper == IsKeyDown(ImGuiKey_LeftSuper) || is_key_down(ImGuiKey_RightSuper));
 
     // Update gamepad/keyboard navigation
     NavUpdate();
@@ -8573,7 +8573,7 @@ ImVec2 ImGui::GetKeyVector2d(ImGuiKey key_left, ImGuiKey key_right, ImGuiKey key
 }
 
 // Note that Dear ImGui doesn't know the meaning/semantic of ImGuiKey from 0..511: they are legacy native keycodes.
-// Consider transitioning from 'IsKeyDown(MY_ENGINE_KEY_A)' (<1.87) to IsKeyDown(ImGuiKey_A) (>= 1.87)
+// Consider transitioning from 'IsKeyDown(MY_ENGINE_KEY_A)' (<1.87) to is_key_down(ImGuiKey_A) (>= 1.87)
 bool ImGui::IsKeyDown(ImGuiKey key)
 {
     const ImGuiKeyData* key_data = GetKeyData(key);

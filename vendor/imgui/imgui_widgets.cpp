@@ -1914,7 +1914,7 @@ static const ImGuiDataTypeInfo GDataTypeInfo[] =
     { sizeof(short),            "S16",  "%d",   "%d"    },  // ImGuiDataType_S16
     { sizeof(unsigned short),   "U16",  "%u",   "%u"    },
     { sizeof(int),              "S32",  "%d",   "%d"    },  // ImGuiDataType_S32
-    { sizeof(unsigned int),     "U32",  "%u",   "%u"    },
+    { sizeof(unsigned int),     "u32",  "%u",   "%u"    },
 #ifdef _MSC_VER
     { sizeof(ImS64),            "S64",  "%I64d","%I64d" },  // ImGuiDataType_S64
     { sizeof(ImU64),            "U64",  "%I64u","%I64u" },

@@ -40,33 +40,33 @@ add_executable(${PROJECT_NAME}
         ${IMGUI_SRC}
 
         # engine test file
-        "sandbox/Main.cpp"
+        "sandbox/main.cpp"
 
         # engine source
-        "src/Window.cpp"
-        "src/Camera.cpp"
-        "src/Entity.cpp"
-        "src/Input.cpp"
+        "src/window.cpp"
+        "src/camera.cpp"
+        "src/entity.cpp"
+        "src/input.cpp"
 
         # engine rendering
-        "src/Renderer/Renderer.cpp"
-        "src/Renderer/UI.cpp"
+        "src/renderer/renderer.cpp"
+        "src/renderer/ui.cpp"
 
         # precompiled header
         # note: this is required to compile header only files such as STB
         # note: this will be removed in the future.
-        "src/PCH.cpp"
-        "src/Model.cpp"
-        "src/Renderer/Texture.cpp"
-        "src/Vertex.cpp"
-        "src/Renderer/VertexArray.cpp"
-        "src/Renderer/Buffer.cpp"
-        "src/Renderer/Shader.cpp"
-        "src/Renderer/RendererContext.cpp")
+        "src/pch.cpp"
+        "src/model.cpp"
+        "src/renderer/texture.cpp"
+        "src/vertex.cpp"
+        "src/renderer/vertex_array.cpp"
+        "src/renderer/buffer.cpp"
+        "src/renderer/shader.cpp"
+        "src/renderer/renderer_context.cpp")
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE
-        src/PCH.hpp)
+        src/pch.hpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         vendor/stb
