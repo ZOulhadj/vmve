@@ -13,7 +13,7 @@ constexpr int frames_in_flight = 2;
 
 enum class BufferMode {
     Double = 2,
-    Triple = 3
+    //Triple = 3
 };
 
 enum class VSyncMode {
@@ -31,9 +31,6 @@ struct Swapchain {
 
 
 struct Frame {
-    VkCommandPool cmd_pool;
-    VkCommandBuffer cmd_buffer;
-
     // CPU -> GPU sync
     VkFence submit_fence;
 
@@ -97,7 +94,7 @@ std::vector<Framebuffer> create_geometry_framebuffers(VkRenderPass render_pass, 
 
 VkRenderPass create_render_pass();
 std::vector<Framebuffer> create_framebuffers(VkRenderPass render_pass,
-                                             const std::vector<image_buffer_t>& images,
+                                             image_buffer_t& images,
                                              image_buffer_t& depth);
 
 void destroy_render_pass(VkRenderPass render_pass);
@@ -112,7 +109,7 @@ Pipeline create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass);
 void destroy_pipeline(Pipeline& pipeline);
 
 
-uint32_t get_current_frame();
+//uint32_t get_current_frame();
 bool begin_frame();
 void end_frame();
 
@@ -121,7 +118,7 @@ void end_frame();
 void begin_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers);
 void end_render_pass();
 
-void bind_pipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
+void bind_pipeline(Pipeline& pipeline, VkDescriptorSet descriptorSets);
 
 void render(instance_t& instance, Pipeline& pipeline);
 

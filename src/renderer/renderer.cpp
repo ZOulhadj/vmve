@@ -8,14 +8,18 @@ static VSyncMode g_vsync{};
 
 static Swapchain g_swapchain{};
 
-static std::vector<Frame> g_frames;
+//static std::vector<Frame> g_frames;
+VkCommandPool cmd_pool;
+VkCommandBuffer cmd_buffer;
+
+static Frame g_frame;
 
 // The frame and image index variables are NOT the same thing.
 // The currentFrame always goes 0..1..2 -> 0..1..2. The currentImage
 // however may not be in that order since Vulkan returns the next
 // available frame which may be like such 0..1..2 -> 0..2..1. Both
 // frame and image index often are the same but is not guaranteed.
-static uint32_t current_frame = 0;
+//static uint32_t current_frame = 0;
 
 static uint32_t currentImage = 0;
 
@@ -156,53 +160,77 @@ static void RebuildSwapchain(Swapchain& swapchain) {
 }
 
 static void CreateFrameBarriers() {
-    VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
-    pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    pool_info.queueFamilyIndex = g_rc->device.graphics_index;
-
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
-    g_frames.resize(g_swapchain.images.size());
-    for (auto& gFrame : g_frames) {
-        // create rendering command pool and buffers
-        vk_check(vkCreateCommandPool(g_rc->device.device, &pool_info, nullptr,
-                                     &gFrame.cmd_pool));
+    // create sync objects
+    vk_check(vkCreateFence(g_rc->device.device, &fence_info, nullptr, &g_frame.submit_fence));
+    vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &g_frame.acquired_semaphore));
+    vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &g_frame.released_semaphore));
 
-        VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
-        allocate_info.commandPool        = gFrame.cmd_pool;
-        allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocate_info.commandBufferCount = 1;
-        vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info,
-                                          &gFrame.cmd_buffer));
-
-
-        // create sync objects
-        vk_check(vkCreateFence(g_rc->device.device, &fence_info, nullptr,
-                               &gFrame.submit_fence));
-        vk_check(
-                vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr,
-                                  &gFrame.acquired_semaphore));
-        vk_check(
-                vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr,
-                                  &gFrame.released_semaphore));
-    }
+//    g_frames.resize(g_swapchain.images.size());
+//    for (auto& gFrame : g_frames) {
+//        // create rendering command pool and buffers
+//        vk_check(vkCreateCommandPool(g_rc->device.device, &pool_info, nullptr,
+//                                     &gFrame.cmd_pool));
+//
+//        VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+//        allocate_info.commandPool        = gFrame.cmd_pool;
+//        allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+//        allocate_info.commandBufferCount = 1;
+//        vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info,
+//                                          &gFrame.cmd_buffer));
+//
+//
+//        // create sync objects
+//        vk_check(vkCreateFence(g_rc->device.device, &fence_info, nullptr,
+//                               &gFrame.submit_fence));
+//        vk_check(
+//                vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr,
+//                                  &gFrame.acquired_semaphore));
+//        vk_check(
+//                vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr,
+//                                  &gFrame.released_semaphore));
+//    }
 }
 
 static void DestroyFrameBarriers() {
-    for (auto& gFrame : g_frames) {
-        vkDestroySemaphore(g_rc->device.device, gFrame.released_semaphore, nullptr);
-        vkDestroySemaphore(g_rc->device.device, gFrame.acquired_semaphore, nullptr);
-        vkDestroyFence(g_rc->device.device, gFrame.submit_fence, nullptr);
+    vkDestroySemaphore(g_rc->device.device, g_frame.released_semaphore, nullptr);
+    vkDestroySemaphore(g_rc->device.device, g_frame.acquired_semaphore, nullptr);
+    vkDestroyFence(g_rc->device.device, g_frame.submit_fence, nullptr);
 
-        //vmaDestroyBuffer(gRc->allocator, frame.uniform_buffer.buffer, frame.uniform_buffer.allocation);
-
-        vkFreeCommandBuffers(g_rc->device.device, gFrame.cmd_pool, 1, &gFrame.cmd_buffer);
-        vkDestroyCommandPool(g_rc->device.device, gFrame.cmd_pool, nullptr);
-    }
+//    for (auto& gFrame : g_frames) {
+//
+//        vkFreeCommandBuffers(g_rc->device.device, gFrame.cmd_pool, 1, &gFrame.cmd_buffer);
+//        vkDestroyCommandPool(g_rc->device.device, gFrame.cmd_pool, nullptr);
+//    }
 }
+
+
+static void create_command_pool() {
+    VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+    pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    pool_info.queueFamilyIndex = g_rc->device.graphics_index;
+
+    vk_check(vkCreateCommandPool(g_rc->device.device, &pool_info, nullptr, &cmd_pool));
+}
+
+static void create_command_buffer() {
+    VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+    allocate_info.commandPool        = cmd_pool;
+    allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocate_info.commandBufferCount = 1;
+
+    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info,  &cmd_buffer));
+}
+
+static void destroy_command_pool() {
+    vkFreeCommandBuffers(g_rc->device.device, cmd_pool, 1, &cmd_buffer);
+    vkDestroyCommandPool(g_rc->device.device, cmd_pool, nullptr);
+}
+
 
 void destroy_render_pass(VkRenderPass render_pass) {
     vkDestroyRenderPass(g_rc->device.device, render_pass, nullptr);
@@ -440,25 +468,25 @@ VkRenderPass create_render_pass() {
 
 
 std::vector<Framebuffer> create_framebuffers(VkRenderPass render_pass,
-                                             const std::vector<image_buffer_t>& images,
+                                             image_buffer_t& images,
                                              image_buffer_t& depth) {
     std::vector<Framebuffer> framebuffers(g_swapchain.images.size());
 
 
     for (std::size_t i = 0; i < framebuffers.size(); ++i) {
-        std::vector<VkImageView> attachments { images[i].view, depth.view };
+        std::vector<VkImageView> attachments { images.view, depth.view };
 
         VkFramebufferCreateInfo framebuffer_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         framebuffer_info.renderPass = render_pass;
         framebuffer_info.attachmentCount = u32(attachments.size());
         framebuffer_info.pAttachments = attachments.data();
-        framebuffer_info.width = images[i].extent.width;
-        framebuffer_info.height = images[i].extent.height;
+        framebuffer_info.width = images.extent.width;
+        framebuffer_info.height = images.extent.height;
         framebuffer_info.layers = 1;
 
         vk_check(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info,
                                      nullptr, &framebuffers[i].handle));
-        framebuffers[i].extent = images[i].extent;
+        framebuffers[i].extent = images.extent;
     }
 
     return framebuffers;
@@ -719,10 +747,15 @@ renderer_context_t* create_renderer(const window_t* window, BufferMode buffering
 
     CreateFrameBarriers();
 
+    create_command_pool();
+    create_command_buffer();
+
     return g_rc;
 }
 
 void destroy_renderer(renderer_context_t* context) {
+    destroy_command_pool();
+
     DestroyFrameBarriers();
     DestroySwapchain(g_swapchain);
 
@@ -733,21 +766,20 @@ renderer_context_t* get_renderer_context() {
     return g_rc;
 }
 
-uint32_t get_current_frame() {
-    return current_frame;
-}
+//uint32_t get_current_frame() {
+//    return current_frame;
+//}
 
 bool begin_frame() {
     // Wait for the GPU to finish all work before getting the next image
-    vk_check(vkWaitForFences(g_rc->device.device, 1,
-                             &g_frames[current_frame].submit_fence, VK_TRUE,
-                             UINT64_MAX));
+    vk_check(vkWaitForFences(g_rc->device.device, 1, &g_frame.submit_fence, VK_TRUE, UINT64_MAX));
+    //vk_check(vkResetFences(g_rc->device.device, 1, &g_frame.submit_fence));
 
     // Keep attempting to acquire the next frame.
     VkResult result = vkAcquireNextImageKHR(g_rc->device.device,
                                             g_swapchain.handle,
                                             UINT64_MAX,
-                                            g_frames[current_frame].acquired_semaphore,
+                                            g_frame.acquired_semaphore,
                                             nullptr,
                                             &currentImage);
 
@@ -759,19 +791,19 @@ bool begin_frame() {
 
     // reset fence when about to submit work to the GPU
     vk_check(vkResetFences(g_rc->device.device, 1,
-                           &g_frames[current_frame].submit_fence));
+                           &g_frame.submit_fence));
 
 
 
 
 
-    Frame& frame = g_frames[current_frame];
+
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    vk_check(vkResetCommandBuffer(frame.cmd_buffer, 0));
-    vk_check(vkBeginCommandBuffer(frame.cmd_buffer, &begin_info));
+    vk_check(vkResetCommandBuffer(cmd_buffer, 0));
+    vk_check(vkBeginCommandBuffer(cmd_buffer, &begin_info));
 
     const VkExtent2D extent = { g_swapchain.images[0].extent };
 
@@ -787,30 +819,27 @@ bool begin_frame() {
     scissor.offset = { 0, 0 };
     scissor.extent = extent;
 
-    vkCmdSetViewport(frame.cmd_buffer, 0, 1, &viewport);
-    vkCmdSetScissor(frame.cmd_buffer, 0, 1, &scissor);
+    vkCmdSetViewport(cmd_buffer, 0, 1, &viewport);
+    vkCmdSetScissor(cmd_buffer, 0, 1, &scissor);
 
     return true;
 }
 
 void end_frame() {
-    Frame& frame = g_frames[current_frame];
-
-    vk_check(vkEndCommandBuffer(frame.cmd_buffer));
+    vk_check(vkEndCommandBuffer(cmd_buffer));
 
     const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submit_info.waitSemaphoreCount   = 1;
-    submit_info.pWaitSemaphores      = &frame.acquired_semaphore;
+    submit_info.pWaitSemaphores      = &g_frame.acquired_semaphore;
     submit_info.pWaitDstStageMask    = &wait_stage;
     submit_info.commandBufferCount   = 1;
-    submit_info.pCommandBuffers      = &frame.cmd_buffer;
+    submit_info.pCommandBuffers      = &cmd_buffer;
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores    = &frame.released_semaphore;
+    submit_info.pSignalSemaphores    = &g_frame.released_semaphore;
 
 
-    vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info,
-                           frame.submit_fence));
+    vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frame.submit_fence));
 
 
 
@@ -818,7 +847,7 @@ void end_frame() {
 
     VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores    = &g_frames[current_frame].released_semaphore;
+    present_info.pWaitSemaphores    = &g_frame.released_semaphore;
     present_info.swapchainCount     = 1;
     present_info.pSwapchains        = &g_swapchain.handle;
     present_info.pImageIndices      = &currentImage;
@@ -833,11 +862,11 @@ void end_frame() {
 
     // Once the image has been shown onto the window, we can move onto the next
     // frame, and so we increment the frame index.
-    current_frame = (current_frame + 1) % frames_in_flight;
+    //current_frame = (current_frame + 1) % frames_in_flight;
 }
 
 VkCommandBuffer get_command_buffer() {
-    return g_frames[current_frame].cmd_buffer;
+    return cmd_buffer;
 }
 
 void begin_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers) {
@@ -856,23 +885,19 @@ void begin_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>&
     renderPassInfo.clearValueCount = 2;
     renderPassInfo.pClearValues = clear_buffers;
 
-    vkCmdBeginRenderPass(g_frames[current_frame].cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void end_render_pass() {
-    vkCmdEndRenderPass(g_frames[current_frame].cmd_buffer);
+    vkCmdEndRenderPass(cmd_buffer);
 }
 
-void bind_pipeline(Pipeline& pipeline, const std::vector<VkDescriptorSet>& descriptorSets) {
-    const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
-
+void bind_pipeline(Pipeline& pipeline, VkDescriptorSet descriptorSets) {
     vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
-    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets[current_frame], 0, nullptr);
+    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets, 0, nullptr);
 }
 
 void render(instance_t& instance, Pipeline& pipeline) {
-    const VkCommandBuffer& cmd_buffer = g_frames[current_frame].cmd_buffer;
-
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &instance.descriptorSet, 0, nullptr);
     vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
     vkCmdDrawIndexed(cmd_buffer, instance.model->index_count, 1, 0, 0, 0);

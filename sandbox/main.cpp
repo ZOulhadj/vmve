@@ -67,7 +67,7 @@ std::vector<Framebuffer> geometry_framebuffers;
 
 
 VkSampler sampler;
-std::vector<image_buffer_t> albedo_image(3);
+image_buffer_t albedo_image{};
 image_buffer_t depth_image{};
 VkRenderPass render_pass = nullptr;
 std::vector<Framebuffer> framebuffers;
@@ -91,15 +91,13 @@ static VkDescriptorSetLayout g_global_descriptor_set_layout;
 // also known as resources. Since this is the global descriptor set, this will
 // hold the resources for projection view matrix, scene lighting etc. The reason
 // why this is an array is so that each frame has its own descriptor set.
-static std::vector<VkDescriptorSet> g_global_descriptor_sets;
-
-
+static VkDescriptorSet g_global_descriptor_sets;
 
 static VkDescriptorSetLayout g_object_descriptor_layout;
 
 // The resources that will be part of the global descriptor set
-static std::vector<buffer_t> g_camera_buffer;
-static std::vector<buffer_t> g_scene_buffer;
+static buffer_t g_camera_buffer;
+static buffer_t g_scene_buffer;
 
 camera_t camera{};
 
@@ -139,7 +137,7 @@ int main(int argc, char** argv) {
     window_t* window = create_window(APPLICATION_NAME, APPLICATION_WIDTH, APPLICATION_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_context_t* renderer = create_renderer(window, BufferMode::Triple,
+    renderer_context_t* renderer = create_renderer(window, BufferMode::Double,
                                                    VSyncMode::Enabled);
 
 
@@ -157,8 +155,8 @@ int main(int argc, char** argv) {
 
     sampler = create_sampler(VK_FILTER_LINEAR, 16);
 
-    for (auto& image : albedo_image)
-        image = create_image(VK_FORMAT_B8G8R8A8_SRGB, { 1280, 720 }, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    albedo_image = create_image(VK_FORMAT_B8G8R8A8_SRGB, { 1280, 720 }, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     depth_image  = create_image(VK_FORMAT_D32_SFLOAT, { 1280, 720 }, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     render_pass  = create_render_pass();
@@ -169,7 +167,7 @@ int main(int argc, char** argv) {
     destroy_render_pass(render_pass);
 
     destroy_image(depth_image);
-    destroy_images(albedo_image);
+    destroy_image(albedo_image);
 
     destroy_sampler(sampler);
 
@@ -198,47 +196,42 @@ int main(int argc, char** argv) {
     };
 
     g_global_descriptor_set_layout = create_descriptor_set_layout(global_layout);
-    g_global_descriptor_sets      = allocate_descriptor_sets(
-            g_global_descriptor_set_layout, frames_in_flight);
+    g_global_descriptor_sets      = allocate_descriptor_set(g_global_descriptor_set_layout);
 
     // temp here: create the global descriptor resources
-    for (std::size_t i = 0; i < frames_in_flight; ++i) {
-        g_camera_buffer.push_back(create_buffer(sizeof(view_projection),
-                                                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
-        g_scene_buffer.push_back(create_buffer(sizeof(engine_scene),
-                                               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
-    }
+    g_camera_buffer = create_buffer(sizeof(view_projection), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    g_scene_buffer  = create_buffer(sizeof(engine_scene), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-    for (std::size_t i = 0; i < g_global_descriptor_sets.size(); ++i) {
-        VkDescriptorBufferInfo view_proj_ubo{};
-        view_proj_ubo.buffer = g_camera_buffer[i].buffer;
-        view_proj_ubo.offset = 0;
-        view_proj_ubo.range = VK_WHOLE_SIZE; // or sizeof(struct)
 
-        VkDescriptorBufferInfo scene_ubo_info{};
-        scene_ubo_info.buffer = g_scene_buffer[i].buffer;
-        scene_ubo_info.offset = 0;
-        scene_ubo_info.range = VK_WHOLE_SIZE; // or sizeof(struct)
+    VkDescriptorBufferInfo view_proj_ubo{};
+    view_proj_ubo.buffer = g_camera_buffer.buffer;
+    view_proj_ubo.offset = 0;
+    view_proj_ubo.range = VK_WHOLE_SIZE; // or sizeof(struct)
 
-        std::array<VkWriteDescriptorSet, 2> descriptor_writes{};
-        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = g_global_descriptor_sets[i];
-        descriptor_writes[0].dstBinding = 0;
-        descriptor_writes[0].dstArrayElement = 0;
-        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_writes[0].descriptorCount = 1;
-        descriptor_writes[0].pBufferInfo = &view_proj_ubo;
+    VkDescriptorBufferInfo scene_ubo_info{};
+    scene_ubo_info.buffer = g_scene_buffer.buffer;
+    scene_ubo_info.offset = 0;
+    scene_ubo_info.range = VK_WHOLE_SIZE; // or sizeof(struct)
 
-        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[1].dstSet = g_global_descriptor_sets[i];
-        descriptor_writes[1].dstBinding = 1;
-        descriptor_writes[1].dstArrayElement = 0;
-        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_writes[1].descriptorCount = 1;
-        descriptor_writes[1].pBufferInfo = &scene_ubo_info;
+    std::array<VkWriteDescriptorSet, 2> descriptor_writes{};
+    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[0].dstSet = g_global_descriptor_sets;
+    descriptor_writes[0].dstBinding = 0;
+    descriptor_writes[0].dstArrayElement = 0;
+    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_writes[0].descriptorCount = 1;
+    descriptor_writes[0].pBufferInfo = &view_proj_ubo;
 
-        vkUpdateDescriptorSets(renderer->device.device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
-    }
+    descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[1].dstSet = g_global_descriptor_sets;
+    descriptor_writes[1].dstBinding = 1;
+    descriptor_writes[1].dstArrayElement = 0;
+    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_writes[1].descriptorCount = 1;
+    descriptor_writes[1].pBufferInfo = &scene_ubo_info;
+
+    vkUpdateDescriptorSets(renderer->device.device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
+
 
     // Per object material descriptor set
     const std::vector<VkDescriptorSetLayoutBinding> per_object_layout {
@@ -346,10 +339,9 @@ int main(int argc, char** argv) {
 
 
         // copy data into uniform buffer
-        uint32_t frame = get_current_frame();
-        set_buffer_data(&g_camera_buffer[frame], &camera.viewProj,
-                        sizeof(view_projection));
-        set_buffer_data(&g_scene_buffer[frame], &scene, sizeof(engine_scene));
+        //uint32_t frame = get_current_frame();
+        set_buffer_data(&g_camera_buffer, &camera.viewProj, sizeof(view_projection));
+        set_buffer_data(&g_scene_buffer, &scene, sizeof(engine_scene));
 
         if (begin_frame()) {
             // Geometry Pass
@@ -501,6 +493,7 @@ int main(int argc, char** argv) {
                 ImGui::Text("Rendering...");
                 ImGui::End();
 //
+                ImGui::ShowDemoWindow();
 //                // TODO: This is a small snippet related to rendering a frame
 //                // TODO: to ImGui as a texture. This can then be used as a viewport.
 //                std::vector<VkDescriptorSet> m_Dset(2);
@@ -549,12 +542,8 @@ int main(int argc, char** argv) {
 
 
     // Destroy rendering resources
-    for (std::size_t i = 0; i < frames_in_flight; ++i) {
-        destroy_buffer(g_scene_buffer[i]);
-        destroy_buffer(g_camera_buffer[i]);
-    }
-    g_scene_buffer.clear();
-    g_camera_buffer.clear();
+    destroy_buffer(g_scene_buffer);
+    destroy_buffer(g_camera_buffer);
 
     destroy_descriptor_set_layout(g_object_descriptor_layout);
     destroy_descriptor_set_layout(g_global_descriptor_set_layout);
