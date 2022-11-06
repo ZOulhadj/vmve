@@ -13,6 +13,6 @@ struct vertex_array_t {
 vertex_array_t create_vertex_array(void* v, int vs, void* i, int is);
 void destroy_vertex_array(vertex_array_t& vertexArray);
 
-void bind_vertex_array(const vertex_array_t& vertexArray);
+void bind_vertex_array(VkCommandBuffer cmd_buffer, const vertex_array_t& vertexArray);
 
 #endif

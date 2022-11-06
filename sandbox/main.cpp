@@ -163,13 +163,6 @@ int main(int argc, char** argv) {
     framebuffers = create_framebuffers(render_pass, albedo_image, depth_image);
 
 
-    destroy_framebuffers(framebuffers);
-    destroy_render_pass(render_pass);
-
-    destroy_image(depth_image);
-    destroy_image(albedo_image);
-
-    destroy_sampler(sampler);
 
     //////////////////////////////
 
@@ -348,31 +341,30 @@ int main(int argc, char** argv) {
             // -----------------------------------------------------------------
             //
 
-            begin_render_pass(geometry_pass, geometry_framebuffers);
-
-            // Render the background skysphere
-            bind_pipeline(skyspherePipeline, g_global_descriptor_sets);
-            bind_vertex_array(icosphere);
-            render(skybox, skyspherePipeline);
-
-
-            // Render the ground where all the models will be on top of
-            bind_pipeline(basicPipeline, g_global_descriptor_sets);
-            bind_vertex_array(plane);
-            translate(ground, {0.0f, 0.0f, 0.0f});
-            scale(ground, {500.0f, 0.0f, 500.0f});
-            render(ground, basicPipeline);
+            VkCommandBuffer cmd_buffer = begin_viewport_render_pass(geometry_pass, geometry_framebuffers);
+            {
+                // Render the background skysphere
+                bind_pipeline(cmd_buffer, skyspherePipeline, g_global_descriptor_sets);
+                bind_vertex_array(cmd_buffer, icosphere);
+                render(cmd_buffer, skybox, skyspherePipeline);
 
 
-            // Render the actual model loaded in by the user
-            bind_vertex_array(model);
-            translate(car, objectTranslation);
-            rotate(car, objectRotation);
-            scale(car, objectScale);
-            render(car, basicPipeline);
+                // Render the ground where all the models will be on top of
+                bind_pipeline(cmd_buffer, basicPipeline, g_global_descriptor_sets);
+                bind_vertex_array(cmd_buffer, plane);
+                translate(ground, {0.0f, 0.0f, 0.0f});
+                scale(ground, {500.0f, 0.0f, 500.0f});
+                render(cmd_buffer, ground, basicPipeline);
 
 
-            end_render_pass();
+                // Render the actual model loaded in by the user
+                bind_vertex_array(cmd_buffer, model);
+                translate(car, objectTranslation);
+                rotate(car, objectRotation);
+                scale(car, objectScale);
+                render(cmd_buffer, car, basicPipeline);
+            }
+            end_render_pass(cmd_buffer);
 
 
             // User interface Pass
@@ -380,145 +372,144 @@ int main(int argc, char** argv) {
             //
 
 
-            begin_render_pass(ui_pass, ui_framebuffers);
-
-            ImGui_ImplVulkan_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
+            VkCommandBuffer ui_cmd_buffer = begin_ui_render_pass(ui_pass, ui_framebuffers);
             {
-                ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+                ImGui_ImplVulkan_NewFrame();
+                ImGui_ImplGlfw_NewFrame();
+                ImGui::NewFrame();
+                {
+                    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 
-                // Submit the DockSpace
-                ImGuiIO& io = ImGui::GetIO();
+                    // Submit the DockSpace
+                    ImGuiIO& io = ImGui::GetIO();
 
-                static bool opt_open = true;
-                static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+                    static bool opt_open = true;
+                    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-                // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-                // because it would be confusing to have two docking targets within each others.
-                ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-                window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-                window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+                    // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+                    // because it would be confusing to have two docking targets within each others.
+                    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+                    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+                    window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-                // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-                // and handle the pass-thru hole, so we ask Begin() to not render a background.
-                if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-                    window_flags |= ImGuiWindowFlags_NoBackground;
+                    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
+                    // and handle the pass-thru hole, so we ask Begin() to not render a background.
+                    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+                        window_flags |= ImGuiWindowFlags_NoBackground;
 
-                // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-                // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-                // all active windows docked into it will lose their parent and become undocked.
-                // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-                // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+                    // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+                    // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+                    // all active windows docked into it will lose their parent and become undocked.
+                    // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+                    // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
 
-                const ImGuiViewport* viewport = ImGui::GetMainViewport();
-                ImGui::SetNextWindowPos(viewport->WorkPos);
-                ImGui::SetNextWindowSize(viewport->WorkSize);
-                ImGui::SetNextWindowViewport(viewport->ID);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                ImGui::Begin("DockSpace", &opt_open, window_flags);
-                ImGui::PopStyleVar();
-                ImGui::PopStyleVar(2);
-                ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+                    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+                    ImGui::SetNextWindowPos(viewport->WorkPos);
+                    ImGui::SetNextWindowSize(viewport->WorkSize);
+                    ImGui::SetNextWindowViewport(viewport->ID);
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+                    ImGui::Begin("DockSpace", &opt_open, window_flags);
+                    ImGui::PopStyleVar();
+                    ImGui::PopStyleVar(2);
+                    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
 
-                if (ImGui::BeginMenuBar()) {
-                    if (ImGui::BeginMenu("File")) {
-                        render_file_menu();
+                    if (ImGui::BeginMenuBar()) {
+                        if (ImGui::BeginMenu("File")) {
+                            render_file_menu();
 
-                        ImGui::EndMenu();
+                            ImGui::EndMenu();
+                        }
+
+                        if (ImGui::BeginMenu("Options")) {
+
+
+                            if (ImGui::MenuItem("Flag: NoSplit",                "", (dockspace_flags & ImGuiDockNodeFlags_NoSplit) != 0))                 { dockspace_flags ^= ImGuiDockNodeFlags_NoSplit; }
+                            if (ImGui::MenuItem("Flag: NoResize",               "", (dockspace_flags & ImGuiDockNodeFlags_NoResize) != 0))                { dockspace_flags ^= ImGuiDockNodeFlags_NoResize; }
+                            if (ImGui::MenuItem("Flag: NoDockingInCentralNode", "", (dockspace_flags & ImGuiDockNodeFlags_NoDockingInCentralNode) != 0))  { dockspace_flags ^= ImGuiDockNodeFlags_NoDockingInCentralNode; }
+                            if (ImGui::MenuItem("Flag: AutoHideTabBar",         "", (dockspace_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0))          { dockspace_flags ^= ImGuiDockNodeFlags_AutoHideTabBar; }
+
+                            ImGui::EndMenu();
+                        }
+
+
+                        ImGui::EndMenuBar();
                     }
 
-                    if (ImGui::BeginMenu("Options")) {
 
+                    if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr) {
+                        ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
+                        ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
+                        ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
 
-                        if (ImGui::MenuItem("Flag: NoSplit",                "", (dockspace_flags & ImGuiDockNodeFlags_NoSplit) != 0))                 { dockspace_flags ^= ImGuiDockNodeFlags_NoSplit; }
-                        if (ImGui::MenuItem("Flag: NoResize",               "", (dockspace_flags & ImGuiDockNodeFlags_NoResize) != 0))                { dockspace_flags ^= ImGuiDockNodeFlags_NoResize; }
-                        if (ImGui::MenuItem("Flag: NoDockingInCentralNode", "", (dockspace_flags & ImGuiDockNodeFlags_NoDockingInCentralNode) != 0))  { dockspace_flags ^= ImGuiDockNodeFlags_NoDockingInCentralNode; }
-                        if (ImGui::MenuItem("Flag: AutoHideTabBar",         "", (dockspace_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0))          { dockspace_flags ^= ImGuiDockNodeFlags_AutoHideTabBar; }
+                        auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
+                        auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, nullptr, &dockspace_id);
+                        auto dock_id_right = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.2f, nullptr, &dockspace_id);
+                        //auto dock_id_viewport = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Up, 1.0f, nullptr, &dockspace_id);
 
-                        ImGui::EndMenu();
+                        // we now dock our windows into the docking node we made above
+                        ImGui::DockBuilderDockWindow("Left", dock_id_left);
+                        ImGui::DockBuilderDockWindow("Right", dock_id_right);
+                        ImGui::DockBuilderDockWindow("Down", dock_id_down);
+                        //ImGui::DockBuilderDockWindow("Viewport", dock_id_viewport);
+                        ImGui::DockBuilderFinish(dockspace_id);
                     }
-
-
-                    ImGui::EndMenuBar();
-                }
-
-
-                if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr) {
-                    ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
-                    ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
-                    ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
-
-                    auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
-                    auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, nullptr, &dockspace_id);
-                    auto dock_id_right = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.2f, nullptr, &dockspace_id);
-                    //auto dock_id_viewport = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Up, 1.0f, nullptr, &dockspace_id);
-
-                    // we now dock our windows into the docking node we made above
-                    ImGui::DockBuilderDockWindow("Left", dock_id_left);
-                    ImGui::DockBuilderDockWindow("Right", dock_id_right);
-                    ImGui::DockBuilderDockWindow("Down", dock_id_down);
-                    //ImGui::DockBuilderDockWindow("Viewport", dock_id_viewport);
-                    ImGui::DockBuilderFinish(dockspace_id);
-                }
-                ImGui::End();
+                    ImGui::End();
 
 //
 
-                const ImGuiWindowFlags docking_flags = ImGuiWindowFlags_NoDecoration;
+                    const ImGuiWindowFlags docking_flags = ImGuiWindowFlags_NoDecoration;
 
-                ImGuiWindowFlags viewport_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground;
+                    ImGuiWindowFlags viewport_flags = ImGuiWindowFlags_NoDecoration;
 
-                static bool o = true;
+                    static bool o = true;
 
-                ImGui::Begin("Down", &o, docking_flags);
-                ImGui::Text("Hello, down!");
-                ImGui::End();
+                    ImGui::Begin("Down", &o, docking_flags);
+                    ImGui::Text("Hello, down!");
+                    ImGui::End();
 
-                ImGui::Begin("Left", &o, docking_flags);
-                ImGui::Text("Hello, left!");
-                ImGui::End();
+                    ImGui::Begin("Left", &o, docking_flags);
+                    ImGui::Text("Hello, left!");
+                    ImGui::End();
 
-                ImGui::Begin("Right", &o, docking_flags);
-                ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
-                ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
-                ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
-                ImGui::End();
+                    ImGui::Begin("Right", &o, docking_flags);
+                    ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
+                    ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
+                    ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
+                    ImGui::End();
 
 
-                ImGui::Begin("Viewport", &o, viewport_flags);
-                ImGui::Text("Rendering...");
-                ImGui::End();
-//
-                ImGui::ShowDemoWindow();
-//                // TODO: This is a small snippet related to rendering a frame
-//                // TODO: to ImGui as a texture. This can then be used as a viewport.
-//                std::vector<VkDescriptorSet> m_Dset(2);
-//                for (uint32_t i = 0; i < m_Dset.size(); i++)
-//                    m_Dset[i] = ImGui_ImplVulkan_AddTexture(skysphere.sampler, geometry_framebuffers[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-//
-//                ImGui::Begin("Viewport", &o, viewport_flags);
-//                ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-//                ImGui::Image(m_Dset[get_current_frame()], ImVec2{viewportPanelSize.x, viewportPanelSize.y});
-//
-//                ImGui::End();
+                    std::vector<VkDescriptorSet> m_Dset(2);
+                    for (auto& i : m_Dset)
+                        i = ImGui_ImplVulkan_AddTexture(sampler, albedo_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-//
-//
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+                    ImGui::Begin("Viewport", &o, viewport_flags);
+                    ImGui::PopStyleVar(2);
+                    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+                    ImGui::Image(m_Dset[currentImage], ImVec2{viewportPanelSize.x, viewportPanelSize.y});
+                    ImGui::End();
+
+                    ImGui::ShowDemoWindow();
+
+
+
+
+
 //                ImGui::ShowDemoWindow();
+                }
+                ImGui::EndFrame();
+
+                ImGui::Render();
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+                ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), ui_cmd_buffer);
+
             }
-            ImGui::EndFrame();
-
-
-            render_ui();
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), get_command_buffer());
-
-            end_render_pass();
+            end_render_pass(ui_cmd_buffer);
 
 
             end_frame();
@@ -551,6 +542,22 @@ int main(int argc, char** argv) {
     destroy_pipeline(wireframePipeline);
     destroy_pipeline(skyspherePipeline);
     destroy_pipeline(basicPipeline);
+
+
+
+
+    destroy_framebuffers(framebuffers);
+    destroy_render_pass(render_pass);
+
+    destroy_image(depth_image);
+    destroy_image(albedo_image);
+
+    destroy_sampler(sampler);
+
+
+
+
+
 
     destroy_framebuffers(geometry_framebuffers);
     destroy_render_pass(geometry_pass);

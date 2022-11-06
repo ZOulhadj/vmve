@@ -10,7 +10,11 @@ static Swapchain g_swapchain{};
 
 //static std::vector<Frame> g_frames;
 VkCommandPool cmd_pool;
-VkCommandBuffer cmd_buffer;
+
+VkCommandBuffer viewport_cmd_buffer;
+VkCommandBuffer ui_cmd_buffer;
+
+
 
 static Frame g_frame;
 
@@ -20,9 +24,6 @@ static Frame g_frame;
 // available frame which may be like such 0..1..2 -> 0..2..1. Both
 // frame and image index often are the same but is not guaranteed.
 //static uint32_t current_frame = 0;
-
-static uint32_t currentImage = 0;
-
 
 Swapchain& get_swapchain() {
     return g_swapchain;
@@ -223,11 +224,14 @@ static void create_command_buffer() {
     allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocate_info.commandBufferCount = 1;
 
-    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info,  &cmd_buffer));
+    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info,  &viewport_cmd_buffer));
+    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info,  &ui_cmd_buffer));
 }
 
 static void destroy_command_pool() {
-    vkFreeCommandBuffers(g_rc->device.device, cmd_pool, 1, &cmd_buffer);
+    vkFreeCommandBuffers(g_rc->device.device, cmd_pool, 1, &ui_cmd_buffer);
+    vkFreeCommandBuffers(g_rc->device.device, cmd_pool, 1, &viewport_cmd_buffer);
+
     vkDestroyCommandPool(g_rc->device.device, cmd_pool, nullptr);
 }
 
@@ -794,54 +798,25 @@ bool begin_frame() {
                            &g_frame.submit_fence));
 
 
-
-
-
-
-
-    VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vk_check(vkResetCommandBuffer(cmd_buffer, 0));
-    vk_check(vkBeginCommandBuffer(cmd_buffer, &begin_info));
-
-    const VkExtent2D extent = { g_swapchain.images[0].extent };
-
-    VkViewport viewport{};
-    viewport.x        = 0.0f;
-    viewport.y        = 0.0f;
-    viewport.width    = static_cast<float>(extent.width);
-    viewport.height   = static_cast<float>(extent.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
-    scissor.extent = extent;
-
-    vkCmdSetViewport(cmd_buffer, 0, 1, &viewport);
-    vkCmdSetScissor(cmd_buffer, 0, 1, &scissor);
-
     return true;
 }
 
 void end_frame() {
-    vk_check(vkEndCommandBuffer(cmd_buffer));
+
+    VkCommandBuffer cmd_buffers[2] = { viewport_cmd_buffer, ui_cmd_buffer };
 
     const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submit_info.waitSemaphoreCount   = 1;
     submit_info.pWaitSemaphores      = &g_frame.acquired_semaphore;
     submit_info.pWaitDstStageMask    = &wait_stage;
-    submit_info.commandBufferCount   = 1;
-    submit_info.pCommandBuffers      = &cmd_buffer;
+    submit_info.commandBufferCount   = 2;
+    submit_info.pCommandBuffers      = cmd_buffers;
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores    = &g_frame.released_semaphore;
 
 
     vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frame.submit_fence));
-
-
 
 
 
@@ -860,23 +835,46 @@ void end_frame() {
         RebuildSwapchain(g_swapchain);
     }
 
+
+
+
     // Once the image has been shown onto the window, we can move onto the next
     // frame, and so we increment the frame index.
     //current_frame = (current_frame + 1) % frames_in_flight;
 }
 
-VkCommandBuffer get_command_buffer() {
-    return cmd_buffer;
-}
+VkCommandBuffer begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers) {
 
-void begin_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers) {
+    VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vk_check(vkResetCommandBuffer(viewport_cmd_buffer, 0));
+    vk_check(vkBeginCommandBuffer(viewport_cmd_buffer, &begin_info));
+
+
+    VkViewport viewport{};
+    viewport.x        = 0.0f;
+    viewport.y        = 0.0f;
+    viewport.width    = (float)framebuffers[currentImage].extent.width;
+    viewport.height   = (float)framebuffers[currentImage].extent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = framebuffers[currentImage].extent;
+
+    vkCmdSetViewport(viewport_cmd_buffer, 0, 1, &viewport);
+    vkCmdSetScissor(viewport_cmd_buffer, 0, 1, &scissor);
+
     const VkClearValue clear_color = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
     const VkClearValue clear_depth = { 0.0f, 0 };
     const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
 
     VkRect2D render_area{};
     render_area.offset = { 0, 0 };
-    render_area.extent = framebuffers[currentImage].extent;
+    render_area.extent.width = (uint32_t)viewport.width;
+    render_area.extent.height = (uint32_t)viewport.height;
 
     VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
     renderPassInfo.renderPass = render_pass;
@@ -885,19 +883,69 @@ void begin_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>&
     renderPassInfo.clearValueCount = 2;
     renderPassInfo.pClearValues = clear_buffers;
 
-    vkCmdBeginRenderPass(cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(viewport_cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    return viewport_cmd_buffer;
 }
 
-void end_render_pass() {
-    vkCmdEndRenderPass(cmd_buffer);
+
+VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers) {
+
+    VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vk_check(vkResetCommandBuffer(ui_cmd_buffer, 0));
+    vk_check(vkBeginCommandBuffer(ui_cmd_buffer, &begin_info));
+
+
+    VkViewport viewport{};
+    viewport.x        = 0.0f;
+    viewport.y        = 0.0f;
+    viewport.width    = (float)framebuffers[currentImage].extent.width;
+    viewport.height   = (float)framebuffers[currentImage].extent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = framebuffers[currentImage].extent;
+
+    vkCmdSetViewport(ui_cmd_buffer, 0, 1, &viewport);
+    vkCmdSetScissor(ui_cmd_buffer, 0, 1, &scissor);
+
+    const VkClearValue clear_color = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
+    const VkClearValue clear_depth = { 0.0f, 0 };
+    const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
+
+    VkRect2D render_area{};
+    render_area.offset = { 0, 0 };
+    render_area.extent.width = (uint32_t)viewport.width;
+    render_area.extent.height = (uint32_t)viewport.height;
+
+    VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+    renderPassInfo.renderPass = render_pass;
+    renderPassInfo.framebuffer = framebuffers[currentImage].handle;
+    renderPassInfo.renderArea = render_area;
+    renderPassInfo.clearValueCount = 2;
+    renderPassInfo.pClearValues = clear_buffers;
+
+    vkCmdBeginRenderPass(ui_cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    return ui_cmd_buffer;
 }
 
-void bind_pipeline(Pipeline& pipeline, VkDescriptorSet descriptorSets) {
+void end_render_pass(VkCommandBuffer buffer) {
+    vkCmdEndRenderPass(buffer);
+
+    vk_check(vkEndCommandBuffer(buffer));
+}
+
+void bind_pipeline(VkCommandBuffer cmd_buffer, Pipeline& pipeline, VkDescriptorSet descriptorSets) {
     vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets, 0, nullptr);
 }
 
-void render(instance_t& instance, Pipeline& pipeline) {
+void render(VkCommandBuffer cmd_buffer, instance_t& instance, Pipeline& pipeline) {
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &instance.descriptorSet, 0, nullptr);
     vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
     vkCmdDrawIndexed(cmd_buffer, instance.model->index_count, 1, 0, 0, 0);

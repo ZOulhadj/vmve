@@ -9,7 +9,10 @@
 
 #include "../entity.hpp"
 
-constexpr int frames_in_flight = 2;
+//constexpr int frames_in_flight = 2;
+
+static uint32_t currentImage = 0;
+
 
 enum class BufferMode {
     Double = 2,
@@ -71,8 +74,6 @@ renderer_context_t* create_renderer(const window_t* window, BufferMode buffering
 void destroy_renderer(renderer_context_t* context);
 
 renderer_context_t* get_renderer_context();
-VkCommandBuffer get_command_buffer();
-
 
 Swapchain& get_swapchain();
 
@@ -115,11 +116,12 @@ void end_frame();
 
 
 
-void begin_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers);
-void end_render_pass();
+VkCommandBuffer begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers);
+VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers);
+void end_render_pass(VkCommandBuffer cmd_buffer);
 
-void bind_pipeline(Pipeline& pipeline, VkDescriptorSet descriptorSets);
+void bind_pipeline(VkCommandBuffer cmd_buffer, Pipeline& pipeline, VkDescriptorSet descriptorSets);
 
-void render(instance_t& instance, Pipeline& pipeline);
+void render(VkCommandBuffer cmd_buffer, instance_t& instance, Pipeline& pipeline);
 
 #endif

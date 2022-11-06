@@ -47,9 +47,7 @@ void destroy_vertex_array(vertex_array_t& vertexArray) {
     destroy_buffer(vertexArray.vertex_buffer);
 }
 
-void bind_vertex_array(const vertex_array_t& vertexArray) {
-    const VkCommandBuffer& cmd_buffer = get_command_buffer();
-
+void bind_vertex_array(VkCommandBuffer cmd_buffer, const vertex_array_t& vertexArray) {
     const VkDeviceSize offset{ 0 };
     vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &vertexArray.vertex_buffer.buffer, &offset);
     vkCmdBindIndexBuffer(cmd_buffer, vertexArray.index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
