@@ -140,15 +140,6 @@ int main(int argc, char** argv) {
     renderer_context_t* renderer = create_renderer(window, BufferMode::Double, VSyncMode::Enabled);
 
 
-    //geometry_pass = create_color_render_pass();
-    //geometry_framebuffers = create_geometry_framebuffers(geometry_pass, { 1280, 720 });
-
-
-
-    /////////////////////////////
-    // Work-in-progress code (Render to texture)
-
-
     sampler = create_sampler(VK_FILTER_NEAREST, 16);
 
     albedo_image = create_image(VK_FORMAT_B8G8R8A8_SRGB, { 1280, 720 }, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -156,8 +147,6 @@ int main(int argc, char** argv) {
 
     render_pass  = create_render_pass();
     framebuffers = create_framebuffers(render_pass, albedo_image, depth_image);
-
-    //////////////////////////////
 
     ui_pass = create_ui_render_pass();
     ui_framebuffers = create_ui_framebuffers(ui_pass, { 1280, 720 });

@@ -25,10 +25,6 @@ static Frame g_frame;
 // frame and image index often are the same but is not guaranteed.
 //static uint32_t current_frame = 0;
 
-Swapchain& get_swapchain() {
-    return g_swapchain;
-}
-
 static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface) {
     if (surface.currentExtent.width != std::numeric_limits<uint32_t>::max())
         return surface.currentExtent;
@@ -126,15 +122,15 @@ static Swapchain CreateSwapchain() {
     }
 
     // create depth buffer image
-    swapchain.depth_image = create_image(VK_FORMAT_D32_SFLOAT,
-                                         swapchain_info.imageExtent,
-                                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+//    swapchain.depth_image = create_image(VK_FORMAT_D32_SFLOAT,
+//                                         swapchain_info.imageExtent,
+//                                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     return swapchain;
 }
 
 static void DestroySwapchain(Swapchain& swapchain) {
-    destroy_image(swapchain.depth_image);
+//    destroy_image(swapchain.depth_image);
 
     for (auto& image : swapchain.images) {
         vkDestroyImageView(g_rc->device.device, image.view, nullptr);
@@ -246,70 +242,6 @@ void destroy_framebuffers(std::vector<Framebuffer>& framebuffers) {
     framebuffers.clear();
 }
 
-
-VkRenderPass create_color_render_pass() {
-    VkRenderPass render_pass{};
-
-    std::vector<VkAttachmentDescription> attachments(2);
-
-    // color attachment
-    attachments[0].format = VK_FORMAT_B8G8R8A8_SRGB;
-    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    // color reference
-    VkAttachmentReference color_reference{};
-    color_reference.attachment = 0;
-    color_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    // Depth attachment
-    attachments[1].format = VK_FORMAT_D32_SFLOAT;
-    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    // Depth reference
-    VkAttachmentReference depth_reference{};
-    depth_reference.attachment = 1;
-    depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDependency dependency{};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.srcAccessMask = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &color_reference;
-    subpass.pDepthStencilAttachment = &depth_reference;
-
-    VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
-    render_pass_info.attachmentCount = u32(attachments.size());
-    render_pass_info.pAttachments = attachments.data();
-    render_pass_info.subpassCount = 1;
-    render_pass_info.pSubpasses = &subpass;
-    render_pass_info.dependencyCount = 1;
-    render_pass_info.pDependencies = &dependency;
-
-    vk_check(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr,
-                                &render_pass));
-
-    return render_pass;
-}
-
 VkRenderPass create_ui_render_pass() {
     VkRenderPass render_pass{};
 
@@ -356,29 +288,6 @@ VkRenderPass create_ui_render_pass() {
                                 &render_pass));
 
     return render_pass;
-}
-
-std::vector<Framebuffer> create_geometry_framebuffers(VkRenderPass render_pass, VkExtent2D extent) {
-    std::vector<Framebuffer> framebuffers(g_swapchain.images.size());
-
-    // Create framebuffers with attachments.
-    for (std::size_t i = 0; i < g_swapchain.images.size(); ++i) {
-        std::vector<VkImageView> attachments { g_swapchain.images[i].view, g_swapchain.depth_image.view };
-
-        VkFramebufferCreateInfo framebuffer_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
-        framebuffer_info.renderPass = render_pass;
-        framebuffer_info.attachmentCount = u32(attachments.size());
-        framebuffer_info.pAttachments = attachments.data();
-        framebuffer_info.width = extent.width;
-        framebuffer_info.height = extent.height;
-        framebuffer_info.layers = 1;
-
-        vk_check(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info,
-                                     nullptr, &framebuffers[i].handle));
-        framebuffers[i].extent = extent;
-    }
-
-    return framebuffers;
 }
 
 std::vector<Framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent) {

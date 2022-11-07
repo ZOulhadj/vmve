@@ -29,7 +29,7 @@ struct Swapchain {
     VkSwapchainKHR handle;
 
     std::vector<image_buffer_t> images;
-    image_buffer_t depth_image;
+    //image_buffer_t depth_image;
 };
 
 
@@ -75,8 +75,6 @@ void destroy_renderer(renderer_context_t* context);
 
 renderer_context_t* get_renderer_context();
 
-Swapchain& get_swapchain();
-
 VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
 void destroy_descriptor_set_layout(VkDescriptorSetLayout layout);
 std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout, uint32_t frames);
@@ -86,10 +84,8 @@ VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
 
 
 // TEMP CODE
-VkRenderPass create_color_render_pass();
 VkRenderPass create_ui_render_pass();
 std::vector<Framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent);
-std::vector<Framebuffer> create_geometry_framebuffers(VkRenderPass render_pass, VkExtent2D extent);
 
 
 
@@ -110,8 +106,6 @@ void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer
 Pipeline create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass);
 void destroy_pipeline(Pipeline& pipeline);
 
-
-//uint32_t get_current_frame();
 bool begin_frame();
 void end_frame();
 
@@ -122,7 +116,6 @@ VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector
 void end_render_pass(VkCommandBuffer cmd_buffer);
 
 void bind_pipeline(VkCommandBuffer cmd_buffer, Pipeline& pipeline, VkDescriptorSet descriptorSets);
-
 void render(VkCommandBuffer cmd_buffer, instance_t& instance, Pipeline& pipeline);
 
 #endif
