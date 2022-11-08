@@ -321,9 +321,6 @@ int main(int argc, char** argv) {
         set_buffer_data(&g_scene_buffer, &scene, sizeof(engine_scene));
 
         if (begin_frame()) {
-            // Geometry Pass
-            // -----------------------------------------------------------------
-            //
             VkCommandBuffer cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
             {
                 // Render the background skysphere
@@ -348,11 +345,6 @@ int main(int argc, char** argv) {
                 render(cmd_buffer, car, basicPipeline);
             }
             end_render_pass(cmd_buffer);
-
-
-            // User interface Pass
-            // -----------------------------------------------------------------
-            //
 
 
             VkCommandBuffer ui_cmd_buffer = begin_ui_render_pass(ui_pass, ui_framebuffers);
