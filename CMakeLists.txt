@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.23 FATAL_ERROR)
-project(my_engine
+project(vmve
         VERSION 0.0.1
         DESCRIPTION "My custom rendering engine"
         LANGUAGES CXX)
