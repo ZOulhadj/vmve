@@ -25,6 +25,7 @@ add_subdirectory(vendor/glm)
 add_subdirectory(vendor/vma)
 add_subdirectory(vendor/assimp)
 
+include_directories(IMGUI_INCLUDE vendor/imgui/)
 set(IMGUI_SRC
         vendor/imgui/imgui.cpp
         vendor/imgui/imgui_demo.cpp
@@ -33,6 +34,10 @@ set(IMGUI_SRC
         vendor/imgui/imgui_impl_vulkan.cpp
         vendor/imgui/imgui_tables.cpp
         vendor/imgui/imgui_widgets.cpp)
+
+include_directories(STB_INCLUDE vendor/stb/)
+
+
 
 add_executable(${PROJECT_NAME}
         ${IMGUI_SRC}
@@ -62,15 +67,10 @@ add_executable(${PROJECT_NAME}
         "src/pch.cpp")
 
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE
-        src/pch.hpp)
+target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
+target_include_directories(${PROJECT_NAME} PRIVATE ${STB_INCLUDE} ${IMGUI_INCLUDE})
 
-target_include_directories(${PROJECT_NAME} PRIVATE
-        vendor/stb
-        vendor/imgui)
-
-target_link_libraries(${PROJECT_NAME}
-        PRIVATE
+target_link_libraries(${PROJECT_NAME} PRIVATE
         glfw
         glm::glm
         Vulkan::Vulkan
