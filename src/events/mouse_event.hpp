@@ -3,12 +3,11 @@
 
 #include "event.hpp"
 
-class MouseButtonEvent : public Event {
-public:
-    int GetButtonCode() const { return m_ButtonCode; }
+struct mouse_button_event : public event {
+    int get_button_code() const { return m_ButtonCode; }
 
 protected:
-    MouseButtonEvent(int buttonCode)
+    mouse_button_event(int buttonCode)
         : m_ButtonCode(buttonCode)
     {}
 
@@ -16,58 +15,52 @@ private:
     int m_ButtonCode;
 };
 
-class MouseButtonPressedEvent : public MouseButtonEvent {
-public:
-    MouseButtonPressedEvent(int buttonCode)
-        : MouseButtonEvent(buttonCode)
+struct mouse_button_pressed_event : public mouse_button_event {
+    mouse_button_pressed_event(int buttonCode)
+        : mouse_button_event(buttonCode)
     {}
 
-    EVENT_CLASS_TYPE(MouseButtonPressedEvent);
+    EVENT_CLASS_TYPE(mouse_button_pressed);
 };
 
-class MouseButtonReleasedEvent : public MouseButtonEvent {
-public:
-    MouseButtonReleasedEvent(int buttonCode)
-        : MouseButtonEvent(buttonCode)
+struct mouse_button_released_event : public mouse_button_event {
+    mouse_button_released_event(int buttonCode)
+        : mouse_button_event(buttonCode)
     {}
 
-    EVENT_CLASS_TYPE(MouseButtonReleasedEvent);
+    EVENT_CLASS_TYPE(mouse_button_released);
 };
 
 
-class MouseMovedEvent : public Event {
-public:
-    MouseMovedEvent(double x, double y)
+struct mouse_moved_event : public event {
+    mouse_moved_event(double x, double y)
         : m_XPos(x), m_YPos(y)
     {}
 
-    double GetX() const { return m_XPos; }
-    double GetY() const { return m_YPos; }
+    double get_x() const { return m_XPos; }
+    double get_y() const { return m_YPos; }
 
-    EVENT_CLASS_TYPE(MouseMovedEvent);
+    EVENT_CLASS_TYPE(mouse_moved);
+
 private:
     double m_XPos;
     double m_YPos;
 };
 
-class MouseEnteredEvent : public Event {
-public:
-    EVENT_CLASS_TYPE(MouseEnteredEvent);
+struct mouse_entered_event : public event {
+    EVENT_CLASS_TYPE(mouse_entered);
 };
 
-class MouseLeftEvent : public Event {
-public:
-    EVENT_CLASS_TYPE(MouseLeftEvent);
+struct mouse_left_event : public event {
+    EVENT_CLASS_TYPE(mouse_left);
 };
 
-class MouseScrolledUpEvent : public Event {
-public:
-    EVENT_CLASS_TYPE(MouseScrolledUpEvent);
+struct mouse_scrolled_up_event : public event {
+    EVENT_CLASS_TYPE(mouse_scrolled_up);
 };
 
-class MouseScrolledDownEvent : public Event {
-public:
-    EVENT_CLASS_TYPE(MouseScrolledDownEvent);
+struct mouse_scrolled_down_event : public event {
+    EVENT_CLASS_TYPE(mouse_scrolled_down);
 };
 
 #endif

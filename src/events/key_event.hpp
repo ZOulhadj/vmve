@@ -3,12 +3,11 @@
 
 #include "event.hpp"
 
-class KeyEvent : public Event {
-public:
-    int GetKeyCode() const { return m_KeyCode; }
+struct key_event : public event {
+    int get_key_code() const { return m_KeyCode; }
 
 protected:
-    KeyEvent(int keycode)
+    key_event(int keycode)
         : m_KeyCode(keycode)
     {}
 
@@ -16,23 +15,20 @@ private:
     int m_KeyCode;
 };
 
-
-class KeyPressedEvent : public KeyEvent {
-public:
-    KeyPressedEvent(int keycode)
-        : KeyEvent(keycode)
+struct key_pressed_event : public key_event {
+    key_pressed_event(int keycode)
+        : key_event(keycode)
     {}
 
-    EVENT_CLASS_TYPE(KeyPressedEvent);
+    EVENT_CLASS_TYPE(key_pressed);
 };
 
-class KeyReleasedEvent : public KeyEvent {
-public:
-    KeyReleasedEvent(int keycode)
-        : KeyEvent(keycode)
+struct key_released_event : public key_event {
+    key_released_event(int keycode)
+        : key_event(keycode)
     {}
 
-    EVENT_CLASS_TYPE(KeyReleasedEvent);
+    EVENT_CLASS_TYPE(key_released);
 };
 
 #endif

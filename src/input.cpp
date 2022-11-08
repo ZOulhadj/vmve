@@ -15,8 +15,7 @@ bool is_mouse_button_down(int buttoncode) {
     return false;
 }
 
-glm::vec2 get_mouse_position()
-{
+glm::vec2 get_mouse_position() {
     // HACK: The renderer has a pointer to the window which we can use for now.
     const renderer_context_t* rc = get_renderer_context();
 

@@ -102,8 +102,7 @@ ImGuiContext* create_user_interface(VkRenderPass renderPass) {
 
 
     // Submit ImGui fonts to the GPU in order to be used during rendering.
-    submit_to_gpu(
-            [&] { ImGui_ImplVulkan_CreateFontsTexture(rc->submit.CmdBuffer); });
+    submit_to_gpu([&] { ImGui_ImplVulkan_CreateFontsTexture(rc->submit.CmdBuffer); });
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 

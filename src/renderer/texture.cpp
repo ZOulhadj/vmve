@@ -20,7 +20,7 @@ TextureBuffer load_texture(const char* path, VkFormat format) {
     }
 
     // Store texture data into GPU memory.
-    buffer = CreateTextureBuffer(texture, width, height, format);
+    buffer = create_texture_buffer(texture, width, height, format);
 
     buffer.sampler = create_sampler(VK_FILTER_LINEAR, 16);
     buffer.descriptor.sampler = buffer.sampler;
@@ -35,7 +35,7 @@ TextureBuffer load_texture(const char* path, VkFormat format) {
 }
 
 
-TextureBuffer CreateTextureBuffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format) {
+TextureBuffer create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format) {
     TextureBuffer buffer{};
 
     const renderer_context_t* rc = get_renderer_context();

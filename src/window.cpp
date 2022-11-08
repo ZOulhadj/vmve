@@ -5,91 +5,89 @@
 #include "events/mouse_event.hpp"
 
 
-
-
-static void GLFWErrorCallback(int code, const char* description) {
+static void glfw_error_callback(int code, const char* description) {
      printf("(%d) %s\n", code, description);
 }
 
-static void WindowCloseCallback(GLFWwindow* window) {
+static void window_close_callback(GLFWwindow* window) {
     window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
 
-    WindowClosedEvent e;
+    window_closed_event e;
     ptr->event_callback(e);
 }
 
-static void WindowResizeCallback(GLFWwindow* window, int width, int height) {
+static void window_resize_callback(GLFWwindow* window, int width, int height) {
     // todo: window resizing is done within the framebuffer callback since that
     // todo: returns the actual pixel count of the display. This ensures that
     // todo: for monitors with a high DPI we return the real pixels.
 }
 
-static void WindowFramebufferResizeCallback(GLFWwindow* window, int width, int height) {
+static void window_framebuffer_resize_callback(GLFWwindow* window, int width, int height) {
     window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
     ptr->width = width;
     ptr->height = height;
 
-    WindowResizedEvent e(width, height);
+    window_resized_event e(width, height);
     ptr->event_callback(e);
 }
 
-static void WindowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+static void window_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
 
     if (action == GLFW_PRESS) {
-        KeyPressedEvent e(key);
+        key_pressed_event e(key);
         ptr->event_callback(e);
     } else if (action == GLFW_REPEAT) {
-        KeyPressedEvent e(key);
+        key_released_event e(key);
         ptr->event_callback(e);
     } else if (action == GLFW_RELEASE) {
-        KeyReleasedEvent e(key);
+        key_released_event e(key);
         ptr->event_callback(e);
     }
 }
 
-static void WindowMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+static void window_mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
 
     if (action == GLFW_PRESS) {
-        MouseButtonPressedEvent e(button);
+        mouse_button_pressed_event e(button);
         ptr->event_callback(e);
     } else if (action == GLFW_REPEAT) {
-        MouseButtonPressedEvent e(button);
+        mouse_button_pressed_event e(button);
         ptr->event_callback(e);
     } else if (action == GLFW_RELEASE) {
-        MouseButtonReleasedEvent e(button);
+        mouse_button_released_event e(button);
         ptr->event_callback(e);
     }
 }
 
-static void WindowMouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+static void window_mouse_scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
 
     if (yoffset == 1.0) {
-        MouseScrolledUpEvent e;
+        mouse_scrolled_up_event e;
         ptr->event_callback(e);
     } else if (yoffset == -1.0) {
-        MouseScrolledDownEvent e;
+        mouse_scrolled_down_event e;
         ptr->event_callback(e);
     }
 }
 
-static void WindowCursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
+static void window_cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
     window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
 
-    MouseMovedEvent e(xpos, ypos);
+    mouse_moved_event e(xpos, ypos);
     ptr->event_callback(e);
 }
 
-static void WindowCursorEnterCallback(GLFWwindow* window, int entered) {
+static void window_cursor_enter_callback(GLFWwindow* window, int entered) {
     window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
 
     if (entered) {
-        MouseEnteredEvent e;
+        mouse_entered_event e;
         ptr->event_callback(e);
     } else {
-        MouseLeftEvent e;
+        mouse_left_event e;
         ptr->event_callback(e);
     }
 }
@@ -99,7 +97,7 @@ static void WindowCursorEnterCallback(GLFWwindow* window, int entered) {
 window_t* create_window(const char* name, uint32_t width, uint32_t height) {
     window_t* window = new window_t();
 
-    glfwSetErrorCallback(GLFWErrorCallback);
+    glfwSetErrorCallback(glfw_error_callback);
 
     if (!glfwInit())
         return nullptr;
@@ -119,16 +117,16 @@ window_t* create_window(const char* name, uint32_t width, uint32_t height) {
 
     // window callbacks
     glfwSetWindowUserPointer(window->handle, window);
-    glfwSetWindowCloseCallback(window->handle, WindowCloseCallback);
-    glfwSetWindowSizeCallback(window->handle, WindowResizeCallback);
-    glfwSetFramebufferSizeCallback(window->handle, WindowFramebufferResizeCallback);
+    glfwSetWindowCloseCallback(window->handle, window_close_callback);
+    glfwSetWindowSizeCallback(window->handle, window_resize_callback);
+    glfwSetFramebufferSizeCallback(window->handle, window_framebuffer_resize_callback);
 
     // input callbacks
-    glfwSetKeyCallback(window->handle, WindowKeyCallback);
-    glfwSetMouseButtonCallback(window->handle, WindowMouseButtonCallback);
-    glfwSetScrollCallback(window->handle, WindowMouseScrollCallback);
-    glfwSetCursorPosCallback(window->handle, WindowCursorPosCallback);
-    glfwSetCursorEnterCallback(window->handle, WindowCursorEnterCallback);
+    glfwSetKeyCallback(window->handle, window_key_callback);
+    glfwSetMouseButtonCallback(window->handle, window_mouse_button_callback);
+    glfwSetScrollCallback(window->handle, window_mouse_scroll_callback);
+    glfwSetCursorPosCallback(window->handle, window_cursor_pos_callback);
+    glfwSetCursorEnterCallback(window->handle, window_cursor_enter_callback);
 
     return window;
 }

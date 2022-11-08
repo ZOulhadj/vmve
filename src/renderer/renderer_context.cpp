@@ -269,7 +269,7 @@ static VkDescriptorPool create_descriptor_pool(device_t& device, const std::vect
 renderer_context_t* create_renderer_context(uint32_t version,
                                             const std::vector<const char*>& requested_layers,
                                             const std::vector<const char*>& requested_extensions,
-                                            const VkPhysicalDeviceFeatures requested_gpu_features,
+                                            const VkPhysicalDeviceFeatures& requested_gpu_features,
                                             const window_t* window) {
     auto context = (renderer_context_t*)malloc(sizeof(renderer_context_t));
 

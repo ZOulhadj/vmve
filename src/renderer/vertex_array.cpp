@@ -14,10 +14,8 @@ vertex_array_t create_vertex_array(void* v, int vs, void* i, int is) {
     buffer_t vertexStagingBuffer = create_staging_buffer(v, vs);
     buffer_t indexStagingBuffer  = create_staging_buffer(i, is);
 
-    vertexArray.vertex_buffer = create_gpu_buffer(vs,
-                                                  VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vertexArray.index_buffer  = create_gpu_buffer(is,
-                                                  VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    vertexArray.vertex_buffer = create_gpu_buffer(vs, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vertexArray.index_buffer  = create_gpu_buffer(is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     vertexArray.index_count   = is / sizeof(uint32_t); // todo: Maybe be unsafe for a hard coded type.
 
     // Upload data to the GPU

@@ -2,40 +2,38 @@
 #define MYENGINE_EVENT_HPP
 
 enum class event_type {
-    None = 0,
+    none = 0,
 
-    KeyPressedEvent,
-    KeyReleasedEvent,
+    key_pressed,
+    key_released,
 
-    MouseButtonPressedEvent,
-    MouseButtonReleasedEvent,
-    MouseMovedEvent,
-    MouseEnteredEvent,
-    MouseLeftEvent,
-    MouseScrolledUpEvent,
-    MouseScrolledDownEvent,
+    mouse_button_pressed,
+    mouse_button_released,
+    mouse_moved,
+    mouse_entered,
+    mouse_left,
+    mouse_scrolled_up,
+    mouse_scrolled_down,
 
-    WindowClosedEvent,
-    WindowResizedEvent,
+    window_closed,
+    window_resized,
 
 };
 
 
-#define EVENT_CLASS_TYPE(type) static event_type GetStaticType() { return event_type::type; } \
-event_type GetType() const override { return GetStaticType(); }                           \
-const char* GetName() const override { return #type; }
+#define EVENT_CLASS_TYPE(type) static event_type get_static_type() { return event_type::type; } \
+event_type get_type() const override { return get_static_type(); }                           \
+const char* get_name() const override { return #type; }
 
-class Event {
-public:
-    virtual event_type GetType() const = 0;
-    virtual const char* GetName() const = 0;
+struct event {
+    virtual event_type get_type() const = 0;
+    virtual const char* get_name() const = 0;
 
-public:
     bool Handled = false;
 };
 
 
-using event_func = std::function<void(Event&)>;
+using event_func = std::function<void(event&)>;
 
 #define BIND_EVENT(x) std::bind(&x, this, std::placeholders::_1)
 

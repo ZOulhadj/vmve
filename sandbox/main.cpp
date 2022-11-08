@@ -4,22 +4,17 @@
 #include "../src/renderer/renderer.hpp"
 #include "../src/renderer/buffer.hpp"
 #include "../src/renderer/texture.hpp"
-
 #include "../src/renderer/ui.hpp"
 #include "../src/input.hpp"
 #include "../src/camera.hpp"
 #include "../src/entity.hpp"
 #include "../src/model.hpp"
-
 #include "../src/events/event.hpp"
 #include "../src/events/event_dispatcher.hpp"
 #include "../src/events/window_event.hpp"
 #include "../src/events/key_event.hpp"
 #include "../src/events/mouse_event.hpp"
-
 #include "../src/utility.hpp"
-
-
 #include "../src/vertex.hpp"
 
 // Application specific header files
@@ -60,12 +55,6 @@ static void handle_input(camera_t& camera, float deltaTime) {
 //        camera.roll += camera.roll_speed * deltaTime;
 }
 
-//VkRenderPass geometry_pass = nullptr;
-//std::vector<Framebuffer> geometry_framebuffers;
-
-
-
-
 VkSampler sampler;
 image_buffer_t albedo_image{};
 image_buffer_t depth_image{};
@@ -78,9 +67,9 @@ VkRenderPass ui_pass = nullptr;
 std::vector<Framebuffer> ui_framebuffers;
 
 
-Pipeline basicPipeline{};
-Pipeline skyspherePipeline{};
-Pipeline wireframePipeline{};
+pipeline_t basicPipeline{};
+pipeline_t skyspherePipeline{};
+pipeline_t wireframePipeline{};
 
 // This is a global descriptor set that will be used for all draw calls and
 // will contain descriptors such as a projection view matrix, global scene
@@ -101,6 +90,7 @@ static buffer_t g_scene_buffer;
 
 camera_t camera{};
 
+//
 // Global scene information that will be accessed by the shaders to perform
 // various computations. The order of the variables cannot be changed! This
 // is because the shaders themselves directly replicate this structs order.
@@ -120,8 +110,7 @@ struct engine_scene {
 };
 
 
-static void event_callback(Event& event);
-
+static void event_callback(event& e);
 
 
 #define APPLICATION_NAME   "Vulkan 3D Model Viewer and Exporter"
@@ -137,7 +126,7 @@ int main(int argc, char** argv) {
     window_t* window = create_window(APPLICATION_NAME, APPLICATION_WIDTH, APPLICATION_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_context_t* renderer = create_renderer(window, BufferMode::Double, VSyncMode::Enabled);
+    renderer_context_t* renderer = create_renderer(window, buffer_mode::Double, vsync_mode::Enabled);
 
 
     sampler = create_sampler(VK_FILTER_NEAREST, 16);
@@ -452,8 +441,6 @@ int main(int argc, char** argv) {
                     }
                     ImGui::End();
 
-//
-
                     const ImGuiWindowFlags docking_flags = ImGuiWindowFlags_None;
                     const ImGuiWindowFlags viewport_flags = ImGuiWindowFlags_None;
                     static bool open = true;
@@ -540,13 +527,6 @@ int main(int argc, char** argv) {
     destroy_sampler(sampler);
 
 
-
-
-
-
-    //destroy_framebuffers(geometry_framebuffers);
-    //destroy_render_pass(geometry_pass);
-
     destroy_framebuffers(ui_framebuffers);
     destroy_render_pass(ui_pass);
 
@@ -560,38 +540,32 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-
-
-
-
-
-
 // TODO: Event system stuff
-static bool Press(KeyPressedEvent& event) {
+static bool press(key_pressed_event& e) {
     return true;
 }
 
-static bool ButtonPress(MouseButtonPressedEvent& event) {
-
-    return true;
-}
-
-static bool ButtonRelease(MouseButtonReleasedEvent& event) {
+static bool mouse_button_press(mouse_button_pressed_event& e) {
 
     return true;
 }
 
-static bool MouseMove(MouseMovedEvent& event) {
+static bool mouse_button_release(mouse_button_released_event& e) {
+
+    return true;
+}
+
+static bool mouse_moved(mouse_moved_event& e) {
     //update_camera_view(camera, event.GetX(), event.GetY());
 
     return true;
 }
 
 
-static bool Resize(WindowResizedEvent& event) {
-    set_camera_projection(camera, event.get_width(), event.get_height());
+static bool resize(window_resized_event& e) {
+    set_camera_projection(camera, e.get_width(), e.get_height());
 
-    VkExtent2D extent = {event.get_width(), event.get_height()};
+    VkExtent2D extent = {e.get_width(), e.get_height()};
 
     destroy_image(albedo_image);
     destroy_image(depth_image);
@@ -610,19 +584,19 @@ static bool Resize(WindowResizedEvent& event) {
     return true;
 }
 
-static bool Close(WindowClosedEvent& event) {
+static bool close(window_closed_event& ) {
     running = false;
 
     return true;
 }
 
-static void event_callback(Event& event) {
-    EventDispatcher dispatcher(event);
+static void event_callback(event& e) {
+    event_dispatcher dispatcher(e);
 
-    dispatcher.Dispatch<KeyPressedEvent>(Press);
-    dispatcher.Dispatch<MouseButtonPressedEvent>(ButtonPress);
-    dispatcher.Dispatch<MouseButtonReleasedEvent>(ButtonRelease);
-    dispatcher.Dispatch<MouseMovedEvent>(MouseMove);
-    dispatcher.Dispatch<WindowResizedEvent>(Resize);
-    dispatcher.Dispatch<WindowClosedEvent>(Close);
+    dispatcher.dispatch<key_pressed_event>(press);
+    dispatcher.dispatch<mouse_button_pressed_event>(mouse_button_press);
+    dispatcher.dispatch<mouse_button_released_event>(mouse_button_release);
+    dispatcher.dispatch<mouse_moved_event>(mouse_moved);
+    dispatcher.dispatch<window_resized_event>(resize);
+    dispatcher.dispatch<window_closed_event>(close);
 }
