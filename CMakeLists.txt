@@ -40,27 +40,26 @@ add_executable(${PROJECT_NAME}
         # engine test file
         "sandbox/main.cpp"
 
-        # engine source
         "src/window.cpp"
         "src/camera.cpp"
         "src/entity.cpp"
         "src/input.cpp"
 
-        # engine rendering
         "src/renderer/renderer.cpp"
         "src/renderer/ui.cpp"
 
-        # precompiled header
-        # note: this is required to compile header only files such as STB
-        # note: this will be removed in the future.
-        "src/pch.cpp"
         "src/model.cpp"
         "src/renderer/texture.cpp"
         "src/vertex.cpp"
         "src/renderer/vertex_array.cpp"
         "src/renderer/buffer.cpp"
         "src/renderer/shader.cpp"
-        "src/renderer/renderer_context.cpp")
+        "src/renderer/renderer_context.cpp"
+
+        # precompiled header
+        # note: this is required to compile header only files such as STB, VMA
+        # note: this will be removed in the future.
+        "src/pch.cpp")
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE
@@ -69,9 +68,6 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME} PRIVATE
         vendor/stb
         vendor/imgui)
-
-target_link_directories(${PROJECT_NAME} PRIVATE
-        ${Vulkan_INCLUDE_DIR}/../Lib)
 
 target_link_libraries(${PROJECT_NAME}
         PRIVATE
