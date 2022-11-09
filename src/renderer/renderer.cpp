@@ -642,7 +642,12 @@ renderer_context_t* create_renderer(const window_t* window, buffer_mode bufferin
 #endif
     };
 
+    // todo: VK_EXT_DEBUG_UTILS_EXTENSION_NAME should only be present if using validation layers
     const std::vector<const char*> extensions {
+        VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+    };
+
+    const std::vector<const char*> device_extensions {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
@@ -653,8 +658,7 @@ renderer_context_t* create_renderer(const window_t* window, buffer_mode bufferin
     };
 
 
-    g_rc        = create_renderer_context(VK_API_VERSION_1_3, layers,
-                                          extensions, features, window);
+    g_rc        = create_renderer_context(VK_API_VERSION_1_3, layers, extensions, device_extensions, features, window);
     g_buffering = buffering_mode;
     g_vsync     = sync_mode;
 

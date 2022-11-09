@@ -2,7 +2,10 @@
 
 #include "common.hpp"
 
-static VkInstance create_instance(uint32_t version, const char* app_name, const std::vector<const char*>& layers) {
+static VkInstance create_instance(uint32_t version,
+                                  const char* app_name,
+                                  const std::vector<const char*>& req_layers,
+                                  const std::vector<const char*>& req_extensions) {
     VkInstance instance{};
 
     // create vulkan instance
@@ -21,23 +24,70 @@ static VkInstance create_instance(uint32_t version, const char* app_name, const 
                                                 instance_layers.data()));
 
     // check if the vulkan instance supports our requested instance layers
-    if (!compare_layers(layers, instance_layers))
+    if (!compare_layers(req_layers, instance_layers))
+        return nullptr;
+
+
+    // get instance layers
+    uint32_t extension_count = 0;
+    vk_check(vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    std::vector<VkExtensionProperties> instance_extensions(extension_count);
+    vk_check(vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, instance_extensions.data()));
+
+    // check if instance supports all requested extensions
+    // note that there is no need to check the extensions returned by glfw as
+    // this is already queried.
+    if (!compare_extensions(req_extensions, instance_extensions))
         return nullptr;
 
     // get instance extensions
-    uint32_t extension_count = 0;
-    const char* const* extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+    uint32_t glfw_count = 0;
+    const char* const* glfwExtensions = glfwGetRequiredInstanceExtensions(&glfw_count);
+
+    // convert glfw extensions to a vector and combine glfw extensions with requested extensions
+    std::vector<const char*> glfw_extensions(glfwExtensions, glfwExtensions + glfw_count);
+
+    std::vector<const char*> requested_extensions = glfw_extensions;
+    requested_extensions.insert(requested_extensions.end(), req_extensions.begin(), req_extensions.end());
 
     VkInstanceCreateInfo instance_info{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
     instance_info.pApplicationInfo = &app_info;
-    instance_info.enabledLayerCount = u32(layers.size());
-    instance_info.ppEnabledLayerNames = layers.data();
-    instance_info.enabledExtensionCount = extension_count;
-    instance_info.ppEnabledExtensionNames = extensions;
+    instance_info.enabledLayerCount = u32(req_layers.size());
+    instance_info.ppEnabledLayerNames = req_layers.data();
+    instance_info.enabledExtensionCount = u32(requested_extensions.size());
+    instance_info.ppEnabledExtensionNames = requested_extensions.data();
 
     vk_check(vkCreateInstance(&instance_info, nullptr, &instance));
 
     return instance;
+}
+
+
+static VkDebugUtilsMessengerEXT create_debug_messenger(VkInstance instance, PFN_vkDebugUtilsMessengerCallbackEXT callback) {
+    VkDebugUtilsMessengerEXT messenger{};
+
+    auto CreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+
+    VkDebugUtilsMessengerCreateInfoEXT ci{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+    ci.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+    ci.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+                         //VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+    ci.pfnUserCallback = callback;
+    ci.pUserData       = nullptr;
+
+    vk_check(CreateDebugUtilsMessengerEXT(instance, &ci, nullptr, &messenger));
+
+    return messenger;
+}
+
+static void destroy_debug_messenger(VkInstance instance, VkDebugUtilsMessengerEXT messenger) {
+    auto DestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+
+    DestroyDebugUtilsMessengerEXT(instance, messenger, nullptr);
 }
 
 static VkSurfaceKHR create_surface(VkInstance instance, GLFWwindow* window) {
@@ -264,24 +314,32 @@ static VkDescriptorPool create_descriptor_pool(device_t& device, const std::vect
     return pool;
 }
 
+
+static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
+                               VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
+                               const VkDebugUtilsMessengerCallbackDataEXT*  pCallbackData,
+                               void*                                        pUserData);
+
+
 // Creates the base renderer context. This context is the core of the renderer
 // and handles all creation/destruction of Vulkan resources. This function must
 // be the first renderer function to be called.
 renderer_context_t* create_renderer_context(uint32_t version,
                                             const std::vector<const char*>& requested_layers,
                                             const std::vector<const char*>& requested_extensions,
+                                            const std::vector<const char*>& requested_device_extensions,
                                             const VkPhysicalDeviceFeatures& requested_gpu_features,
                                             const window_t* window) {
     auto context = (renderer_context_t*)malloc(sizeof(renderer_context_t));
 
     context->window = window;
 
-    context->instance  = create_instance(version, window->name,
-                                         requested_layers);
+    context->instance  = create_instance(version, window->name, requested_layers, requested_extensions);
+    // todo: only create debug callback when validation layers are enabled
+    context->messenger = create_debug_messenger(context->instance, debug_callback);
     context->surface   = create_surface(context->instance, window->handle);
     context->device    = create_device(context->instance, context->surface,
-                                       requested_gpu_features,
-                                       requested_extensions);
+                                       requested_gpu_features, requested_device_extensions);
     context->allocator = create_allocator(context->instance, version,
                                           context->device);
     context->submit    = create_submit_context(context->device);
@@ -324,7 +382,21 @@ void destroy_renderer_context(renderer_context_t* rc) {
     vmaDestroyAllocator(rc->allocator);
     vkDestroyDevice(rc->device.device, nullptr);
     vkDestroySurfaceKHR(rc->instance, rc->surface, nullptr);
+    destroy_debug_messenger(rc->instance, rc->messenger);
     vkDestroyInstance(rc->instance, nullptr);
 
     free(rc);
+}
+
+
+
+
+
+static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
+                               VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
+                               const VkDebugUtilsMessengerCallbackDataEXT*  pCallbackData,
+                               void*                                        pUserData) {
+    printf("Debug callback: %s\n", pCallbackData->pMessage);
+
+    return false;
 }
