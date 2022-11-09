@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
     window_t* window = create_window(APPLICATION_NAME, APPLICATION_WIDTH, APPLICATION_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_context_t* renderer = create_renderer(window, buffer_mode::Double, vsync_mode::Enabled);
+    renderer_context_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
 
     sampler = create_sampler(VK_FILTER_NEAREST, 16);

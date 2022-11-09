@@ -46,17 +46,49 @@ static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface) {
     return actualExtent;
 }
 
+static VkPresentModeKHR query_present_mode(const std::vector<VkPresentModeKHR>& present_modes, vsync_mode vsync) {
+    if (vsync == vsync_mode::disabled)
+        return VK_PRESENT_MODE_IMMEDIATE_KHR;
+
+    if (vsync == vsync_mode::enabled)
+        return VK_PRESENT_MODE_FIFO_KHR;
+
+    for (auto& present : present_modes) {
+        if (present == VK_PRESENT_MODE_MAILBOX_KHR)
+            return VK_PRESENT_MODE_MAILBOX_KHR;
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
 
 // Creates a swapchain which is a collection of images that will be used for
 // rendering. When called, you must specify the number of images you would
 // like to be created. It's important to remember that this is a request
 // and not guaranteed as the hardware may not support that number
 // of images.
-static swapchain_t CreateSwapchain() {
+static swapchain_t create_swapchain() {
     swapchain_t swapchain{};
 
+
+
+    // Get various capabilities of the surface including limits, formats and present modes
+    //
     VkSurfaceCapabilitiesKHR surface_properties{};
     vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(g_rc->device.gpu, g_rc->surface, &surface_properties));
+
+    uint32_t format_count = 0;
+    vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(g_rc->device.gpu, g_rc->surface, &format_count, nullptr));
+    std::vector<VkSurfaceFormatKHR> surface_formats(format_count);
+    vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(g_rc->device.gpu, g_rc->surface, &format_count, surface_formats.data()));
+
+    uint32_t present_count = 0;
+    vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(g_rc->device.gpu, g_rc->surface, &present_count, nullptr));
+    std::vector<VkPresentModeKHR> present_modes(present_count);
+    vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(g_rc->device.gpu, g_rc->surface, &present_count, present_modes.data()));
+
+    // Query surface capabilities
+    VkPresentModeKHR present_mode = query_present_mode(present_modes, g_vsync);
 
     VkSwapchainCreateInfoKHR swapchain_info { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
     swapchain_info.surface               = g_rc->surface;
@@ -68,7 +100,7 @@ static swapchain_t CreateSwapchain() {
     swapchain_info.imageUsage            = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_info.preTransform          = surface_properties.currentTransform;
     swapchain_info.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swapchain_info.presentMode           = static_cast<VkPresentModeKHR>(g_vsync);
+    swapchain_info.presentMode           = present_mode;
     swapchain_info.clipped               = true;
 
     // Specify how the swapchain should manage images if we have different rendering 
@@ -142,10 +174,10 @@ static void RebuildSwapchain(swapchain_t& swapchain) {
     vk_check(vkDeviceWaitIdle(g_rc->device.device));
 
     DestroySwapchain(swapchain);
-    swapchain = CreateSwapchain();
+    swapchain = create_swapchain();
 }
 
-static void CreateFrameBarriers() {
+static void create_frame_barriers() {
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
@@ -621,14 +653,14 @@ renderer_context_t* create_renderer(const window_t* window, buffer_mode bufferin
     };
 
 
-    g_rc        = create_renderer_context(VK_API_VERSION_1_0, layers,
+    g_rc        = create_renderer_context(VK_API_VERSION_1_3, layers,
                                           extensions, features, window);
     g_buffering = buffering_mode;
     g_vsync     = sync_mode;
 
-    g_swapchain = CreateSwapchain();
+    g_swapchain = create_swapchain();
 
-    CreateFrameBarriers();
+    create_frame_barriers();
 
     create_command_pool();
     create_command_buffer();

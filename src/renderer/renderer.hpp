@@ -13,15 +13,15 @@
 
 static uint32_t currentImage = 0;
 
-
 enum class buffer_mode {
-    Double = 2,
-    //Triple = 3
+    standard = 2,
+    triple   = 3
 };
 
 enum class vsync_mode {
-    Disabled = VK_PRESENT_MODE_IMMEDIATE_KHR,
-    Enabled  = VK_PRESENT_MODE_FIFO_KHR
+    disabled = 0,
+    enabled  = 1,
+    enabled_mailbox = 2
 };
 
 
