@@ -68,6 +68,7 @@ std::vector<Framebuffer> ui_framebuffers;
 
 
 pipeline_t basicPipeline{};
+pipeline_t gridPipeline{};
 pipeline_t skyspherePipeline{};
 pipeline_t wireframePipeline{};
 
@@ -129,22 +130,27 @@ int main(int argc, char** argv) {
     renderer_context_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
 
-    sampler = create_sampler(VK_FILTER_NEAREST, 16);
 
-    albedo_image = create_image(VK_FORMAT_B8G8R8A8_SRGB, { 1280, 720 }, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    depth_image  = create_image(VK_FORMAT_D32_SFLOAT, { 1280, 720 }, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    ui_pass = create_ui_render_pass();
+    ui_framebuffers = create_ui_framebuffers(ui_pass, { window->width, window->height });
+
+
+
+    sampler = create_sampler(VK_FILTER_LINEAR, 16);
+
+    VkExtent2D size = { window->width, window->height };
+    albedo_image = create_image(VK_FORMAT_B8G8R8A8_SRGB, size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    depth_image  = create_image(VK_FORMAT_D32_SFLOAT, size, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     render_pass  = create_render_pass();
     framebuffers = create_framebuffers(render_pass, albedo_image, depth_image);
 
-    ui_pass = create_ui_render_pass();
-    ui_framebuffers = create_ui_framebuffers(ui_pass, { 1280, 720 });
+
 
 
     // Load shaders text files
-//    std::string offscreenQuadVSCode = load_text_file("src/shaders/quad.vert");
-//    std::string offscreenQuadFSCode = load_text_file("src/shaders/quad.frag");
-
+    std::string gridVSCode = load_text_file("src/shaders/grid.vert");
+    std::string gridFSCode = load_text_file("src/shaders/grid.frag");
     std::string objectVSCode  = load_text_file("src/shaders/object.vert");
     std::string objectFSCode  = load_text_file("src/shaders/object.frag");
     std::string skysphereVSCode = load_text_file("src/shaders/skysphere.vert");
@@ -155,6 +161,8 @@ int main(int argc, char** argv) {
 //    shader quadVS  = create_vertex_shader(offscreenQuadVSCode);
 //    shader quadFS  = create_fragment_shader(offscreenQuadFSCode);
 
+    shader gridVS = create_vertex_shader(gridVSCode);
+    shader gridFS = create_fragment_shader(gridFSCode);
     shader objectVS  = create_vertex_shader(objectVSCode);
     shader objectFS  = create_fragment_shader(objectFSCode);
     shader skysphereVS = create_vertex_shader(skysphereVSCode);
@@ -233,27 +241,32 @@ int main(int argc, char** argv) {
         basicPipeline = create_pipeline(info, render_pass);
     }
     {
+        info.shaders = {objectVS, objectFS };
+        info.wireframe = true;
+        wireframePipeline = create_pipeline(info, render_pass);
+    }
+    {
+        info.shaders = { gridVS, gridFS };
+        info.cull_mode = VK_CULL_MODE_NONE;
+        info.wireframe = false;
+        gridPipeline = create_pipeline(info, render_pass);
+    }
+    {
         info.shaders = { skysphereVS, skysphereFS };
         info.depth_testing = false;
+        info.wireframe = false;
         info.cull_mode = VK_CULL_MODE_FRONT_BIT;
         skyspherePipeline = create_pipeline(info, render_pass);
     }
-    {
-        info.shaders = {objectVS, objectFS };
-        info.wireframe = true;
-        info.depth_testing = true;
-        info.cull_mode = VK_CULL_MODE_BACK_BIT;
-        wireframePipeline = create_pipeline(info, render_pass);
-    }
+
 
     // Delete all individual shaders since they are now part of the various pipelines
-//    destroy_shader(quadFS);
-//    destroy_shader(quadVS);
-
     destroy_shader(skysphereFS);
     destroy_shader(skysphereVS);
     destroy_shader(objectFS);
     destroy_shader(objectVS);
+    destroy_shader(gridFS);
+    destroy_shader(gridVS);
 
 
     ImGuiContext* uiContext = create_user_interface(ui_pass);
@@ -281,7 +294,7 @@ int main(int argc, char** argv) {
                                    g_object_descriptor_layout);
 
 
-    camera = create_camera({0.0f, 5.0f, -10.0f}, 60.0f, 100.0f);
+    camera = create_camera({0.0f, 2.0f, -8.0f}, 60.0f, 2.0f);
 
     engine_scene scene {
         .ambientStrength = 0.05f,
@@ -291,7 +304,6 @@ int main(int argc, char** argv) {
         .lightPosition = glm::vec3(0.0f, 20.0f, 0.0f),
         .lightColor = glm::vec3(1.0f),
     };
-
 
     running = true;
     uptime  = 0.0f;
@@ -329,12 +341,18 @@ int main(int argc, char** argv) {
                 render(cmd_buffer, skybox, skyspherePipeline);
 
 
+                // Render the grid floor
+                bind_pipeline(cmd_buffer, gridPipeline, g_global_descriptor_sets);
+                bind_vertex_array(cmd_buffer, icosphere);
+                render(cmd_buffer, ground, gridPipeline);
+
+
                 // Render the ground where all the models will be on top of
                 bind_pipeline(cmd_buffer, basicPipeline, g_global_descriptor_sets);
-                bind_vertex_array(cmd_buffer, plane);
-                translate(ground, {0.0f, 0.0f, 0.0f});
-                scale(ground, {500.0f, 0.0f, 500.0f});
-                render(cmd_buffer, ground, basicPipeline);
+//                bind_vertex_array(cmd_buffer, plane);
+//                translate(ground, {0.0f, 0.0f, 0.0f});
+//                scale(ground, {500.0f, 0.0f, 500.0f});
+//                render(cmd_buffer, ground, basicPipeline);
 
 
                 // Render the actual model loaded in by the user
@@ -411,7 +429,7 @@ int main(int argc, char** argv) {
                     }
 
                     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-                    ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoTabBar;
+                    ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoTabBar;
                     if (!ImGui::DockBuilderGetNode(dockspace_id)) {
                         ImGui::DockBuilderRemoveNode(dockspace_id);
                         ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
@@ -510,6 +528,7 @@ int main(int argc, char** argv) {
 
     destroy_pipeline(wireframePipeline);
     destroy_pipeline(skyspherePipeline);
+    destroy_pipeline(gridPipeline);
     destroy_pipeline(basicPipeline);
 
 
