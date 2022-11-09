@@ -69,12 +69,13 @@ ImGuiContext* create_user_interface(VkRenderPass renderPass) {
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    //io.IniFilename = nullptr;
+    io.IniFilename = nullptr;
 
-    if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
-        printf("Failed to load required font for ImGui.\n");
-        return nullptr;
-    }
+    //io.Fonts->AddFontDefault();
+//    if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
+//        printf("Failed to load required font for ImGui.\n");
+//        return nullptr;
+//    }
 
     ImGui::StyleColorsDark();
     //custom_style();

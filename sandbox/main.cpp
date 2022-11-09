@@ -22,7 +22,7 @@
 
 
 
-// UI Object limits
+// Limits
 constexpr float translateMin = -20.0f;
 constexpr float translateMax =  20.0f;
 
@@ -281,7 +281,7 @@ int main(int argc, char** argv) {
                                    g_object_descriptor_layout);
 
 
-    camera = create_camera({0.0f, 4.0f, -4.0f}, 60.0f, 100.0f);
+    camera = create_camera({0.0f, 5.0f, -10.0f}, 60.0f, 100.0f);
 
     engine_scene scene {
         .ambientStrength = 0.05f,
@@ -353,24 +353,23 @@ int main(int argc, char** argv) {
                 ImGui_ImplGlfw_NewFrame();
                 ImGui::NewFrame();
                 {
-                    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 
                     // Submit the DockSpace
                     ImGuiIO& io = ImGui::GetIO();
 
-                    static bool opt_open = true;
-                    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+                    static bool opt_open = false;
+
 
                     // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
                     // because it would be confusing to have two docking targets within each others.
-                    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-                    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-                    window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-                    // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-                    // and handle the pass-thru hole, so we ask Begin() to not render a background.
-                    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-                        window_flags |= ImGuiWindowFlags_NoBackground;
+                    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar |
+                                                    ImGuiWindowFlags_NoDocking |
+                                                    ImGuiWindowFlags_NoTitleBar |
+                                                    ImGuiWindowFlags_NoCollapse |
+                                                    ImGuiWindowFlags_NoResize |
+                                                    ImGuiWindowFlags_NoMove |
+                                                    ImGuiWindowFlags_NoNavFocus |
+                                                    ImGuiWindowFlags_NoBringToFrontOnFocus;
 
                     // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
                     // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
@@ -378,18 +377,16 @@ int main(int argc, char** argv) {
                     // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
                     // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
 
-                    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+                    ImGuiViewport* viewport = ImGui::GetMainViewport();
                     ImGui::SetNextWindowPos(viewport->WorkPos);
                     ImGui::SetNextWindowSize(viewport->WorkSize);
                     ImGui::SetNextWindowViewport(viewport->ID);
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                    ImGui::Begin("DockSpace", &opt_open, window_flags);
+                    ImGui::Begin("Editor", &opt_open, window_flags);
                     ImGui::PopStyleVar();
                     ImGui::PopStyleVar(2);
-                    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-
 
                     if (ImGui::BeginMenuBar()) {
                         if (ImGui::BeginMenu("File")) {
@@ -398,71 +395,79 @@ int main(int argc, char** argv) {
                             ImGui::EndMenu();
                         }
 
-                        if (ImGui::BeginMenu("Options")) {
-
-
-                            if (ImGui::MenuItem("Flag: NoSplit",                "", (dockspace_flags & ImGuiDockNodeFlags_NoSplit) != 0))                 { dockspace_flags ^= ImGuiDockNodeFlags_NoSplit; }
-                            if (ImGui::MenuItem("Flag: NoResize",               "", (dockspace_flags & ImGuiDockNodeFlags_NoResize) != 0))                { dockspace_flags ^= ImGuiDockNodeFlags_NoResize; }
-                            if (ImGui::MenuItem("Flag: NoDockingInCentralNode", "", (dockspace_flags & ImGuiDockNodeFlags_NoDockingInCentralNode) != 0))  { dockspace_flags ^= ImGuiDockNodeFlags_NoDockingInCentralNode; }
-                            if (ImGui::MenuItem("Flag: AutoHideTabBar",         "", (dockspace_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0))          { dockspace_flags ^= ImGuiDockNodeFlags_AutoHideTabBar; }
+                        if (ImGui::BeginMenu("Settings")) {
+                            render_settings_menu();
 
                             ImGui::EndMenu();
                         }
 
+                        if (ImGui::BeginMenu("Help")) {
+                            render_help_menu();
+
+                            ImGui::EndMenu();
+                        }
 
                         ImGui::EndMenuBar();
                     }
 
-
-                    if (ImGui::DockBuilderGetNode(dockspace_id) == nullptr) {
-                        ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
+                    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+                    ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoTabBar;
+                    if (!ImGui::DockBuilderGetNode(dockspace_id)) {
+                        ImGui::DockBuilderRemoveNode(dockspace_id);
                         ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
                         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
 
-                        auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
-                        auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, nullptr, &dockspace_id);
-                        auto dock_id_right = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.2f, nullptr, &dockspace_id);
-                        //auto dock_id_viewport = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Up, 1.0f, nullptr, &dockspace_id);
+                        ImGuiID dock_main_id = dockspace_id;
+                        ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.2f, nullptr, &dock_main_id);
+                        ImGuiID dock_left_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
+                        ImGuiID dock_down_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.2f, nullptr, &dock_main_id);
+                        //ImGuiID dock_down_right_id = ImGui::DockBuilderSplitNode(dock_down_id, ImGuiDir_Right, 0.5f, nullptr, &dock_down_id);
 
-                        // we now dock our windows into the docking node we made above
-                        ImGui::DockBuilderDockWindow("Left", dock_id_left);
-                        ImGui::DockBuilderDockWindow("Right", dock_id_right);
-                        ImGui::DockBuilderDockWindow("Down", dock_id_down);
-                        //ImGui::DockBuilderDockWindow("Viewport", dock_id_viewport);
-                        ImGui::DockBuilderFinish(dockspace_id);
+
+                        ImGui::DockBuilderDockWindow("Right", dock_right_id);
+                        ImGui::DockBuilderDockWindow("Left", dock_left_id);
+                        ImGui::DockBuilderDockWindow("Bottom", dock_down_id);
+                        ImGui::DockBuilderDockWindow("Viewport", dock_main_id);
+
+                        ImGui::DockBuilderFinish(dock_main_id);
                     }
-                    ImGui::End();
+                    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
-                    const ImGuiWindowFlags docking_flags = ImGuiWindowFlags_None;
+
+                    const ImGuiWindowFlags docking_flags = ImGuiWindowFlags_NoTitleBar;
                     const ImGuiWindowFlags viewport_flags = ImGuiWindowFlags_None;
                     static bool open = true;
 
-                    ImGui::Begin("Down", &open, docking_flags);
-                    ImGui::Text("Hello, down!");
-                    ImGui::End();
 
-                    ImGui::Begin("Left", &open, docking_flags);
-                    ImGui::Text("Hello, left!");
-                    ImGui::End();
-
-                    ImGui::Begin("Right", &open, docking_flags);
+                    ImGui::Begin("Right");
                     ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
                     ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
                     ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
+
                     ImGui::End();
 
+                    ImGui::Begin("Left");
+                    ImGui::Text("Camera");
+                    ImGui::SliderFloat("Movement speed", &camera.speed, 0.0f, 20.0f);
+                    ImGui::SliderFloat("Roll speed", &camera.speed, 0.0f, 20.0f);
+                    ImGui::SliderFloat("Fov", &camera.fov, 1.0f, 120.0f);
+                    ImGui::SliderFloat("Near", &camera.near, 0.1f, 10.0f);
+                    ImGui::End();
+
+                    ImGui::Begin("Bottom");
+                    ImGui::End();
 
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                    ImGui::Begin("Viewport", &open, viewport_flags);
+                    ImGui::Begin("Viewport");
                     ImGui::PopStyleVar(2);
                     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
                     ImGui::Image(m_Dset[currentImage], ImVec2{viewportPanelSize.x, viewportPanelSize.y});
+                    ImGui::End();
+
 
 
                     ImGui::End();
-
-                    ImGui::ShowDemoWindow();
 
                 }
                 ImGui::EndFrame();
