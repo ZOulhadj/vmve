@@ -58,6 +58,11 @@
 #include <assimp/postprocess.h>
 
 
+#include <cryptopp/dh.h>
+#include <cryptopp/osrng.h>
+#include <cryptopp/integer.h>
+
+
 #if defined(_MSC_VER)
 #define _CRT_SECURE_NO_WARNINGS
 #endif

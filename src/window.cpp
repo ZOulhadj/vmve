@@ -24,7 +24,7 @@ static void window_resize_callback(GLFWwindow* window, int width, int height) {
 
 static void window_framebuffer_resize_callback(GLFWwindow* window, int width, int height) {
     window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
-    ptr->width = width;
+    ptr->width  = width;
     ptr->height = height;
 
     window_resized_event e(width, height);
@@ -105,7 +105,7 @@ window_t* create_window(const char* name, uint32_t width, uint32_t height) {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, true);
 
-    window->handle = glfwCreateWindow((int)width, (int)height, name, nullptr, nullptr);
+    window->handle = glfwCreateWindow(width, height, name, nullptr, nullptr);
     window->name   = name;
     window->width  = width;
     window->height = height;

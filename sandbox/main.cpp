@@ -114,9 +114,9 @@ struct engine_scene {
 static void event_callback(event& e);
 
 
-#define APPLICATION_NAME   "Vulkan 3D Model Viewer and Exporter"
-#define APPLICATION_WIDTH  1280
-#define APPLICATION_HEIGHT 720
+#define APP_NAME   "Vulkan 3D Model Viewer and Exporter"
+#define APP_WIDTH  1280
+#define APP_HEIGHT  720
 
 
 bool running = true;
@@ -124,21 +124,22 @@ float uptime = 0.0f;
 
 
 int main(int argc, char** argv) {
-    window_t* window = create_window(APPLICATION_NAME, APPLICATION_WIDTH, APPLICATION_HEIGHT);
+    window_t* window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
     renderer_context_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
 
 
+    VkExtent2D size = { window->width, window->height };
     ui_pass = create_ui_render_pass();
-    ui_framebuffers = create_ui_framebuffers(ui_pass, { window->width, window->height });
+    ui_framebuffers = create_ui_framebuffers(ui_pass, size);
 
 
 
     sampler = create_sampler(VK_FILTER_LINEAR, 16);
 
-    VkExtent2D size = { window->width, window->height };
+
     albedo_image = create_image(VK_FORMAT_B8G8R8A8_SRGB, size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     depth_image  = create_image(VK_FORMAT_D32_SFLOAT, size, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 

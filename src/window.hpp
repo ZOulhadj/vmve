@@ -1,7 +1,9 @@
 #ifndef MYENGINE_WINDOW_HPP
 #define MYENGINE_WINDOW_HPP
 
+
 #include "events/event.hpp"
+
 
 struct window_t {
     GLFWwindow* handle;
