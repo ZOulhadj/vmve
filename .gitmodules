@@ -10,3 +10,6 @@
 [submodule "vendor/assimp"]
 	path = vendor/assimp
 	url = https://github.com/assimp/assimp
+[submodule "vendor/cryptopp"]
+	path = vendor/cryptopp
+	url = https://github.com/abdes/cryptopp-cmake

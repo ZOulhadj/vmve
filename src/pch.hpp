@@ -52,13 +52,11 @@
 
 #include <stb_image.h>
 
-//#include <tiny_obj_loader.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#undef CreateWindow
 
 #if defined(_MSC_VER)
 #define _CRT_SECURE_NO_WARNINGS

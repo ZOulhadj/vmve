@@ -24,6 +24,7 @@ add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glm)
 add_subdirectory(vendor/vma)
 add_subdirectory(vendor/assimp)
+add_subdirectory(vendor/cryptopp)
 
 include_directories(IMGUI_INCLUDE vendor/imgui/)
 set(IMGUI_SRC
@@ -77,4 +78,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         shaderc_shared
         VulkanMemoryAllocator
         assimp
+        cryptopp
         )
