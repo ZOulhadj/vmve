@@ -324,13 +324,14 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
 // Creates the base renderer context. This context is the core of the renderer
 // and handles all creation/destruction of Vulkan resources. This function must
 // be the first renderer function to be called.
-renderer_context_t* create_renderer_context(uint32_t version,
-                                            const std::vector<const char*>& requested_layers,
-                                            const std::vector<const char*>& requested_extensions,
-                                            const std::vector<const char*>& requested_device_extensions,
-                                            const VkPhysicalDeviceFeatures& requested_gpu_features,
-                                            const window_t* window) {
-    auto context = (renderer_context_t*)malloc(sizeof(renderer_context_t));
+renderer_t* create_renderer_context(uint32_t version,
+                                    const std::vector<const char*>& requested_layers,
+                                    const std::vector<const char*>& requested_extensions,
+                                    const std::vector<const char*>& requested_device_extensions,
+                                    const VkPhysicalDeviceFeatures& requested_gpu_features,
+                                    const window_t* window) {
+
+    auto context = (renderer_t*)malloc(sizeof(renderer_t));
 
     context->window = window;
 
@@ -371,7 +372,7 @@ renderer_context_t* create_renderer_context(uint32_t version,
 }
 
 // Deallocates/frees memory allocated by the renderer context.
-void destroy_renderer_context(renderer_context_t* rc) {
+void destroy_renderer_context(renderer_t* rc) {
     if (!rc)
         return;
 
@@ -398,5 +399,5 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
                                void*                                        pUserData) {
     printf("Debug callback: %s\n", pCallbackData->pMessage);
 
-    return false;
+    return VK_FALSE;
 }

@@ -39,13 +39,15 @@ struct renderer_context_t {
     VkDescriptorPool pool;
 };
 
-renderer_context_t* create_renderer_context(uint32_t version,
-                                            const std::vector<const char*>& requested_layers,
-                                            const std::vector<const char*>& requested_extensions,
-                                            const std::vector<const char*>& requested_device_extensions,
-                                            const VkPhysicalDeviceFeatures& requested_gpu_features,
-                                            const window_t* window);
-void destroy_renderer_context(renderer_context_t* rc);
+using renderer_t = renderer_context_t;
+
+renderer_t* create_renderer_context(uint32_t version,
+                                    const std::vector<const char*>& requested_layers,
+                                    const std::vector<const char*>& requested_extensions,
+                                    const std::vector<const char*>& requested_device_extensions,
+                                    const VkPhysicalDeviceFeatures& requested_gpu_features,
+                                    const window_t* window);
+void destroy_renderer_context(renderer_t* rc);
 
 
 #endif

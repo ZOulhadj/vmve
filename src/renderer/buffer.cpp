@@ -3,7 +3,9 @@
 #include "common.hpp"
 #include "renderer.hpp"
 
-buffer_t create_buffer(uint32_t size, VkBufferUsageFlags type) {
+
+
+ buffer_t create_buffer(uint32_t size, VkBufferUsageFlags type) {
     buffer_t buffer{};
 
 
@@ -24,16 +26,19 @@ buffer_t create_buffer(uint32_t size, VkBufferUsageFlags type) {
                              &buffer.allocation,
                              nullptr));
 
+    buffer.usage = buffer_info.usage;
+    buffer.size  = buffer_info.size;
+
     return buffer;
 }
 
 // Maps/Fills an existing buffer with data.
-void set_buffer_data(buffer_t* buffer, void* data, uint32_t size) {
+void set_buffer_data(buffer_t* buffer, void* data) {
     const renderer_context_t* rc = get_renderer_context();
 
     void* allocation{};
     vk_check(vmaMapMemory(rc->allocator, buffer->allocation, &allocation));
-    std::memcpy(allocation, data, size);
+    std::memcpy(allocation, data, buffer->size);
     vmaUnmapMemory(rc->allocator, buffer->allocation);
 }
 
@@ -62,7 +67,10 @@ buffer_t create_staging_buffer(void* data, uint32_t size) {
                              &buffer.allocation,
                              nullptr));
 
-    set_buffer_data(&buffer, data, size);
+    buffer.usage = buffer_info.usage;
+    buffer.size  = buffer_info.size;
+
+    set_buffer_data(&buffer, data);
 
     return buffer;
 }
@@ -88,6 +96,9 @@ buffer_t create_gpu_buffer(uint32_t size, VkBufferUsageFlags type) {
                              &buffer.buffer,
                              &buffer.allocation,
                              nullptr));
+
+    buffer.usage = buffer_info.usage;
+    buffer.size  = buffer_info.size;
 
     return buffer;
 }
@@ -143,7 +154,7 @@ VkImageView create_image_view(VkImage image, VkFormat format, VkImageUsageFlagBi
     // Select aspect mask based on image format
     VkImageAspectFlags aspect_flags = 0;
     // todo: VK_IMAGE_USAGE_TRANSFER_DST_BIT was only added because of texture creation
-    // todo: This need to be looked at again.
+    // todo: This needs to be looked at again.
     if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT || usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) {
         aspect_flags = VK_IMAGE_ASPECT_COLOR_BIT;
     } else if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {

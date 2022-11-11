@@ -469,6 +469,39 @@ VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout) {
     return descriptor_set;
 }
 
+
+
+
+
+void update_descriptor_sets(const std::vector<buffer_t>& buffers, VkDescriptorSet descriptor_set)
+{
+    std::vector<VkWriteDescriptorSet> writes(buffers.size());
+    std::vector<VkDescriptorBufferInfo> buffer_infos(buffers.size());
+
+    for (std::size_t i = 0; i < writes.size(); ++i)
+    {
+        buffer_infos[i].buffer = buffers[i].buffer;
+        buffer_infos[i].offset = 0;
+        buffer_infos[i].range  = VK_WHOLE_SIZE; // or sizeof(struct)
+
+        // todo: Figure out a better way of converting for buffer usage to descriptor type
+        VkDescriptorType descriptor_type;
+        if (buffers[i].usage == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+            descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+        writes[i].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[i].dstSet          = descriptor_set;
+        writes[i].dstBinding      = i;
+        writes[i].dstArrayElement = 0;
+        writes[i].descriptorType  = descriptor_type;
+        writes[i].descriptorCount = 1;
+        writes[i].pBufferInfo     = &buffer_infos[i];
+    }
+
+    vkUpdateDescriptorSets(g_rc->device.device, writes.size(), writes.data(), 0, nullptr);
+};
+
+
 pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass) {
     pipeline_t pipeline{};
 

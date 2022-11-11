@@ -3,8 +3,10 @@
 
 
 struct buffer_t {
-    VkBuffer      buffer;
-    VmaAllocation allocation;
+    VkBuffer           buffer;
+    VmaAllocation      allocation;
+    VkBufferUsageFlags usage;
+    uint32_t           size;
 };
 
 struct image_buffer_t {
@@ -15,14 +17,24 @@ struct image_buffer_t {
     VkFormat      format;
 };
 
+
+
+
 buffer_t create_buffer(uint32_t size, VkBufferUsageFlags type);
+
+template <typename T>
+buffer_t create_uniform_buffer()
+{
+    return create_buffer(sizeof(T), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+}
+
 buffer_t create_staging_buffer(void* data, uint32_t size);
 buffer_t create_gpu_buffer(uint32_t size, VkBufferUsageFlags type);
 
 void submit_to_gpu(const std::function<void()>& submit_func);
 
 
-void set_buffer_data(buffer_t* buffer, void* data, uint32_t size);
+void set_buffer_data(buffer_t* buffer, void* data);
 void destroy_buffer(buffer_t& buffer);
 
 VkImageView create_image_view(VkImage image, VkFormat format, VkImageUsageFlagBits usage);

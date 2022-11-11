@@ -50,6 +50,12 @@ struct Framebuffer {
 
 
 
+struct descriptor_info
+{
+    VkBuffer         buffer;
+};
+
+
 struct PipelineInfo {
     std::vector<VkDescriptorSetLayout> descriptor_layouts;
     uint32_t push_constant_size;
@@ -80,7 +86,7 @@ void destroy_descriptor_set_layout(VkDescriptorSetLayout layout);
 
 std::vector<VkDescriptorSet> allocate_descriptor_set(VkDescriptorSetLayout layout, uint32_t frames);
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
-
+void update_descriptor_sets(const std::vector<buffer_t>& buffers, VkDescriptorSet descriptor_set);
 
 VkRenderPass create_ui_render_pass();
 std::vector<Framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent);

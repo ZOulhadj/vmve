@@ -81,9 +81,9 @@ static VkDescriptorSetLayout g_global_descriptor_set_layout;
 // also known as resources. Since this is the global descriptor set, this will
 // hold the resources for projection view matrix, scene lighting etc. The reason
 // why this is an array is so that each frame has its own descriptor set.
-static VkDescriptorSet g_global_descriptor_sets;
+static VkDescriptorSet g_descriptor_sets;
 
-static VkDescriptorSetLayout g_object_descriptor_layout;
+static VkDescriptorSetLayout g_layout;
 
 // The resources that will be part of the global descriptor set
 static buffer_t g_camera_buffer;
@@ -131,15 +131,13 @@ int main(int argc, char** argv) {
 
 
 
+
+    // Images, Render pass and Framebuffers
     VkExtent2D size = { window->width, window->height };
     ui_pass = create_ui_render_pass();
     ui_framebuffers = create_ui_framebuffers(ui_pass, size);
 
-
-
     sampler = create_sampler(VK_FILTER_LINEAR, 16);
-
-
     albedo_image = create_image(VK_FORMAT_B8G8R8A8_SRGB, size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     depth_image  = create_image(VK_FORMAT_D32_SFLOAT, size, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
@@ -149,26 +147,8 @@ int main(int argc, char** argv) {
 
 
 
-    // Load shaders text files
-    std::string gridVSCode = load_text_file("src/shaders/grid.vert");
-    std::string gridFSCode = load_text_file("src/shaders/grid.frag");
-    std::string objectVSCode  = load_text_file("src/shaders/object.vert");
-    std::string objectFSCode  = load_text_file("src/shaders/object.frag");
-    std::string skysphereVSCode = load_text_file("src/shaders/skysphere.vert");
-    std::string skysphereFSCode = load_text_file("src/shaders/skysphere.frag");
 
-
-    // Compile text shaders into Vulkan binary shader modules
-//    shader quadVS  = create_vertex_shader(offscreenQuadVSCode);
-//    shader quadFS  = create_fragment_shader(offscreenQuadFSCode);
-
-    shader gridVS = create_vertex_shader(gridVSCode);
-    shader gridFS = create_fragment_shader(gridFSCode);
-    shader objectVS  = create_vertex_shader(objectVSCode);
-    shader objectFS  = create_fragment_shader(objectFSCode);
-    shader skysphereVS = create_vertex_shader(skysphereVSCode);
-    shader skysphereFS = create_fragment_shader(skysphereFSCode);
-
+    // Descriptor sets
     const std::vector<VkDescriptorSetLayoutBinding> global_layout {
             { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
             { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT |
@@ -176,41 +156,13 @@ int main(int argc, char** argv) {
     };
 
     g_global_descriptor_set_layout = create_descriptor_set_layout(global_layout);
-    g_global_descriptor_sets      = allocate_descriptor_set(g_global_descriptor_set_layout);
+    g_descriptor_sets       = allocate_descriptor_set(g_global_descriptor_set_layout);
 
-    // temp here: create the global descriptor resources
-    g_camera_buffer = create_buffer(sizeof(view_projection), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    g_scene_buffer  = create_buffer(sizeof(engine_scene), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    g_camera_buffer = create_uniform_buffer<view_projection>();
+    g_scene_buffer  = create_uniform_buffer<engine_scene>();
 
 
-    VkDescriptorBufferInfo view_proj_ubo{};
-    view_proj_ubo.buffer = g_camera_buffer.buffer;
-    view_proj_ubo.offset = 0;
-    view_proj_ubo.range = VK_WHOLE_SIZE; // or sizeof(struct)
-
-    VkDescriptorBufferInfo scene_ubo_info{};
-    scene_ubo_info.buffer = g_scene_buffer.buffer;
-    scene_ubo_info.offset = 0;
-    scene_ubo_info.range = VK_WHOLE_SIZE; // or sizeof(struct)
-
-    std::array<VkWriteDescriptorSet, 2> descriptor_writes{};
-    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_writes[0].dstSet = g_global_descriptor_sets;
-    descriptor_writes[0].dstBinding = 0;
-    descriptor_writes[0].dstArrayElement = 0;
-    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_writes[0].descriptorCount = 1;
-    descriptor_writes[0].pBufferInfo = &view_proj_ubo;
-
-    descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_writes[1].dstSet = g_global_descriptor_sets;
-    descriptor_writes[1].dstBinding = 1;
-    descriptor_writes[1].dstArrayElement = 0;
-    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_writes[1].descriptorCount = 1;
-    descriptor_writes[1].pBufferInfo = &scene_ubo_info;
-
-    vkUpdateDescriptorSets(renderer->device.device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
+    update_descriptor_sets({ g_camera_buffer, g_scene_buffer }, g_descriptor_sets);
 
 
     // Per object material descriptor set
@@ -218,8 +170,34 @@ int main(int argc, char** argv) {
         { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
     };
 
-    g_object_descriptor_layout = create_descriptor_set_layout(per_object_layout);
+    g_layout = create_descriptor_set_layout(per_object_layout);
 
+
+
+
+
+
+
+    // Shaders and Pipeline
+
+
+
+
+    // Load shaders text files
+    std::string gridVSCode      = load_text_file("src/shaders/grid.vert");
+    std::string gridFSCode      = load_text_file("src/shaders/grid.frag");
+    std::string objectVSCode    = load_text_file("src/shaders/object.vert");
+    std::string objectFSCode    = load_text_file("src/shaders/object.frag");
+    std::string skysphereVSCode = load_text_file("src/shaders/skysphere.vert");
+    std::string skysphereFSCode = load_text_file("src/shaders/skysphere.frag");
+
+    // Compile text shaders into Vulkan binary shader modules
+    shader gridVS      = create_vertex_shader(gridVSCode);
+    shader gridFS      = create_fragment_shader(gridFSCode);
+    shader objectVS    = create_vertex_shader(objectVSCode);
+    shader objectFS    = create_fragment_shader(objectFSCode);
+    shader skysphereVS = create_vertex_shader(skysphereVSCode);
+    shader skysphereFS = create_fragment_shader(skysphereFSCode);
 
     const std::vector<VkFormat> binding_format{
             VK_FORMAT_R32G32B32_SFLOAT, // Position
@@ -229,7 +207,7 @@ int main(int argc, char** argv) {
     };
 
     PipelineInfo info{};
-    info.descriptor_layouts = {g_global_descriptor_set_layout, g_object_descriptor_layout };
+    info.descriptor_layouts = {g_global_descriptor_set_layout, g_layout };
     info.push_constant_size = sizeof(glm::mat4);
     info.binding_layout_size = sizeof(vertex_t);
     info.binding_format = binding_format;
@@ -277,33 +255,42 @@ int main(int argc, char** argv) {
 
 
     // Built-in resources
-    vertex_array_t plane     = load_model("assets/plane.obj");
+    std::vector<vertex_t> quad_vertices {
+        {{  1.0, 0.0, -1.0 }, { 0.0f, 1.0f, 0.0f } },
+        {{ -1.0, 0.0, -1.0 }, { 0.0f, 1.0f, 0.0f } },
+        {{  1.0, 0.0,  1.0 }, { 0.0f, 1.0f, 0.0f } },
+        {{ -1.0, 0.0,  1.0 }, { 0.0f, 1.0f, 0.0f } }
+    };
+    std::vector<uint32_t> quad_indices {
+        0, 1, 2,
+        3, 2, 1
+    };
+
+    vertex_array_t quad = create_vertex_array(quad_vertices.data(), quad_vertices.size() * sizeof(vertex_t),
+                                              quad_indices.data(), quad_indices.size() * sizeof(uint32_t));
     vertex_array_t icosphere = load_model("assets/icosphere.obj");
     TextureBuffer groundTexture = load_texture("assets/textures/plane.jpg",
                                                VK_FORMAT_B8G8R8A8_SRGB);
     TextureBuffer skysphere = load_texture("assets/textures/skysphere.jpg",
                                            VK_FORMAT_B8G8R8A8_SRGB);
-    instance_t skybox = create_entity(icosphere, skysphere,
-                                      g_object_descriptor_layout);
-    instance_t ground = create_entity(plane, groundTexture,
-                                      g_object_descriptor_layout);
+    instance_t skybox = create_entity(icosphere, skysphere, g_layout);
+    instance_t ground = create_entity(quad, groundTexture, g_layout);
 
 
     // User loaded resources
     vertex_array_t model = load_model("assets/model.obj");
-    instance_t car = create_entity(model, skysphere,
-                                   g_object_descriptor_layout);
+    instance_t model_instance = create_entity(model, skysphere, g_layout);
 
 
     camera = create_camera({0.0f, 2.0f, -8.0f}, 60.0f, 2.0f);
 
     engine_scene scene {
-        .ambientStrength = 0.05f,
-        .specularStrength = 0.15f,
+        .ambientStrength   = 0.05f,
+        .specularStrength  = 0.15f,
         .specularShininess = 128.0f,
-        .cameraPosition = camera.position,
-        .lightPosition = glm::vec3(0.0f, 20.0f, 0.0f),
-        .lightColor = glm::vec3(1.0f),
+        .cameraPosition    = camera.position,
+        .lightPosition     = glm::vec3(0.0f, 20.0f, 0.0f),
+        .lightColor        = glm::vec3(1.0f),
     };
 
     running = true;
@@ -315,7 +302,6 @@ int main(int argc, char** argv) {
     glm::vec3 objectScale = glm::vec3(1.0f);
 
     while (running) {
-
         float deltaTime = get_delta_time();
 
         uptime += deltaTime;
@@ -330,38 +316,29 @@ int main(int argc, char** argv) {
 
         // copy data into uniform buffer
         //uint32_t frame = get_current_frame();
-        set_buffer_data(&g_camera_buffer, &camera.viewProj, sizeof(view_projection));
-        set_buffer_data(&g_scene_buffer, &scene, sizeof(engine_scene));
+        set_buffer_data(&g_camera_buffer, &camera.viewProj);
+        set_buffer_data(&g_scene_buffer, &scene);
 
         if (begin_frame()) {
             VkCommandBuffer cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
             {
                 // Render the background skysphere
-                bind_pipeline(cmd_buffer, skyspherePipeline, g_global_descriptor_sets);
+                bind_pipeline(cmd_buffer, skyspherePipeline, g_descriptor_sets);
                 bind_vertex_array(cmd_buffer, icosphere);
                 render(cmd_buffer, skybox, skyspherePipeline);
 
-
                 // Render the grid floor
-                bind_pipeline(cmd_buffer, gridPipeline, g_global_descriptor_sets);
-                bind_vertex_array(cmd_buffer, icosphere);
+                bind_pipeline(cmd_buffer, gridPipeline, g_descriptor_sets);
+                bind_vertex_array(cmd_buffer, quad);
                 render(cmd_buffer, ground, gridPipeline);
 
-
-                // Render the ground where all the models will be on top of
-                bind_pipeline(cmd_buffer, basicPipeline, g_global_descriptor_sets);
-//                bind_vertex_array(cmd_buffer, plane);
-//                translate(ground, {0.0f, 0.0f, 0.0f});
-//                scale(ground, {500.0f, 0.0f, 500.0f});
-//                render(cmd_buffer, ground, basicPipeline);
-
-
                 // Render the actual model loaded in by the user
+                bind_pipeline(cmd_buffer, basicPipeline, g_descriptor_sets);
                 bind_vertex_array(cmd_buffer, model);
-                translate(car, objectTranslation);
-                rotate(car, objectRotation);
-                scale(car, objectScale);
-                render(cmd_buffer, car, basicPipeline);
+                translate(model_instance, objectTranslation);
+                rotate(model_instance, objectRotation);
+                scale(model_instance, objectScale);
+                render(cmd_buffer, model_instance, basicPipeline);
             }
             end_render_pass(cmd_buffer);
 
@@ -517,14 +494,14 @@ int main(int argc, char** argv) {
     destroy_texture_buffer(skysphere);
     destroy_texture_buffer(groundTexture);
     destroy_vertex_array(icosphere);
-    destroy_vertex_array(plane);
+    destroy_vertex_array(quad);
 
 
     // Destroy rendering resources
     destroy_buffer(g_scene_buffer);
     destroy_buffer(g_camera_buffer);
 
-    destroy_descriptor_set_layout(g_object_descriptor_layout);
+    destroy_descriptor_set_layout(g_layout);
     destroy_descriptor_set_layout(g_global_descriptor_set_layout);
 
     destroy_pipeline(wireframePipeline);
@@ -601,7 +578,7 @@ static bool resize(window_resized_event& e) {
     return true;
 }
 
-static bool close(window_closed_event& ) {
+static bool close_window(window_closed_event& e) {
     running = false;
 
     return true;
@@ -615,5 +592,5 @@ static void event_callback(event& e) {
     dispatcher.dispatch<mouse_button_released_event>(mouse_button_release);
     dispatcher.dispatch<mouse_moved_event>(mouse_moved);
     dispatcher.dispatch<window_resized_event>(resize);
-    dispatcher.dispatch<window_closed_event>(close);
+    dispatcher.dispatch<window_closed_event>(close_window);
 }
