@@ -60,7 +60,7 @@ add_executable(${PROJECT_NAME}
         "src/renderer/vertex_array.cpp"
         "src/renderer/buffer.cpp"
         "src/renderer/shader.cpp"
-        "src/renderer/renderer_context.cpp"
+        "src/renderer/context.cpp"
 
         # precompiled header
         # note: this is required to compile header only files such as STB, VMA

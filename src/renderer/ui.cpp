@@ -1,7 +1,7 @@
 #include "ui.hpp"
 
 #include "common.hpp"
-#include "renderer.hpp"
+
 
 //static void custom_style() {
 //    ImGuiStyle& style = ImGui::GetStyle();
@@ -59,10 +59,9 @@
 //}
 
 
-ImGuiContext* create_user_interface(VkRenderPass renderPass) {
-    ImGuiContext* context = nullptr;
-
-    const renderer_context_t* rc = get_renderer_context();
+ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass renderPass)
+{
+    ImGuiContext* context{};
 
     IMGUI_CHECKVERSION();
     context = ImGui::CreateContext();
@@ -80,17 +79,17 @@ ImGuiContext* create_user_interface(VkRenderPass renderPass) {
     ImGui::StyleColorsDark();
     //custom_style();
 
-    if (!ImGui_ImplGlfw_InitForVulkan(rc->window->handle, true))
+    if (!ImGui_ImplGlfw_InitForVulkan(renderer->ctx.window->handle, true))
         return nullptr;
 
     ImGui_ImplVulkan_InitInfo init_info{};
-    init_info.Instance        = rc->instance;
-    init_info.PhysicalDevice  = rc->device.gpu;
-    init_info.Device          = rc->device.device;
-    init_info.QueueFamily     = rc->device.graphics_index;
-    init_info.Queue           = rc->device.graphics_queue;
+    init_info.Instance        = renderer->ctx.instance;
+    init_info.PhysicalDevice  = renderer->ctx.device.gpu;
+    init_info.Device          = renderer->ctx.device.device;
+    init_info.QueueFamily     = renderer->ctx.device.graphics_index;
+    init_info.Queue           = renderer->ctx.device.graphics_queue;
     init_info.PipelineCache   = nullptr;
-    init_info.DescriptorPool  = rc->pool;
+    init_info.DescriptorPool  = renderer->descriptor_pool;
     init_info.Subpass         = 0;
     init_info.MinImageCount   = 2;
     init_info.ImageCount      = 2;
@@ -103,14 +102,15 @@ ImGuiContext* create_user_interface(VkRenderPass renderPass) {
 
 
     // Submit ImGui fonts to the GPU in order to be used during rendering.
-    submit_to_gpu([&] { ImGui_ImplVulkan_CreateFontsTexture(rc->submit.CmdBuffer); });
+    submit_to_gpu([&] { ImGui_ImplVulkan_CreateFontsTexture(renderer->submit.CmdBuffer); });
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 
     return context;
 }
 
-void destroy_user_interface(ImGuiContext* context) {
+void destroy_user_interface(ImGuiContext* context)
+{
     if (!context)
         return;
 
@@ -120,6 +120,7 @@ void destroy_user_interface(ImGuiContext* context) {
     ImGui::DestroyContext(context);
 }
 
-void render_ui() {
+void render_ui()
+{
     ImGui::Render();
 }

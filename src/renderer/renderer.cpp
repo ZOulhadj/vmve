@@ -2,6 +2,8 @@
 
 #include "common.hpp"
 
+
+static renderer_t* g_r = nullptr;
 static renderer_context_t* g_rc  = nullptr;
 
 static buffer_mode g_buffering{};
@@ -9,7 +11,7 @@ static vsync_mode g_vsync{};
 
 static swapchain_t g_swapchain{};
 
-//static std::vector<Frame> g_frames;
+//VkDescriptorPool g_pool;
 VkCommandPool cmd_pool;
 
 VkCommandBuffer viewport_cmd_buffer;
@@ -18,6 +20,7 @@ VkCommandBuffer ui_cmd_buffer;
 
 
 static Frame g_frame;
+//static std::vector<Frame> g_frames;
 
 // The frame and image index variables are NOT the same thing.
 // The currentFrame always goes 0..1..2 -> 0..1..2. The currentImage
@@ -26,7 +29,12 @@ static Frame g_frame;
 // frame and image index often are the same but is not guaranteed.
 //static uint32_t current_frame = 0;
 
-static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface) {
+
+
+
+
+static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface)
+{
     if (surface.currentExtent.width != std::numeric_limits<uint32_t>::max())
         return surface.currentExtent;
 
@@ -46,7 +54,8 @@ static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface) {
     return actualExtent;
 }
 
-static VkPresentModeKHR query_present_mode(const std::vector<VkPresentModeKHR>& present_modes, vsync_mode vsync) {
+static VkPresentModeKHR query_present_mode(const std::vector<VkPresentModeKHR>& present_modes, vsync_mode vsync)
+{
     if (vsync == vsync_mode::disabled)
         return VK_PRESENT_MODE_IMMEDIATE_KHR;
 
@@ -67,9 +76,9 @@ static VkPresentModeKHR query_present_mode(const std::vector<VkPresentModeKHR>& 
 // like to be created. It's important to remember that this is a request
 // and not guaranteed as the hardware may not support that number
 // of images.
-static swapchain_t create_swapchain() {
+static swapchain_t create_swapchain()
+{
     swapchain_t swapchain{};
-
 
 
     // Get various capabilities of the surface including limits, formats and present modes
@@ -106,7 +115,7 @@ static swapchain_t create_swapchain() {
     // Specify how the swapchain should manage images if we have different rendering 
     // and presentation queues for our gpu.
     if (g_rc->device.graphics_index != g_rc->device.present_index) {
-        const uint32_t indices[2] { g_rc->device.graphics_index, g_rc->device.present_index };
+        const uint32_t indices[2] {g_rc->device.graphics_index, g_rc->device.present_index };
         
         swapchain_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         swapchain_info.queueFamilyIndexCount = 2;
@@ -152,7 +161,8 @@ static swapchain_t create_swapchain() {
     return swapchain;
 }
 
-static void DestroySwapchain(swapchain_t& swapchain) {
+static void DestroySwapchain(swapchain_t& swapchain)
+{
     for (auto& image : swapchain.images)
         vkDestroyImageView(g_rc->device.device, image.view, nullptr);
 
@@ -161,7 +171,8 @@ static void DestroySwapchain(swapchain_t& swapchain) {
     vkDestroySwapchainKHR(g_rc->device.device, swapchain.handle, nullptr);
 }
 
-static void RebuildSwapchain(swapchain_t& swapchain) {
+static void RebuildSwapchain(swapchain_t& swapchain)
+{
     // Check if the window is minimized and if so then wait here.
     int width = 0, height = 0;
     glfwGetFramebufferSize(g_rc->window->handle, &width, &height);
@@ -177,7 +188,48 @@ static void RebuildSwapchain(swapchain_t& swapchain) {
     swapchain = create_swapchain();
 }
 
-static void create_frame_barriers() {
+
+
+
+static VkDescriptorPool create_descriptor_pool()
+{
+    VkDescriptorPool pool{};
+
+    // todo: temp
+    const std::vector<VkDescriptorPoolSize> pool_sizes {
+            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+    };
+
+
+
+
+
+    VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.poolSizeCount = u32(pool_sizes.size());
+    pool_info.pPoolSizes    = pool_sizes.data();
+    pool_info.maxSets       = pool_info.poolSizeCount * 1000;
+
+    vk_check(vkCreateDescriptorPool(g_rc->device.device, &pool_info, nullptr, &pool));
+
+    return pool;
+}
+
+
+
+
+static void create_frame_barriers()
+{
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
@@ -189,14 +241,16 @@ static void create_frame_barriers() {
     vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &g_frame.released_semaphore));
 }
 
-static void DestroyFrameBarriers() {
+static void DestroyFrameBarriers()
+{
     vkDestroySemaphore(g_rc->device.device, g_frame.released_semaphore, nullptr);
     vkDestroySemaphore(g_rc->device.device, g_frame.acquired_semaphore, nullptr);
     vkDestroyFence(g_rc->device.device, g_frame.submit_fence, nullptr);
 }
 
 
-static void create_command_pool() {
+static void create_command_pool()
+{
     VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
     pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     pool_info.queueFamilyIndex = g_rc->device.graphics_index;
@@ -204,17 +258,19 @@ static void create_command_pool() {
     vk_check(vkCreateCommandPool(g_rc->device.device, &pool_info, nullptr, &cmd_pool));
 }
 
-static void create_command_buffer() {
+static void create_command_buffer()
+{
     VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
     allocate_info.commandPool        = cmd_pool;
     allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocate_info.commandBufferCount = 1;
 
-    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info,  &viewport_cmd_buffer));
-    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info,  &ui_cmd_buffer));
+    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &viewport_cmd_buffer));
+    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &ui_cmd_buffer));
 }
 
-static void destroy_command_pool() {
+static void destroy_command_pool()
+{
     vkFreeCommandBuffers(g_rc->device.device, cmd_pool, 1, &ui_cmd_buffer);
     vkFreeCommandBuffers(g_rc->device.device, cmd_pool, 1, &viewport_cmd_buffer);
 
@@ -222,17 +278,21 @@ static void destroy_command_pool() {
 }
 
 
-void destroy_render_pass(VkRenderPass render_pass) {
+void destroy_render_pass(VkRenderPass render_pass)
+{
     vkDestroyRenderPass(g_rc->device.device, render_pass, nullptr);
 }
-void destroy_framebuffers(std::vector<Framebuffer>& framebuffers) {
+
+void destroy_framebuffers(std::vector<Framebuffer>& framebuffers)
+{
     for (auto& framebuffer : framebuffers) {
         vkDestroyFramebuffer(g_rc->device.device, framebuffer.handle, nullptr);
     }
     framebuffers.clear();
 }
 
-VkRenderPass create_ui_render_pass() {
+VkRenderPass create_ui_render_pass()
+{
     VkRenderPass render_pass{};
 
     std::vector<VkAttachmentDescription> attachments(1);
@@ -280,7 +340,8 @@ VkRenderPass create_ui_render_pass() {
     return render_pass;
 }
 
-std::vector<Framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent) {
+std::vector<Framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent)
+{
     std::vector<Framebuffer> framebuffers(g_swapchain.images.size());
 
     // Create framebuffers with attachments.
@@ -305,7 +366,8 @@ std::vector<Framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExte
 
 
 
-VkRenderPass create_render_pass() {
+VkRenderPass create_render_pass()
+{
     VkRenderPass render_pass{};
 
     std::vector<VkAttachmentDescription> attachments(2);
@@ -383,7 +445,8 @@ VkRenderPass create_render_pass() {
 
 std::vector<Framebuffer> create_framebuffers(VkRenderPass render_pass,
                                              image_buffer_t& images,
-                                             image_buffer_t& depth) {
+                                             image_buffer_t& depth)
+{
     std::vector<Framebuffer> framebuffers(g_swapchain.images.size());
 
 
@@ -407,29 +470,38 @@ std::vector<Framebuffer> create_framebuffers(VkRenderPass render_pass,
 }
 
 void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, image_buffer_t& images,
-                                         image_buffer_t& depth) {
+                                         image_buffer_t& depth)
+{
     vkDeviceWaitIdle(g_rc->device.device);
     destroy_framebuffers(framebuffers);
     framebuffers = create_framebuffers(render_pass, images, depth);
 }
 
-void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, VkExtent2D extent) {
+void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, VkExtent2D extent)
+{
     vkDeviceWaitIdle(g_rc->device.device);
     destroy_framebuffers(framebuffers);
     framebuffers = create_ui_framebuffers(render_pass, extent);
 }
 
 
-VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<VkDescriptorSetLayoutBinding>& bindings) {
+VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings)
+{
     VkDescriptorSetLayout layout{};
+    std::vector<VkDescriptorSetLayoutBinding> layout_bindings(bindings.size());
 
-    VkDescriptorSetLayoutCreateInfo descriptor_layout_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-    descriptor_layout_info.bindingCount = u32(bindings.size());
-    descriptor_layout_info.pBindings    = bindings.data();
+    for (std::size_t i = 0; i < layout_bindings.size(); ++i) {
+        layout_bindings[i].binding = i;
+        layout_bindings[i].descriptorType = bindings[i].type;
+        layout_bindings[i].descriptorCount = 1;
+        layout_bindings[i].stageFlags = bindings[i].stages;
+    }
 
-    vk_check(vkCreateDescriptorSetLayout(g_rc->device.device,
-                                         &descriptor_layout_info, nullptr,
-                                         &layout));
+    VkDescriptorSetLayoutCreateInfo info{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+    info.bindingCount = u32(layout_bindings.size());
+    info.pBindings    = layout_bindings.data();
+
+    vk_check(vkCreateDescriptorSetLayout(g_rc->device.device, &info, nullptr, &layout));
 
     return layout;
 }
@@ -438,12 +510,13 @@ void destroy_descriptor_set_layout(VkDescriptorSetLayout layout) {
     vkDestroyDescriptorSetLayout(g_rc->device.device, layout, nullptr);
 }
 
-std::vector<VkDescriptorSet> allocate_descriptor_set(VkDescriptorSetLayout layout, uint32_t frames) {
+std::vector<VkDescriptorSet> allocate_descriptor_set(VkDescriptorSetLayout layout, uint32_t frames)
+{
     std::vector<VkDescriptorSet> descriptor_sets(frames);
 
     for (auto& descriptor_set : descriptor_sets) {
         VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        allocate_info.descriptorPool = g_rc->pool;
+        allocate_info.descriptorPool = g_r->descriptor_pool;
         allocate_info.descriptorSetCount = 1;
         allocate_info.pSetLayouts = &layout;
 
@@ -455,11 +528,12 @@ std::vector<VkDescriptorSet> allocate_descriptor_set(VkDescriptorSetLayout layou
     return descriptor_sets;
 }
 
-VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout) {
+VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout)
+{
     VkDescriptorSet descriptor_set{};
 
     VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-    allocate_info.descriptorPool = g_rc->pool;
+    allocate_info.descriptorPool = g_r->descriptor_pool;
     allocate_info.descriptorSetCount = 1;
     allocate_info.pSetLayouts = &layout;
 
@@ -485,9 +559,11 @@ void update_descriptor_sets(const std::vector<buffer_t>& buffers, VkDescriptorSe
         buffer_infos[i].range  = VK_WHOLE_SIZE; // or sizeof(struct)
 
         // todo: Figure out a better way of converting for buffer usage to descriptor type
-        VkDescriptorType descriptor_type;
+        VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
         if (buffers[i].usage == VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
             descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+        assert(descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
 
         writes[i].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writes[i].dstSet          = descriptor_set;
@@ -502,7 +578,8 @@ void update_descriptor_sets(const std::vector<buffer_t>& buffers, VkDescriptorSe
 };
 
 
-pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass) {
+pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass)
+{
     pipeline_t pipeline{};
 
     // push constant
@@ -661,13 +738,89 @@ pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass)
 }
 
 
-void destroy_pipeline(pipeline_t& pipeline) {
+void destroy_pipeline(pipeline_t& pipeline)
+{
     vkDestroyPipeline(g_rc->device.device, pipeline.handle, nullptr);
     vkDestroyPipelineLayout(g_rc->device.device, pipeline.layout, nullptr);
 }
 
 
-renderer_context_t* create_renderer(const window_t* window, buffer_mode buffering_mode, vsync_mode sync_mode) {
+
+static upload_context create_submit_context()
+{
+    upload_context context{};
+
+    VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+
+    VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+    pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    pool_info.queueFamilyIndex = g_rc->device.graphics_index;
+
+    // Create the resources required to upload data to GPU-only memory.
+    vk_check(vkCreateFence(g_rc->device.device, &fence_info, nullptr, &context.Fence));
+    vk_check(vkCreateCommandPool(g_rc->device.device, &pool_info, nullptr, &context.CmdPool));
+
+    VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+    allocate_info.commandPool        = context.CmdPool;
+    allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocate_info.commandBufferCount = 1;
+
+    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &context.CmdBuffer));
+
+    return context;
+}
+
+static void destroy_submit_context(upload_context& context)
+{
+    vkFreeCommandBuffers(g_rc->device.device, context.CmdPool, 1, &context.CmdBuffer);
+    vkDestroyCommandPool(g_rc->device.device, context.CmdPool, nullptr);
+    vkDestroyFence(g_rc->device.device, context.Fence, nullptr);
+}
+
+
+
+static VkDebugUtilsMessengerEXT create_debug_messenger(PFN_vkDebugUtilsMessengerCallbackEXT callback)
+{
+    VkDebugUtilsMessengerEXT messenger{};
+
+    auto CreateDebugUtilsMessenger = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(g_rc->instance,
+                                                                                               "vkCreateDebugUtilsMessengerEXT");
+
+    VkDebugUtilsMessengerCreateInfoEXT ci{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+    ci.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+    ci.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    //VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+    ci.pfnUserCallback = callback;
+    ci.pUserData       = nullptr;
+
+    vk_check(CreateDebugUtilsMessenger(g_rc->instance, &ci, nullptr, &messenger));
+
+    return messenger;
+}
+
+static void destroy_debug_messenger(VkDebugUtilsMessengerEXT messenger)
+{
+    auto DestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(g_rc->instance,
+                                                                                                    "vkDestroyDebugUtilsMessengerEXT");
+
+    DestroyDebugUtilsMessengerEXT(g_rc->instance, messenger, nullptr);
+}
+
+static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
+                               VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
+                               const VkDebugUtilsMessengerCallbackDataEXT*  pCallbackData,
+                               void*                                        pUserData);
+
+
+
+renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, vsync_mode sync_mode)
+{
+    renderer_t* renderer = (renderer_t*)malloc(sizeof(renderer_t));
+
     const std::vector<const char*> layers {
         "VK_LAYER_KHRONOS_validation",
 #if defined(_WIN32)
@@ -676,13 +829,8 @@ renderer_context_t* create_renderer(const window_t* window, buffer_mode bufferin
     };
 
     // todo: VK_EXT_DEBUG_UTILS_EXTENSION_NAME should only be present if using validation layers
-    const std::vector<const char*> extensions {
-        VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-    };
-
-    const std::vector<const char*> device_extensions {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
+    const std::vector<const char*> extensions { VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
+    const std::vector<const char*> device_extensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 
     const VkPhysicalDeviceFeatures features {
@@ -690,42 +838,71 @@ renderer_context_t* create_renderer(const window_t* window, buffer_mode bufferin
         .samplerAnisotropy = true,
     };
 
+    renderer->ctx    = create_renderer_context(VK_API_VERSION_1_3,
+                                               layers,
+                                               extensions,
+                                               device_extensions,
+                                               features, window);
+    g_rc = &renderer->ctx;
 
-    g_rc        = create_renderer_context(VK_API_VERSION_1_3, layers, extensions, device_extensions, features, window);
+
+    // Beyond this point, all subsystems of the renderer now makes use of the
+    // renderer context internally to avoid needing to pass the context to
+    // every function.
+
+    // todo: only create debug callback when validation layers are enabled
+    renderer->messenger = create_debug_messenger(debug_callback);
+    renderer->submit    = create_submit_context();
+    renderer->compiler  = create_shader_compiler();
+
     g_buffering = buffering_mode;
     g_vsync     = sync_mode;
-
     g_swapchain = create_swapchain();
+
+    renderer->descriptor_pool = create_descriptor_pool();
 
     create_frame_barriers();
 
     create_command_pool();
     create_command_buffer();
 
-    return g_rc;
+    g_r = renderer;
+
+    return renderer;
 }
 
-void destroy_renderer(renderer_context_t* context) {
+void destroy_renderer(renderer_t* renderer)
+{
     destroy_command_pool();
+
+
+    vkDestroyDescriptorPool(renderer->ctx.device.device, renderer->descriptor_pool, nullptr);
+    destroy_shader_compiler(renderer->compiler);
+    destroy_submit_context(renderer->submit);
+    destroy_debug_messenger(renderer->messenger);
 
     DestroyFrameBarriers();
     DestroySwapchain(g_swapchain);
 
-    destroy_renderer_context(g_rc);
+    destroy_renderer_context(&renderer->ctx);
 }
 
-renderer_context_t* get_renderer_context() {
-    return g_rc;
+renderer_t* get_renderer()
+{
+    return g_r;
 }
 
-//uint32_t get_current_frame() {
-//    return current_frame;
-//}
+renderer_context_t& get_renderer_context()
+{
+    return *g_rc;
+}
 
-bool begin_frame() {
+
+bool begin_rendering()
+{
     // Wait for the GPU to finish all work before getting the next image
     vk_check(vkWaitForFences(g_rc->device.device, 1, &g_frame.submit_fence, VK_TRUE, UINT64_MAX));
-    //vk_check(vkResetFences(g_rc->device.device, 1, &g_frame.submit_fence));
+    //vk_check(vkResetFences(g_r->ctxc->device.device, 1, &g_frame.submit_fence));
 
     // Keep attempting to acquire the next frame.
     VkResult result = vkAcquireNextImageKHR(g_rc->device.device,
@@ -749,8 +926,8 @@ bool begin_frame() {
     return true;
 }
 
-void end_frame() {
-
+void end_rendering()
+{
     VkCommandBuffer cmd_buffers[2] = { viewport_cmd_buffer, ui_cmd_buffer };
 
     const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -791,7 +968,8 @@ void end_frame() {
     //current_frame = (current_frame + 1) % frames_in_flight;
 }
 
-VkCommandBuffer begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers) {
+VkCommandBuffer begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers)
+{
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -837,7 +1015,8 @@ VkCommandBuffer begin_viewport_render_pass(VkRenderPass render_pass, const std::
 }
 
 
-VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers) {
+VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers)
+{
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -880,13 +1059,15 @@ VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector
     return ui_cmd_buffer;
 }
 
-void end_render_pass(VkCommandBuffer buffer) {
+void end_render_pass(VkCommandBuffer buffer)
+{
     vkCmdEndRenderPass(buffer);
 
     vk_check(vkEndCommandBuffer(buffer));
 }
 
-void bind_pipeline(VkCommandBuffer cmd_buffer, pipeline_t& pipeline, VkDescriptorSet descriptorSets) {
+void bind_pipeline(VkCommandBuffer cmd_buffer, pipeline_t& pipeline, VkDescriptorSet descriptorSets)
+{
     vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets, 0, nullptr);
 }
@@ -895,4 +1076,19 @@ void render(VkCommandBuffer cmd_buffer, instance_t& instance, pipeline_t& pipeli
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &instance.descriptorSet, 0, nullptr);
     vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
     vkCmdDrawIndexed(cmd_buffer, instance.model->index_count, 1, 0, 0, 0);
+}
+
+
+
+
+
+
+static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
+                               VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
+                               const VkDebugUtilsMessengerCallbackDataEXT*  pCallbackData,
+                               void*                                        pUserData)
+{
+    printf("Debug callback: %s\n", pCallbackData->pMessage);
+
+    return VK_FALSE;
 }

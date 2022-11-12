@@ -6,17 +6,18 @@
 #include "renderer/texture.hpp"
 
 
-struct instance_t {
+struct instance_t
+{
     glm::mat4 matrix;
 
     const vertex_array_t* model;
-    const TextureBuffer* texture;
+    const texture_buffer_t* texture;
 
     VkDescriptorSet descriptorSet;
 };
 
 
-instance_t create_entity(vertex_array_t& model, TextureBuffer& texture, VkDescriptorSetLayout layout);
+instance_t create_entity(vertex_array_t& model, texture_buffer_t& texture, VkDescriptorSetLayout layout);
 
 void translate(instance_t& e, const glm::vec3& position);
 void rotate(instance_t& e, float deg, const glm::vec3& axis);

@@ -1,11 +1,12 @@
-#include "renderer_context.hpp"
+#include "context.hpp"
 
 #include "common.hpp"
 
 static VkInstance create_instance(uint32_t version,
                                   const char* app_name,
                                   const std::vector<const char*>& req_layers,
-                                  const std::vector<const char*>& req_extensions) {
+                                  const std::vector<const char*>& req_extensions)
+{
     VkInstance instance{};
 
     // create vulkan instance
@@ -63,34 +64,8 @@ static VkInstance create_instance(uint32_t version,
 }
 
 
-static VkDebugUtilsMessengerEXT create_debug_messenger(VkInstance instance, PFN_vkDebugUtilsMessengerCallbackEXT callback) {
-    VkDebugUtilsMessengerEXT messenger{};
-
-    auto CreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-
-    VkDebugUtilsMessengerCreateInfoEXT ci{ VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
-    ci.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
-                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-                         VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-    ci.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-                         //VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
-    ci.pfnUserCallback = callback;
-    ci.pUserData       = nullptr;
-
-    vk_check(CreateDebugUtilsMessengerEXT(instance, &ci, nullptr, &messenger));
-
-    return messenger;
-}
-
-static void destroy_debug_messenger(VkInstance instance, VkDebugUtilsMessengerEXT messenger) {
-    auto DestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-
-    DestroyDebugUtilsMessengerEXT(instance, messenger, nullptr);
-}
-
-static VkSurfaceKHR create_surface(VkInstance instance, GLFWwindow* window) {
+static VkSurfaceKHR create_surface(VkInstance instance, GLFWwindow* window)
+{
     VkSurfaceKHR surface{};
 
     vk_check(glfwCreateWindowSurface(instance, window, nullptr, &surface));
@@ -101,8 +76,10 @@ static VkSurfaceKHR create_surface(VkInstance instance, GLFWwindow* window) {
 static device_t create_device(VkInstance instance,
                               VkSurfaceKHR surface,
                               VkPhysicalDeviceFeatures features,
-                              const std::vector<const char*>& extensions) {
-    struct gpu_info {
+                              const std::vector<const char*>& extensions)
+{
+    struct gpu_info
+    {
         VkPhysicalDevice gpu;
         uint32_t graphics_index, present_index;
     };
@@ -253,7 +230,8 @@ static device_t create_device(VkInstance instance,
     return device;
 }
 
-static VmaAllocator create_allocator(VkInstance instance, uint32_t version, device_t& device) {
+static VmaAllocator create_allocator(VkInstance instance, uint32_t version, device_t& device)
+{
     VmaAllocator allocator{};
 
     VmaAllocatorCreateInfo allocator_info{};
@@ -268,122 +246,43 @@ static VmaAllocator create_allocator(VkInstance instance, uint32_t version, devi
 }
 
 
-static renderer_submit_context_t create_submit_context(device_t& device) {
-    renderer_submit_context_t context{};
-
-    VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-
-    VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
-    pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    pool_info.queueFamilyIndex = device.graphics_index;
-
-    // Create the resources required to upload data to GPU-only memory.
-    vk_check(vkCreateFence(device.device, &fence_info, nullptr, &context.Fence));
-    vk_check(vkCreateCommandPool(device.device, &pool_info, nullptr,
-                                 &context.CmdPool));
-
-    VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
-    allocate_info.commandPool        = context.CmdPool;
-    allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocate_info.commandBufferCount = 1;
-
-    vk_check(vkAllocateCommandBuffers(device.device, &allocate_info,
-                                      &context.CmdBuffer));
-
-    return context;
-}
-
-static void destroy_submit_context(device_t& device, renderer_submit_context_t& context) {
-    vkFreeCommandBuffers(device.device, context.CmdPool, 1, &context.CmdBuffer);
-    vkDestroyCommandPool(device.device, context.CmdPool, nullptr);
-    vkDestroyFence(device.device, context.Fence, nullptr);
-}
-
-
-static VkDescriptorPool create_descriptor_pool(device_t& device, const std::vector<VkDescriptorPoolSize>& sizes, uint32_t max_sets) {
-    VkDescriptorPool pool{};
-
-    VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.poolSizeCount = u32(sizes.size());
-    pool_info.pPoolSizes = sizes.data();
-    pool_info.maxSets = max_sets;
-
-    vk_check(vkCreateDescriptorPool(device.device, &pool_info, nullptr, &pool));
-
-    return pool;
-}
-
-
-static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
-                               VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
-                               const VkDebugUtilsMessengerCallbackDataEXT*  pCallbackData,
-                               void*                                        pUserData);
-
 
 // Creates the base renderer context. This context is the core of the renderer
 // and handles all creation/destruction of Vulkan resources. This function must
 // be the first renderer function to be called.
-renderer_t* create_renderer_context(uint32_t version,
-                                    const std::vector<const char*>& requested_layers,
-                                    const std::vector<const char*>& requested_extensions,
-                                    const std::vector<const char*>& requested_device_extensions,
-                                    const VkPhysicalDeviceFeatures& requested_gpu_features,
-                                    const window_t* window) {
+renderer_context_t create_renderer_context(uint32_t version,
+                                           const std::vector<const char*>& requested_layers,
+                                           const std::vector<const char*>& requested_extensions,
+                                           const std::vector<const char*>& requested_device_extensions,
+                                           const VkPhysicalDeviceFeatures& requested_gpu_features,
+                                           const window_t* window)
+{
 
-    auto context = (renderer_t*)malloc(sizeof(renderer_t));
+    renderer_context_t context{};
 
-    context->window = window;
+    context.window    = window;
 
-    context->instance  = create_instance(version, window->name, requested_layers, requested_extensions);
-    // todo: only create debug callback when validation layers are enabled
-    context->messenger = create_debug_messenger(context->instance, debug_callback);
-    context->surface   = create_surface(context->instance, window->handle);
-    context->device    = create_device(context->instance, context->surface,
+    context.instance  = create_instance(version, window->name, requested_layers, requested_extensions);
+
+    context.surface   = create_surface(context.instance, window->handle);
+    context.device    = create_device(context.instance, context.surface,
                                        requested_gpu_features, requested_device_extensions);
-    context->allocator = create_allocator(context->instance, version,
-                                          context->device);
-    context->submit    = create_submit_context(context->device);
-    context->compiler  = create_shader_compiler();
-
-
-
-
-    const std::vector<VkDescriptorPoolSize> pool_sizes {
-        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-    };
-
-    context->pool = create_descriptor_pool(context->device, pool_sizes,
-                                           1000 * pool_sizes.size());
-
-
+    context.allocator = create_allocator(context.instance, version,
+                                          context.device);
 
     return context;
 }
 
 // Deallocates/frees memory allocated by the renderer context.
-void destroy_renderer_context(renderer_t* rc) {
+void destroy_renderer_context(renderer_context_t* rc)
+{
     if (!rc)
         return;
 
-
-    vkDestroyDescriptorPool(rc->device.device, rc->pool, nullptr);
-    destroy_shader_compiler(rc->compiler);
-    destroy_submit_context(rc->device, rc->submit);
     vmaDestroyAllocator(rc->allocator);
     vkDestroyDevice(rc->device.device, nullptr);
     vkDestroySurfaceKHR(rc->instance, rc->surface, nullptr);
-    destroy_debug_messenger(rc->instance, rc->messenger);
+
     vkDestroyInstance(rc->instance, nullptr);
 
     free(rc);
@@ -391,13 +290,3 @@ void destroy_renderer_context(renderer_t* rc) {
 
 
 
-
-
-static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
-                               VkDebugUtilsMessageTypeFlagsEXT              messageTypes,
-                               const VkDebugUtilsMessengerCallbackDataEXT*  pCallbackData,
-                               void*                                        pUserData) {
-    printf("Debug callback: %s\n", pCallbackData->pMessage);
-
-    return VK_FALSE;
-}

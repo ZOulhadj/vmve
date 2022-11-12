@@ -36,7 +36,8 @@ static shaderc_shader_kind convert_shader_type(VkShaderStageFlagBits type)
 }
 
 
-shader_compiler create_shader_compiler() {
+shader_compiler create_shader_compiler()
+{
     shader_compiler compiler{};
 
     // todo(zak): Check for potential initialization errors.
@@ -48,26 +49,28 @@ shader_compiler create_shader_compiler() {
     return compiler;
 }
 
-void destroy_shader_compiler(shader_compiler& compiler) {
+void destroy_shader_compiler(shader_compiler& compiler)
+{
     shaderc_compile_options_release(compiler.options);
     shaderc_compiler_release(compiler.compiler);
 }
 
-shader create_shader(VkShaderStageFlagBits type, const std::string& code) {
+shader create_shader(VkShaderStageFlagBits type, const std::string& code)
+{
     shader shader{};
 
-    const renderer_context_t* rc = get_renderer_context();
+    const renderer_t* renderer = get_renderer();
 
     shaderc_compilation_result_t result;
     shaderc_compilation_status status;
 
-    result = shaderc_compile_into_spv(rc->compiler.compiler,
+    result = shaderc_compile_into_spv(renderer->compiler.compiler,
                                       code.data(),
                                       code.size(),
                                       convert_shader_type(type),
                                       "",
                                       "main",
-                                      rc->compiler.options);
+                                      renderer->compiler.options);
     status = shaderc_result_get_compilation_status(result);
 
     if (status != shaderc_compilation_status_success) {
@@ -80,7 +83,7 @@ shader create_shader(VkShaderStageFlagBits type, const std::string& code) {
     module_info.codeSize = u32(shaderc_result_get_length(result));
     module_info.pCode    = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(result));
 
-    vk_check(vkCreateShaderModule(rc->device.device, &module_info, nullptr,
+    vk_check(vkCreateShaderModule(renderer->ctx.device.device, &module_info, nullptr,
                                   &shader.handle));
     shader.type = type;
 
@@ -88,17 +91,20 @@ shader create_shader(VkShaderStageFlagBits type, const std::string& code) {
 }
 
 
-void destroy_shader(shader& shader) {
-    const renderer_context_t* rc = get_renderer_context();
+void destroy_shader(shader& shader)
+{
+    const renderer_context_t& rc = get_renderer_context();
 
-    vkDestroyShaderModule(rc->device.device, shader.handle, nullptr);
+    vkDestroyShaderModule(rc.device.device, shader.handle, nullptr);
 }
 
-shader create_vertex_shader(const std::string& code) {
+shader create_vertex_shader(const std::string& code)
+{
     return create_shader(VK_SHADER_STAGE_VERTEX_BIT, code);
 }
 
-shader create_fragment_shader(const std::string& code) {
+shader create_fragment_shader(const std::string& code)
+{
     return create_shader(VK_SHADER_STAGE_FRAGMENT_BIT, code);
 }
 

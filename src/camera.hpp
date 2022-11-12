@@ -2,12 +2,14 @@
 #define MYENGINE_QUATERNION_CAMERA_HPP
 
 
-struct view_projection {
+struct view_projection
+{
     glm::mat4 view;
     glm::mat4 proj;
 };
 
-struct camera_t {
+struct camera_t
+{
     glm::vec3 position;
     glm::vec3 front_vector;
     glm::vec3 right_vector;

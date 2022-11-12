@@ -6,7 +6,7 @@
 vertex_array_t create_vertex_array(void* v, int vs, void* i, int is) {
     vertex_array_t vertexArray{};
 
-    const renderer_context_t* rc = get_renderer_context();
+    const renderer_t* renderer = get_renderer();
 
 
     // Create a temporary "staging" buffer that will be used to copy the data
@@ -22,12 +22,12 @@ vertex_array_t create_vertex_array(void* v, int vs, void* i, int is) {
     submit_to_gpu([&] {
         VkBufferCopy vertex_copy_info{}, index_copy_info{};
         vertex_copy_info.size = vs;
-        index_copy_info.size = is;
+        index_copy_info.size  = is;
 
-        vkCmdCopyBuffer(rc->submit.CmdBuffer, vertexStagingBuffer.buffer,
+        vkCmdCopyBuffer(renderer->submit.CmdBuffer, vertexStagingBuffer.buffer,
                         vertexArray.vertex_buffer.buffer, 1,
                         &vertex_copy_info);
-        vkCmdCopyBuffer(rc->submit.CmdBuffer, indexStagingBuffer.buffer,
+        vkCmdCopyBuffer(renderer->submit.CmdBuffer, indexStagingBuffer.buffer,
                         vertexArray.index_buffer.buffer, 1,
                         &index_copy_info);
     });

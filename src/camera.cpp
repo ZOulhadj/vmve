@@ -5,7 +5,8 @@
 // GLM provides various types of perspective functions including infinitePerspective()
 // but a reversed depth version (far-near) is not. Thus, below is my own version
 // that creates an infinite perspective from far to near.
-glm::mat4 infinite_perspective(float fovy, float width, float height, float zNear) {
+glm::mat4 infinite_perspective(float fovy, float width, float height, float zNear)
+{
 	const float h = glm::cot(0.5f * fovy);
 	const float w = h * height / width;
 
@@ -19,7 +20,8 @@ glm::mat4 infinite_perspective(float fovy, float width, float height, float zNea
     return result;
 }
 
-camera_t create_camera(const glm::vec3& position, float fov, float speed) {
+camera_t create_camera(const glm::vec3& position, float fov, float speed)
+{
     camera_t camera{};
     camera.position    = position;
     camera.orientation = glm::quat(1, 0, 0, 0);
@@ -42,12 +44,14 @@ camera_t create_camera(const glm::vec3& position, float fov, float speed) {
     return camera;
 }
 
-void update_camera_view(camera_t& camera, float cursor_x, float cursor_y) {
+void update_camera_view(camera_t& camera, float cursor_x, float cursor_y)
+{
     camera.cursor_x = cursor_x;
     camera.cursor_y = cursor_y;
 }
 
-void update_camera(camera_t& camera) {
+void update_camera(camera_t& camera)
+{
     // todo(zak): Need to fix unwanted roll when rotating
     // Get the mouse offsets
     static float last_x = 0.0f;
@@ -80,7 +84,8 @@ void update_camera(camera_t& camera) {
     camera.roll      = 0.0f;
 }
 
-void update_projection(camera_t& camera) {
+void update_projection(camera_t& camera)
+{
     camera.viewProj.proj = infinite_perspective(glm::radians(camera.fov),
                                                 camera.width, camera.height,
                                                 camera.near);
@@ -88,6 +93,7 @@ void update_projection(camera_t& camera) {
     camera.viewProj.proj[1][1] *= -1.0;
 }
 
-void set_camera_projection(camera_t& camera, uint32_t width, uint32_t height) {
+void set_camera_projection(camera_t& camera, uint32_t width, uint32_t height)
+{
     update_projection(camera);
 }

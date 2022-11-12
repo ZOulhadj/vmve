@@ -5,8 +5,9 @@
 
 #include "renderer.hpp"
 
-TextureBuffer load_texture(const char* path, VkFormat format) {
-    TextureBuffer buffer{};
+texture_buffer_t load_texture(const char* path, VkFormat format)
+{
+    texture_buffer_t buffer{};
 
     // Load the texture from the file system.
     int width, height, channels;
@@ -35,10 +36,11 @@ TextureBuffer load_texture(const char* path, VkFormat format) {
 }
 
 
-TextureBuffer create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format) {
-    TextureBuffer buffer{};
+texture_buffer_t create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
+{
+    texture_buffer_t buffer{};
 
-    const renderer_context_t* rc = get_renderer_context();
+    const renderer_t* renderer = get_renderer();
 
     buffer_t staging_buffer = create_staging_buffer(texture, width * height * 4);
 
@@ -63,7 +65,7 @@ TextureBuffer create_texture_buffer(unsigned char* texture, uint32_t width, uint
         imageBarrier_toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
         // barrier the image into the transfer-receive layout
-        vkCmdPipelineBarrier(rc->submit.CmdBuffer,
+        vkCmdPipelineBarrier(renderer->submit.CmdBuffer,
                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                              VK_PIPELINE_STAGE_TRANSFER_BIT,
                              0, 0, nullptr, 0, nullptr, 1,
@@ -83,7 +85,7 @@ TextureBuffer create_texture_buffer(unsigned char* texture, uint32_t width, uint
         copyRegion.imageExtent = {width, height, 1};
 
         //copy the buffer into the image
-        vkCmdCopyBufferToImage(rc->submit.CmdBuffer,
+        vkCmdCopyBufferToImage(renderer->submit.CmdBuffer,
                                staging_buffer.buffer,
                                buffer.image.handle,
                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
@@ -99,7 +101,7 @@ TextureBuffer create_texture_buffer(unsigned char* texture, uint32_t width, uint
         imageBarrier_toReadable.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
         //barrier the image into the shader readable layout
-        vkCmdPipelineBarrier(rc->submit.CmdBuffer,
+        vkCmdPipelineBarrier(renderer->submit.CmdBuffer,
                              VK_PIPELINE_STAGE_TRANSFER_BIT,
                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                              0, 0, nullptr, 0, nullptr, 1,
@@ -112,19 +114,21 @@ TextureBuffer create_texture_buffer(unsigned char* texture, uint32_t width, uint
     return buffer;
 }
 
-void destroy_texture_buffer(TextureBuffer& texture) {
+void destroy_texture_buffer(texture_buffer_t& texture)
+{
     destroy_image(texture.image);
     destroy_sampler(texture.sampler);
 }
 
-VkSampler create_sampler(VkFilter filtering, uint32_t anisotropic_level) {
+VkSampler create_sampler(VkFilter filtering, uint32_t anisotropic_level)
+{
     VkSampler sampler{};
 
-    const renderer_context_t* rc = get_renderer_context();
+    const renderer_context_t& rc = get_renderer_context();
 
     // get the maximum supported anisotropic filtering level
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(rc->device.gpu, &properties);
+    vkGetPhysicalDeviceProperties(rc.device.gpu, &properties);
 
     if (anisotropic_level > properties.limits.maxSamplerAnisotropy) {
         anisotropic_level = properties.limits.maxSamplerAnisotropy;
@@ -149,14 +153,15 @@ VkSampler create_sampler(VkFilter filtering, uint32_t anisotropic_level) {
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    vk_check(vkCreateSampler(rc->device.device, &sampler_info, nullptr,
+    vk_check(vkCreateSampler(rc.device.device, &sampler_info, nullptr,
                              &sampler));
 
     return sampler;
 }
 
-void destroy_sampler(VkSampler sampler) {
-    const renderer_context_t* rc = get_renderer_context();
+void destroy_sampler(VkSampler sampler)
+{
+    const renderer_context_t& rc = get_renderer_context();
 
-    vkDestroySampler(rc->device.device, sampler, nullptr);
+    vkDestroySampler(rc.device.device, sampler, nullptr);
 }

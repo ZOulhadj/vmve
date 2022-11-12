@@ -4,8 +4,10 @@
 #include "../window.hpp"
 
 
-#include "renderer_context.hpp"
+#include "context.hpp"
 #include "buffer.hpp"
+
+#include "shader.hpp"
 
 #include "../entity.hpp"
 
@@ -48,11 +50,10 @@ struct Framebuffer {
     VkFramebuffer handle;
 };
 
-
-
-struct descriptor_info
+struct descriptor_set_layout
 {
-    VkBuffer         buffer;
+    VkDescriptorType   type;
+    VkShaderStageFlags stages;
 };
 
 
@@ -74,14 +75,32 @@ struct pipeline_t {
 };
 
 
+struct upload_context
+{
+    VkFence         Fence;
+    VkCommandPool   CmdPool;
+    VkCommandBuffer CmdBuffer;
+};
 
+struct renderer_t
+{
+    renderer_context_t ctx;
 
-renderer_context_t* create_renderer(const window_t* window, buffer_mode buffering_mode, vsync_mode sync_mode);
-void destroy_renderer(renderer_context_t* context);
+    upload_context submit;
+    shader_compiler compiler;
 
-renderer_context_t* get_renderer_context();
+    VkDescriptorPool descriptor_pool;
 
-VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
+    VkDebugUtilsMessengerEXT messenger;
+};
+
+renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, vsync_mode sync_mode);
+void destroy_renderer(renderer_t* renderer);
+
+renderer_t* get_renderer();
+renderer_context_t& get_renderer_context();
+
+VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings);
 void destroy_descriptor_set_layout(VkDescriptorSetLayout layout);
 
 std::vector<VkDescriptorSet> allocate_descriptor_set(VkDescriptorSetLayout layout, uint32_t frames);
@@ -108,8 +127,8 @@ void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer
 pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass);
 void destroy_pipeline(pipeline_t& pipeline);
 
-bool begin_frame();
-void end_frame();
+bool begin_rendering();
+void end_rendering();
 
 
 

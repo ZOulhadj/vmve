@@ -75,7 +75,7 @@ pipeline_t wireframePipeline{};
 // This is a global descriptor set that will be used for all draw calls and
 // will contain descriptors such as a projection view matrix, global scene
 // information including lighting.
-static VkDescriptorSetLayout g_global_descriptor_set_layout;
+static VkDescriptorSetLayout g_layout;
 
 // This is the actual descriptor set/collection that will hold the descriptors
 // also known as resources. Since this is the global descriptor set, this will
@@ -83,7 +83,7 @@ static VkDescriptorSetLayout g_global_descriptor_set_layout;
 // why this is an array is so that each frame has its own descriptor set.
 static VkDescriptorSet g_descriptor_sets;
 
-static VkDescriptorSetLayout g_layout;
+static VkDescriptorSetLayout g_object_layout;
 
 // The resources that will be part of the global descriptor set
 static buffer_t g_camera_buffer;
@@ -123,11 +123,12 @@ bool running = true;
 float uptime = 0.0f;
 
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     window_t* window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_context_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
+    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
 
 
@@ -148,29 +149,25 @@ int main(int argc, char** argv) {
 
 
 
-    // Descriptor sets
-    const std::vector<VkDescriptorSetLayoutBinding> global_layout {
-            { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT },   // projection view
-            { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT |
-                                                       VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
+    // Global
+    const std::vector<descriptor_set_layout> global_layout {
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT },                                // projection view
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
     };
 
-    g_global_descriptor_set_layout = create_descriptor_set_layout(global_layout);
-    g_descriptor_sets       = allocate_descriptor_set(g_global_descriptor_set_layout);
+    // Per object
+    const std::vector<descriptor_set_layout> per_object_layout {
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }
+    };
+
+    g_layout          = create_descriptor_set_layout(global_layout);
+    g_descriptor_sets = allocate_descriptor_set(g_layout);
 
     g_camera_buffer = create_uniform_buffer<view_projection>();
     g_scene_buffer  = create_uniform_buffer<engine_scene>();
-
-
     update_descriptor_sets({ g_camera_buffer, g_scene_buffer }, g_descriptor_sets);
 
-
-    // Per object material descriptor set
-    const std::vector<VkDescriptorSetLayoutBinding> per_object_layout {
-        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-    };
-
-    g_layout = create_descriptor_set_layout(per_object_layout);
+    g_object_layout = create_descriptor_set_layout(per_object_layout);
 
 
 
@@ -179,9 +176,6 @@ int main(int argc, char** argv) {
 
 
     // Shaders and Pipeline
-
-
-
 
     // Load shaders text files
     std::string gridVSCode      = load_text_file("src/shaders/grid.vert");
@@ -207,7 +201,7 @@ int main(int argc, char** argv) {
     };
 
     PipelineInfo info{};
-    info.descriptor_layouts = {g_global_descriptor_set_layout, g_layout };
+    info.descriptor_layouts = { g_layout, g_object_layout };
     info.push_constant_size = sizeof(glm::mat4);
     info.binding_layout_size = sizeof(vertex_t);
     info.binding_format = binding_format;
@@ -248,7 +242,7 @@ int main(int argc, char** argv) {
     destroy_shader(gridVS);
 
 
-    ImGuiContext* uiContext = create_user_interface(ui_pass);
+    ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
 
     for (auto& i : m_Dset)
         i = ImGui_ImplVulkan_AddTexture(sampler, albedo_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -269,17 +263,17 @@ int main(int argc, char** argv) {
     vertex_array_t quad = create_vertex_array(quad_vertices.data(), quad_vertices.size() * sizeof(vertex_t),
                                               quad_indices.data(), quad_indices.size() * sizeof(uint32_t));
     vertex_array_t icosphere = load_model("assets/icosphere.obj");
-    TextureBuffer groundTexture = load_texture("assets/textures/plane.jpg",
-                                               VK_FORMAT_B8G8R8A8_SRGB);
-    TextureBuffer skysphere = load_texture("assets/textures/skysphere.jpg",
-                                           VK_FORMAT_B8G8R8A8_SRGB);
-    instance_t skybox = create_entity(icosphere, skysphere, g_layout);
-    instance_t ground = create_entity(quad, groundTexture, g_layout);
+    texture_buffer_t groundTexture = load_texture("assets/textures/plane.jpg",
+                                                  VK_FORMAT_B8G8R8A8_SRGB);
+    texture_buffer_t skysphere = load_texture("assets/textures/skysphere.jpg",
+                                              VK_FORMAT_B8G8R8A8_SRGB);
+    instance_t skybox = create_entity(icosphere, skysphere, g_object_layout);
+    instance_t ground = create_entity(quad, groundTexture, g_object_layout);
 
 
     // User loaded resources
     vertex_array_t model = load_model("assets/model.obj");
-    instance_t model_instance = create_entity(model, skysphere, g_layout);
+    instance_t model_instance = create_entity(model, skysphere, g_object_layout);
 
 
     camera = create_camera({0.0f, 2.0f, -8.0f}, 60.0f, 2.0f);
@@ -302,6 +296,9 @@ int main(int argc, char** argv) {
     glm::vec3 objectScale = glm::vec3(1.0f);
 
     while (running) {
+
+
+        // todo: only perform rendering operations if the window is not minimised
         float deltaTime = get_delta_time();
 
         uptime += deltaTime;
@@ -319,7 +316,7 @@ int main(int argc, char** argv) {
         set_buffer_data(&g_camera_buffer, &camera.viewProj);
         set_buffer_data(&g_scene_buffer, &scene);
 
-        if (begin_frame()) {
+        if (begin_rendering()) {
             VkCommandBuffer cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
             {
                 // Render the background skysphere
@@ -477,8 +474,10 @@ int main(int argc, char** argv) {
             end_render_pass(ui_cmd_buffer);
 
 
-            end_frame();
+            end_rendering();
         }
+
+
 
         update_window(window);
     }
@@ -486,7 +485,7 @@ int main(int argc, char** argv) {
 
 
     // Wait until all GPU commands have finished
-    vk_check(vkDeviceWaitIdle(renderer->device.device));
+    vk_check(vkDeviceWaitIdle(renderer->ctx.device.device));
 
 
     destroy_vertex_array(model);
@@ -501,8 +500,8 @@ int main(int argc, char** argv) {
     destroy_buffer(g_scene_buffer);
     destroy_buffer(g_camera_buffer);
 
+    destroy_descriptor_set_layout(g_object_layout);
     destroy_descriptor_set_layout(g_layout);
-    destroy_descriptor_set_layout(g_global_descriptor_set_layout);
 
     destroy_pipeline(wireframePipeline);
     destroy_pipeline(skyspherePipeline);

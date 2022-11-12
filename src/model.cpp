@@ -4,7 +4,8 @@
 
 
 static void parse_mesh(std::vector<vertex_t>& vertices, std::vector<uint32_t>& indices,
-                       const aiMesh* mesh, const aiScene* scene) {
+                       const aiMesh* mesh, const aiScene* scene)
+{
     // walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
         vertex_t vertex{};
@@ -71,7 +72,8 @@ static void parse_mesh(std::vector<vertex_t>& vertices, std::vector<uint32_t>& i
 }
 
 static void parse_model(std::vector<vertex_t>& vertices, std::vector<uint32_t>& indices,
-                        aiNode* node, const aiScene* scene) {
+                        aiNode* node, const aiScene* scene)
+{
 
     for (std::size_t i = 0; i < node->mNumMeshes; ++i)
         parse_mesh(vertices, indices, scene->mMeshes[node->mMeshes[i]], scene);
@@ -81,8 +83,9 @@ static void parse_model(std::vector<vertex_t>& vertices, std::vector<uint32_t>& 
 
 }
 
-vertex_array_t load_model(const char* path) {
-    vertex_array_t buffer = {};
+vertex_array_t load_model(const char* path)
+{
+    vertex_array_t buffer{};
 
     Assimp::Importer importer;
 
@@ -108,5 +111,4 @@ vertex_array_t load_model(const char* path) {
 
 
     return buffer;
-
 }

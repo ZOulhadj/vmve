@@ -2,14 +2,16 @@
 #define MY_ENGINE_BUFFER_HPP
 
 
-struct buffer_t {
+struct buffer_t
+{
     VkBuffer           buffer;
     VmaAllocation      allocation;
     VkBufferUsageFlags usage;
     uint32_t           size;
 };
 
-struct image_buffer_t {
+struct image_buffer_t
+{
     VkImage       handle;
     VkImageView   view;
     VmaAllocation allocation;
