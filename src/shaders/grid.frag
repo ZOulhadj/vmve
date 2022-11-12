@@ -1,23 +1,21 @@
 #version 450
 
-layout (location=0) in vec2 uv;
+layout (location = 0) in vec2 uv;
+layout (location = 1) in float grid_size;
 
 layout (location=0) out vec4 out_FragColor;
 
-// extents of grid in world coordinates
-float gridSize = 200.0;
-
 // size of one cell
-float gridCellSize = 1.0;
+float gridCellSize = 0.0;
 
 // color of thin lines
-vec4 gridColorThin = vec4(0.8, 0.8, 0.8, 1.0);
+vec4 gridColorThin = vec4(0.5, 0.5, 0.5, 1.0);
 
 // color of thick lines (every tenth line)
-vec4 gridColorThick = vec4(0.2, 0.2, 0.2, 1.0);
+vec4 gridColorThick = vec4(0.0, 0.0, 1.0, 1.0);
 
 // minimum number of pixels between cell lines before LOD switch should occur.
-const float gridMinPixelsBetweenCells = 2.0;
+const float gridMinPixelsBetweenCells = 1.0;
 
 float log10(float x)
 {
@@ -55,7 +53,7 @@ vec4 gridColor(vec2 uv)
     float lod2 = lod1 * 10.0;
 
     // each anti-aliased line covers up to 4 pixels
-    dudv *= 2.0;
+    dudv *= 4.0;
 
     // calculate absolute distances to cell line centers for each lod and pick max X/Y to get coverage alpha value
     float lod0a = max2( vec2(1.0) - abs(satv(mod(uv, lod0) / dudv) * 2.0 - vec2(1.0)) );
@@ -63,13 +61,28 @@ vec4 gridColor(vec2 uv)
     float lod2a = max2( vec2(1.0) - abs(satv(mod(uv, lod2) / dudv) * 2.0 - vec2(1.0)) );
 
     // blend between falloff colors to handle LOD transition
-    vec4 c = lod2a > 0.0 ? gridColorThick : lod1a > 0.0 ? mix(gridColorThick, gridColorThin, lodFade) : gridColorThin;
+    vec4 c;
+    if (lod2a > 0.0) {
+        c = gridColorThick;
+    } else if (lod1a > 0.0) {
+        c = mix(gridColorThick, gridColorThin, lodFade);
+        //c = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    } else {
+        c = gridColorThin;
+        discard;
+    }
 
     // calculate opacity falloff based on distance to grid extents
-    float opacityFalloff = (1.0 - satf(length(uv) / gridSize));
+    float opacityFalloff = (1.0 - satf(length(uv) / grid_size));
 
     // blend between LOD level alphas and scale with opacity falloff
-    c.a *= (lod2a > 0.0 ? lod2a : lod1a > 0.0 ? lod1a : (lod0a * (1.0-lodFade))) * opacityFalloff;
+    if (lod2a > 0.0) {
+        c.a *= lod2a * opacityFalloff;
+    } else if (lod1a > 0.0) {
+        c.a *= lod1a * opacityFalloff;
+    } else {
+        c.a *= (lod0a * (1.0 - lodFade)) * opacityFalloff;
+    }
 
     return c;
 }

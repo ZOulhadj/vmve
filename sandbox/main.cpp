@@ -302,8 +302,6 @@ int main(int argc, char** argv)
             continue;
         }
 
-
-        // todo: only perform rendering operations if the window is not minimised
         float deltaTime = get_delta_time();
 
         uptime += deltaTime;
