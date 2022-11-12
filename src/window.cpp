@@ -18,6 +18,45 @@ static void window_close_callback(GLFWwindow* window)
     ptr->event_callback(e);
 }
 
+static void window_focus_callback(GLFWwindow* window, int focused)
+{
+    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+
+    if (focused) {
+        window_focused_event e;
+        ptr->event_callback(e);
+    } else {
+        window_lost_focus_event e;
+        ptr->event_callback(e);
+    }
+}
+
+static void window_maximized_callback(GLFWwindow* window, int maximized)
+{
+    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+
+    if (maximized) {
+        window_maximized_event e;
+        ptr->event_callback(e);
+    } else {
+        window_restored_event e;
+        ptr->event_callback(e);
+    }
+}
+
+static void window_minimized_callback(GLFWwindow* window, int minimized)
+{
+    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+
+    if (minimized) {
+        window_minimized_event e;
+        ptr->event_callback(e);
+    } else {
+        window_not_minimized_event e;
+        ptr->event_callback(e);
+    }
+}
+
 static void window_resize_callback(GLFWwindow* window, int width, int height)
 {
     // todo: window resizing is done within the framebuffer callback since that
@@ -128,6 +167,9 @@ window_t* create_window(const char* name, uint32_t width, uint32_t height)
     // window callbacks
     glfwSetWindowUserPointer(window->handle, window);
     glfwSetWindowCloseCallback(window->handle, window_close_callback);
+    glfwSetWindowFocusCallback(window->handle, window_focus_callback);
+    glfwSetWindowMaximizeCallback(window->handle, window_maximized_callback);
+    glfwSetWindowIconifyCallback(window->handle, window_minimized_callback);
     glfwSetWindowSizeCallback(window->handle, window_resize_callback);
     glfwSetFramebufferSizeCallback(window->handle, window_framebuffer_resize_callback);
 

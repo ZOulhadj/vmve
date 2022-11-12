@@ -119,8 +119,9 @@ static void event_callback(event& e);
 #define APP_HEIGHT  720
 
 
-bool running = true;
-float uptime = 0.0f;
+bool running   = true;
+bool minimised = false;
+float uptime   = 0.0f;
 
 
 int main(int argc, char** argv)
@@ -296,6 +297,10 @@ int main(int argc, char** argv)
     glm::vec3 objectScale = glm::vec3(1.0f);
 
     while (running) {
+        if (minimised) {
+            glfwWaitEvents();
+            continue;
+        }
 
 
         // todo: only perform rendering operations if the window is not minimised
@@ -583,6 +588,20 @@ static bool close_window(window_closed_event& e) {
     return true;
 }
 
+static bool minimized_window(window_minimized_event& e)
+{
+    minimised = true;
+    return true;
+}
+
+static bool not_minimized_window(window_not_minimized_event& e)
+{
+    minimised = false;
+    return true;
+}
+
+
+
 static void event_callback(event& e) {
     event_dispatcher dispatcher(e);
 
@@ -592,4 +611,6 @@ static void event_callback(event& e) {
     dispatcher.dispatch<mouse_moved_event>(mouse_moved);
     dispatcher.dispatch<window_resized_event>(resize);
     dispatcher.dispatch<window_closed_event>(close_window);
+    dispatcher.dispatch<window_minimized_event>(minimized_window);
+    dispatcher.dispatch<window_not_minimized_event>(not_minimized_window);
 }

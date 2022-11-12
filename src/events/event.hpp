@@ -16,6 +16,12 @@ enum class event_type {
     mouse_scrolled_down,
 
     window_closed,
+    window_focused,
+    window_lost_focus,
+    window_maximized,
+    window_restored,
+    window_minimized,
+    window_not_minimized,
     window_resized,
 
 };
