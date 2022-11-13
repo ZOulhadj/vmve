@@ -264,13 +264,9 @@ int main(int argc, char** argv)
     vertex_array_t quad = create_vertex_array(quad_vertices.data(), quad_vertices.size() * sizeof(vertex_t),
                                               quad_indices.data(), quad_indices.size() * sizeof(uint32_t));
     vertex_array_t icosphere = load_model("assets/icosphere.obj");
-    texture_buffer_t groundTexture = load_texture("assets/textures/plane.jpg",
-                                                  VK_FORMAT_B8G8R8A8_SRGB);
-    texture_buffer_t skysphere = load_texture("assets/textures/skysphere.jpg",
-                                              VK_FORMAT_B8G8R8A8_SRGB);
+    texture_buffer_t skysphere = load_texture("assets/textures/skysphere.jpg", VK_FORMAT_B8G8R8A8_SRGB);
     instance_t skybox = create_entity(icosphere, skysphere, g_object_layout);
-    instance_t ground = create_entity(quad, groundTexture, g_object_layout);
-
+    instance_t ground = create_entity(quad, skysphere, g_object_layout);
 
     // User loaded resources
     vertex_array_t model = load_model("assets/model.obj");
@@ -443,6 +439,13 @@ int main(int argc, char** argv)
                     ImGui::End();
 
                     ImGui::Begin("Left");
+                    ImGui::Text("Lighting");
+                    ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 1.0f);
+                    ImGui::SliderFloat("Specular strength", &scene.specularStrength, 0.0f, 1.0f);
+                    ImGui::SliderFloat("Specular shininess", &scene.specularShininess, 0.0f, 512.0f);
+                    ImGui::SliderFloat3("Light position", glm::value_ptr(scene.lightPosition), -100.0f, 100.0f);
+                    ImGui::SliderFloat3("Light color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
+                    ImGui::Separator();
                     ImGui::Text("Camera");
                     ImGui::SliderFloat("Movement speed", &camera.speed, 0.0f, 20.0f);
                     ImGui::SliderFloat("Roll speed", &camera.speed, 0.0f, 20.0f);
@@ -494,7 +497,6 @@ int main(int argc, char** argv)
     destroy_vertex_array(model);
 
     destroy_texture_buffer(skysphere);
-    destroy_texture_buffer(groundTexture);
     destroy_vertex_array(icosphere);
     destroy_vertex_array(quad);
 

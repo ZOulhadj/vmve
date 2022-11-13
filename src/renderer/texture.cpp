@@ -42,7 +42,7 @@ texture_buffer_t create_texture_buffer(unsigned char* texture, uint32_t width, u
 
     const renderer_t* renderer = get_renderer();
 
-    buffer_t staging_buffer = create_staging_buffer(texture, width * height * 4);
+    buffer_t staging_buffer = create_staging_buffer(texture, (width * height) * 4);
 
     buffer.image = create_image(format, {width, height}, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 

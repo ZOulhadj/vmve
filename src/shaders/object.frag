@@ -18,29 +18,36 @@ layout(binding = 1) uniform scene_ubo
 
 layout(set = 1, binding = 0) uniform sampler2D albedoTexture;
 
+
+
+vec3 direction_lighting(vec3 object_color, vec3 position, vec3 normal)
+{
+    // ambient
+    vec3 ambientResult = scene.ambientStrength * object_color;
+
+    // diffuse
+    vec3 lightDir   = normalize(scene.lightPosition - position);
+    float difference = max(dot(normal, lightDir), 0.0);
+    vec3 diffuseResult = difference * object_color * scene.lightColor;
+
+    // specular
+    vec3 viewDir    = normalize(scene.cameraPosition - position);
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec          = pow(max(dot(normal, reflectDir), 0.0), scene.specularShininess);
+    vec3 specularResult = scene.specularStrength * spec * scene.lightColor;
+
+    return ambientResult + diffuseResult + specularResult;
+}
+
+
+
 void main()
 {
     vec3 norm = normalize(vertex_normal);
 
-    // Get pixel colors for each texture map
     vec3 albedo   = texture(albedoTexture, texture_coord).rgb;
 
-    // ambient
-    vec3 ambientResult = scene.ambientStrength * albedo;
+    vec3 result = direction_lighting(albedo, vertex_position, norm);
 
-    // diffuse
-    vec3 lightDir   = normalize(scene.lightPosition - vertex_position);
-    float difference = max(dot(norm, lightDir), 0.0);
-    vec3 diffuseResult = difference * albedo * scene.lightColor;
-
-    // specular
-    vec3 viewDir    = normalize(scene.cameraPosition - vertex_position);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    float spec          = pow(max(dot(norm, reflectDir), 0.0), scene.specularShininess);
-    vec3 specularResult = scene.specularStrength * spec * scene.lightColor;
-
-
-    // final result
-    vec3 result = (ambientResult + diffuseResult + specularResult);
     final_color = vec4(result, 1.0);
 }
