@@ -370,14 +370,14 @@ int main(int argc, char** argv)
 
                     // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
                     // because it would be confusing to have two docking targets within each others.
-                    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar |
-                                                    ImGuiWindowFlags_NoDocking |
-                                                    ImGuiWindowFlags_NoTitleBar |
-                                                    ImGuiWindowFlags_NoCollapse |
-                                                    ImGuiWindowFlags_NoResize |
-                                                    ImGuiWindowFlags_NoMove |
-                                                    ImGuiWindowFlags_NoNavFocus |
-                                                    ImGuiWindowFlags_NoBringToFrontOnFocus;
+                    ImGuiWindowFlags docking_flags = ImGuiWindowFlags_MenuBar |
+                                                     ImGuiWindowFlags_NoDocking |
+                                                     ImGuiWindowFlags_NoTitleBar |
+                                                     ImGuiWindowFlags_NoCollapse |
+                                                     ImGuiWindowFlags_NoResize |
+                                                     ImGuiWindowFlags_NoMove |
+                                                     ImGuiWindowFlags_NoNavFocus |
+                                                     ImGuiWindowFlags_NoBringToFrontOnFocus;
 
                     // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
                     // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
@@ -392,7 +392,7 @@ int main(int argc, char** argv)
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                    ImGui::Begin("Editor", &opt_open, window_flags);
+                    ImGui::Begin("Editor", &opt_open, docking_flags);
                     ImGui::PopStyleVar();
                     ImGui::PopStyleVar(2);
 
@@ -441,14 +441,16 @@ int main(int argc, char** argv)
                     }
                     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
+                    static bool window_visible = true;
+                    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove;
 
-                    ImGui::Begin(object_window);
+                    ImGui::Begin(object_window, &window_visible, window_flags);
                     ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
                     ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
                     ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
                     ImGui::End();
 
-                    ImGui::Begin(scene_window);
+                    ImGui::Begin(scene_window, &window_visible, window_flags);
                     ImGui::Text("Lighting");
                     ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 1.0f);
                     ImGui::SliderFloat("Specular strength", &scene.specularStrength, 0.0f, 1.0f);
@@ -464,14 +466,14 @@ int main(int argc, char** argv)
                     ImGui::SliderFloat("Near", &camera.near, 0.1f, 10.0f);
                     ImGui::End();
 
-                    ImGui::Begin(console_window);
+                    ImGui::Begin(console_window, &window_visible, window_flags);
                     for (std::size_t i = 0; i < 10; ++i)
                         ImGui::Text("Text %d", i);
                     ImGui::End();
 
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                    ImGui::Begin(viewport_window);
+                    ImGui::Begin(viewport_window, &window_visible, window_flags);
                     ImGui::PopStyleVar(2);
                     ImGui::Image(m_Dset[currentImage], ImGui::GetContentRegionAvail());
                     ImGui::End();
