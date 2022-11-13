@@ -125,9 +125,9 @@ vec3 direction_lighting(vec3 object_color, vec3 position, vec3 normal)
 
 void main()
 {
-    vec4 grid = grid_color(uv);
+    vec3 grid = grid_color(uv).xyz;
     vec3 norm = normalize(normal);
 
-    vec3 result = direction_lighting(grid.xyz, position, norm);
+    vec3 result = direction_lighting(grid, position, norm);
     final_color = vec4(result, 1.0);
 }

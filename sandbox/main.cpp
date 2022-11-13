@@ -263,7 +263,7 @@ int main(int argc, char** argv)
 
     vertex_array_t quad = create_vertex_array(quad_vertices.data(), quad_vertices.size() * sizeof(vertex_t),
                                               quad_indices.data(), quad_indices.size() * sizeof(uint32_t));
-    vertex_array_t icosphere = load_model("assets/icosphere.obj");
+    vertex_array_t icosphere = load_model("assets/sphere.obj");
     texture_buffer_t skysphere = load_texture("assets/textures/skysphere.jpg", VK_FORMAT_R8G8B8A8_SRGB);
     instance_t skybox = create_entity(icosphere, skysphere, g_object_layout);
     instance_t ground = create_entity(quad, skysphere, g_object_layout);
@@ -274,6 +274,15 @@ int main(int argc, char** argv)
 
 
     camera = create_camera({0.0f, 2.0f, -8.0f}, 60.0f, 2.0f);
+
+
+
+    const char* object_window   = "Object";
+    const char* console_window  = "Console";
+    const char* viewport_window = "Viewport";
+    const char* scene_window    = "Scene";
+
+
 
     engine_scene scene {
         .ambientStrength   = 0.05f,
@@ -349,8 +358,7 @@ int main(int argc, char** argv)
                     // Submit the DockSpace
                     ImGuiIO& io = ImGui::GetIO();
 
-                    static bool opt_open = false;
-
+                    static bool opt_open = true;
 
                     // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
                     // because it would be confusing to have two docking targets within each others.
@@ -403,7 +411,7 @@ int main(int argc, char** argv)
                     }
 
                     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-                    ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoTabBar;
+                    ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None; // ImGuiDockNodeFlags_NoTabBar
                     if (!ImGui::DockBuilderGetNode(dockspace_id)) {
                         ImGui::DockBuilderRemoveNode(dockspace_id);
                         ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
@@ -413,32 +421,25 @@ int main(int argc, char** argv)
                         ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.2f, nullptr, &dock_main_id);
                         ImGuiID dock_left_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
                         ImGuiID dock_down_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.2f, nullptr, &dock_main_id);
-                        //ImGuiID dock_down_right_id = ImGui::DockBuilderSplitNode(dock_down_id, ImGuiDir_Right, 0.5f, nullptr, &dock_down_id);
 
 
-                        ImGui::DockBuilderDockWindow("Right", dock_right_id);
-                        ImGui::DockBuilderDockWindow("Left", dock_left_id);
-                        ImGui::DockBuilderDockWindow("Bottom", dock_down_id);
-                        ImGui::DockBuilderDockWindow("Viewport", dock_main_id);
+                        ImGui::DockBuilderDockWindow(object_window, dock_right_id);
+                        ImGui::DockBuilderDockWindow(scene_window, dock_left_id);
+                        ImGui::DockBuilderDockWindow(console_window, dock_down_id);
+                        ImGui::DockBuilderDockWindow(viewport_window, dock_main_id);
 
                         ImGui::DockBuilderFinish(dock_main_id);
                     }
                     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
 
-                    const ImGuiWindowFlags docking_flags = ImGuiWindowFlags_NoTitleBar;
-                    const ImGuiWindowFlags viewport_flags = ImGuiWindowFlags_None;
-                    static bool open = true;
-
-
-                    ImGui::Begin("Right");
+                    ImGui::Begin(object_window);
                     ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
                     ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
                     ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
-
                     ImGui::End();
 
-                    ImGui::Begin("Left");
+                    ImGui::Begin(scene_window);
                     ImGui::Text("Lighting");
                     ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 1.0f);
                     ImGui::SliderFloat("Specular strength", &scene.specularStrength, 0.0f, 1.0f);
@@ -447,22 +448,27 @@ int main(int argc, char** argv)
                     ImGui::SliderFloat3("Light color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
                     ImGui::Separator();
                     ImGui::Text("Camera");
+                    ImGui::SliderFloat3("Position", glm::value_ptr(camera.position), -500.0f, 500.0f);
                     ImGui::SliderFloat("Movement speed", &camera.speed, 0.0f, 20.0f);
                     ImGui::SliderFloat("Roll speed", &camera.speed, 0.0f, 20.0f);
                     ImGui::SliderFloat("Fov", &camera.fov, 1.0f, 120.0f);
                     ImGui::SliderFloat("Near", &camera.near, 0.1f, 10.0f);
                     ImGui::End();
 
-                    ImGui::Begin("Bottom");
+                    ImGui::Begin(console_window);
+                    for (std::size_t i = 0; i < 10; ++i)
+                        ImGui::Text("Text %d", i);
                     ImGui::End();
 
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                    ImGui::Begin("Viewport");
+                    ImGui::Begin(viewport_window);
                     ImGui::PopStyleVar(2);
                     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
                     ImGui::Image(m_Dset[currentImage], ImVec2{viewportPanelSize.x, viewportPanelSize.y});
+                    ImGui::ShowDemoWindow();
                     ImGui::End();
+
 
 
 

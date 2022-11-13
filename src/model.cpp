@@ -92,7 +92,8 @@ vertex_array_t load_model(const char* path)
     const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate |
                                                    aiProcess_OptimizeGraph |
                                                    aiProcess_OptimizeMeshes |
-                                                   aiProcess_CalcTangentSpace);
+                                                   aiProcess_CalcTangentSpace
+                                                   );
 
     if (!scene) {
         printf("Failed to load model at path: %s\n", path);
