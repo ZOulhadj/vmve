@@ -264,7 +264,7 @@ int main(int argc, char** argv)
     vertex_array_t quad = create_vertex_array(quad_vertices.data(), quad_vertices.size() * sizeof(vertex_t),
                                               quad_indices.data(), quad_indices.size() * sizeof(uint32_t));
     vertex_array_t icosphere = load_model("assets/icosphere.obj");
-    texture_buffer_t skysphere = load_texture("assets/textures/skysphere.jpg", VK_FORMAT_B8G8R8A8_SRGB);
+    texture_buffer_t skysphere = load_texture("assets/textures/skysphere.jpg", VK_FORMAT_R8G8B8A8_SRGB);
     instance_t skybox = create_entity(icosphere, skysphere, g_object_layout);
     instance_t ground = create_entity(quad, skysphere, g_object_layout);
 
