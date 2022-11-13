@@ -289,7 +289,7 @@ int main(int argc, char** argv)
         .specularStrength  = 0.15f,
         .specularShininess = 128.0f,
         .cameraPosition    = camera.position,
-        .lightPosition     = glm::vec3(0.0f, 20.0f, 0.0f),
+        .lightPosition     = glm::vec3(10.0f, 20.0f, -20.0f),
         .lightColor        = glm::vec3(1.0f),
     };
 
@@ -302,28 +302,36 @@ int main(int argc, char** argv)
     glm::vec3 objectScale = glm::vec3(1.0f);
 
     while (running) {
+        // If the application is minimized then only wait for events and don't
+        // do anything else. This ensures the application does not waste resources
+        // performing other operations such as maths and rendering when the window
+        // is not visible.
         if (minimised) {
             glfwWaitEvents();
             continue;
         }
 
-        float deltaTime = get_delta_time();
-
-        uptime += deltaTime;
-        scene.cameraPosition = camera.position;
+        // Calculate the amount that has passed since the last frame. This value
+        // is then used with inputs and physics to ensure that the result is the
+        // same no matter how fast the CPU is running.
+        float delta_time = get_delta_time();
+        uptime += delta_time;
 
         // Input and camera
-        handle_input(camera, deltaTime);
+        handle_input(camera, delta_time);
         glm::vec2 cursorPos = get_mouse_position();
         //update_camera_view(camera, cursorPos.x, cursorPos.y);
         update_camera(camera);
 
+        scene.cameraPosition = camera.position;
+
 
         // copy data into uniform buffer
-        //uint32_t frame = get_current_frame();
         set_buffer_data(&g_camera_buffer, &camera.viewProj);
         set_buffer_data(&g_scene_buffer, &scene);
 
+
+        // This is where the main rendering starts
         if (begin_rendering()) {
             VkCommandBuffer cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
             {
@@ -402,7 +410,8 @@ int main(int argc, char** argv)
                         }
 
                         if (ImGui::BeginMenu("Help")) {
-                            render_help_menu();
+                            static bool menu_open = false;
+                            render_help_menu(&menu_open);
 
                             ImGui::EndMenu();
                         }
@@ -464,9 +473,7 @@ int main(int argc, char** argv)
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
                     ImGui::Begin(viewport_window);
                     ImGui::PopStyleVar(2);
-                    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-                    ImGui::Image(m_Dset[currentImage], ImVec2{viewportPanelSize.x, viewportPanelSize.y});
-                    ImGui::ShowDemoWindow();
+                    ImGui::Image(m_Dset[currentImage], ImGui::GetContentRegionAvail());
                     ImGui::End();
 
 
@@ -545,28 +552,35 @@ int main(int argc, char** argv)
 }
 
 // TODO: Event system stuff
-static bool press(key_pressed_event& e) {
+static bool press(key_pressed_event& e)
+{
     return true;
 }
 
-static bool mouse_button_press(mouse_button_pressed_event& e) {
+static bool mouse_button_press(mouse_button_pressed_event& e)
+{
 
     return true;
 }
 
-static bool mouse_button_release(mouse_button_released_event& e) {
+static bool mouse_button_release(mouse_button_released_event& e)
+{
 
     return true;
 }
 
-static bool mouse_moved(mouse_moved_event& e) {
+static bool mouse_moved(mouse_moved_event& e)
+{
     //update_camera_view(camera, event.GetX(), event.GetY());
 
     return true;
 }
 
 
-static bool resize(window_resized_event& e) {
+static bool resize(window_resized_event& e)
+{
+    printf("resizing %d %d\n", e.get_width(), e.get_height());
+
     set_camera_projection(camera, e.get_width(), e.get_height());
 
     VkExtent2D extent = {e.get_width(), e.get_height()};
@@ -588,7 +602,8 @@ static bool resize(window_resized_event& e) {
     return true;
 }
 
-static bool close_window(window_closed_event& e) {
+static bool close_window(window_closed_event& e)
+{
     running = false;
 
     return true;
@@ -606,9 +621,8 @@ static bool not_minimized_window(window_not_minimized_event& e)
     return true;
 }
 
-
-
-static void event_callback(event& e) {
+static void event_callback(event& e)
+{
     event_dispatcher dispatcher(e);
 
     dispatcher.dispatch<key_pressed_event>(press);

@@ -1,16 +1,19 @@
 #ifndef SANDBOX_UI_HPP
 #define SANDBOX_UI_HPP
 
-void RenderMenuBar() {
+void render_menu_bar()
+{
 
 }
 
 
-void RenderOverlay() {
+void render_overlay()
+{
 
 }
 
-void render_file_menu() {
+void render_file_menu()
+{
     if (ImGui::MenuItem("Load model"))
         ImGui::OpenPopup("filesystem");
 
@@ -35,7 +38,8 @@ void render_file_menu() {
     ImGui::MenuItem("Exit");
 }
 
-void render_settings_menu() {
+void render_settings_menu()
+{
     static bool wireframe = false;
     static bool shadows   = false;
     static bool aabb      = false;
@@ -50,13 +54,13 @@ void render_settings_menu() {
 
 }
 
-void render_help_menu() {
-    static bool demo_window = false;
+void render_help_menu(bool* open)
+{
+    if (ImGui::MenuItem("Show demo window"))
+        *open = true;
 
-    if (ImGui::MenuItem("Show demo window")) demo_window = true;
-
-
-    if (demo_window) ImGui::ShowDemoWindow();
+    if (*open)
+        ImGui::ShowDemoWindow();
 }
 
 

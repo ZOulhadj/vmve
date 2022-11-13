@@ -173,15 +173,6 @@ static void DestroySwapchain(swapchain_t& swapchain)
 
 static void RebuildSwapchain(swapchain_t& swapchain)
 {
-    // Check if the window is minimized and if so then wait here.
-    int width = 0, height = 0;
-    glfwGetFramebufferSize(g_rc->window->handle, &width, &height);
-
-    while (width == 0 || height == 0) {
-        glfwGetFramebufferSize(g_rc->window->handle, &width, &height);
-        glfwWaitEvents();
-    }
-
     vk_check(vkDeviceWaitIdle(g_rc->device.device));
 
     DestroySwapchain(swapchain);
@@ -472,14 +463,12 @@ std::vector<Framebuffer> create_framebuffers(VkRenderPass render_pass,
 void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, image_buffer_t& images,
                                          image_buffer_t& depth)
 {
-    vkDeviceWaitIdle(g_rc->device.device);
     destroy_framebuffers(framebuffers);
     framebuffers = create_framebuffers(render_pass, images, depth);
 }
 
 void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, VkExtent2D extent)
 {
-    vkDeviceWaitIdle(g_rc->device.device);
     destroy_framebuffers(framebuffers);
     framebuffers = create_ui_framebuffers(render_pass, extent);
 }
@@ -970,11 +959,10 @@ void end_rendering()
 
 VkCommandBuffer begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers)
 {
+    vk_check(vkResetCommandBuffer(viewport_cmd_buffer, 0));
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vk_check(vkResetCommandBuffer(viewport_cmd_buffer, 0));
     vk_check(vkBeginCommandBuffer(viewport_cmd_buffer, &begin_info));
 
 
@@ -1003,11 +991,11 @@ VkCommandBuffer begin_viewport_render_pass(VkRenderPass render_pass, const std::
     render_area.extent.height = framebuffers[currentImage].extent.height;
 
     VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    renderPassInfo.renderPass = render_pass;
-    renderPassInfo.framebuffer = framebuffers[currentImage].handle;
-    renderPassInfo.renderArea = render_area;
+    renderPassInfo.renderPass      = render_pass;
+    renderPassInfo.framebuffer     = framebuffers[currentImage].handle;
+    renderPassInfo.renderArea      = render_area;
     renderPassInfo.clearValueCount = 2;
-    renderPassInfo.pClearValues = clear_buffers;
+    renderPassInfo.pClearValues    = clear_buffers;
 
     vkCmdBeginRenderPass(viewport_cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -1017,11 +1005,10 @@ VkCommandBuffer begin_viewport_render_pass(VkRenderPass render_pass, const std::
 
 VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers)
 {
+    vk_check(vkResetCommandBuffer(ui_cmd_buffer, 0));
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vk_check(vkResetCommandBuffer(ui_cmd_buffer, 0));
     vk_check(vkBeginCommandBuffer(ui_cmd_buffer, &begin_info));
 
 
@@ -1043,16 +1030,16 @@ VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector
     const VkClearValue clear_color = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
 
     VkRect2D render_area{};
-    render_area.offset = { 0, 0 };
-    render_area.extent.width = framebuffers[currentImage].extent.width;
+    render_area.offset        = { 0, 0 };
+    render_area.extent.width  = framebuffers[currentImage].extent.width;
     render_area.extent.height = framebuffers[currentImage].extent.height;
 
     VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    renderPassInfo.renderPass = render_pass;
-    renderPassInfo.framebuffer = framebuffers[currentImage].handle;
-    renderPassInfo.renderArea = render_area;
+    renderPassInfo.renderPass      = render_pass;
+    renderPassInfo.framebuffer     = framebuffers[currentImage].handle;
+    renderPassInfo.renderArea      = render_area;
     renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clear_color;
+    renderPassInfo.pClearValues    = &clear_color;
 
     vkCmdBeginRenderPass(ui_cmd_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
