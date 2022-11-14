@@ -36,12 +36,16 @@ set(IMGUI_SRC
         vendor/imgui/imgui_tables.cpp
         vendor/imgui/imgui_widgets.cpp)
 
+set(IMGUIZMO_SRC
+        vendor/imgui/ImGuizmo.cpp)
+
 include_directories(STB_INCLUDE vendor/stb/)
 
 
 
 add_executable(${PROJECT_NAME}
         ${IMGUI_SRC}
+        ${IMGUIZMO_SRC}
 
         # engine test file
         "sandbox/main.cpp"
@@ -61,6 +65,7 @@ add_executable(${PROJECT_NAME}
         "src/renderer/buffer.cpp"
         "src/renderer/shader.cpp"
         "src/renderer/context.cpp"
+        "src/vfs.cpp"
 
         # precompiled header
         # note: this is required to compile header only files such as STB, VMA

@@ -16,6 +16,7 @@
 #include "../src/events/mouse_event.hpp"
 #include "../src/utility.hpp"
 #include "../src/vertex.hpp"
+#include "../src/vfs.hpp"
 
 // Application specific header files
 #include "ui.hpp"
@@ -55,12 +56,12 @@ static void handle_input(camera_t& camera, float deltaTime) {
 //        camera.roll += camera.roll_speed * deltaTime;
 }
 
-VkSampler sampler;
-image_buffer_t albedo_image{};
-image_buffer_t depth_image{};
+VkSampler viewport_sampler;
+image_buffer_t viewport_color{};
+image_buffer_t viewport_depth{};
 VkRenderPass render_pass = nullptr;
 std::vector<Framebuffer> framebuffers;
-std::vector<VkDescriptorSet> m_Dset(2);
+std::vector<VkDescriptorSet> viewport_descriptor_sets(2);
 
 
 VkRenderPass ui_pass = nullptr;
@@ -131,20 +132,25 @@ int main(int argc, char** argv)
 
     renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
-
-
+    virtual_file_system vfs;
+    vfs.root_path = "/home/zakariya/CLionProjects/vmve/";
+//
+//    mount_folder(vfs, "models", "assets/models");
+//    mount_folder(vfs, "textures", "assets/textures");
+//    mount_folder(vfs, "shaders", "assets/shaders");
+//    mount_folder(vfs, "sounds", "assets/sounds");
 
     // Images, Render pass and Framebuffers
     VkExtent2D size = { window->width, window->height };
     ui_pass = create_ui_render_pass();
     ui_framebuffers = create_ui_framebuffers(ui_pass, size);
 
-    sampler = create_sampler(VK_FILTER_LINEAR, 16);
-    albedo_image = create_image(VK_FORMAT_B8G8R8A8_SRGB, size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    depth_image  = create_image(VK_FORMAT_D32_SFLOAT, size, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    viewport_sampler = create_sampler(VK_FILTER_LINEAR, 16);
+    viewport_color   = create_image(VK_FORMAT_B8G8R8A8_SRGB, size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    viewport_depth   = create_image(VK_FORMAT_D32_SFLOAT, size, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     render_pass  = create_render_pass();
-    framebuffers = create_framebuffers(render_pass, albedo_image, depth_image);
+    framebuffers = create_framebuffers(render_pass, viewport_color, viewport_depth);
 
 
 
@@ -245,8 +251,8 @@ int main(int argc, char** argv)
 
     ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
 
-    for (auto& i : m_Dset)
-        i = ImGui_ImplVulkan_AddTexture(sampler, albedo_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    for (auto& i : viewport_descriptor_sets)
+        i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
     // Built-in resources
@@ -267,6 +273,8 @@ int main(int argc, char** argv)
     texture_buffer_t skysphere = load_texture("assets/textures/skysphere.jpg", VK_FORMAT_R8G8B8A8_SRGB);
     instance_t skybox = create_entity(icosphere, skysphere, g_object_layout);
     instance_t ground = create_entity(quad, skysphere, g_object_layout);
+
+    VkDescriptorSet skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere.sampler, skysphere.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // User loaded resources
     vertex_array_t model = load_model("assets/model.obj");
@@ -362,6 +370,7 @@ int main(int argc, char** argv)
                 ImGui_ImplGlfw_NewFrame();
                 ImGui::NewFrame();
                 {
+                    ImGuizmo::BeginFrame();
 
                     // Submit the DockSpace
                     ImGuiIO& io = ImGui::GetIO();
@@ -464,24 +473,161 @@ int main(int argc, char** argv)
                     ImGui::SliderFloat("Roll speed", &camera.speed, 0.0f, 20.0f);
                     ImGui::SliderFloat("Fov", &camera.fov, 1.0f, 120.0f);
                     ImGui::SliderFloat("Near", &camera.near, 0.1f, 10.0f);
+
+                    ImGui::Image(skysphere_dset, { 128, 128 });
+                    static bool select_skybox = false;
+                    if (ImGui::Button("Select skybox..."))
+                        select_skybox = true;
+
+                    if (select_skybox) {
+                        const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
+
+                        if (ImGui::TreeNodeEx("Tree view", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+                            static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
+                                                           ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg |
+                                                           ImGuiTableFlags_NoBordersInBody;
+
+                            if (ImGui::BeginTable("3ways", 3, flags)) {
+                                // The first column will use the default _WidthStretch when ScrollX is Off and _WidthFixed when ScrollX is On
+                                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+                                ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,
+                                                        TEXT_BASE_WIDTH * 12.0f);
+                                ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed,
+                                                        TEXT_BASE_WIDTH * 18.0f);
+                                ImGui::TableHeadersRow();
+
+                                // Simple storage to output a dummy file-system.
+                                struct MyTreeNode {
+                                    const char* Name;
+                                    const char* Type;
+                                    int Size;
+                                    int ChildIdx;
+                                    int ChildCount;
+
+                                    static void DisplayNode(const MyTreeNode* node, const MyTreeNode* all_nodes) {
+                                        ImGui::TableNextRow();
+                                        ImGui::TableNextColumn();
+                                        const bool is_folder = (node->ChildCount > 0);
+                                        if (is_folder) {
+                                            bool open = ImGui::TreeNodeEx(node->Name, ImGuiTreeNodeFlags_SpanFullWidth);
+                                            ImGui::TableNextColumn();
+                                            ImGui::TextDisabled("--");
+                                            ImGui::TableNextColumn();
+                                            ImGui::TextUnformatted(node->Type);
+                                            if (open) {
+                                                for (int child_n = 0; child_n < node->ChildCount; child_n++)
+                                                    DisplayNode(&all_nodes[node->ChildIdx + child_n], all_nodes);
+                                                ImGui::TreePop();
+                                            }
+                                        } else {
+                                            ImGui::TreeNodeEx(node->Name,
+                                                              ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet |
+                                                              ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                                                              ImGuiTreeNodeFlags_SpanFullWidth);
+                                            ImGui::TableNextColumn();
+                                            ImGui::Text("%d", node->Size);
+                                            ImGui::TableNextColumn();
+                                            ImGui::TextUnformatted(node->Type);
+                                        }
+                                    }
+                                };
+                                static const MyTreeNode nodes[] =
+                                        {
+                                                {"Root",                          "Folder",      -1,     1,  3}, // 0
+                                                {"Music",                         "Folder",      -1,     4,  2}, // 1
+                                                {"Textures",                      "Folder",      -1,     6,  3}, // 2
+                                                {"desktop.ini",                   "System file", 1024,   -1, -1}, // 3
+                                                {"File1_a.wav",                   "Audio file",  123000, -1, -1}, // 4
+                                                {"File1_b.wav",                   "Audio file",  456000, -1, -1}, // 5
+                                                {"Image001.png",                  "Image file",  203128, -1, -1}, // 6
+                                                {"Copy of Image001.png",          "Image file",  203256, -1, -1}, // 7
+                                                {"Copy of Image001 (Final2).png", "Image file",  203512, -1, -1}, // 8
+                                        };
+
+                                MyTreeNode::DisplayNode(&nodes[0], nodes);
+
+                                ImGui::EndTable();
+                            }
+                            ImGui::TreePop();
+                        }
+                    }
+
+
+                    static bool show_demo_window = false;
+                    if (ImGui::Button("Show demo window"))
+                        show_demo_window = true;
+
+                    if (show_demo_window)
+                        ImGui::ShowDemoWindow();
+
                     ImGui::End();
 
+                    ImGui::PushFont(io.Fonts->Fonts[1]);
                     ImGui::Begin(console_window, &window_visible, window_flags);
                     for (std::size_t i = 0; i < 10; ++i)
                         ImGui::Text("Text %d", i);
                     ImGui::End();
+                    ImGui::PopFont();
 
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
                     ImGui::Begin(viewport_window, &window_visible, window_flags);
+
+
+                    auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+                    auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+                    auto viewportOffset = ImGui::GetWindowPos();
+                    ImVec2 viewportBoundsMin { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+                    ImVec2 viewportBoundsMax { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+
+
                     ImGui::PopStyleVar(2);
-                    ImGui::Image(m_Dset[currentImage], ImGui::GetContentRegionAvail());
+                    ImGui::Image(viewport_descriptor_sets[currentImage], ImGui::GetContentRegionAvail());
                     ImGui::End();
 
 
+//                    glm::vec2 light_overlay = world_to_screen(window, camera, scene.lightPosition);
+//                    ImGui::SetNextWindowPos({ light_overlay.x, light_overlay.y });
+//                    ImGui::Begin("Light");
+//                    ImGui::Text("Light");
+//                    ImGui::End();
+
+
+                    // The renderer uses a left-handed coordinate system and therefore, we must invert the Y axis of the
+                    // matrix for correct gizmo screen-space translation.
+                    glm::mat4 projection = camera.viewProj.proj;
+                    projection[1][1] *= -1.0;
+
+
+                    ImGuizmo::SetOrthographic(false);
+                    static bool enable = false;
+                    ImGuizmo::Enable(enable);
+                    //ImGuizmo::SetDrawlist();
+                    ImGuizmo::SetRect(viewportBoundsMin.x, viewportBoundsMin.y, viewportBoundsMax.x - viewportBoundsMin.x, viewportBoundsMax.y - viewportBoundsMin.y);
+                    ImGuizmo::Manipulate(glm::value_ptr(camera.viewProj.view),
+                                         glm::value_ptr(projection),
+                                         ImGuizmo::OPERATION::ROTATE,
+                                         ImGuizmo::MODE::LOCAL,
+                                         glm::value_ptr(model_instance.matrix));
+
+                    if (ImGuizmo::IsOver()) {
+                        enable = true;
+                        glm::vec3 translation, rotation, scale1;
+                        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model_instance.matrix),
+                                                              glm::value_ptr(translation),
+                                                              glm::value_ptr(rotation),
+                                                              glm::value_ptr(scale1));
+                        translate(model_instance, translation);
+                        rotate(model_instance, rotation);
+                        scale(model_instance, scale1);
+                    } else {
+                        enable = false;
+                    }
+
 
 
                     ImGui::End();
+
 
                 }
                 ImGui::EndFrame();
@@ -534,10 +680,10 @@ int main(int argc, char** argv)
     destroy_framebuffers(framebuffers);
     destroy_render_pass(render_pass);
 
-    destroy_image(depth_image);
-    destroy_image(albedo_image);
+    destroy_image(viewport_depth);
+    destroy_image(viewport_color);
 
-    destroy_sampler(sampler);
+    destroy_sampler(viewport_sampler);
 
 
     destroy_framebuffers(ui_framebuffers);
@@ -587,18 +733,18 @@ static bool resize(window_resized_event& e)
 
     VkExtent2D extent = {e.get_width(), e.get_height()};
 
-    destroy_image(albedo_image);
-    destroy_image(depth_image);
-    albedo_image = create_image(VK_FORMAT_B8G8R8A8_SRGB, extent, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    depth_image = create_image(VK_FORMAT_D32_SFLOAT, extent, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    destroy_image(viewport_color);
+    destroy_image(viewport_depth);
+    viewport_color = create_image(VK_FORMAT_B8G8R8A8_SRGB, extent, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    viewport_depth = create_image(VK_FORMAT_D32_SFLOAT, extent, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-    resize_framebuffers_color_and_depth(render_pass, framebuffers, albedo_image, depth_image);
+    resize_framebuffers_color_and_depth(render_pass, framebuffers, viewport_color, viewport_depth);
     resize_framebuffers_color(ui_pass, ui_framebuffers, extent);
 
 
-    for (auto& i: m_Dset) {
+    for (auto& i: viewport_descriptor_sets) {
         ImGui_ImplVulkan_RemoveTexture(i);
-        i = ImGui_ImplVulkan_AddTexture(sampler, albedo_image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
     return true;

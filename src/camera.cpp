@@ -79,6 +79,7 @@ void update_camera(camera_t& camera)
 
     // Create the view and projection matrices
     camera.viewProj.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
+    //camera.viewProj.proj[1][1] = -1.0;
 
     // Build final camera transform matrix
     camera.roll      = 0.0f;

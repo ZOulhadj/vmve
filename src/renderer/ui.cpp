@@ -78,8 +78,13 @@ ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass ren
     context = ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigDockingWithShift = true;
     io.IniFilename = nullptr;
+    io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/source_sans_pro/SourceSansPro-Regular.ttf", 16);
+    io.Fonts->AddFontFromFileTTF("assets/fonts/source_sans_pro/SourceSansPro-Bold.ttf", 16);
 
     //io.Fonts->AddFontDefault();
 //    if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
