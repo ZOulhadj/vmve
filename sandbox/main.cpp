@@ -20,7 +20,7 @@
 
 // Application specific header files
 #include "ui.hpp"
-
+#include "security.hpp"
 
 
 // Limits
@@ -127,6 +127,10 @@ float uptime   = 0.0f;
 
 int main(int argc, char** argv)
 {
+    aes_data data = aes_encrypt("This is Zakariya Oulhadj.");
+    std::string text = aes_decrypt(data);
+
+
     window_t* window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
