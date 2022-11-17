@@ -35,8 +35,8 @@ constexpr float scaleMax = 10.0f;
 
 
 
-
-static void handle_input(camera_t& camera, float deltaTime) {
+static void handle_input(camera_t& camera, float deltaTime)
+{
     float dt = camera.speed * deltaTime;
     if (is_key_down(GLFW_KEY_W))
         camera.position += camera.front_vector * dt;
@@ -474,10 +474,10 @@ int main(int argc, char** argv)
                     ImGui::SliderFloat("Fov", &camera.fov, 1.0f, 120.0f);
                     ImGui::SliderFloat("Near", &camera.near, 0.1f, 10.0f);
 
-                    ImGui::Image(skysphere_dset, { 128, 128 });
                     static bool select_skybox = false;
-                    if (ImGui::Button("Select skybox..."))
+                    if (ImGui::ImageButton(skysphere_dset, { 128, 128 })) {
                         select_skybox = true;
+                    }
 
                     if (select_skybox) {
                         const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
