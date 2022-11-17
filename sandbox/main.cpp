@@ -17,6 +17,7 @@
 #include "../src/utility.hpp"
 #include "../src/vertex.hpp"
 #include "../src/vfs.hpp"
+#include "../src/filesystem.hpp"
 
 // Application specific header files
 #include "ui.hpp"
@@ -48,7 +49,7 @@ static void handle_input(camera_t& camera, float deltaTime)
         camera.position += camera.right_vector * dt;
     if (is_key_down(GLFW_KEY_SPACE))
         camera.position += camera.up_vector * dt;
-    if (is_key_down(GLFW_KEY_LEFT_CONTROL))
+    if (is_key_down(GLFW_KEY_CAPS_LOCK))
         camera.position -= camera.up_vector * dt;
 //    if (is_key_down(GLFW_KEY_Q))
 //        camera.roll -= camera.roll_speed * deltaTime;
@@ -131,13 +132,17 @@ int main(int argc, char** argv)
     std::string text = aes_decrypt(data);
 
 
+
     window_t* window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
+    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::disabled);
 
     virtual_file_system vfs;
     vfs.root_path = "/home/zakariya/CLionProjects/vmve/";
+
+    std::vector<item> items = get_files_in_directory("assets/");
+
 //
 //    mount_folder(vfs, "models", "assets/models");
 //    mount_folder(vfs, "textures", "assets/textures");
@@ -479,90 +484,14 @@ int main(int argc, char** argv)
                     ImGui::SliderFloat("Near", &camera.near, 0.1f, 10.0f);
 
                     static bool select_skybox = false;
+                    ImGui::Text("Skybox");
                     if (ImGui::ImageButton(skysphere_dset, { 128, 128 })) {
                         select_skybox = true;
                     }
+                    if (select_skybox)
+                        render_filesystem_window("assets/", &select_skybox);
 
-                    if (select_skybox) {
-                        const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
-
-                        if (ImGui::TreeNodeEx("Tree view", ImGuiTreeNodeFlags_SpanAvailWidth)) {
-                            static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
-                                                           ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg |
-                                                           ImGuiTableFlags_NoBordersInBody;
-
-                            if (ImGui::BeginTable("3ways", 3, flags)) {
-                                // The first column will use the default _WidthStretch when ScrollX is Off and _WidthFixed when ScrollX is On
-                                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
-                                ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,
-                                                        TEXT_BASE_WIDTH * 12.0f);
-                                ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed,
-                                                        TEXT_BASE_WIDTH * 18.0f);
-                                ImGui::TableHeadersRow();
-
-                                // Simple storage to output a dummy file-system.
-                                struct MyTreeNode {
-                                    const char* Name;
-                                    const char* Type;
-                                    int Size;
-                                    int ChildIdx;
-                                    int ChildCount;
-
-                                    static void DisplayNode(const MyTreeNode* node, const MyTreeNode* all_nodes) {
-                                        ImGui::TableNextRow();
-                                        ImGui::TableNextColumn();
-                                        const bool is_folder = (node->ChildCount > 0);
-                                        if (is_folder) {
-                                            bool open = ImGui::TreeNodeEx(node->Name, ImGuiTreeNodeFlags_SpanFullWidth);
-                                            ImGui::TableNextColumn();
-                                            ImGui::TextDisabled("--");
-                                            ImGui::TableNextColumn();
-                                            ImGui::TextUnformatted(node->Type);
-                                            if (open) {
-                                                for (int child_n = 0; child_n < node->ChildCount; child_n++)
-                                                    DisplayNode(&all_nodes[node->ChildIdx + child_n], all_nodes);
-                                                ImGui::TreePop();
-                                            }
-                                        } else {
-                                            ImGui::TreeNodeEx(node->Name,
-                                                              ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet |
-                                                              ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                                                              ImGuiTreeNodeFlags_SpanFullWidth);
-                                            ImGui::TableNextColumn();
-                                            ImGui::Text("%d", node->Size);
-                                            ImGui::TableNextColumn();
-                                            ImGui::TextUnformatted(node->Type);
-                                        }
-                                    }
-                                };
-                                static const MyTreeNode nodes[] =
-                                        {
-                                                {"Root",                          "Folder",      -1,     1,  3}, // 0
-                                                {"Music",                         "Folder",      -1,     4,  2}, // 1
-                                                {"Textures",                      "Folder",      -1,     6,  3}, // 2
-                                                {"desktop.ini",                   "System file", 1024,   -1, -1}, // 3
-                                                {"File1_a.wav",                   "Audio file",  123000, -1, -1}, // 4
-                                                {"File1_b.wav",                   "Audio file",  456000, -1, -1}, // 5
-                                                {"Image001.png",                  "Image file",  203128, -1, -1}, // 6
-                                                {"Copy of Image001.png",          "Image file",  203256, -1, -1}, // 7
-                                                {"Copy of Image001 (Final2).png", "Image file",  203512, -1, -1}, // 8
-                                        };
-
-                                MyTreeNode::DisplayNode(&nodes[0], nodes);
-
-                                ImGui::EndTable();
-                            }
-                            ImGui::TreePop();
-                        }
-                    }
-
-
-                    static bool show_demo_window = false;
-                    if (ImGui::Button("Show demo window"))
-                        show_demo_window = true;
-
-                    if (show_demo_window)
-                        ImGui::ShowDemoWindow();
+                    render_demo_window();
 
                     ImGui::End();
 
@@ -578,12 +507,11 @@ int main(int argc, char** argv)
                     ImGui::Begin(viewport_window, &window_visible, window_flags);
 
 
-                    auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
-                    auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-                    auto viewportOffset = ImGui::GetWindowPos();
-                    ImVec2 viewportBoundsMin { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-                    ImVec2 viewportBoundsMax { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
-
+                    auto v_min_r = ImGui::GetWindowContentRegionMin();
+                    auto v_max_r = ImGui::GetWindowContentRegionMax();
+                    auto v_offset = ImGui::GetWindowPos();
+                    ImVec2 viewportBoundsMin {v_min_r.x + v_offset.x, v_min_r.y + v_offset.y };
+                    ImVec2 viewportBoundsMax {v_max_r.x + v_offset.x, v_max_r.y + v_offset.y };
 
                     ImGui::PopStyleVar(2);
                     ImGui::Image(viewport_descriptor_sets[currentImage], ImGui::GetContentRegionAvail());
@@ -597,6 +525,7 @@ int main(int argc, char** argv)
 //                    ImGui::End();
 
 
+#if 0
                     // The renderer uses a left-handed coordinate system and therefore, we must invert the Y axis of the
                     // matrix for correct gizmo screen-space translation.
                     glm::mat4 projection = camera.viewProj.proj;
@@ -627,7 +556,7 @@ int main(int argc, char** argv)
                     } else {
                         enable = false;
                     }
-
+#endif
 
 
                     ImGui::End();

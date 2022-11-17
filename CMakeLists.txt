@@ -66,11 +66,12 @@ add_executable(${PROJECT_NAME}
         "src/renderer/shader.cpp"
         "src/renderer/context.cpp"
         "src/vfs.cpp"
+        "src/filesystem.cpp"
 
         # precompiled header
         # note: this is required to compile header only files such as STB, VMA
         # note: this will be removed in the future.
-        "src/pch.cpp")
+        "src/pch.cpp" )
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
