@@ -53,28 +53,31 @@ void render_demo_window()
     if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 }
 
-void render_filesystem_item(const std::vector<item>& items)
+void render_filesystem(std::vector<filesystem_node>& items)
 {
-    for (const item& i : items) {
-        ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_None;
 
+
+#if 0
+    for (const auto& i : items) {
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
-        if (i.type == item_type::file) {
-            tree_node_flags = ImGuiTreeNodeFlags_Leaf |
-                              ImGuiTreeNodeFlags_Bullet |
-                              ImGuiTreeNodeFlags_NoTreePushOnOpen |
-                              ImGuiTreeNodeFlags_SpanFullWidth;
+
+        if (i.type == filesystem_node_type::file) {
+            ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_Leaf |
+                                                 ImGuiTreeNodeFlags_Bullet |
+                                                 ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                                                 ImGuiTreeNodeFlags_SpanFullWidth;
             ImGui::TreeNodeEx(i.name.c_str(), tree_node_flags);
 
             ImGui::TableNextColumn();
-            ImGui::Text("%d", (int) i.size);
+            ImGui::Text("%d", (int)i.size);
 
             ImGui::TableNextColumn();
             ImGui::TextUnformatted("File");
-        } else if (i.type == item_type::directory) {
-            tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth;
-            bool o = ImGui::TreeNodeEx(i.name.c_str(), tree_node_flags);
+        } else if (i.type == filesystem_node_type::directory) {
+
+
+            bool open = ImGui::TreeNodeEx(i.name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
 
             ImGui::TableNextColumn();
             ImGui::Text("--");
@@ -82,53 +85,85 @@ void render_filesystem_item(const std::vector<item>& items)
             ImGui::TableNextColumn();
             ImGui::TextUnformatted("Folder");
 
-            if (o) {
-                std::vector<item> folder_items = get_files_in_directory(i.path);
-                render_filesystem_item(folder_items);
+            if (open) {
+                printf("Getting files at path: %s\n", i.path.c_str());
+
+                items = get_files_in_directory(i.path.c_str());
+
 
                 ImGui::TreePop();
             }
         }
+
     }
+#endif
+
 }
 
-void render_filesystem_window(std::string_view directory, bool* open)
+void render_filesystem_window(const char* root_dir, bool* open, VkDescriptorSet folder_icon, VkDescriptorSet file_icon)
 {
-    static std::vector<item> items = get_files_in_directory(directory);
 
+    ImGui::SetNextWindowSize({ 800, 600 });
     ImGui::Begin("Filesystem", open);
 
-    if (ImGui::Button("Refresh")) {
-        items = get_files_in_directory(directory);
+    ImGui::Button("Open");
+    ImGui::SameLine();
+    ImGui::Button("Refresh");
+
+    ImVec2 icon_size{ 12, 12 };
+
+    static const char* current_dir = root_dir;
+    static std::vector<filesystem_node> files = get_files_in_directory(current_dir);
+
+    static int index = 0;
+
+    ImGui::Text("Directory: %s", current_dir);
+    if (ImGui::BeginListBox("##empty", { -FLT_MIN, ImGui::GetContentRegionAvail().y })) {
+        for (int i = 0; i < files.size(); ++i) {
+            const bool is_selected = (index == i);
+
+            filesystem_node_type file_type = files[i].type;
+            std::string file_name          = files[i].name;
+            std::string selectable_name    = std::string("##" + file_name);
+
+            ImVec2 combo_pos = ImGui::GetCursorScreenPos();
+            ImGui::SetCursorScreenPos(ImVec2(combo_pos.x + ImGui::GetStyle().FramePadding.x, combo_pos.y));
+
+            if (file_type == filesystem_node_type::file) {
+                bool selected = ImGui::Selectable(selectable_name.c_str(), is_selected);
+                ImGui::SameLine();
+                ImGui::Image(file_icon, icon_size);
+                ImGui::SameLine();
+                ImGui::Text("%s", file_name.c_str());
+
+                if (selected)
+                    index = i;
+
+            } else if (file_type == filesystem_node_type::directory) {
+                bool selected = ImGui::Selectable(selectable_name.c_str(), is_selected);
+
+                ImGui::SameLine();
+                ImGui::Image(folder_icon, icon_size);
+                ImGui::SameLine();
+                ImGui::Text("%s", file_name.c_str());
+
+                if (selected) {
+                    current_dir = files[i].path.c_str();
+                    files = get_files_in_directory(current_dir);
+                    index = 0;
+                }
+            }
+
+            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndListBox();
     }
 
-    const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
-
-
-    static ImGuiTableFlags flags = ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH |
-                                   ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg |
-                                   ImGuiTableFlags_NoBordersInBody;
-
-    if (ImGui::BeginTable("Header", 3, flags)) {
-        // The first column will use the default _WidthStretch when ScrollX is Off and _WidthFixed when ScrollX is On
-        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
-        ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,
-                                TEXT_BASE_WIDTH * 12.0f);
-        ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed,
-                                TEXT_BASE_WIDTH * 18.0f);
-        ImGui::TableHeadersRow();
-
-        render_filesystem_item(items);
-
-        ImGui::EndTable();
-    }
 
 
 
-
-
-
-    ImGui::ButtonEx("Open");
 
     ImGui::End();
 }

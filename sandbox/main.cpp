@@ -141,8 +141,6 @@ int main(int argc, char** argv)
     virtual_file_system vfs;
     vfs.root_path = "/home/zakariya/CLionProjects/vmve/";
 
-    std::vector<item> items = get_files_in_directory("assets/");
-
 //
 //    mount_folder(vfs, "models", "assets/models");
 //    mount_folder(vfs, "textures", "assets/textures");
@@ -259,6 +257,12 @@ int main(int argc, char** argv)
 
 
     ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
+
+    texture_buffer_t folder_texture = load_texture("assets/icons/folder.png", VK_FORMAT_R8G8B8A8_SRGB);
+    texture_buffer_t file_texture = load_texture("assets/icons/file.png", VK_FORMAT_R8G8B8A8_SRGB);
+
+    VkDescriptorSet folder_icon  = ImGui_ImplVulkan_AddTexture(folder_texture.sampler, folder_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    VkDescriptorSet file_icon = ImGui_ImplVulkan_AddTexture(file_texture.sampler, file_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     for (auto& i : viewport_descriptor_sets)
         i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -434,6 +438,13 @@ int main(int argc, char** argv)
                             ImGui::EndMenu();
                         }
 
+
+
+
+                        ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+
+
                         ImGui::EndMenuBar();
                     }
 
@@ -488,8 +499,10 @@ int main(int argc, char** argv)
                     if (ImGui::ImageButton(skysphere_dset, { 128, 128 })) {
                         select_skybox = true;
                     }
-                    if (select_skybox)
-                        render_filesystem_window("assets/", &select_skybox);
+                    if (select_skybox) {
+                        render_filesystem_window("assets", &select_skybox, folder_icon, file_icon);
+                    }
+
 
                     render_demo_window();
 
@@ -593,6 +606,10 @@ int main(int argc, char** argv)
     destroy_texture_buffer(skysphere);
     destroy_vertex_array(icosphere);
     destroy_vertex_array(quad);
+
+
+    destroy_texture_buffer(file_texture);
+    destroy_texture_buffer(folder_texture);
 
 
     // Destroy rendering resources
