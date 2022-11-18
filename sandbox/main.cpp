@@ -136,7 +136,7 @@ int main(int argc, char** argv)
     window_t* window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::disabled);
+    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
     virtual_file_system vfs;
     vfs.root_path = "/home/zakariya/CLionProjects/vmve/";
@@ -500,7 +500,7 @@ int main(int argc, char** argv)
                         select_skybox = true;
                     }
                     if (select_skybox) {
-                        render_filesystem_window("assets", &select_skybox, folder_icon, file_icon);
+                        render_filesystem_window(".", &select_skybox, folder_icon, file_icon);
                     }
 
 

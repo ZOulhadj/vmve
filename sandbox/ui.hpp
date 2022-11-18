@@ -103,21 +103,30 @@ void render_filesystem(std::vector<filesystem_node>& items)
 void render_filesystem_window(const char* root_dir, bool* open, VkDescriptorSet folder_icon, VkDescriptorSet file_icon)
 {
 
+    ImVec2 icon_size{ 12, 12 };
+
+    static std::string current_dir = root_dir;
+    static std::vector<filesystem_node> files = get_files_in_directory(current_dir.c_str());
+
+
+
+
     ImGui::SetNextWindowSize({ 800, 600 });
     ImGui::Begin("Filesystem", open);
 
-    ImGui::Button("Open");
+    if (ImGui::Button("Open")) {
+
+    }
+
     ImGui::SameLine();
-    ImGui::Button("Refresh");
 
-    ImVec2 icon_size{ 12, 12 };
-
-    static const char* current_dir = root_dir;
-    static std::vector<filesystem_node> files = get_files_in_directory(current_dir);
+    if (ImGui::Button("Refresh")) {
+        files = get_files_in_directory(current_dir.c_str());
+    }
 
     static int index = 0;
-
-    ImGui::Text("Directory: %s", current_dir);
+    //printf("%s\n", current_dir.c_str());
+    ImGui::Text("Directory: %s", current_dir.c_str());
     if (ImGui::BeginListBox("##empty", { -FLT_MIN, ImGui::GetContentRegionAvail().y })) {
         for (int i = 0; i < files.size(); ++i) {
             const bool is_selected = (index == i);
@@ -148,8 +157,8 @@ void render_filesystem_window(const char* root_dir, bool* open, VkDescriptorSet 
                 ImGui::Text("%s", file_name.c_str());
 
                 if (selected) {
-                    current_dir = files[i].path.c_str();
-                    files = get_files_in_directory(current_dir);
+                    current_dir = files[i].path;
+                    files = get_files_in_directory(current_dir.c_str());
                     index = 0;
                 }
             }
