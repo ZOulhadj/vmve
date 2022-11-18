@@ -128,8 +128,6 @@ float uptime   = 0.0f;
 
 int main(int argc, char** argv)
 {
-    //aes_data data = aes_encrypt("This is Zakariya Oulhadj.");
-    //std::string text = aes_decrypt(data);
     window_t* window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
@@ -139,7 +137,7 @@ int main(int argc, char** argv)
     vfs.mount("models", "assets/models");
     vfs.mount("textures", "assets/textures");
     vfs.mount("icons", "assets/textures/icons");
-    vfs.mount("shaders", "src/shaders");
+    vfs.mount("shaders", "assets/shaders");
 
     std::string shader_file = load_text_file(vfs.get_path("/shaders/object.vert"));
 
@@ -497,7 +495,7 @@ int main(int argc, char** argv)
                         select_skybox = true;
                     }
                     if (select_skybox) {
-                        render_filesystem_window(".", &select_skybox, folder_icon, file_icon);
+                        render_filesystem_window(vfs.get_path("/textures/"), &select_skybox, folder_icon, file_icon);
                     }
 
                     render_demo_window();

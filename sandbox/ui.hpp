@@ -100,7 +100,7 @@ void render_filesystem(std::vector<filesystem_node>& items)
 
 }
 
-void render_filesystem_window(const char* root_dir, bool* open, VkDescriptorSet folder_icon, VkDescriptorSet file_icon)
+void render_filesystem_window(const std::string& root_dir, bool* open, VkDescriptorSet folder_icon, VkDescriptorSet file_icon)
 {
 
     ImVec2 icon_size{ 12, 12 };

@@ -12,6 +12,7 @@ void virtual_filesystem::unmount(const std::string& virtual_path)
 
 std::string virtual_filesystem::get_path(const std::string& virtual_path)
 {
+
     std::string full_path = virtual_path;
     std::string mount_point;
     std::string remaining_path;
@@ -29,6 +30,8 @@ std::string virtual_filesystem::get_path(const std::string& virtual_path)
         full_path = full_path.erase(0, 1);
     }
 
+    // todo: A path such as "/example_path" causes a substr position error.
+    // todo: This is due to the "/" not being present at the end.
 
     // Find the next slash and everything before it will be considered the
     // mount point.
