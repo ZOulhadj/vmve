@@ -128,33 +128,29 @@ float uptime   = 0.0f;
 
 int main(int argc, char** argv)
 {
-    aes_data data = aes_encrypt("This is Zakariya Oulhadj.");
-    std::string text = aes_decrypt(data);
-
-
-
+    //aes_data data = aes_encrypt("This is Zakariya Oulhadj.");
+    //std::string text = aes_decrypt(data);
     window_t* window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
     renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
-    virtual_file_system vfs;
-    vfs.root_path = "/home/zakariya/CLionProjects/vmve/";
+    virtual_filesystem vfs;
+    vfs.mount("models", "assets/models");
+    vfs.mount("textures", "assets/textures");
+    vfs.mount("icons", "assets/textures/icons");
+    vfs.mount("shaders", "src/shaders");
 
-//
-//    mount_folder(vfs, "models", "assets/models");
-//    mount_folder(vfs, "textures", "assets/textures");
-//    mount_folder(vfs, "shaders", "assets/shaders");
-//    mount_folder(vfs, "sounds", "assets/sounds");
+    std::string shader_file = load_text_file(vfs.get_path("/shaders/object.vert"));
+
 
     // Images, Render pass and Framebuffers
-    VkExtent2D size = { window->width, window->height };
     ui_pass = create_ui_render_pass();
-    ui_framebuffers = create_ui_framebuffers(ui_pass, size);
+    ui_framebuffers = create_ui_framebuffers(ui_pass, { window->width, window->height });
 
     viewport_sampler = create_sampler(VK_FILTER_LINEAR, 16);
-    viewport_color   = create_image(VK_FORMAT_B8G8R8A8_SRGB, size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    viewport_depth   = create_image(VK_FORMAT_D32_SFLOAT, size, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    viewport_color   = create_color_image({ window->width, window->height });
+    viewport_depth   = create_depth_image({ window->width, window->height });
 
     render_pass  = create_render_pass();
     framebuffers = create_framebuffers(render_pass, viewport_color, viewport_depth);
@@ -192,12 +188,12 @@ int main(int argc, char** argv)
     // Shaders and Pipeline
 
     // Load shaders text files
-    std::string gridVSCode      = load_text_file("src/shaders/grid.vert");
-    std::string gridFSCode      = load_text_file("src/shaders/grid.frag");
-    std::string objectVSCode    = load_text_file("src/shaders/object.vert");
-    std::string objectFSCode    = load_text_file("src/shaders/object.frag");
-    std::string skysphereVSCode = load_text_file("src/shaders/skysphere.vert");
-    std::string skysphereFSCode = load_text_file("src/shaders/skysphere.frag");
+    std::string gridVSCode      = load_text_file(vfs.get_path("/shaders/grid.vert"));
+    std::string gridFSCode      = load_text_file(vfs.get_path("/shaders/grid.frag"));
+    std::string objectVSCode    = load_text_file(vfs.get_path("/shaders/object.vert"));
+    std::string objectFSCode    = load_text_file(vfs.get_path("/shaders/object.frag"));
+    std::string skysphereVSCode = load_text_file(vfs.get_path("/shaders/skysphere.vert"));
+    std::string skysphereFSCode = load_text_file(vfs.get_path("/shaders/skysphere.frag"));
 
     // Compile text shaders into Vulkan binary shader modules
     shader gridVS      = create_vertex_shader(gridVSCode);
@@ -258,8 +254,8 @@ int main(int argc, char** argv)
 
     ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
 
-    texture_buffer_t folder_texture = load_texture("assets/icons/folder.png", VK_FORMAT_R8G8B8A8_SRGB);
-    texture_buffer_t file_texture = load_texture("assets/icons/file.png", VK_FORMAT_R8G8B8A8_SRGB);
+    texture_buffer_t folder_texture = load_texture(vfs.get_path("/icons/folder.png"), VK_FORMAT_R8G8B8A8_SRGB);
+    texture_buffer_t file_texture = load_texture(vfs.get_path("/icons/file.png"), VK_FORMAT_R8G8B8A8_SRGB);
 
     VkDescriptorSet folder_icon  = ImGui_ImplVulkan_AddTexture(folder_texture.sampler, folder_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     VkDescriptorSet file_icon = ImGui_ImplVulkan_AddTexture(file_texture.sampler, file_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -282,15 +278,16 @@ int main(int argc, char** argv)
 
     vertex_array_t quad = create_vertex_array(quad_vertices.data(), quad_vertices.size() * sizeof(vertex_t),
                                               quad_indices.data(), quad_indices.size() * sizeof(uint32_t));
-    vertex_array_t icosphere = load_model("assets/sphere.obj");
-    texture_buffer_t skysphere = load_texture("assets/textures/skysphere.jpg", VK_FORMAT_R8G8B8A8_SRGB);
+
+    vertex_array_t icosphere = load_model(vfs.get_path("/models/sphere.obj"));
+    texture_buffer_t skysphere = load_texture(vfs.get_path("/textures/skysphere.jpg"), VK_FORMAT_R8G8B8A8_SRGB);
     instance_t skybox = create_entity(icosphere, skysphere, g_object_layout);
     instance_t ground = create_entity(quad, skysphere, g_object_layout);
 
     VkDescriptorSet skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere.sampler, skysphere.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // User loaded resources
-    vertex_array_t model = load_model("assets/model.obj");
+    vertex_array_t model = load_model(vfs.get_path("/models/model.obj"));
     instance_t model_instance = create_entity(model, skysphere, g_object_layout);
 
 
@@ -503,7 +500,6 @@ int main(int argc, char** argv)
                         render_filesystem_window(".", &select_skybox, folder_icon, file_icon);
                     }
 
-
                     render_demo_window();
 
                     ImGui::End();
@@ -685,8 +681,8 @@ static bool resize(window_resized_event& e)
 
     destroy_image(viewport_color);
     destroy_image(viewport_depth);
-    viewport_color = create_image(VK_FORMAT_B8G8R8A8_SRGB, extent, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    viewport_depth = create_image(VK_FORMAT_D32_SFLOAT, extent, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    viewport_color = create_color_image(extent);
+    viewport_depth = create_depth_image(extent);
 
     resize_framebuffers_color_and_depth(render_pass, framebuffers, viewport_color, viewport_depth);
     resize_framebuffers_color(ui_pass, ui_framebuffers, extent);

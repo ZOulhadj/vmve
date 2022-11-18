@@ -216,6 +216,16 @@ image_buffer_t create_image(VkFormat format, VkExtent2D extent, VkImageUsageFlag
     return image;
 }
 
+image_buffer_t create_color_image(VkExtent2D size)
+{
+    return create_image(VK_FORMAT_B8G8R8A8_SRGB, size, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+}
+
+image_buffer_t create_depth_image(VkExtent2D size)
+{
+    return create_image(VK_FORMAT_D32_SFLOAT, size, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
 void destroy_image(image_buffer_t& image)
 {
     const renderer_context_t& rc = get_renderer_context();

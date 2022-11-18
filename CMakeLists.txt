@@ -50,28 +50,30 @@ add_executable(${PROJECT_NAME}
         # engine test file
         "sandbox/main.cpp"
 
+        # core
         "src/window.cpp"
         "src/camera.cpp"
         "src/entity.cpp"
         "src/input.cpp"
+        "src/model.cpp"
+        "src/vertex.cpp"
+        "src/vfs.cpp"
+        "src/filesystem.cpp"
+        "src/utility.cpp"
 
+        # renderer
         "src/renderer/renderer.cpp"
         "src/renderer/ui.cpp"
-
-        "src/model.cpp"
-        "src/renderer/texture.cpp"
-        "src/vertex.cpp"
         "src/renderer/vertex_array.cpp"
         "src/renderer/buffer.cpp"
         "src/renderer/shader.cpp"
         "src/renderer/context.cpp"
-        "src/vfs.cpp"
-        "src/filesystem.cpp"
+        "src/renderer/texture.cpp"
 
         # precompiled header
         # note: this is required to compile header only files such as STB, VMA
         # note: this will be removed in the future.
-        "src/pch.cpp" )
+        "src/pch.cpp")
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)

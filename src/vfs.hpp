@@ -2,9 +2,17 @@
 #define MYENGINE_VFS_HPP
 
 
-struct virtual_file_system
+class virtual_filesystem
 {
-    std::filesystem::path root_path;
+public:
+    virtual_filesystem() = default;
+
+    void mount(const std::string& virtual_path, const std::string& real_path);
+    void unmount(const std::string& virtual_path);
+
+    std::string get_path(const std::string& virtual_path);
+private:
+    std::unordered_map<std::string, std::vector<std::string>> _mount_points;
 };
 
 #endif

@@ -4,6 +4,6 @@
 
 #include "renderer/vertex_array.hpp"
 
-vertex_array_t load_model(const char* path);
+vertex_array_t load_model(const std::string& path);
 
 #endif

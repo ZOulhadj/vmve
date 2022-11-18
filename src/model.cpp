@@ -83,7 +83,7 @@ static void parse_model(std::vector<vertex_t>& vertices, std::vector<uint32_t>& 
 
 }
 
-vertex_array_t load_model(const char* path)
+vertex_array_t load_model(const std::string& path)
 {
     vertex_array_t buffer{};
 
@@ -96,7 +96,7 @@ vertex_array_t load_model(const char* path)
                                                    );
 
     if (!scene) {
-        printf("Failed to load model at path: %s\n", path);
+        printf("Failed to load model at path: %s\n", path.c_str());
         return {};
     }
 

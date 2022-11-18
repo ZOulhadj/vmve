@@ -107,15 +107,13 @@ void render_filesystem_window(const char* root_dir, bool* open, VkDescriptorSet 
 
     static std::string current_dir = root_dir;
     static std::vector<filesystem_node> files = get_files_in_directory(current_dir.c_str());
+    static int index = 0;
 
 
-
-
-    ImGui::SetNextWindowSize({ 800, 600 });
+    ImGui::SetNextWindowSize({ 600, 480 });
     ImGui::Begin("Filesystem", open);
 
     if (ImGui::Button("Open")) {
-
     }
 
     ImGui::SameLine();
@@ -124,8 +122,7 @@ void render_filesystem_window(const char* root_dir, bool* open, VkDescriptorSet 
         files = get_files_in_directory(current_dir.c_str());
     }
 
-    static int index = 0;
-    //printf("%s\n", current_dir.c_str());
+
     ImGui::Text("Directory: %s", current_dir.c_str());
     if (ImGui::BeginListBox("##empty", { -FLT_MIN, ImGui::GetContentRegionAvail().y })) {
         for (int i = 0; i < files.size(); ++i) {
