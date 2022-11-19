@@ -7,8 +7,7 @@ std::vector<filesystem_node> get_files_in_directory(const char* directory)
 
     std::filesystem::path current_path(directory);
 
-    if (current_path.has_parent_path())
-    {
+    if (current_path.has_parent_path()) {
         filesystem_node node{};
 
         node.path = current_path.parent_path();

@@ -44,7 +44,7 @@ std::string virtual_filesystem::get_path(const std::string& virtual_path)
     // Once the mount point has been set then we store the rest of the path
     // so that it can be combined with each real path for a given virtual
     // mount point.
-    remaining_path = full_path.substr(pos, full_path.size());
+    remaining_path = full_path.substr(mount_point.size(), full_path.size());
 
 
     // Check if virtual mount point exists or if any real paths are mounted to

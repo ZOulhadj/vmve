@@ -136,7 +136,6 @@ int main(int argc, char** argv)
     virtual_filesystem vfs;
     vfs.mount("models", "assets/models");
     vfs.mount("textures", "assets/textures");
-    vfs.mount("icons", "assets/textures/icons");
     vfs.mount("shaders", "assets/shaders");
 
     std::string shader_file = load_text_file(vfs.get_path("/shaders/object.vert"));
@@ -252,8 +251,8 @@ int main(int argc, char** argv)
 
     ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
 
-    texture_buffer_t folder_texture = load_texture(vfs.get_path("/icons/folder.png"), VK_FORMAT_R8G8B8A8_SRGB);
-    texture_buffer_t file_texture = load_texture(vfs.get_path("/icons/file.png"), VK_FORMAT_R8G8B8A8_SRGB);
+    texture_buffer_t folder_texture = load_texture(vfs.get_path("/textures/icons/folder.png"), VK_FORMAT_R8G8B8A8_SRGB);
+    texture_buffer_t file_texture = load_texture(vfs.get_path("/textures/icons/file.png"), VK_FORMAT_R8G8B8A8_SRGB);
 
     VkDescriptorSet folder_icon  = ImGui_ImplVulkan_AddTexture(folder_texture.sampler, folder_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     VkDescriptorSet file_icon = ImGui_ImplVulkan_AddTexture(file_texture.sampler, file_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -495,7 +494,7 @@ int main(int argc, char** argv)
                         select_skybox = true;
                     }
                     if (select_skybox) {
-                        render_filesystem_window(vfs.get_path("/textures/"), &select_skybox, folder_icon, file_icon);
+                        render_filesystem_window(vfs.get_path("/textures"), &select_skybox, folder_icon, file_icon);
                     }
 
                     render_demo_window();
