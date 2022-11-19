@@ -137,7 +137,21 @@ void destroy_user_interface(ImGuiContext* context)
     ImGui::DestroyContext(context);
 }
 
-void render_ui()
+void begin_ui()
 {
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    ImGuizmo::BeginFrame();
+}
+
+void end_ui(VkCommandBuffer cmd_buffer)
+{
+    ImGui::EndFrame();
+
     ImGui::Render();
+    ImGui::UpdatePlatformWindows();
+    ImGui::RenderPlatformWindowsDefault();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd_buffer);
 }

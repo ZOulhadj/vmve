@@ -13,6 +13,8 @@ struct GUI {
 ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass renderPass);
 void destroy_user_interface(ImGuiContext* context);
 
-void render_ui();
+void begin_ui();
+void end_ui(VkCommandBuffer cmd_buffer);
+
 
 #endif

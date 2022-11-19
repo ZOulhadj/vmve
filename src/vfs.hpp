@@ -2,6 +2,8 @@
 #define MYENGINE_VFS_HPP
 
 
+// todo: convert into a singleton
+
 class virtual_filesystem
 {
 public:

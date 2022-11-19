@@ -35,28 +35,6 @@ constexpr float scaleMin = 1.0f;
 constexpr float scaleMax = 10.0f;
 
 
-
-static void handle_input(camera_t& camera, float deltaTime)
-{
-    float dt = camera.speed * deltaTime;
-    if (is_key_down(GLFW_KEY_W))
-        camera.position += camera.front_vector * dt;
-    if (is_key_down(GLFW_KEY_S))
-        camera.position -= camera.front_vector * dt;
-    if (is_key_down(GLFW_KEY_A))
-        camera.position -= camera.right_vector * dt;
-    if (is_key_down(GLFW_KEY_D))
-        camera.position += camera.right_vector * dt;
-    if (is_key_down(GLFW_KEY_SPACE))
-        camera.position += camera.up_vector * dt;
-    if (is_key_down(GLFW_KEY_CAPS_LOCK))
-        camera.position -= camera.up_vector * dt;
-//    if (is_key_down(GLFW_KEY_Q))
-//        camera.roll -= camera.roll_speed * deltaTime;
-//    if (is_key_down(GLFW_KEY_E))
-//        camera.roll += camera.roll_speed * deltaTime;
-}
-
 VkSampler viewport_sampler;
 image_buffer_t viewport_color{};
 image_buffer_t viewport_depth{};
@@ -73,6 +51,8 @@ pipeline_t basicPipeline{};
 pipeline_t gridPipeline{};
 pipeline_t skyspherePipeline{};
 pipeline_t wireframePipeline{};
+
+pipeline_t current_pipeline{};
 
 // This is a global descriptor set that will be used for all draw calls and
 // will contain descriptors such as a projection view matrix, global scene
@@ -102,7 +82,7 @@ camera_t camera{};
 //
 // Padding is equally important and hence the usage of the "alignas" keyword.
 //
-struct engine_scene {
+struct sandbox_scene {
     float ambientStrength;
     float specularStrength;
     float specularShininess;
@@ -111,6 +91,12 @@ struct engine_scene {
     alignas(16) glm::vec3 lightColor;
 
 };
+
+
+glm::vec3 objectTranslation = glm::vec3(0.0f);
+glm::vec3 objectRotation = glm::vec3(0.0f);
+glm::vec3 objectScale = glm::vec3(1.0f);
+
 
 
 static void event_callback(event& e);
@@ -126,6 +112,198 @@ bool minimised = false;
 float uptime   = 0.0f;
 
 
+
+
+static void handle_input(camera_t& camera, float deltaTime)
+{
+    float dt = camera.speed * deltaTime;
+    if (is_key_down(GLFW_KEY_W))
+        camera.position += camera.front_vector * dt;
+    if (is_key_down(GLFW_KEY_S))
+        camera.position -= camera.front_vector * dt;
+    if (is_key_down(GLFW_KEY_A))
+        camera.position -= camera.right_vector * dt;
+    if (is_key_down(GLFW_KEY_D))
+        camera.position += camera.right_vector * dt;
+    if (is_key_down(GLFW_KEY_SPACE))
+        camera.position += camera.up_vector * dt;
+    if (is_key_down(GLFW_KEY_CAPS_LOCK))
+        camera.position -= camera.up_vector * dt;
+//    if (is_key_down(GLFW_KEY_Q))
+//        camera.roll -= camera.roll_speed * deltaTime;
+//    if (is_key_down(GLFW_KEY_E))
+//        camera.roll += camera.roll_speed * deltaTime;
+}
+
+
+
+
+// Global GUI flags and settings
+
+
+// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+// because it would be confusing to have two docking targets within each others.
+static ImGuiWindowFlags docking_flags = ImGuiWindowFlags_MenuBar |
+                                        ImGuiWindowFlags_NoDocking |
+                                        ImGuiWindowFlags_NoTitleBar |
+                                        ImGuiWindowFlags_NoCollapse |
+                                        ImGuiWindowFlags_NoResize |
+                                        ImGuiWindowFlags_NoMove |
+                                        ImGuiWindowFlags_NoNavFocus |
+                                        ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None; // ImGuiDockNodeFlags_NoTabBar
+
+static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove;
+
+
+
+
+const char* object_window   = "Object";
+const char* console_window  = "Console";
+const char* viewport_window = "Viewport";
+const char* scene_window    = "Scene";
+
+
+static bool editor_open = false;
+static bool window_open = true;
+
+static void render_main_menu()
+{
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
+
+            static bool load_model_open = false;
+            bool load_model_clicked = ImGui::MenuItem("Load model");
+            if (load_model_clicked) load_model_open = true;
+
+//            if (load_model_open)
+//                render_filesystem_window(vfs.get_path("/models"), &load_model_open);
+
+            ImGui::MenuItem("Exit");
+
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Settings")) {
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Help")) {
+            ImGui::EndMenu();
+        }
+
+
+
+        ImGui::EndMenuBar();
+    }
+
+}
+
+static void render_dockspace()
+{
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+    if (!ImGui::DockBuilderGetNode(dockspace_id)) {
+        ImGui::DockBuilderRemoveNode(dockspace_id);
+        ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
+
+        ImGuiID dock_main_id = dockspace_id;
+        ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.2f, nullptr, &dock_main_id);
+        ImGuiID dock_left_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
+        ImGuiID dock_down_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.2f, nullptr, &dock_main_id);
+
+
+        ImGui::DockBuilderDockWindow(object_window, dock_right_id);
+        ImGui::DockBuilderDockWindow(scene_window, dock_left_id);
+        ImGui::DockBuilderDockWindow(console_window, dock_down_id);
+        ImGui::DockBuilderDockWindow(viewport_window, dock_main_id);
+
+        ImGui::DockBuilderFinish(dock_main_id);
+    }
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+
+}
+
+static void render_right_window()
+{
+    // Object window
+    ImGui::Begin(object_window, &window_open, window_flags);
+    {
+        ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
+        ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
+        ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
+    }
+    ImGui::End();
+}
+
+static void render_left_window()
+{
+    ImGuiIO& io = ImGui::GetIO();
+
+    ImGui::Begin(scene_window, &window_open, window_flags);
+    {
+        ImGui::Text("Rendering");
+        ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+        static bool wireframe = false;
+        if (ImGui::Checkbox("Wireframe", &wireframe))
+            wireframe ? current_pipeline = wireframePipeline : current_pipeline = basicPipeline;
+
+        ImGui::Separator();
+        ImGui::Text("Lighting");
+//    ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 1.0f);
+//    ImGui::SliderFloat("Specular strength", &scene.specularStrength, 0.0f, 1.0f);
+//    ImGui::SliderFloat("Specular shininess", &scene.specularShininess, 0.0f, 512.0f);
+//    ImGui::SliderFloat3("Light position", glm::value_ptr(scene.lightPosition), -100.0f, 100.0f);
+//    ImGui::SliderFloat3("Light color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
+        ImGui::Separator();
+        ImGui::Text("Camera");
+        ImGui::SliderFloat3("Position", glm::value_ptr(camera.position), -500.0f, 500.0f);
+        ImGui::SliderFloat("Movement speed", &camera.speed, 0.0f, 20.0f);
+        ImGui::SliderFloat("Roll speed", &camera.roll_speed, 0.0f, 20.0f);
+        ImGui::SliderFloat("Fov", &camera.fov, 1.0f, 120.0f);
+        ImGui::SliderFloat("Near", &camera.near, 0.1f, 10.0f);
+
+
+        ImGui::Text("Skybox");
+        //ImGui::ImageButton(skysphere_dset, { 128, 128 });
+//                    if (select_skybox) {
+//                        render_filesystem_window(vfs.get_path("/textures"), &select_skybox, folder_icon, file_icon);
+//                    }
+
+        render_demo_window();
+    }
+    ImGui::End();
+}
+
+static void render_bottom_window()
+{
+    ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+    ImGui::Begin(console_window, &window_open, window_flags);
+    {
+        for (std::size_t i = 0; i < 5; ++i)
+            ImGui::Text("Text %lu", i);
+    }
+    ImGui::End();
+    ImGui::PopFont();
+}
+
+static void render_viewport_window()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin(viewport_window, &window_open, window_flags);
+    ImGui::PopStyleVar(2);
+    {
+        ImGui::Image(viewport_descriptor_sets[currentImage], ImGui::GetContentRegionAvail());
+    }
+    ImGui::End();
+}
+
+
 int main(int argc, char** argv)
 {
     window_t* window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
@@ -137,8 +315,6 @@ int main(int argc, char** argv)
     vfs.mount("models", "assets/models");
     vfs.mount("textures", "assets/textures");
     vfs.mount("shaders", "assets/shaders");
-
-    std::string shader_file = load_text_file(vfs.get_path("/shaders/object.vert"));
 
 
     // Images, Render pass and Framebuffers
@@ -171,7 +347,7 @@ int main(int argc, char** argv)
     g_descriptor_sets = allocate_descriptor_set(g_layout);
 
     g_camera_buffer = create_uniform_buffer<view_projection>();
-    g_scene_buffer  = create_uniform_buffer<engine_scene>();
+    g_scene_buffer  = create_uniform_buffer<sandbox_scene>();
     update_descriptor_sets({ g_camera_buffer, g_scene_buffer }, g_descriptor_sets);
 
     g_object_layout = create_descriptor_set_layout(per_object_layout);
@@ -183,8 +359,6 @@ int main(int argc, char** argv)
 
 
     // Shaders and Pipeline
-
-    // Load shaders text files
     std::string gridVSCode      = load_text_file(vfs.get_path("/shaders/grid.vert"));
     std::string gridFSCode      = load_text_file(vfs.get_path("/shaders/grid.frag"));
     std::string objectVSCode    = load_text_file(vfs.get_path("/shaders/object.vert"));
@@ -192,7 +366,6 @@ int main(int argc, char** argv)
     std::string skysphereVSCode = load_text_file(vfs.get_path("/shaders/skysphere.vert"));
     std::string skysphereFSCode = load_text_file(vfs.get_path("/shaders/skysphere.frag"));
 
-    // Compile text shaders into Vulkan binary shader modules
     shader gridVS      = create_vertex_shader(gridVSCode);
     shader gridFS      = create_fragment_shader(gridFSCode);
     shader objectVS    = create_vertex_shader(objectVSCode);
@@ -201,10 +374,10 @@ int main(int argc, char** argv)
     shader skysphereFS = create_fragment_shader(skysphereFSCode);
 
     const std::vector<VkFormat> binding_format{
-            VK_FORMAT_R32G32B32_SFLOAT, // Position
-            VK_FORMAT_R32G32B32_SFLOAT, // Color
-            VK_FORMAT_R32G32B32_SFLOAT, // Normal
-            VK_FORMAT_R32G32_SFLOAT     // UV
+        VK_FORMAT_R32G32B32_SFLOAT, // Position
+        VK_FORMAT_R32G32B32_SFLOAT, // Color
+        VK_FORMAT_R32G32B32_SFLOAT, // Normal
+        VK_FORMAT_R32G32_SFLOAT     // UV
     };
 
     PipelineInfo info{};
@@ -221,7 +394,7 @@ int main(int argc, char** argv)
         basicPipeline = create_pipeline(info, render_pass);
     }
     {
-        info.shaders = {objectVS, objectFS };
+        info.shaders = { objectVS, objectFS };
         info.wireframe = true;
         wireframePipeline = create_pipeline(info, render_pass);
     }
@@ -254,8 +427,8 @@ int main(int argc, char** argv)
     texture_buffer_t folder_texture = load_texture(vfs.get_path("/textures/icons/folder.png"), VK_FORMAT_R8G8B8A8_SRGB);
     texture_buffer_t file_texture = load_texture(vfs.get_path("/textures/icons/file.png"), VK_FORMAT_R8G8B8A8_SRGB);
 
-    VkDescriptorSet folder_icon  = ImGui_ImplVulkan_AddTexture(folder_texture.sampler, folder_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    VkDescriptorSet file_icon = ImGui_ImplVulkan_AddTexture(file_texture.sampler, file_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    //VkDescriptorSet folder_icon  = ImGui_ImplVulkan_AddTexture(folder_texture.sampler, folder_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    //VkDescriptorSet file_icon = ImGui_ImplVulkan_AddTexture(file_texture.sampler, file_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     for (auto& i : viewport_descriptor_sets)
         i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -288,18 +461,14 @@ int main(int argc, char** argv)
     instance_t model_instance = create_entity(model, skysphere, g_object_layout);
 
 
+
+
+
+
+    current_pipeline = basicPipeline;
     camera = create_camera({0.0f, 2.0f, -8.0f}, 60.0f, 2.0f);
 
-
-
-    const char* object_window   = "Object";
-    const char* console_window  = "Console";
-    const char* viewport_window = "Viewport";
-    const char* scene_window    = "Scene";
-
-
-
-    engine_scene scene {
+    sandbox_scene scene {
         .ambientStrength   = 0.05f,
         .specularStrength  = 0.15f,
         .specularShininess = 128.0f,
@@ -311,10 +480,6 @@ int main(int argc, char** argv)
     running = true;
     uptime  = 0.0f;
 
-
-    glm::vec3 objectTranslation = glm::vec3(0.0f);
-    glm::vec3 objectRotation = glm::vec3(0.0f);
-    glm::vec3 objectScale = glm::vec3(1.0f);
 
     while (running) {
         // If the application is minimized then only wait for events and don't
@@ -346,6 +511,7 @@ int main(int argc, char** argv)
         set_buffer_data(&g_scene_buffer, &scene);
 
 
+
         // This is where the main rendering starts
         if (begin_rendering()) {
             VkCommandBuffer cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
@@ -361,221 +527,40 @@ int main(int argc, char** argv)
                 render(cmd_buffer, ground, gridPipeline);
 
                 // Render the actual model loaded in by the user
-                bind_pipeline(cmd_buffer, basicPipeline, g_descriptor_sets);
+                bind_pipeline(cmd_buffer, current_pipeline, g_descriptor_sets);
                 bind_vertex_array(cmd_buffer, model);
                 translate(model_instance, objectTranslation);
                 rotate(model_instance, objectRotation);
                 scale(model_instance, objectScale);
-                render(cmd_buffer, model_instance, basicPipeline);
+                render(cmd_buffer, model_instance, current_pipeline);
             }
             end_render_pass(cmd_buffer);
 
 
             VkCommandBuffer ui_cmd_buffer = begin_ui_render_pass(ui_pass, ui_framebuffers);
             {
-                ImGui_ImplVulkan_NewFrame();
-                ImGui_ImplGlfw_NewFrame();
-                ImGui::NewFrame();
+                begin_ui();
+
+                ImGuiViewport* viewport = ImGui::GetMainViewport();
+                ImGui::SetNextWindowPos(viewport->WorkPos);
+                ImGui::SetNextWindowSize(viewport->WorkSize);
+                ImGui::SetNextWindowViewport(viewport->ID);
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+                ImGui::Begin("Editor", &editor_open, docking_flags);
+                ImGui::PopStyleVar(3);
                 {
-                    ImGuizmo::BeginFrame();
-
-                    // Submit the DockSpace
-                    ImGuiIO& io = ImGui::GetIO();
-
-                    static bool opt_open = true;
-
-                    // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-                    // because it would be confusing to have two docking targets within each others.
-                    ImGuiWindowFlags docking_flags = ImGuiWindowFlags_MenuBar |
-                                                     ImGuiWindowFlags_NoDocking |
-                                                     ImGuiWindowFlags_NoTitleBar |
-                                                     ImGuiWindowFlags_NoCollapse |
-                                                     ImGuiWindowFlags_NoResize |
-                                                     ImGuiWindowFlags_NoMove |
-                                                     ImGuiWindowFlags_NoNavFocus |
-                                                     ImGuiWindowFlags_NoBringToFrontOnFocus;
-
-                    // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-                    // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-                    // all active windows docked into it will lose their parent and become undocked.
-                    // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-                    // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-
-                    ImGuiViewport* viewport = ImGui::GetMainViewport();
-                    ImGui::SetNextWindowPos(viewport->WorkPos);
-                    ImGui::SetNextWindowSize(viewport->WorkSize);
-                    ImGui::SetNextWindowViewport(viewport->ID);
-                    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                    ImGui::Begin("Editor", &opt_open, docking_flags);
-                    ImGui::PopStyleVar();
-                    ImGui::PopStyleVar(2);
-
-                    if (ImGui::BeginMenuBar()) {
-                        if (ImGui::BeginMenu("File")) {
-                            render_file_menu();
-
-                            ImGui::EndMenu();
-                        }
-
-                        if (ImGui::BeginMenu("Settings")) {
-                            render_settings_menu();
-
-                            ImGui::EndMenu();
-                        }
-
-                        if (ImGui::BeginMenu("Help")) {
-                            static bool menu_open = false;
-                            render_help_menu(&menu_open);
-
-                            ImGui::EndMenu();
-                        }
-
-
-
-
-                        ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-
-
-
-                        ImGui::EndMenuBar();
-                    }
-
-                    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-                    ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None; // ImGuiDockNodeFlags_NoTabBar
-                    if (!ImGui::DockBuilderGetNode(dockspace_id)) {
-                        ImGui::DockBuilderRemoveNode(dockspace_id);
-                        ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
-                        ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
-
-                        ImGuiID dock_main_id = dockspace_id;
-                        ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.2f, nullptr, &dock_main_id);
-                        ImGuiID dock_left_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
-                        ImGuiID dock_down_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.2f, nullptr, &dock_main_id);
-
-
-                        ImGui::DockBuilderDockWindow(object_window, dock_right_id);
-                        ImGui::DockBuilderDockWindow(scene_window, dock_left_id);
-                        ImGui::DockBuilderDockWindow(console_window, dock_down_id);
-                        ImGui::DockBuilderDockWindow(viewport_window, dock_main_id);
-
-                        ImGui::DockBuilderFinish(dock_main_id);
-                    }
-                    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-
-                    static bool window_visible = true;
-                    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove;
-
-                    ImGui::Begin(object_window, &window_visible, window_flags);
-                    ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
-                    ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
-                    ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
-                    ImGui::End();
-
-                    ImGui::Begin(scene_window, &window_visible, window_flags);
-                    ImGui::Text("Lighting");
-                    ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 1.0f);
-                    ImGui::SliderFloat("Specular strength", &scene.specularStrength, 0.0f, 1.0f);
-                    ImGui::SliderFloat("Specular shininess", &scene.specularShininess, 0.0f, 512.0f);
-                    ImGui::SliderFloat3("Light position", glm::value_ptr(scene.lightPosition), -100.0f, 100.0f);
-                    ImGui::SliderFloat3("Light color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
-                    ImGui::Separator();
-                    ImGui::Text("Camera");
-                    ImGui::SliderFloat3("Position", glm::value_ptr(camera.position), -500.0f, 500.0f);
-                    ImGui::SliderFloat("Movement speed", &camera.speed, 0.0f, 20.0f);
-                    ImGui::SliderFloat("Roll speed", &camera.speed, 0.0f, 20.0f);
-                    ImGui::SliderFloat("Fov", &camera.fov, 1.0f, 120.0f);
-                    ImGui::SliderFloat("Near", &camera.near, 0.1f, 10.0f);
-
-                    static bool select_skybox = false;
-                    ImGui::Text("Skybox");
-                    if (ImGui::ImageButton(skysphere_dset, { 128, 128 })) {
-                        select_skybox = true;
-                    }
-                    if (select_skybox) {
-                        render_filesystem_window(vfs.get_path("/textures"), &select_skybox, folder_icon, file_icon);
-                    }
-
-                    render_demo_window();
-
-                    ImGui::End();
-
-                    ImGui::PushFont(io.Fonts->Fonts[1]);
-                    ImGui::Begin(console_window, &window_visible, window_flags);
-                    for (std::size_t i = 0; i < 10; ++i)
-                        ImGui::Text("Text %d", i);
-                    ImGui::End();
-                    ImGui::PopFont();
-
-                    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                    ImGui::Begin(viewport_window, &window_visible, window_flags);
-
-
-                    auto v_min_r = ImGui::GetWindowContentRegionMin();
-                    auto v_max_r = ImGui::GetWindowContentRegionMax();
-                    auto v_offset = ImGui::GetWindowPos();
-                    ImVec2 viewportBoundsMin {v_min_r.x + v_offset.x, v_min_r.y + v_offset.y };
-                    ImVec2 viewportBoundsMax {v_max_r.x + v_offset.x, v_max_r.y + v_offset.y };
-
-                    ImGui::PopStyleVar(2);
-                    ImGui::Image(viewport_descriptor_sets[currentImage], ImGui::GetContentRegionAvail());
-                    ImGui::End();
-
-
-//                    glm::vec2 light_overlay = world_to_screen(window, camera, scene.lightPosition);
-//                    ImGui::SetNextWindowPos({ light_overlay.x, light_overlay.y });
-//                    ImGui::Begin("Light");
-//                    ImGui::Text("Light");
-//                    ImGui::End();
-
-
-#if 0
-                    // The renderer uses a left-handed coordinate system and therefore, we must invert the Y axis of the
-                    // matrix for correct gizmo screen-space translation.
-                    glm::mat4 projection = camera.viewProj.proj;
-                    projection[1][1] *= -1.0;
-
-
-                    ImGuizmo::SetOrthographic(false);
-                    static bool enable = false;
-                    ImGuizmo::Enable(enable);
-                    //ImGuizmo::SetDrawlist();
-                    ImGuizmo::SetRect(viewportBoundsMin.x, viewportBoundsMin.y, viewportBoundsMax.x - viewportBoundsMin.x, viewportBoundsMax.y - viewportBoundsMin.y);
-                    ImGuizmo::Manipulate(glm::value_ptr(camera.viewProj.view),
-                                         glm::value_ptr(projection),
-                                         ImGuizmo::OPERATION::ROTATE,
-                                         ImGuizmo::MODE::LOCAL,
-                                         glm::value_ptr(model_instance.matrix));
-
-                    if (ImGuizmo::IsOver()) {
-                        enable = true;
-                        glm::vec3 translation, rotation, scale1;
-                        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model_instance.matrix),
-                                                              glm::value_ptr(translation),
-                                                              glm::value_ptr(rotation),
-                                                              glm::value_ptr(scale1));
-                        translate(model_instance, translation);
-                        rotate(model_instance, rotation);
-                        scale(model_instance, scale1);
-                    } else {
-                        enable = false;
-                    }
-#endif
-
-
-                    ImGui::End();
-
-
+                    render_main_menu();
+                    render_dockspace();
+                    render_right_window();
+                    render_left_window();
+                    render_bottom_window();
+                    render_viewport_window();
                 }
-                ImGui::EndFrame();
+                ImGui::End();
 
-                ImGui::Render();
-                ImGui::UpdatePlatformWindows();
-                ImGui::RenderPlatformWindowsDefault();
-                ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), ui_cmd_buffer);
-
+                end_ui(ui_cmd_buffer);
             }
             end_render_pass(ui_cmd_buffer);
 
@@ -618,17 +603,11 @@ int main(int argc, char** argv)
     destroy_pipeline(basicPipeline);
 
 
-
-
     destroy_framebuffers(framebuffers);
     destroy_render_pass(render_pass);
-
     destroy_image(viewport_depth);
     destroy_image(viewport_color);
-
     destroy_sampler(viewport_sampler);
-
-
     destroy_framebuffers(ui_framebuffers);
     destroy_render_pass(ui_pass);
 
