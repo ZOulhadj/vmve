@@ -458,8 +458,9 @@ int main(int argc, char** argv)
     skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere.sampler, skysphere.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // User loaded resources
-    vertex_array_t model = load_model(vfs::get().get_path("/models/model.obj"));
-    instance_t model_instance = create_entity(model, skysphere, g_object_layout);
+    vertex_array_t model = load_model(vfs::get().get_path("/models/cottage_obj.obj"));
+    texture_buffer_t model_texture = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_diffuse.png"));
+    instance_t model_instance = create_entity(model, model_texture, g_object_layout);
 
 
 
