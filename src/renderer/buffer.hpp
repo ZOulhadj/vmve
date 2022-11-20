@@ -40,7 +40,7 @@ void set_buffer_data(buffer_t* buffer, void* data);
 void destroy_buffer(buffer_t& buffer);
 
 VkImageView create_image_view(VkImage image, VkFormat format, VkImageUsageFlagBits usage);
-image_buffer_t create_image(VkFormat format, VkExtent2D extent, VkImageUsageFlagBits usage);
+image_buffer_t create_image(VkExtent2D extent, VkFormat format, VkImageUsageFlagBits usage);
 
 image_buffer_t create_color_image(VkExtent2D size);
 image_buffer_t create_depth_image(VkExtent2D size);

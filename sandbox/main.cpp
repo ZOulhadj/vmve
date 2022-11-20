@@ -111,7 +111,7 @@ bool running   = true;
 bool minimised = false;
 float uptime   = 0.0f;
 
-
+VkDescriptorSet skysphere_dset;
 
 
 static void handle_input(camera_t& camera, float deltaTime)
@@ -269,10 +269,12 @@ static void render_left_window()
 
 
         ImGui::Text("Skybox");
-        //ImGui::ImageButton(skysphere_dset, { 128, 128 });
-//                    if (select_skybox) {
-//                        render_filesystem_window(vfs.get_path("/textures"), &select_skybox, folder_icon, file_icon);
-//                    }
+        static bool open = false;
+        if (ImGui::ImageButton(skysphere_dset, { 128, 128 }))
+            open = true;
+
+        if (open)
+            render_filesystem_window(vfs::get().get_path("/textures"), &open);
 
         render_demo_window();
     }
@@ -311,10 +313,10 @@ int main(int argc, char** argv)
 
     renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
-    virtual_filesystem vfs;
-    vfs.mount("models", "assets/models");
-    vfs.mount("textures", "assets/textures");
-    vfs.mount("shaders", "assets/shaders");
+
+    vfs::get().mount("models", "assets/models");
+    vfs::get().mount("textures", "assets/textures");
+    vfs::get().mount("shaders", "assets/shaders");
 
 
     // Images, Render pass and Framebuffers
@@ -359,12 +361,12 @@ int main(int argc, char** argv)
 
 
     // Shaders and Pipeline
-    std::string gridVSCode      = load_text_file(vfs.get_path("/shaders/grid.vert"));
-    std::string gridFSCode      = load_text_file(vfs.get_path("/shaders/grid.frag"));
-    std::string objectVSCode    = load_text_file(vfs.get_path("/shaders/object.vert"));
-    std::string objectFSCode    = load_text_file(vfs.get_path("/shaders/object.frag"));
-    std::string skysphereVSCode = load_text_file(vfs.get_path("/shaders/skysphere.vert"));
-    std::string skysphereFSCode = load_text_file(vfs.get_path("/shaders/skysphere.frag"));
+    std::string gridVSCode      = load_text_file(vfs::get().get_path("/shaders/grid.vert"));
+    std::string gridFSCode      = load_text_file(vfs::get().get_path("/shaders/grid.frag"));
+    std::string objectVSCode    = load_text_file(vfs::get().get_path("/shaders/object.vert"));
+    std::string objectFSCode    = load_text_file(vfs::get().get_path("/shaders/object.frag"));
+    std::string skysphereVSCode = load_text_file(vfs::get().get_path("/shaders/skysphere.vert"));
+    std::string skysphereFSCode = load_text_file(vfs::get().get_path("/shaders/skysphere.frag"));
 
     shader gridVS      = create_vertex_shader(gridVSCode);
     shader gridFS      = create_fragment_shader(gridFSCode);
@@ -424,8 +426,8 @@ int main(int argc, char** argv)
 
     ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
 
-    texture_buffer_t folder_texture = load_texture(vfs.get_path("/textures/icons/folder.png"), VK_FORMAT_R8G8B8A8_SRGB);
-    texture_buffer_t file_texture = load_texture(vfs.get_path("/textures/icons/file.png"), VK_FORMAT_R8G8B8A8_SRGB);
+    texture_buffer_t folder_texture = load_texture(vfs::get().get_path("/textures/icons/folder.png"));
+    texture_buffer_t file_texture = load_texture(vfs::get().get_path("/textures/icons/file.png"));
 
     //VkDescriptorSet folder_icon  = ImGui_ImplVulkan_AddTexture(folder_texture.sampler, folder_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     //VkDescriptorSet file_icon = ImGui_ImplVulkan_AddTexture(file_texture.sampler, file_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -449,15 +451,15 @@ int main(int argc, char** argv)
     vertex_array_t quad = create_vertex_array(quad_vertices.data(), quad_vertices.size() * sizeof(vertex_t),
                                               quad_indices.data(), quad_indices.size() * sizeof(uint32_t));
 
-    vertex_array_t icosphere = load_model(vfs.get_path("/models/sphere.obj"));
-    texture_buffer_t skysphere = load_texture(vfs.get_path("/textures/skysphere.jpg"), VK_FORMAT_R8G8B8A8_SRGB);
+    vertex_array_t icosphere = load_model(vfs::get().get_path("/models/sphere.obj"));
+    texture_buffer_t skysphere = load_texture(vfs::get().get_path("/textures/skysphere.jpg"));
     instance_t skybox = create_entity(icosphere, skysphere, g_object_layout);
     instance_t ground = create_entity(quad, skysphere, g_object_layout);
 
-    VkDescriptorSet skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere.sampler, skysphere.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere.sampler, skysphere.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // User loaded resources
-    vertex_array_t model = load_model(vfs.get_path("/models/model.obj"));
+    vertex_array_t model = load_model(vfs::get().get_path("/models/model.obj"));
     instance_t model_instance = create_entity(model, skysphere, g_object_layout);
 
 

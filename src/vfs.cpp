@@ -1,16 +1,24 @@
 #include "vfs.hpp"
 
-void virtual_filesystem::mount(const std::string& virtual_path, const std::string& real_path)
+vfs& vfs::get()
+{
+    static vfs instance;
+
+    return instance;
+}
+
+
+void vfs::mount(const std::string& virtual_path, const std::string& real_path)
 {
     _mount_points[virtual_path].push_back(real_path);
 }
 
-void virtual_filesystem::unmount(const std::string& virtual_path)
+void vfs::unmount(const std::string& virtual_path)
 {
     _mount_points[virtual_path].clear();
 }
 
-std::string virtual_filesystem::get_path(const std::string& virtual_path)
+std::string vfs::get_path(const std::string& virtual_path)
 {
 
     std::string full_path = virtual_path;
@@ -81,3 +89,4 @@ std::string virtual_filesystem::get_path(const std::string& virtual_path)
 
     return file_path;
 }
+
