@@ -3,6 +3,7 @@
 
 
 #include "buffer.hpp"
+#include "../vertex.hpp"
 
 struct vertex_array_t {
     buffer_t   vertex_buffer;
@@ -10,7 +11,7 @@ struct vertex_array_t {
     uint32_t index_count;
 };
 
-vertex_array_t create_vertex_array(void* v, int vs, void* i, int is);
+vertex_array_t create_vertex_array(const std::vector<vertex_t>& vertices, const std::vector<uint32_t>& indices);
 void destroy_vertex_array(vertex_array_t& vertexArray);
 
 void bind_vertex_array(VkCommandBuffer cmd_buffer, const vertex_array_t& vertexArray);

@@ -448,8 +448,7 @@ int main(int argc, char** argv)
         3, 2, 1
     };
 
-    vertex_array_t quad = create_vertex_array(quad_vertices.data(), quad_vertices.size() * sizeof(vertex_t),
-                                              quad_indices.data(), quad_indices.size() * sizeof(uint32_t));
+    vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
 
     vertex_array_t icosphere = load_model(vfs::get().get_path("/models/sphere.obj"));
     texture_buffer_t skysphere = load_texture(vfs::get().get_path("/textures/skysphere.jpg"));

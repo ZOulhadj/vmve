@@ -3,26 +3,29 @@
 
 #include "renderer.hpp"
 
-vertex_array_t create_vertex_array(void* v, int vs, void* i, int is) {
+vertex_array_t create_vertex_array(const std::vector<vertex_t>& vertices, const std::vector<uint32_t>& indices)
+{
     vertex_array_t vertexArray{};
 
     const renderer_t* renderer = get_renderer();
 
+    const uint32_t vertices_size = vertices.size() * sizeof(vertex_t);
+    const uint32_t indices_size = indices.size() * sizeof(uint32_t);
 
     // Create a temporary "staging" buffer that will be used to copy the data
     // from CPU memory over to GPU memory.
-    buffer_t vertexStagingBuffer = create_staging_buffer(v, vs);
-    buffer_t indexStagingBuffer  = create_staging_buffer(i, is);
+    buffer_t vertexStagingBuffer = create_staging_buffer((void*)vertices.data(), vertices_size);
+    buffer_t indexStagingBuffer  = create_staging_buffer((void*)indices.data(), indices_size);
 
-    vertexArray.vertex_buffer = create_gpu_buffer(vs, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vertexArray.index_buffer  = create_gpu_buffer(is, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    vertexArray.index_count   = is / sizeof(uint32_t); // todo: Maybe be unsafe for a hard coded type.
+    vertexArray.vertex_buffer = create_gpu_buffer(vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vertexArray.index_buffer  = create_gpu_buffer(indices_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    vertexArray.index_count   = indices.size(); // todo: Maybe be unsafe for a hard coded type.
 
     // Upload data to the GPU
     submit_to_gpu([&] {
         VkBufferCopy vertex_copy_info{}, index_copy_info{};
-        vertex_copy_info.size = vs;
-        index_copy_info.size  = is;
+        vertex_copy_info.size = vertices_size;
+        index_copy_info.size  = indices_size;
 
         vkCmdCopyBuffer(renderer->submit.CmdBuffer, vertexStagingBuffer.buffer,
                         vertexArray.vertex_buffer.buffer, 1,

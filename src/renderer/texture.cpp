@@ -44,7 +44,7 @@ texture_buffer_t create_texture_buffer(unsigned char* texture, uint32_t width, u
 
     buffer_t staging_buffer = create_staging_buffer(texture, (width * height) * 4);
 
-    buffer.image = create_image(format, {width, height}, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    buffer.image = create_image({width, height}, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     // Upload texture data into GPU memory by doing a layout transition
     submit_to_gpu([&]() {

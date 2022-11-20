@@ -105,10 +105,7 @@ vertex_array_t load_model(const std::string& path)
 
     parse_model(vertices, indices, scene->mRootNode, scene);
 
-    buffer = create_vertex_array(vertices.data(),
-                                 sizeof(vertex_t) * vertices.size(),
-                                 indices.data(),
-                                 sizeof(uint32_t) * indices.size());
+    buffer = create_vertex_array(vertices, indices);
 
 
     return buffer;
