@@ -313,11 +313,11 @@ int main(int argc, char** argv)
 
     renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
-
-    vfs::get().mount("models", "assets/models");
-    vfs::get().mount("textures", "assets/textures");
-    vfs::get().mount("shaders", "assets/shaders");
-
+    std::string root_dir = "C:/Users/zakar/Documents/work/vmve/";
+    vfs::get().mount("models", root_dir + "assets/models");
+    vfs::get().mount("textures", root_dir + "assets/textures");
+    vfs::get().mount("shaders", root_dir + "assets/shaders");
+    vfs::get().mount("fonts", root_dir + "assets/fonts");
 
     // Images, Render pass and Framebuffers
     ui_pass = create_ui_render_pass();

@@ -10,7 +10,7 @@ std::vector<filesystem_node> get_files_in_directory(const char* directory)
     if (current_path.has_parent_path()) {
         filesystem_node node{};
 
-        node.path = current_path.parent_path();
+        node.path = current_path.parent_path().string();
         node.name = "..";
         node.type = filesystem_node_type::directory;
         node.size = 0;
@@ -24,8 +24,8 @@ std::vector<filesystem_node> get_files_in_directory(const char* directory)
 
         current_path = entry.path();
 
-        node.path = current_path;
-        node.name = current_path.filename();
+        node.path = current_path.string();
+        node.name = current_path.filename().string();
 
         // Note that the function std::filesystem::directory_entry::file_size
         // cannot be called on a directory as this results in an exception.

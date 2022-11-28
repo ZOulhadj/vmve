@@ -2,6 +2,9 @@
 
 #include "common.hpp"
 
+
+#include "../vfs.hpp"
+
 static void custom_style() {
     ImGuiStyle& style = ImGui::GetStyle();
 
@@ -74,6 +77,10 @@ ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass ren
 {
     ImGuiContext* context{};
 
+
+    std::string font1 = vfs::get().get_path("fonts/source_sans_pro/SourceSansPro-Regular.ttf");
+    std::string font2 = vfs::get().get_path("fonts/source_sans_pro/SourceSansPro-Bold.ttf");
+
     IMGUI_CHECKVERSION();
     context = ImGui::CreateContext();
 
@@ -83,14 +90,8 @@ ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass ren
     //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigDockingWithShift = true;
     io.IniFilename = nullptr;
-    io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/source_sans_pro/SourceSansPro-Regular.ttf", 16);
-    io.Fonts->AddFontFromFileTTF("assets/fonts/source_sans_pro/SourceSansPro-Bold.ttf", 16);
-
-    //io.Fonts->AddFontDefault();
-//    if (!io.Fonts->AddFontFromFileTTF("assets/fonts/Karla-Regular.ttf", 16)) {
-//        printf("Failed to load required font for ImGui.\n");
-//        return nullptr;
-//    }
+    io.FontDefault = io.Fonts->AddFontFromFileTTF(font1.c_str(), 16);
+    io.Fonts->AddFontFromFileTTF(font2.c_str(), 16);
 
     //ImGui::StyleColorsDark();
     custom_style();

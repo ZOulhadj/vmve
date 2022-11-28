@@ -78,7 +78,7 @@ add_executable(${PROJECT_NAME}
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
 target_include_directories(${PROJECT_NAME} PRIVATE ${STB_INCLUDE} ${IMGUI_INCLUDE})
-
+target_link_directories(${PROJECT_NAME} PRIVATE "C:/VulkanSDK/1.3.231.1/Lib")
 target_link_libraries(${PROJECT_NAME} PRIVATE
         glfw
         glm::glm
