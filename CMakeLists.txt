@@ -49,8 +49,6 @@ add_executable(${PROJECT_NAME}
 
         # engine test file
         "sandbox/main.cpp"
-
-        # core
         "src/window.cpp"
         "src/camera.cpp"
         "src/entity.cpp"
@@ -60,8 +58,7 @@ add_executable(${PROJECT_NAME}
         "src/vfs.cpp"
         "src/filesystem.cpp"
         "src/utility.cpp"
-
-        # renderer
+        "src/material.cpp"
         "src/renderer/renderer.cpp"
         "src/renderer/ui.cpp"
         "src/renderer/vertex_array.cpp"

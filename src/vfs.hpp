@@ -1,9 +1,6 @@
 #ifndef MYENGINE_VFS_HPP
 #define MYENGINE_VFS_HPP
 
-
-// todo: convert into a singleton
-
 class vfs
 {
 public:

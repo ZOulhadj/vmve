@@ -313,7 +313,7 @@ int main(int argc, char** argv)
 
     renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
-    std::string root_dir = "C:/Users/zakar/Documents/work/vmve/";
+    std::string root_dir = "C:/Users/zakar/Projects/vmve/";
     vfs::get().mount("models", root_dir + "assets/models");
     vfs::get().mount("textures", root_dir + "assets/textures");
     vfs::get().mount("shaders", root_dir + "assets/shaders");
