@@ -8,8 +8,8 @@
 
 struct texture_buffer_t {
     image_buffer_t image;
-    VkSampler sampler;
-    VkDescriptorImageInfo descriptor;
+    VkSampler sampler = nullptr;
+    VkDescriptorImageInfo descriptor{};
 };
 
 

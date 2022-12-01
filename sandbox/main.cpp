@@ -66,7 +66,7 @@ static VkDescriptorSetLayout g_layout;
 // why this is an array is so that each frame has its own descriptor set.
 static VkDescriptorSet g_descriptor_sets;
 
-static VkDescriptorSetLayout g_object_layout;
+static VkDescriptorSetLayout g_object_material_layout;
 
 // The resources that will be part of the global descriptor set
 static buffer_t g_camera_buffer;
@@ -306,7 +306,8 @@ static void render_viewport_window()
     ImGui::End();
 }
 
-#define USING_MATERIAL
+
+
 
 int main(int argc, char** argv)
 {
@@ -342,11 +343,6 @@ int main(int argc, char** argv)
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
     };
 
-    // Per object
-    const std::vector<descriptor_set_layout> per_object_layout {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }
-    };
-
     g_layout          = create_descriptor_set_layout(global_layout);
     g_descriptor_sets = allocate_descriptor_set(g_layout);
 
@@ -354,9 +350,12 @@ int main(int argc, char** argv)
     g_scene_buffer  = create_uniform_buffer<sandbox_scene>();
     update_descriptor_sets({ g_camera_buffer, g_scene_buffer }, g_descriptor_sets);
 
-    g_object_layout = create_descriptor_set_layout(per_object_layout);
+    // Global material descriptor set
+    const std::vector<descriptor_set_layout> per_material_layout{
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }
+    };
 
-
+    g_object_material_layout = create_descriptor_set_layout(per_material_layout);
 
 
 
@@ -385,7 +384,7 @@ int main(int argc, char** argv)
     };
 
     PipelineInfo info{};
-    info.descriptor_layouts = { g_layout, g_object_layout };
+    info.descriptor_layouts = { g_layout, g_object_material_layout };
     info.push_constant_size = sizeof(glm::mat4);
     info.binding_layout_size = sizeof(vertex_t);
     info.binding_format = binding_format;
@@ -450,25 +449,36 @@ int main(int argc, char** argv)
         3, 2, 1
     };
 
+
+    // create models
     vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
     vertex_array_t icosphere = load_model(vfs::get().get_path("/models/sphere.obj"));
-
-    texture_buffer_t skysphere = load_texture(vfs::get().get_path("/textures/skysphere.jpg"));
-    instance_t skybox = create_entity(icosphere, skysphere, g_object_layout);
-    instance_t ground = create_entity(quad, skysphere, g_object_layout);
-
-    skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere.sampler, skysphere.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    // User loaded resources
     vertex_array_t model = load_model(vfs::get().get_path("/models/cottage_obj.obj"));
-    texture_buffer_t model_texture = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_diffuse.png"));
-    instance_t model_instance = create_entity(model, model_texture, g_object_layout);
+
+    // create materials
+    material_t cottage_material;
+    cottage_material.albedo = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_diffuse.png"));
+    cottage_material.normal = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_normal.png"));
+    create_material(cottage_material, g_object_material_layout);
+
+    material_t skysphere_material;
+    skysphere_material.albedo = load_texture(vfs::get().get_path("/textures/skysphere.jpg"));
+    create_material(skysphere_material, g_object_material_layout);
+
+    skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere_material.albedo.sampler, skysphere_material.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
-#if defined(USING_MATERIAL)
 
-    material_t example_material;
-#endif
+    // create instances
+    instance_t skyboxsphere_instance;
+    skyboxsphere_instance.matrix = glm::mat4(1.0f);
+
+    instance_t grid_instance;
+    grid_instance.matrix = glm::mat4(1.0f);
+
+    instance_t model_instance;
+    model_instance.matrix = glm::mat4(1.0f);
+    model_instance.matrix = glm::translate(model_instance.matrix, glm::vec3(0.0f, 0.0f, 10.0f));
 
 
     current_pipeline = basicPipeline;
@@ -522,23 +532,29 @@ int main(int argc, char** argv)
         if (begin_rendering()) {
             VkCommandBuffer cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
             {
-                // Render the background skysphere
+                // Render the skysphere
                 bind_pipeline(cmd_buffer, skyspherePipeline, g_descriptor_sets);
+                bind_material(cmd_buffer, skyspherePipeline.layout, skysphere_material);
                 bind_vertex_array(cmd_buffer, icosphere);
-                render(cmd_buffer, skybox, skyspherePipeline);
+                render(cmd_buffer, skyspherePipeline.layout, icosphere.index_count, skyboxsphere_instance);
 
                 // Render the grid floor
                 bind_pipeline(cmd_buffer, gridPipeline, g_descriptor_sets);
                 bind_vertex_array(cmd_buffer, quad);
-                render(cmd_buffer, ground, gridPipeline);
+                render(cmd_buffer, gridPipeline.layout, quad_indices.size(), grid_instance);
 
-                // Render the actual model loaded in by the user
+
+
+                // set instance position
+                model_instance.matrix = glm::mat4(1.0f);
+                model_instance.matrix = glm::translate(model_instance.matrix, glm::vec3(0.0f, 0.0f, 10.0f));
+                model_instance.matrix = glm::rotate(model_instance.matrix, glm::radians(20.0f) * uptime, glm::vec3(0.0f, 1.0f, 0.0f));
+
+                // Render the model
                 bind_pipeline(cmd_buffer, current_pipeline, g_descriptor_sets);
+                bind_material(cmd_buffer, current_pipeline.layout, cottage_material);
                 bind_vertex_array(cmd_buffer, model);
-                translate(model_instance, objectTranslation);
-                rotate(model_instance, objectRotation);
-                scale(model_instance, objectScale);
-                render(cmd_buffer, model_instance, current_pipeline);
+                render(cmd_buffer, current_pipeline.layout, model.index_count, model_instance);
             }
             end_render_pass(cmd_buffer);
 
@@ -585,10 +601,11 @@ int main(int argc, char** argv)
     vk_check(vkDeviceWaitIdle(renderer->ctx.device.device));
 
 
-    destroy_vertex_array(model);
-    destroy_texture_buffer(model_texture);
+    destroy_material(cottage_material);
+    destroy_material(skysphere_material);
 
-    destroy_texture_buffer(skysphere);
+
+    destroy_vertex_array(model);
     destroy_vertex_array(icosphere);
     destroy_vertex_array(quad);
 
@@ -601,7 +618,7 @@ int main(int argc, char** argv)
     destroy_buffer(g_scene_buffer);
     destroy_buffer(g_camera_buffer);
 
-    destroy_descriptor_set_layout(g_object_layout);
+    destroy_descriptor_set_layout(g_object_material_layout);
     destroy_descriptor_set_layout(g_layout);
 
     destroy_pipeline(wireframePipeline);

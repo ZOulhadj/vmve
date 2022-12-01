@@ -163,5 +163,7 @@ void destroy_sampler(VkSampler sampler)
 {
     const renderer_context_t& rc = get_renderer_context();
 
-    vkDestroySampler(rc.device.device, sampler, nullptr);
+    if (sampler) {
+        vkDestroySampler(rc.device.device, sampler, nullptr);
+    }
 }

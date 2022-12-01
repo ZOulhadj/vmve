@@ -1059,13 +1059,11 @@ void bind_pipeline(VkCommandBuffer cmd_buffer, pipeline_t& pipeline, VkDescripto
     vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets, 0, nullptr);
 }
 
-void render(VkCommandBuffer cmd_buffer, instance_t& instance, pipeline_t& pipeline) {
-    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 1, 1, &instance.descriptorSet, 0, nullptr);
-    vkCmdPushConstants(cmd_buffer, pipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
-    vkCmdDrawIndexed(cmd_buffer, instance.model->index_count, 1, 0, 0, 0);
+void render(VkCommandBuffer cmd_buffer, VkPipelineLayout layout, uint32_t index_count, instance_t& instance)
+{
+    vkCmdPushConstants(cmd_buffer, layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
+    vkCmdDrawIndexed(cmd_buffer, index_count, 1, 0, 0, 0);
 }
-
-
 
 
 

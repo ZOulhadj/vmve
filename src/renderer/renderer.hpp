@@ -137,6 +137,5 @@ VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector
 void end_render_pass(VkCommandBuffer cmd_buffer);
 
 void bind_pipeline(VkCommandBuffer cmd_buffer, pipeline_t& pipeline, VkDescriptorSet descriptorSets);
-void render(VkCommandBuffer cmd_buffer, instance_t& instance, pipeline_t& pipeline);
-
+void render(VkCommandBuffer cmd_buffer, VkPipelineLayout layout, uint32_t index_count, instance_t& instance);
 #endif

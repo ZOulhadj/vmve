@@ -2,12 +2,12 @@
 #define MY_ENGINE_SHADER_HPP
 
 struct shader_compiler {
-    shaderc_compiler_t compiler;
-    shaderc_compile_options_t options;
+    shaderc_compiler_t compiler       = nullptr;
+    shaderc_compile_options_t options = nullptr;
 };
 
 struct shader {
-    VkShaderModule handle;
+    VkShaderModule handle      = nullptr;
     VkShaderStageFlagBits type;
 };
 

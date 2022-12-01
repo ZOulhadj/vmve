@@ -4,19 +4,19 @@
 
 struct buffer_t
 {
-    VkBuffer           buffer;
-    VmaAllocation      allocation;
+    VkBuffer           buffer     = nullptr;
+    VmaAllocation      allocation = nullptr;
     VkBufferUsageFlags usage;
     uint32_t           size;
 };
 
 struct image_buffer_t
 {
-    VkImage       handle;
-    VkImageView   view;
-    VmaAllocation allocation;
-    VkExtent2D    extent;
-    VkFormat      format;
+    VkImage       handle     = nullptr;
+    VkImageView   view       = nullptr;
+    VmaAllocation allocation = nullptr;
+    VkExtent2D    extent     = {};
+    VkFormat      format     = VK_FORMAT_UNDEFINED;
 };
 
 
