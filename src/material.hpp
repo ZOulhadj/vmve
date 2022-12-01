@@ -3,6 +3,9 @@
 
 struct material_t
 {
+    VkDescriptorSet descriptor_set;
+
+
 
 };
 

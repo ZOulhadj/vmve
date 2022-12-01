@@ -18,6 +18,7 @@
 #include "../src/vertex.hpp"
 #include "../src/vfs.hpp"
 #include "../src/filesystem.hpp"
+#include "../src/material.hpp"
 
 // Application specific header files
 #include "ui.hpp"
@@ -305,6 +306,7 @@ static void render_viewport_window()
     ImGui::End();
 }
 
+#define USING_MATERIAL
 
 int main(int argc, char** argv)
 {
@@ -449,8 +451,8 @@ int main(int argc, char** argv)
     };
 
     vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
-
     vertex_array_t icosphere = load_model(vfs::get().get_path("/models/sphere.obj"));
+
     texture_buffer_t skysphere = load_texture(vfs::get().get_path("/textures/skysphere.jpg"));
     instance_t skybox = create_entity(icosphere, skysphere, g_object_layout);
     instance_t ground = create_entity(quad, skysphere, g_object_layout);
@@ -463,8 +465,10 @@ int main(int argc, char** argv)
     instance_t model_instance = create_entity(model, model_texture, g_object_layout);
 
 
+#if defined(USING_MATERIAL)
 
-
+    material_t example_material;
+#endif
 
 
     current_pipeline = basicPipeline;
@@ -582,6 +586,7 @@ int main(int argc, char** argv)
 
 
     destroy_vertex_array(model);
+    destroy_texture_buffer(model_texture);
 
     destroy_texture_buffer(skysphere);
     destroy_vertex_array(icosphere);
