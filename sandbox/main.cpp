@@ -169,6 +169,24 @@ const char* scene_window    = "Scene";
 static bool editor_open = false;
 static bool window_open = true;
 
+static void render_begin_docking()
+{
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("Editor", &editor_open, docking_flags);
+    ImGui::PopStyleVar(3);
+}
+
+static void render_end_docking()
+{
+    ImGui::End();
+}
+
 static void render_main_menu()
 {
     if (ImGui::BeginMenuBar()) {
@@ -482,7 +500,7 @@ int main(int argc, char** argv)
 
 
     current_pipeline = basicPipeline;
-    camera = create_camera({0.0f, 2.0f, -8.0f}, 60.0f, 2.0f);
+    camera = create_camera({0.0f, 2.0f, -20.0f}, 60.0f, 2.0f);
 
     sandbox_scene scene {
         .ambientStrength   = 0.05f,
@@ -546,9 +564,9 @@ int main(int argc, char** argv)
 
 
                 // set instance position
-                model_instance.matrix = glm::mat4(1.0f);
-                model_instance.matrix = glm::translate(model_instance.matrix, glm::vec3(0.0f, 0.0f, 10.0f));
-                model_instance.matrix = glm::rotate(model_instance.matrix, glm::radians(20.0f) * uptime, glm::vec3(0.0f, 1.0f, 0.0f));
+                translate(model_instance, objectTranslation);
+                scale(model_instance, objectScale);
+                rotate(model_instance, objectRotation);
 
                 // Render the model
                 bind_pipeline(cmd_buffer, current_pipeline, g_descriptor_sets);
@@ -563,15 +581,7 @@ int main(int argc, char** argv)
             {
                 begin_ui();
 
-                ImGuiViewport* viewport = ImGui::GetMainViewport();
-                ImGui::SetNextWindowPos(viewport->WorkPos);
-                ImGui::SetNextWindowSize(viewport->WorkSize);
-                ImGui::SetNextWindowViewport(viewport->ID);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                ImGui::Begin("Editor", &editor_open, docking_flags);
-                ImGui::PopStyleVar(3);
+                render_begin_docking();
                 {
                     render_main_menu();
                     render_dockspace();
@@ -580,7 +590,7 @@ int main(int argc, char** argv)
                     render_bottom_window();
                     render_viewport_window();
                 }
-                ImGui::End();
+                render_end_docking();
 
                 end_ui(ui_cmd_buffer);
             }
