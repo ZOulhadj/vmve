@@ -23,7 +23,7 @@ static void parse_mesh(std::vector<vertex_t>& vertices, std::vector<uint32_t>& i
             // We thus make the assumption that we won't
             // use models where a vertex can have multiple texture coordinates,
             // so we always take the first set (0).
-            vertex.uv        = glm::vec2(1.0f - mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y);
+            vertex.uv        = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
             vertex.tangent   = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
             vertex.biTangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
         } else {
@@ -89,9 +89,9 @@ vertex_array_t load_model(const std::string& path)
 
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate |
-                                                   aiProcess_PreTransformVertices |
-                                                   aiProcess_CalcTangentSpace
+    const aiScene* scene = importer.ReadFile(path, aiProcess_PreTransformVertices |
+                                                   aiProcessPreset_TargetRealtime_Fast |
+                                                   aiProcess_ConvertToLeftHanded
                                                    );
 
     if (!scene) {

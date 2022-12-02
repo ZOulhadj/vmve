@@ -108,9 +108,13 @@ static void event_callback(event& e);
 #define APP_HEIGHT  720
 
 
-bool running   = true;
-bool minimised = false;
-float uptime   = 0.0f;
+static bool running   = true;
+static bool minimised = false;
+static bool in_viewport = false;
+static float uptime   = 0.0f;
+
+
+
 
 VkDescriptorSet skysphere_dset;
 
@@ -128,7 +132,7 @@ static void handle_input(camera_t& camera, float deltaTime)
         camera.position += camera.right_vector * dt;
     if (is_key_down(GLFW_KEY_SPACE))
         camera.position += camera.up_vector * dt;
-    if (is_key_down(GLFW_KEY_CAPS_LOCK))
+    if (is_key_down(GLFW_KEY_LEFT_CONTROL) || is_key_down(GLFW_KEY_CAPS_LOCK))
         camera.position -= camera.up_vector * dt;
 //    if (is_key_down(GLFW_KEY_Q))
 //        camera.roll -= camera.roll_speed * deltaTime;
@@ -151,11 +155,11 @@ static ImGuiWindowFlags docking_flags = ImGuiWindowFlags_MenuBar |
                                         ImGuiWindowFlags_NoResize |
                                         ImGuiWindowFlags_NoMove |
                                         ImGuiWindowFlags_NoNavFocus |
-                                        ImGuiWindowFlags_NoBringToFrontOnFocus;
+                                        ImGuiWindowFlags_NoBringToFrontOnFocus ;
 
-static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None; // ImGuiDockNodeFlags_NoTabBar
+static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode; // ImGuiDockNodeFlags_NoTabBar
 
-static ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove;
+static ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
 
 
 
@@ -314,14 +318,21 @@ static void render_bottom_window()
 
 static void render_viewport_window()
 {
+    ImGuiIO& io = ImGui::GetIO();
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin(viewport_window, &window_open, window_flags);
+
+    in_viewport = ImGui::IsWindowFocused();
+
     ImGui::PopStyleVar(2);
     {
         ImGui::Image(viewport_descriptor_sets[currentImage], ImGui::GetContentRegionAvail());
     }
     ImGui::End();
+
+    //ImGui::ShowDemoWindow();
 }
 
 
@@ -472,12 +483,18 @@ int main(int argc, char** argv)
     vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
     vertex_array_t icosphere = load_model(vfs::get().get_path("/models/sphere.obj"));
     vertex_array_t model = load_model(vfs::get().get_path("/models/cottage_obj.obj"));
+    vertex_array_t model1 = load_model(vfs::get().get_path("/models/backpack/backpack.obj"));
 
     // create materials
-    material_t cottage_material;
-    cottage_material.albedo = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_diffuse.png"));
-    cottage_material.normal = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_normal.png"));
-    create_material(cottage_material, g_object_material_layout);
+    material_t model_material;
+    model_material.albedo = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_diffuse.png"));
+    model_material.normal = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_normal.png"));
+    create_material(model_material, g_object_material_layout);
+
+    material_t model1_material;
+    model1_material.albedo = load_texture(vfs::get().get_path("/models/backpack/diffuse.jpg"), true);
+    model1_material.normal = load_texture(vfs::get().get_path("/models/backpack/normal.png"), true);
+    create_material(model1_material, g_object_material_layout);
 
     material_t skysphere_material;
     skysphere_material.albedo = load_texture(vfs::get().get_path("/textures/skysphere.jpg"));
@@ -496,11 +513,15 @@ int main(int argc, char** argv)
 
     instance_t model_instance;
     model_instance.matrix = glm::mat4(1.0f);
-    model_instance.matrix = glm::translate(model_instance.matrix, glm::vec3(0.0f, 0.0f, 10.0f));
+    model_instance.matrix = glm::translate(model_instance.matrix, glm::vec3(20.0f, 0.0f, 10.0f));
+
+    instance_t model1_instance;
+    model1_instance.matrix = glm::mat4(1.0f);
+    model1_instance.matrix = glm::translate(model_instance.matrix, glm::vec3(0.0f, 2.0f, 0.0f));
 
 
     current_pipeline = basicPipeline;
-    camera = create_camera({0.0f, 2.0f, -20.0f}, 60.0f, 2.0f);
+    camera = create_camera({0.0f, 2.0f, -5.0f}, 60.0f, 20.0f);
 
     sandbox_scene scene {
         .ambientStrength   = 0.05f,
@@ -534,7 +555,7 @@ int main(int argc, char** argv)
         // Input and camera
         handle_input(camera, delta_time);
         glm::vec2 cursorPos = get_mouse_position();
-        //update_camera_view(camera, cursorPos.x, cursorPos.y);
+        update_camera_view(camera, cursorPos.x, cursorPos.y);
         update_camera(camera);
 
         scene.cameraPosition = camera.position;
@@ -568,11 +589,15 @@ int main(int argc, char** argv)
                 scale(model_instance, objectScale);
                 rotate(model_instance, objectRotation);
 
-                // Render the model
+                // Render the models
                 bind_pipeline(cmd_buffer, current_pipeline, g_descriptor_sets);
-                bind_material(cmd_buffer, current_pipeline.layout, cottage_material);
+                bind_material(cmd_buffer, current_pipeline.layout, model_material);
                 bind_vertex_array(cmd_buffer, model);
                 render(cmd_buffer, current_pipeline.layout, model.index_count, model_instance);
+
+                bind_material(cmd_buffer, current_pipeline.layout, model1_material);
+                bind_vertex_array(cmd_buffer, model1);
+                render(cmd_buffer, current_pipeline.layout, model1.index_count, model1_instance);
             }
             end_render_pass(cmd_buffer);
 
@@ -611,10 +636,12 @@ int main(int argc, char** argv)
     vk_check(vkDeviceWaitIdle(renderer->ctx.device.device));
 
 
-    destroy_material(cottage_material);
+    destroy_material(model1_material);
+    destroy_material(model_material);
     destroy_material(skysphere_material);
 
 
+    destroy_vertex_array(model1);
     destroy_vertex_array(model);
     destroy_vertex_array(icosphere);
     destroy_vertex_array(quad);

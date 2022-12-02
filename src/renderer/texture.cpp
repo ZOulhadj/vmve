@@ -5,12 +5,13 @@
 
 #include "renderer.hpp"
 
-texture_buffer_t load_texture(const std::string& path, VkFormat format)
+texture_buffer_t load_texture(const std::string& path, bool flip_y, VkFormat format)
 {
     texture_buffer_t buffer{};
 
     // Load the texture from the file system.
     int width, height, channels;
+    stbi_set_flip_vertically_on_load(flip_y);
     unsigned char* texture = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
         printf("Failed to load texture at path: %s\n", path.c_str());

@@ -89,7 +89,7 @@ ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass ren
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigDockingWithShift = true;
-    io.IniFilename = nullptr;
+    //io.IniFilename = nullptr;
     io.FontDefault = io.Fonts->AddFontFromFileTTF(font1.c_str(), 16);
     io.Fonts->AddFontFromFileTTF(font2.c_str(), 16);
 
