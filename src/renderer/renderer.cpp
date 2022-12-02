@@ -891,7 +891,7 @@ bool begin_rendering()
 {
     // Wait for the GPU to finish all work before getting the next image
     vk_check(vkWaitForFences(g_rc->device.device, 1, &g_frame.submit_fence, VK_TRUE, UINT64_MAX));
-    //vk_check(vkResetFences(g_r->ctxc->device.device, 1, &g_frame.submit_fence));
+    //vk_check(vkResetFences(g_rc->device.device, 1, &g_frame.submit_fence));
 
     // Keep attempting to acquire the next frame.
     VkResult result = vkAcquireNextImageKHR(g_rc->device.device,
@@ -908,8 +908,7 @@ bool begin_rendering()
     }
 
     // reset fence when about to submit work to the GPU
-    vk_check(vkResetFences(g_rc->device.device, 1,
-                           &g_frame.submit_fence));
+    vk_check(vkResetFences(g_rc->device.device, 1, &g_frame.submit_fence));
 
 
     return true;
