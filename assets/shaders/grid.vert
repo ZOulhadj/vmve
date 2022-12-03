@@ -16,7 +16,7 @@ layout(binding = 0) uniform model_view_projection {
 
 void main()
 {
-    grid_size = 1000;
+    grid_size = 5000;
 
     position = vertex_position * grid_size;
     uv = position.xz;
