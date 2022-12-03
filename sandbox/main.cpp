@@ -174,7 +174,7 @@ static ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
 const char* object_window   = "Object";
 const char* console_window  = "Console";
 const char* viewport_window = "Viewport";
-const char* scene_window    = "Scene";
+const char* scene_window    = "Global";
 
 
 static bool editor_open = false;
@@ -245,7 +245,8 @@ static void render_main_menu()
     if (load_model_open)
         render_filesystem_window(vfs::get().get_path("/models"), &load_model_open);
 
-
+    if (export_model_open)
+        render_filesystem_window(vfs::get().get_path("/models"), &export_model_open);
 }
 
 static void render_dockspace()
@@ -280,9 +281,37 @@ static void render_right_window()
     // Object window
     ImGui::Begin(object_window, &window_open, window_flags);
     {
-        ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
-        ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
-        ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
+        // List all currently loaded models
+        static int currently_selected_model = 0;
+        std::array<const char*, 2> items = { "House", "Backpack" };
+        ImGui::ListBox("Models", &currently_selected_model, items.data(), items.size());
+
+        if (currently_selected_model == 0) {
+            ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
+            ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
+            ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
+
+
+
+            static bool open = false;
+
+            ImGui::Text("Material");
+            
+            ImGui::Text("Albedo");
+            ImGui::SameLine();
+            if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
+                open = true;
+
+            ImGui::Text("Normal");
+            ImGui::SameLine();
+            if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
+                open = true;
+
+            ImGui::Text("Specular");
+            ImGui::SameLine();
+            if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
+                open = true;
+        }
     }
     ImGui::End();
 }
@@ -297,8 +326,24 @@ static void render_left_window()
         ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 
         static bool wireframe = false;
+        static bool vsync = true;
+        static bool depth     = false;
+
         if (ImGui::Checkbox("Wireframe", &wireframe))
             wireframe ? current_pipeline = wireframePipeline : current_pipeline = basicPipeline;
+
+        ImGui::Checkbox("VSync", &vsync);
+        static int swapchain_images = 3;
+        ImGui::SliderInt("Swapchain images", &swapchain_images, 2, 3);
+        
+        ImGui::Text("Rendering mode");
+        ImGui::RadioButton("Full", true);
+        ImGui::SameLine();
+        ImGui::RadioButton("Position", false);
+        ImGui::SameLine();
+        ImGui::RadioButton("Depth", false);
+        ImGui::SameLine();
+        ImGui::RadioButton("Normal", false);
 
         ImGui::Separator();
         ImGui::Text("Day/Night");
@@ -312,6 +357,7 @@ static void render_left_window()
 //    ImGui::SliderFloat3("Light color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
         ImGui::Separator();
         ImGui::Text("Camera");
+        ImGui::Text("Camera mode %s", "Perspective");
         ImGui::SliderFloat3("Position", glm::value_ptr(camera.position), -500.0f, 500.0f);
         ImGui::SliderFloat("Movement speed", &camera.speed, 0.0f, 20.0f);
         ImGui::SliderFloat("Roll speed", &camera.roll_speed, 0.0f, 20.0f);
@@ -321,12 +367,42 @@ static void render_left_window()
 
         ImGui::Text("Skybox");
         static bool open = false;
-        if (ImGui::ImageButton(skysphere_dset, { 128, 128 }))
+        ImGui::SameLine();
+        if (ImGui::ImageButton(skysphere_dset, { 32, 32 }))
             open = true;
 
         if (open)
             render_filesystem_window(vfs::get().get_path("/textures"), &open);
 
+
+        static bool edit_shaders = false;
+        if (ImGui::Button("Edit shaders"))
+            edit_shaders = true;
+
+
+        if (edit_shaders) {
+            ImGui::Begin("Edit Shaders");
+
+            static char text[1024 * 16] =
+                "/*\n"
+                " The Pentium F00F bug, shorthand for F0 0F C7 C8,\n"
+                " the hexadecimal encoding of one offending instruction,\n"
+                " more formally, the invalid operand with locked CMPXCHG8B\n"
+                " instruction bug, is a design flaw in the majority of\n"
+                " Intel Pentium, Pentium MMX, and Pentium OverDrive\n"
+                " processors (all in the P5 microarchitecture).\n"
+                "*/\n\n"
+                "label:\n"
+                "\tlock cmpxchg8b eax\n";
+
+            static ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput;
+            ImGui::CheckboxFlags("ImGuiInputTextFlags_ReadOnly", &flags, ImGuiInputTextFlags_ReadOnly);
+            ImGui::CheckboxFlags("ImGuiInputTextFlags_AllowTabInput", &flags, ImGuiInputTextFlags_AllowTabInput);
+            ImGui::CheckboxFlags("ImGuiInputTextFlags_CtrlEnterForNewLine", &flags, ImGuiInputTextFlags_CtrlEnterForNewLine);
+            ImGui::InputTextMultiline("##source", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), flags);
+
+            ImGui::End();
+        }
         render_demo_window();
     }
     ImGui::End();
@@ -497,8 +573,8 @@ int main(int argc, char** argv)
 
     ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
 
-    texture_buffer_t folder_texture = load_texture(vfs::get().get_path("/textures/icons/folder.png"));
-    texture_buffer_t file_texture = load_texture(vfs::get().get_path("/textures/icons/file.png"));
+    //texture_buffer_t folder_texture = load_texture(vfs::get().get_path("/textures/icons/folder.png"));
+    //texture_buffer_t file_texture = load_texture(vfs::get().get_path("/textures/icons/file.png"));
 
     //VkDescriptorSet folder_icon  = ImGui_ImplVulkan_AddTexture(folder_texture.sampler, folder_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     //VkDescriptorSet file_icon = ImGui_ImplVulkan_AddTexture(file_texture.sampler, file_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -592,21 +668,17 @@ int main(int argc, char** argv)
         double delta_time = get_delta_time();
         uptime += delta_time;
 
+        // Only update movement and camera view when in viewport mode
         if (in_viewport) {
             handle_input(camera, delta_time);
             glm::vec2 cursorPos = get_mouse_position();
             update_camera_view(camera, cursorPos.x, cursorPos.y);
-        } else {
-        
         }
-        // Input and camera
-        //handle_input(camera, delta_time);
-        //glm::vec2 cursorPos = get_mouse_position();
-        //update_camera_view(camera, cursorPos.x, cursorPos.y);
+
         update_camera(camera);
 
         scene.cameraPosition = camera.position;
-        scene.lightPosition = { 0.0f, 100.0f, 500.0f };
+        scene.lightPosition = { 0.0f, 100.0f, 50 };
 
         // set instance position
         translate(model_instance, objectTranslation);
@@ -709,8 +781,8 @@ int main(int argc, char** argv)
     destroy_vertex_array(quad);
 
 
-    destroy_texture_buffer(file_texture);
-    destroy_texture_buffer(folder_texture);
+    //destroy_texture_buffer(file_texture);
+    //destroy_texture_buffer(folder_texture);
 
 
     // Destroy rendering resources
@@ -802,6 +874,20 @@ static bool resize(window_resized_event& e)
         ImGui_ImplVulkan_RemoveTexture(i);
         i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
+
+
+    // Images, Render pass and Framebuffers
+    ui_pass = create_ui_render_pass();
+    ui_framebuffers = create_ui_framebuffers(ui_pass, { window->width, window->height });
+
+    viewport_sampler = create_sampler(VK_FILTER_LINEAR, 16);
+    viewport_color = create_color_image({ window->width, window->height });
+    viewport_depth = create_depth_image({ window->width, window->height });
+
+    render_pass = create_render_pass();
+    framebuffers = create_framebuffers(render_pass, viewport_color, viewport_depth);
+
+
 
     return true;
 }

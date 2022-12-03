@@ -109,8 +109,8 @@ ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass ren
     init_info.PipelineCache   = nullptr;
     init_info.DescriptorPool  = renderer->descriptor_pool;
     init_info.Subpass         = 0;
-    init_info.MinImageCount   = 2;
-    init_info.ImageCount      = 2;
+    init_info.MinImageCount   = 3;
+    init_info.ImageCount      = 3;
     init_info.MSAASamples     = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator       = nullptr;
     init_info.CheckVkResultFn = vk_check;
