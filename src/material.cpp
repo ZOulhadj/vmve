@@ -29,7 +29,8 @@ void destroy_material(material_t& material)
     destroy_texture_buffer(material.albedo);
 }
 
-void bind_material(VkCommandBuffer cmd_buffer, VkPipelineLayout layout, material_t& material)
+void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, material_t& material)
 {
-    vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, 1, &material.descriptor_set, 0, nullptr);
+    uint32_t current_frame = get_current_frame();
+    vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, 1, &material.descriptor_set, 0, nullptr);
 }

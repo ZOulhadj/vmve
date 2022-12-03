@@ -44,10 +44,8 @@ vec3 direction_lighting(vec3 object_color, vec3 position, vec3 normal)
 void main()
 {
     vec3 norm = normalize(vertex_normal);
-
-    vec3 albedo   = texture(albedoTexture, texture_coord).rgb;
-
-    vec3 result = direction_lighting(albedo, vertex_position, norm);
+    vec4 albedo = texture(albedoTexture, texture_coord).rgba;
+    vec3 result = direction_lighting(albedo.rgb, vertex_position, norm);
 
     final_color = vec4(result, 1.0);
 }

@@ -23,7 +23,7 @@ enum class event_type {
     window_minimized,
     window_not_minimized,
     window_resized,
-
+    window_dropped
 };
 
 

@@ -74,6 +74,20 @@ static void window_framebuffer_resize_callback(GLFWwindow* window, int width, in
     ptr->event_callback(e);
 }
 
+static void window_drop_callback(GLFWwindow* window, int path_count, const char* in_paths[])
+{
+    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+
+    // todo: should this be handled in the event?
+    std::vector<std::string> paths(path_count);
+    for (std::size_t i = 0; i < paths.size(); ++i) {
+        paths[i] = in_paths[i];
+    }
+
+    window_dropped_callback e(paths);
+    ptr->event_callback(e);
+}
+
 static void window_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
@@ -172,6 +186,7 @@ window_t* create_window(const char* name, uint32_t width, uint32_t height)
     glfwSetWindowIconifyCallback(window->handle, window_minimized_callback);
     glfwSetWindowSizeCallback(window->handle, window_resize_callback);
     glfwSetFramebufferSizeCallback(window->handle, window_framebuffer_resize_callback);
+    glfwSetDropCallback(window->handle, window_drop_callback);
 
     // input callbacks
     glfwSetKeyCallback(window->handle, window_key_callback);

@@ -14,7 +14,7 @@ std::string load_text_file(std::string_view path);
 // allows for frame dependent systems such as movement and translation
 // to run at the same speed no matter the time difference between two
 // frames.
-float get_delta_time();
+double get_delta_time();
 
 // For a given world-space position this function converts that into a screen-space
 // local coordinate. In other words, it returns a position on the screen of

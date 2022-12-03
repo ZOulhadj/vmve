@@ -33,16 +33,27 @@
 }
 
 // Maps/Fills an existing buffer with data.
-void set_buffer_data(buffer_t* buffer, void* data)
+void set_buffer_data(std::vector<buffer_t>& buffers, void* data)
+{
+    const renderer_context_t& rc = get_renderer_context();
+
+    const uint32_t current_frame= get_current_frame();
+
+    void* allocation{};
+    vk_check(vmaMapMemory(rc.allocator, buffers[current_frame].allocation, &allocation));
+    std::memcpy(allocation, data, buffers[current_frame].size);
+    vmaUnmapMemory(rc.allocator, buffers[current_frame].allocation);
+}
+
+void set_buffer_data(buffer_t& buffer, void* data)
 {
     const renderer_context_t& rc = get_renderer_context();
 
     void* allocation{};
-    vk_check(vmaMapMemory(rc.allocator, buffer->allocation, &allocation));
-    std::memcpy(allocation, data, buffer->size);
-    vmaUnmapMemory(rc.allocator, buffer->allocation);
+    vk_check(vmaMapMemory(rc.allocator, buffer.allocation, &allocation));
+    std::memcpy(allocation, data, buffer.size);
+    vmaUnmapMemory(rc.allocator, buffer.allocation);
 }
-
 
 // Creates and fills a buffer that is CPU accessible. A staging
 // buffer is most often used as a temporary buffer when copying
@@ -72,7 +83,7 @@ buffer_t create_staging_buffer(void* data, uint32_t size)
     buffer.usage = buffer_info.usage;
     buffer.size  = buffer_info.size;
 
-    set_buffer_data(&buffer, data);
+    set_buffer_data(buffer, data);
 
     return buffer;
 }
@@ -141,12 +152,19 @@ void submit_to_gpu(const std::function<void()>& submit_func)
 }
 
 
-
 void destroy_buffer(buffer_t& buffer)
 {
     const renderer_context_t& rc = get_renderer_context();
 
     vmaDestroyBuffer(rc.allocator, buffer.buffer, buffer.allocation);
+}
+
+void destroy_buffers(std::vector<buffer_t>& buffers)
+{
+    const renderer_context_t& rc = get_renderer_context();
+
+    for (buffer_t& buffer : buffers)
+        vmaDestroyBuffer(rc.allocator, buffer.buffer, buffer.allocation);
 }
 
 

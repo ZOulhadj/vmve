@@ -14,7 +14,7 @@ ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass ren
 void destroy_user_interface(ImGuiContext* context);
 
 void begin_ui();
-void end_ui(VkCommandBuffer cmd_buffer);
+void end_ui(std::vector<VkCommandBuffer>& buffers);
 
 
 #endif

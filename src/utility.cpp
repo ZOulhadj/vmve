@@ -11,12 +11,12 @@ std::string load_text_file(std::string_view path)
 }
 
 
-float get_delta_time()
+double get_delta_time()
 {
     // todo: replace glfwGetTime() with C++ chrono
-    static float lastTime;
-    float currentTime = (float)glfwGetTime();
-    float deltaTime = currentTime - lastTime;
+    static double lastTime;
+    double currentTime = glfwGetTime();
+    double deltaTime = currentTime - lastTime;
     lastTime = currentTime;
 
     return deltaTime;

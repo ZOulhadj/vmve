@@ -147,12 +147,15 @@ void begin_ui()
     ImGuizmo::BeginFrame();
 }
 
-void end_ui(VkCommandBuffer cmd_buffer)
+void end_ui(std::vector<VkCommandBuffer>& buffers)
 {
     ImGui::EndFrame();
 
     ImGui::Render();
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd_buffer);
+
+
+    const uint32_t current_frame = get_current_frame();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffers[current_frame]);
 }

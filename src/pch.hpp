@@ -44,6 +44,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/exponential.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #define IMGUI_DEFINE_MATH_OPERATORS

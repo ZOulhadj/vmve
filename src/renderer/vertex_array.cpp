@@ -48,9 +48,12 @@ void destroy_vertex_array(vertex_array_t& vertexArray) {
     destroy_buffer(vertexArray.vertex_buffer);
 }
 
-void bind_vertex_array(VkCommandBuffer cmd_buffer, const vertex_array_t& vertexArray) {
+void bind_vertex_array(std::vector<VkCommandBuffer>& buffers, const vertex_array_t& vertexArray) {
+
+    uint32_t current_frame = get_current_frame();
+
     const VkDeviceSize offset{ 0 };
-    vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &vertexArray.vertex_buffer.buffer, &offset);
-    vkCmdBindIndexBuffer(cmd_buffer, vertexArray.index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
+    vkCmdBindVertexBuffers(buffers[current_frame], 0, 1, &vertexArray.vertex_buffer.buffer, &offset);
+    vkCmdBindIndexBuffer(buffers[current_frame], vertexArray.index_buffer.buffer, offset, VK_INDEX_TYPE_UINT32);
 }
 

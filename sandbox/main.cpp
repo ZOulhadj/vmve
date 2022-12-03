@@ -36,12 +36,18 @@ constexpr float scaleMin = 1.0f;
 constexpr float scaleMax = 10.0f;
 
 
+
+
+
+static window_t* window = nullptr;
+
+
 VkSampler viewport_sampler;
 image_buffer_t viewport_color{};
 image_buffer_t viewport_depth{};
 VkRenderPass render_pass = nullptr;
 std::vector<Framebuffer> framebuffers;
-std::vector<VkDescriptorSet> viewport_descriptor_sets(2);
+std::vector<VkDescriptorSet> viewport_descriptor_sets(frames_in_flight);
 
 
 VkRenderPass ui_pass = nullptr;
@@ -51,6 +57,7 @@ std::vector<Framebuffer> ui_framebuffers;
 pipeline_t basicPipeline{};
 pipeline_t gridPipeline{};
 pipeline_t skyspherePipeline{};
+pipeline_t billboardPipeline{};
 pipeline_t wireframePipeline{};
 
 pipeline_t current_pipeline{};
@@ -64,13 +71,13 @@ static VkDescriptorSetLayout g_layout;
 // also known as resources. Since this is the global descriptor set, this will
 // hold the resources for projection view matrix, scene lighting etc. The reason
 // why this is an array is so that each frame has its own descriptor set.
-static VkDescriptorSet g_descriptor_sets;
+static std::vector<VkDescriptorSet> g_descriptor_sets;
 
 static VkDescriptorSetLayout g_object_material_layout;
 
 // The resources that will be part of the global descriptor set
-static buffer_t g_camera_buffer;
-static buffer_t g_scene_buffer;
+static std::vector<buffer_t> g_camera_buffers;
+static std::vector<buffer_t> g_scene_buffers;
 
 camera_t camera{};
 
@@ -98,7 +105,7 @@ glm::vec3 objectTranslation = glm::vec3(0.0f);
 glm::vec3 objectRotation = glm::vec3(0.0f);
 glm::vec3 objectScale = glm::vec3(1.0f);
 
-
+static int time_of_day = 10;
 
 static void event_callback(event& e);
 
@@ -119,7 +126,7 @@ static float uptime   = 0.0f;
 VkDescriptorSet skysphere_dset;
 
 
-static void handle_input(camera_t& camera, float deltaTime)
+static void handle_input(camera_t& camera, double deltaTime)
 {
     float dt = camera.speed * deltaTime;
     if (is_key_down(GLFW_KEY_W))
@@ -193,15 +200,14 @@ static void render_end_docking()
 
 static void render_main_menu()
 {
+    static bool load_model_open = false;
+    static bool export_model_open = false;
+
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
 
-            static bool load_model_open = false;
-            bool load_model_clicked = ImGui::MenuItem("Load model");
-            if (load_model_clicked) load_model_open = true;
-
-//            if (load_model_open)
-//                render_filesystem_window(vfs.get_path("/models"), &load_model_open);
+            load_model_open = ImGui::MenuItem("Load model");
+            export_model_open = ImGui::MenuItem("Export model");
 
             ImGui::MenuItem("Exit");
 
@@ -209,10 +215,22 @@ static void render_main_menu()
         }
 
         if (ImGui::BeginMenu("Settings")) {
+            if (ImGui::BeginMenu("Theme")) {
+                static bool sel = true;
+                ImGui::MenuItem("Dark", "", &sel);
+                ImGui::MenuItem("Light");
+
+
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Help")) {
+
+            ImGui::MenuItem("Keybindings");
+
             ImGui::EndMenu();
         }
 
@@ -220,6 +238,13 @@ static void render_main_menu()
 
         ImGui::EndMenuBar();
     }
+
+
+
+
+    if (load_model_open)
+        render_filesystem_window(vfs::get().get_path("/models"), &load_model_open);
+
 
 }
 
@@ -276,6 +301,9 @@ static void render_left_window()
             wireframe ? current_pipeline = wireframePipeline : current_pipeline = basicPipeline;
 
         ImGui::Separator();
+        ImGui::Text("Day/Night");
+        ImGui::SliderInt("Time", &time_of_day, 0.0f, 24.0f);
+        ImGui::Separator();
         ImGui::Text("Lighting");
 //    ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 1.0f);
 //    ImGui::SliderFloat("Specular strength", &scene.specularStrength, 0.0f, 1.0f);
@@ -309,8 +337,10 @@ static void render_bottom_window()
     ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
     ImGui::Begin(console_window, &window_open, window_flags);
     {
-        for (std::size_t i = 0; i < 5; ++i)
-            ImGui::Text("Text %lu", i);
+        ImGui::Text("Viewport mode: %s", in_viewport ? "Enabled" : "Disabled");
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "[Logging]: A normal message");
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "[Warning]: This is a warning");
+        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "[Error]: A failed example.");
     }
     ImGui::End();
     ImGui::PopFont();
@@ -324,15 +354,14 @@ static void render_viewport_window()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin(viewport_window, &window_open, window_flags);
 
-    in_viewport = ImGui::IsWindowFocused();
+    //in_viewport = ImGui::IsWindowFocused();
 
     ImGui::PopStyleVar(2);
     {
-        ImGui::Image(viewport_descriptor_sets[currentImage], ImGui::GetContentRegionAvail());
+        uint32_t current_frame = get_current_frame();
+        ImGui::Image(viewport_descriptor_sets[current_frame], ImGui::GetContentRegionAvail());
     }
     ImGui::End();
-
-    //ImGui::ShowDemoWindow();
 }
 
 
@@ -340,10 +369,10 @@ static void render_viewport_window()
 
 int main(int argc, char** argv)
 {
-    window_t* window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
+    window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
+    renderer_t* renderer = create_renderer(window, buffer_mode::triple, vsync_mode::enabled_mailbox);
 
     std::string root_dir = "C:/Users/zakar/Projects/vmve/";
     vfs::get().mount("models", root_dir + "assets/models");
@@ -373,11 +402,12 @@ int main(int argc, char** argv)
     };
 
     g_layout          = create_descriptor_set_layout(global_layout);
-    g_descriptor_sets = allocate_descriptor_set(g_layout);
+    g_descriptor_sets = allocate_descriptor_set(g_layout, frames_in_flight);
 
-    g_camera_buffer = create_uniform_buffer<view_projection>();
-    g_scene_buffer  = create_uniform_buffer<sandbox_scene>();
-    update_descriptor_sets({ g_camera_buffer, g_scene_buffer }, g_descriptor_sets);
+    g_camera_buffers = create_uniform_buffers<view_projection>(frames_in_flight);
+    g_scene_buffers  = create_uniform_buffers<sandbox_scene>(frames_in_flight);
+
+    update_descriptor_sets({ g_camera_buffers, g_scene_buffers }, g_descriptor_sets);
 
     // Global material descriptor set
     const std::vector<descriptor_set_layout> per_material_layout{
@@ -397,6 +427,8 @@ int main(int argc, char** argv)
     std::string objectFSCode    = load_text_file(vfs::get().get_path("/shaders/object.frag"));
     std::string skysphereVSCode = load_text_file(vfs::get().get_path("/shaders/skysphere.vert"));
     std::string skysphereFSCode = load_text_file(vfs::get().get_path("/shaders/skysphere.frag"));
+    std::string billboardVSCode = load_text_file(vfs::get().get_path("/shaders/billboard.vert"));
+    std::string billboardFSCode = load_text_file(vfs::get().get_path("/shaders/billboard.frag"));
 
     shader gridVS      = create_vertex_shader(gridVSCode);
     shader gridFS      = create_fragment_shader(gridFSCode);
@@ -404,6 +436,8 @@ int main(int argc, char** argv)
     shader objectFS    = create_fragment_shader(objectFSCode);
     shader skysphereVS = create_vertex_shader(skysphereVSCode);
     shader skysphereFS = create_fragment_shader(skysphereFSCode);
+    shader billboardVS = create_vertex_shader(billboardVSCode);
+    shader billboardFS = create_fragment_shader(billboardFSCode);
 
     const std::vector<VkFormat> binding_format{
         VK_FORMAT_R32G32B32_SFLOAT, // Position
@@ -437,6 +471,11 @@ int main(int argc, char** argv)
         gridPipeline = create_pipeline(info, render_pass);
     }
     {
+        info.shaders = { billboardVS, billboardFS };
+        info.cull_mode = VK_CULL_MODE_NONE;
+        billboardPipeline = create_pipeline(info, render_pass);
+    }
+    {
         info.shaders = { skysphereVS, skysphereFS };
         info.depth_testing = false;
         info.wireframe = false;
@@ -446,6 +485,8 @@ int main(int argc, char** argv)
 
 
     // Delete all individual shaders since they are now part of the various pipelines
+    destroy_shader(billboardFS);
+    destroy_shader(billboardVS);
     destroy_shader(skysphereFS);
     destroy_shader(skysphereVS);
     destroy_shader(objectFS);
@@ -468,10 +509,10 @@ int main(int argc, char** argv)
 
     // Built-in resources
     std::vector<vertex_t> quad_vertices {
-        {{  1.0, 0.0, -1.0 }, { 0.0f, 1.0f, 0.0f } },
-        {{ -1.0, 0.0, -1.0 }, { 0.0f, 1.0f, 0.0f } },
-        {{  1.0, 0.0,  1.0 }, { 0.0f, 1.0f, 0.0f } },
-        {{ -1.0, 0.0,  1.0 }, { 0.0f, 1.0f, 0.0f } }
+        {{  1.0, 0.0, -1.0 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f} },
+        {{ -1.0, 0.0, -1.0 }, { 0.0f, 1.0f, 0.0f }, {1.0f, 0.0f} },
+        {{  1.0, 0.0,  1.0 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 1.0f} },
+        {{ -1.0, 0.0,  1.0 }, { 0.0f, 1.0f, 0.0f }, {1.0f, 1.0f} }
     };
     std::vector<uint32_t> quad_indices {
         0, 1, 2,
@@ -486,9 +527,13 @@ int main(int argc, char** argv)
     vertex_array_t model1 = load_model(vfs::get().get_path("/models/backpack/backpack.obj"));
 
     // create materials
+    material_t sun_material;
+    sun_material.albedo = load_texture(vfs::get().get_path("/textures/sun.png"));
+    create_material(sun_material, g_object_material_layout);
+
     material_t model_material;
     model_material.albedo = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_diffuse.png"));
-    model_material.normal = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_normal.png"));
+    //model_material.normal = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_normal.png"));
     create_material(model_material, g_object_material_layout);
 
     material_t model1_material;
@@ -497,7 +542,7 @@ int main(int argc, char** argv)
     create_material(model1_material, g_object_material_layout);
 
     material_t skysphere_material;
-    skysphere_material.albedo = load_texture(vfs::get().get_path("/textures/skysphere.jpg"));
+    skysphere_material.albedo = load_texture(vfs::get().get_path("/textures/skysphere1.png"));
     create_material(skysphere_material, g_object_material_layout);
 
     skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere_material.albedo.sampler, skysphere_material.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -506,19 +551,14 @@ int main(int argc, char** argv)
 
     // create instances
     instance_t skyboxsphere_instance;
-    skyboxsphere_instance.matrix = glm::mat4(1.0f);
-
     instance_t grid_instance;
-    grid_instance.matrix = glm::mat4(1.0f);
+    instance_t sun_instance;
 
     instance_t model_instance;
-    model_instance.matrix = glm::mat4(1.0f);
-    model_instance.matrix = glm::translate(model_instance.matrix, glm::vec3(20.0f, 0.0f, 10.0f));
+    translate(model_instance, { 20.0f, 0.0f, 10.0f });
 
     instance_t model1_instance;
-    model1_instance.matrix = glm::mat4(1.0f);
-    model1_instance.matrix = glm::translate(model_instance.matrix, glm::vec3(0.0f, 2.0f, 0.0f));
-
+    translate(model1_instance, { 0.0f, 2.0f, 0.0f });
 
     current_pipeline = basicPipeline;
     camera = create_camera({0.0f, 2.0f, -5.0f}, 60.0f, 20.0f);
@@ -528,7 +568,7 @@ int main(int argc, char** argv)
         .specularStrength  = 0.15f,
         .specularShininess = 128.0f,
         .cameraPosition    = camera.position,
-        .lightPosition     = glm::vec3(10.0f, 20.0f, -20.0f),
+        .lightPosition     = glm::vec3(10.0f, 2000.0f, -20.0f),
         .lightColor        = glm::vec3(1.0f),
     };
 
@@ -549,27 +589,45 @@ int main(int argc, char** argv)
         // Calculate the amount that has passed since the last frame. This value
         // is then used with inputs and physics to ensure that the result is the
         // same no matter how fast the CPU is running.
-        float delta_time = get_delta_time();
+        double delta_time = get_delta_time();
         uptime += delta_time;
 
+        if (in_viewport) {
+            handle_input(camera, delta_time);
+            glm::vec2 cursorPos = get_mouse_position();
+            update_camera_view(camera, cursorPos.x, cursorPos.y);
+        } else {
+        
+        }
         // Input and camera
-        handle_input(camera, delta_time);
-        glm::vec2 cursorPos = get_mouse_position();
-        update_camera_view(camera, cursorPos.x, cursorPos.y);
+        //handle_input(camera, delta_time);
+        //glm::vec2 cursorPos = get_mouse_position();
+        //update_camera_view(camera, cursorPos.x, cursorPos.y);
         update_camera(camera);
 
         scene.cameraPosition = camera.position;
+        scene.lightPosition = { 0.0f, 100.0f, 500.0f };
+
+        // set instance position
+        translate(model_instance, objectTranslation);
+        scale(model_instance, objectScale);
+        rotate(model_instance, objectRotation);
+
+        // set sun position
+        translate(sun_instance, scene.lightPosition);
+        rotate(sun_instance, -120.0f, { 1.0f, 0.0f, 0.0f });
+        scale(sun_instance, 10.0f);
 
 
         // copy data into uniform buffer
-        set_buffer_data(&g_camera_buffer, &camera.viewProj);
-        set_buffer_data(&g_scene_buffer, &scene);
+        set_buffer_data(g_camera_buffers, &camera.viewProj);
+        set_buffer_data(g_scene_buffers, &scene);
 
 
 
         // This is where the main rendering starts
         if (begin_rendering()) {
-            VkCommandBuffer cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
+            std::vector<VkCommandBuffer> cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
             {
                 // Render the skysphere
                 bind_pipeline(cmd_buffer, skyspherePipeline, g_descriptor_sets);
@@ -580,17 +638,20 @@ int main(int argc, char** argv)
                 // Render the grid floor
                 bind_pipeline(cmd_buffer, gridPipeline, g_descriptor_sets);
                 bind_vertex_array(cmd_buffer, quad);
-                render(cmd_buffer, gridPipeline.layout, quad_indices.size(), grid_instance);
+                render(cmd_buffer, gridPipeline.layout, quad.index_count, grid_instance);
 
 
+                // Render the sun
+                bind_pipeline(cmd_buffer, billboardPipeline, g_descriptor_sets);
+                bind_material(cmd_buffer, billboardPipeline.layout, sun_material);
+                bind_vertex_array(cmd_buffer, quad);
+                render(cmd_buffer, billboardPipeline.layout, quad.index_count, sun_instance);
 
-                // set instance position
-                translate(model_instance, objectTranslation);
-                scale(model_instance, objectScale);
-                rotate(model_instance, objectRotation);
+
 
                 // Render the models
                 bind_pipeline(cmd_buffer, current_pipeline, g_descriptor_sets);
+
                 bind_material(cmd_buffer, current_pipeline.layout, model_material);
                 bind_vertex_array(cmd_buffer, model);
                 render(cmd_buffer, current_pipeline.layout, model.index_count, model_instance);
@@ -602,7 +663,7 @@ int main(int argc, char** argv)
             end_render_pass(cmd_buffer);
 
 
-            VkCommandBuffer ui_cmd_buffer = begin_ui_render_pass(ui_pass, ui_framebuffers);
+            std::vector<VkCommandBuffer> ui_cmd_buffer = begin_ui_render_pass(ui_pass, ui_framebuffers);
             {
                 begin_ui();
 
@@ -638,6 +699,7 @@ int main(int argc, char** argv)
 
     destroy_material(model1_material);
     destroy_material(model_material);
+    destroy_material(sun_material);
     destroy_material(skysphere_material);
 
 
@@ -652,8 +714,8 @@ int main(int argc, char** argv)
 
 
     // Destroy rendering resources
-    destroy_buffer(g_scene_buffer);
-    destroy_buffer(g_camera_buffer);
+    destroy_buffers(g_scene_buffers);
+    destroy_buffers(g_camera_buffers);
 
     destroy_descriptor_set_layout(g_object_material_layout);
     destroy_descriptor_set_layout(g_layout);
@@ -685,6 +747,17 @@ int main(int argc, char** argv)
 // TODO: Event system stuff
 static bool press(key_pressed_event& e)
 {
+    if (e.get_key_code() == GLFW_KEY_F1) {
+        in_viewport = !in_viewport;
+
+        if (in_viewport) {
+            glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        } else {
+            glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+    }
+
+
     return true;
 }
 

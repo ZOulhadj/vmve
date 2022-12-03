@@ -45,4 +45,14 @@ private:
     uint32_t m_Height;
 };
 
+struct window_dropped_callback : public event {
+    window_dropped_callback(const std::vector<std::string>& paths)
+        : m_Paths(paths)
+    {}
+
+    EVENT_CLASS_TYPE(window_dropped);
+private:
+    std::vector<std::string> m_Paths;
+};
+
 #endif

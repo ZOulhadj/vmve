@@ -11,9 +11,8 @@
 
 #include "../entity.hpp"
 
-//constexpr int frames_in_flight = 2;
 
-static uint32_t currentImage = 0;
+constexpr uint32_t frames_in_flight = 2;
 
 enum class buffer_mode {
     standard = 2,
@@ -33,7 +32,6 @@ struct swapchain_t {
     std::vector<image_buffer_t> images;
     //image_buffer_t depth_image;
 };
-
 
 struct Frame {
     // CPU -> GPU sync
@@ -99,13 +97,15 @@ void destroy_renderer(renderer_t* renderer);
 
 renderer_t* get_renderer();
 renderer_context_t& get_renderer_context();
+//uint32_t get_current_image();
+uint32_t get_current_frame();
 
 VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings);
 void destroy_descriptor_set_layout(VkDescriptorSetLayout layout);
 
 std::vector<VkDescriptorSet> allocate_descriptor_set(VkDescriptorSetLayout layout, uint32_t frames);
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
-void update_descriptor_sets(const std::vector<buffer_t>& buffers, VkDescriptorSet descriptor_set);
+void update_descriptor_sets(const std::vector<std::vector<buffer_t>>& buffers, std::vector<VkDescriptorSet>& descriptor_sets);
 
 VkRenderPass create_ui_render_pass();
 std::vector<Framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent);
@@ -132,10 +132,13 @@ void end_rendering();
 
 
 
-VkCommandBuffer begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers);
-VkCommandBuffer begin_ui_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers);
-void end_render_pass(VkCommandBuffer cmd_buffer);
+std::vector<VkCommandBuffer> begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers);
+std::vector<VkCommandBuffer> begin_ui_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers);
+void end_render_pass(std::vector<VkCommandBuffer>& buffers);
 
-void bind_pipeline(VkCommandBuffer cmd_buffer, pipeline_t& pipeline, VkDescriptorSet descriptorSets);
-void render(VkCommandBuffer cmd_buffer, VkPipelineLayout layout, uint32_t index_count, instance_t& instance);
+void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, std::vector<VkDescriptorSet>& descriptorSets);
+void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, instance_t& instance);
+
+
+
 #endif
