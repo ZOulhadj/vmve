@@ -4,7 +4,7 @@
 #include "../src/renderer/renderer.hpp"
 #include "../src/renderer/buffer.hpp"
 #include "../src/renderer/texture.hpp"
-#include "../src/renderer/ui.hpp"
+#include "../src/ui/ui.hpp"
 #include "../src/input.hpp"
 #include "../src/camera.hpp"
 #include "../src/entity.hpp"
@@ -101,9 +101,9 @@ struct sandbox_scene {
 };
 
 
-glm::vec3 objectTranslation = glm::vec3(0.0f);
-glm::vec3 objectRotation = glm::vec3(0.0f);
-glm::vec3 objectScale = glm::vec3(1.0f);
+//glm::vec3 objectTranslation = glm::vec3(0.0f);
+//glm::vec3 objectRotation = glm::vec3(0.0f);
+//glm::vec3 objectScale = glm::vec3(1.0f);
 
 static int time_of_day = 10;
 
@@ -287,9 +287,9 @@ static void render_right_window()
         ImGui::ListBox("Models", &currently_selected_model, items.data(), items.size());
 
         if (currently_selected_model == 0) {
-            ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
-            ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
-            ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
+            //ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
+            //ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
+            //ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
 
 
 
@@ -487,7 +487,9 @@ int main(int argc, char** argv)
 
     // Global material descriptor set
     const std::vector<descriptor_set_layout> per_material_layout{
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }, // albedo
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }, // normal
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }, // specular
     };
 
     g_object_material_layout = create_descriptor_set_layout(per_material_layout);
@@ -598,53 +600,42 @@ int main(int argc, char** argv)
 
     // create models
     vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
+
+    model_t model = load_model_new(vfs::get().get_path("/models/backpack/backpack.obj"));
+    create_material(model.textures, g_object_material_layout);
+
     vertex_array_t icosphere = load_model(vfs::get().get_path("/models/sphere.obj"));
-    vertex_array_t model = load_model(vfs::get().get_path("/models/cottage_obj.obj"));
-    vertex_array_t model1 = load_model(vfs::get().get_path("/models/backpack/backpack.obj"));
+
+
 
     // create materials
     material_t sun_material;
     sun_material.albedo = load_texture(vfs::get().get_path("/textures/sun.png"));
     create_material(sun_material, g_object_material_layout);
 
-    material_t model_material;
-    model_material.albedo = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_diffuse.png"));
-    //model_material.normal = load_texture(vfs::get().get_path("/textures/cottage_textures/cottage_normal.png"));
-    create_material(model_material, g_object_material_layout);
-
-    material_t model1_material;
-    model1_material.albedo = load_texture(vfs::get().get_path("/models/backpack/diffuse.jpg"), true);
-    model1_material.normal = load_texture(vfs::get().get_path("/models/backpack/normal.png"), true);
-    create_material(model1_material, g_object_material_layout);
-
     material_t skysphere_material;
-    skysphere_material.albedo = load_texture(vfs::get().get_path("/textures/skysphere1.png"));
+    skysphere_material.albedo = load_texture(vfs::get().get_path("/textures/skysphere.jpg"));
     create_material(skysphere_material, g_object_material_layout);
 
     skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere_material.albedo.sampler, skysphere_material.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
 
 
     // create instances
     instance_t skyboxsphere_instance;
     instance_t grid_instance;
     instance_t sun_instance;
-
     instance_t model_instance;
-    translate(model_instance, { 20.0f, 0.0f, 10.0f });
 
-    instance_t model1_instance;
-    translate(model1_instance, { 0.0f, 2.0f, 0.0f });
 
     current_pipeline = basicPipeline;
     camera = create_camera({0.0f, 2.0f, -5.0f}, 60.0f, 20.0f);
 
     sandbox_scene scene {
-        .ambientStrength   = 0.05f,
-        .specularStrength  = 0.15f,
-        .specularShininess = 128.0f,
+        .ambientStrength   = 0.1f,
+        .specularStrength  = 0.0f,
+        .specularShininess = 16.0f,
         .cameraPosition    = camera.position,
-        .lightPosition     = glm::vec3(10.0f, 2000.0f, -20.0f),
+        .lightPosition     = glm::vec3(10.0f, 20.0, 10.0f),
         .lightColor        = glm::vec3(1.0f),
     };
 
@@ -678,18 +669,14 @@ int main(int argc, char** argv)
         update_camera(camera);
 
         scene.cameraPosition = camera.position;
-        scene.lightPosition = { 0.0f, 100.0f, 50 };
-
-        // set instance position
-        translate(model_instance, objectTranslation);
-        scale(model_instance, objectScale);
-        rotate(model_instance, objectRotation);
 
         // set sun position
         translate(sun_instance, scene.lightPosition);
         rotate(sun_instance, -120.0f, { 1.0f, 0.0f, 0.0f });
-        scale(sun_instance, 10.0f);
+        scale(sun_instance, 1.0f);
 
+        translate(model_instance, { 0.0f, 2.0f, 0.0f });
+        rotate(model_instance, 10.0f * uptime, { 0.0f, 1.0f, 0.0f });
 
         // copy data into uniform buffer
         set_buffer_data(g_camera_buffers, &camera.viewProj);
@@ -724,13 +711,13 @@ int main(int argc, char** argv)
                 // Render the models
                 bind_pipeline(cmd_buffer, current_pipeline, g_descriptor_sets);
 
-                bind_material(cmd_buffer, current_pipeline.layout, model_material);
-                bind_vertex_array(cmd_buffer, model);
-                render(cmd_buffer, current_pipeline.layout, model.index_count, model_instance);
+                bind_material(cmd_buffer, current_pipeline.layout, model.textures);
+                bind_vertex_array(cmd_buffer, model.data);
+                render(cmd_buffer, current_pipeline.layout, model.data.index_count, model_instance);
 
-                bind_material(cmd_buffer, current_pipeline.layout, model1_material);
-                bind_vertex_array(cmd_buffer, model1);
-                render(cmd_buffer, current_pipeline.layout, model1.index_count, model1_instance);
+                //bind_material(cmd_buffer, current_pipeline.layout, model1_material);
+                //bind_vertex_array(cmd_buffer, model1);
+                //render(cmd_buffer, current_pipeline.layout, model1.index_count, model1_instance);
             }
             end_render_pass(cmd_buffer);
 
@@ -769,14 +756,12 @@ int main(int argc, char** argv)
     vk_check(vkDeviceWaitIdle(renderer->ctx.device.device));
 
 
-    destroy_material(model1_material);
-    destroy_material(model_material);
+    destroy_material(model.textures);
     destroy_material(sun_material);
     destroy_material(skysphere_material);
 
 
-    destroy_vertex_array(model1);
-    destroy_vertex_array(model);
+    destroy_vertex_array(model.data);
     destroy_vertex_array(icosphere);
     destroy_vertex_array(quad);
 
@@ -794,6 +779,7 @@ int main(int argc, char** argv)
 
     destroy_pipeline(wireframePipeline);
     destroy_pipeline(skyspherePipeline);
+    destroy_pipeline(billboardPipeline);
     destroy_pipeline(gridPipeline);
     destroy_pipeline(basicPipeline);
 

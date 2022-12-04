@@ -2,9 +2,37 @@
 
 #include "vertex.hpp"
 
+#include "vfs.hpp"
 
-static void parse_mesh(std::vector<vertex_t>& vertices, std::vector<uint32_t>& indices,
-                       const aiMesh* mesh, const aiScene* scene)
+static texture_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureType type, std::string_view path)
+{
+    texture_buffer_t texture;
+
+    for (std::size_t i = 0; i < material->GetTextureCount(type); ++i) {
+        aiString ai_path;
+        std::string ai_path_string;
+
+        if (material->GetTexture(type, i, &ai_path) == aiReturn_FAILURE) {
+            ai_path_string = ai_path.C_Str();
+            printf("Failed to load texture %s\n", ai_path_string.c_str());
+
+            return {};
+        }
+
+        ai_path_string = ai_path.C_Str();
+        // HACK: A work around to getting the full path. Should look into
+        // a proper implementation.
+        std::filesystem::path parent_path(path);
+        texture = load_texture(parent_path.parent_path().string() + "/" + ai_path_string);
+        printf("");
+    }
+
+    return texture;
+}
+
+static void parse_mesh(model_t& model, std::vector<vertex_t>& vertices, 
+                                       std::vector<uint32_t>& indices,
+                                       aiMesh* mesh, const aiScene* scene, const std::string& p)
 {
     // walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
@@ -44,68 +72,69 @@ static void parse_mesh(std::vector<vertex_t>& vertices, std::vector<uint32_t>& i
             indices.push_back(face.mIndices[j]);
     }
 
-#if 0
+
     // process materials
-    aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-    // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
-    // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER.
-    // Same applies to other texture as the following list summarizes:
-    // diffuse: texture_diffuseN
-    // specular: texture_specularN
-    // normal: texture_normalN
+    for (std::size_t i = 0; i < scene->mNumMaterials; ++i) {
+        const aiMaterial* material = scene->mMaterials[i];
 
-
-    // 1. diffuse maps
-    vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-    textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-    // 2. specular maps
-    vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-    textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-    // 3. normal maps
-    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
-    textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-    // 4. height maps
-    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
-    textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
-#endif
+        model.textures.albedo = load_mesh_texture(material, aiTextureType_DIFFUSE, p);
+        model.textures.normal = load_mesh_texture(material, aiTextureType_HEIGHT, p);
+        model.textures.specular = load_mesh_texture(material, aiTextureType_SPECULAR, p);
+    }
 
 }
 
-static void parse_model(std::vector<vertex_t>& vertices, std::vector<uint32_t>& indices,
-                        aiNode* node, const aiScene* scene)
+static model_t parse_model(aiNode* node, const aiScene* scene, const std::string& p)
 {
+    model_t model;
+    std::vector<vertex_t> vertices;
+    std::vector<uint32_t> indices;
+
 
     for (std::size_t i = 0; i < node->mNumMeshes; ++i)
-        parse_mesh(vertices, indices, scene->mMeshes[node->mMeshes[i]], scene);
+        parse_mesh(model, vertices, indices, scene->mMeshes[node->mMeshes[i]], scene, p);
 
-    for (std::size_t i = 0; i < node->mNumChildren; ++i)
-        parse_model(vertices, indices, node->mChildren[i], scene);
+    //for (std::size_t i = 0; i < node->mNumChildren; ++i)
+    //    parse_model(data, node->mChildren[i], scene);
 
+
+    model.data = create_vertex_array(vertices, indices);
+
+    return model;
 }
 
 vertex_array_t load_model(const std::string& path)
 {
-    vertex_array_t buffer{};
-
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(path, aiProcess_PreTransformVertices |
-                                                   aiProcessPreset_TargetRealtime_Fast |
-                                                   aiProcess_ConvertToLeftHanded
-                                                   );
+        aiProcessPreset_TargetRealtime_Fast |
+        aiProcess_ConvertToLeftHanded
+    );
 
     if (!scene) {
         printf("Failed to load model at path: %s\n", path.c_str());
         return {};
     }
 
-    std::vector<vertex_t> vertices;
-    std::vector<uint32_t> indices;
+    model_t data = parse_model(scene->mRootNode, scene, path);
+    return data.data;
+}
 
-    parse_model(vertices, indices, scene->mRootNode, scene);
+model_t load_model_new(const std::string& path)
+{
+    Assimp::Importer importer;
 
-    buffer = create_vertex_array(vertices, indices);
+    const aiScene* scene = importer.ReadFile(path, aiProcess_PreTransformVertices |
+        aiProcessPreset_TargetRealtime_Fast |
+        aiProcess_FlipWindingOrder |
+        aiProcess_MakeLeftHanded
+    );
 
+    if (!scene) {
+        printf("Failed to load model at path: %s\n", path.c_str());
+        return {};
+    }
 
-    return buffer;
+    return parse_model(scene->mRootNode, scene, path);
 }

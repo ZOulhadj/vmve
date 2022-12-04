@@ -60,7 +60,7 @@ add_executable(${PROJECT_NAME}
         "src/utility.cpp"
         "src/material.cpp"
         "src/renderer/renderer.cpp"
-        "src/renderer/ui.cpp"
+        "src/ui/ui.cpp"
         "src/renderer/vertex_array.cpp"
         "src/renderer/buffer.cpp"
         "src/renderer/shader.cpp"

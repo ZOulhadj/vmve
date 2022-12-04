@@ -1,6 +1,6 @@
 #include "ui.hpp"
 
-#include "common.hpp"
+#include "../renderer/common.hpp"
 
 
 #include "../vfs.hpp"

@@ -10,6 +10,7 @@ struct material_t
 
     texture_buffer_t albedo;
     texture_buffer_t normal;
+    texture_buffer_t specular;
 };
 
 
