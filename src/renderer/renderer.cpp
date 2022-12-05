@@ -177,14 +177,10 @@ static void DestroySwapchain(swapchain_t& swapchain)
     vkDestroySwapchainKHR(g_rc->device.device, swapchain.handle, nullptr);
 }
 
-static void RebuildSwapchain(swapchain_t& swapchain, VkRenderPass p, std::vector<Framebuffer>& fb, VkExtent2D size)
+static void resize_swapchain(swapchain_t& swapchain)
 {
-    vk_check(vkDeviceWaitIdle(g_rc->device.device));
-
     DestroySwapchain(swapchain);
     swapchain = create_swapchain();
-
-    resize_framebuffers_color(p, fb, size);
 }
 
 static VkDescriptorPool create_descriptor_pool()
@@ -965,7 +961,14 @@ bool begin_rendering(VkRenderPass p, std::vector<Framebuffer>& fb, VkExtent2D si
         &currentImage);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        RebuildSwapchain(g_swapchain, p, fb, size);
+        // Wait for all GPU operations to complete before destroy and recreating
+        // any resources.
+        vk_check(vkDeviceWaitIdle(g_rc->device.device));
+
+        resize_swapchain(g_swapchain);
+
+        // todo: This must be implemented outside this function.
+        resize_framebuffers_color(p, fb, size);
 
         return false;
     }
@@ -978,15 +981,18 @@ bool begin_rendering(VkRenderPass p, std::vector<Framebuffer>& fb, VkExtent2D si
 
 void end_rendering()
 {
-    VkCommandBuffer cmd_buffers[2] = { viewport_cmd_buffers[current_frame], ui_cmd_buffers[current_frame] };
+    const std::array<VkCommandBuffer, 2> cmd_buffers{
+        viewport_cmd_buffers[current_frame],
+        ui_cmd_buffers[current_frame]
+    };
 
     const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submit_info.waitSemaphoreCount   = 1;
     submit_info.pWaitSemaphores      = &g_frames[current_frame].acquired_semaphore;
     submit_info.pWaitDstStageMask    = &wait_stage;
-    submit_info.commandBufferCount   = 2;
-    submit_info.pCommandBuffers      = cmd_buffers;
+    submit_info.commandBufferCount   = u32(cmd_buffers.size());
+    submit_info.pCommandBuffers      = cmd_buffers.data();
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores    = &g_frames[current_frame].released_semaphore;
 
@@ -1007,8 +1013,7 @@ void end_rendering()
     VkResult result = vkQueuePresentKHR(g_rc->device.graphics_queue, &present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        std::vector<Framebuffer> d;
-        RebuildSwapchain(g_swapchain, nullptr, d, {});
+        throw std::runtime_error("Implement rebuild of swapchain and framebuffers. ");
     }
 
 

@@ -96,5 +96,8 @@ void update_projection(camera_t& camera)
 
 void set_camera_projection(camera_t& camera, uint32_t width, uint32_t height)
 {
+    camera.width = width;
+    camera.height = height;
+
     update_projection(camera);
 }

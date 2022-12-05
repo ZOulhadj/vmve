@@ -47,8 +47,14 @@ image_buffer_t viewport_color{};
 image_buffer_t viewport_depth{};
 VkRenderPass render_pass = nullptr;
 std::vector<Framebuffer> framebuffers;
-std::vector<VkDescriptorSet> viewport_descriptor_sets(frames_in_flight);
+std::vector<VkDescriptorSet> framebuffer_id(frames_in_flight);
 
+
+// temp
+glm::vec2 old_viewport_size{};
+glm::vec2 current_viewport_size{};
+bool has_to_resize = false;
+glm::vec2 resize_extent;
 
 VkRenderPass ui_pass = nullptr;
 std::vector<Framebuffer> ui_framebuffers;
@@ -483,8 +489,27 @@ static void render_viewport_window()
 
     ImGui::PopStyleVar(2);
     {
+        static bool first_time = true;
+        // If new size is different than old size we will resize all contents
+        current_viewport_size = { ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y };
+
+        if (first_time) {
+            old_viewport_size = current_viewport_size;
+            first_time = false;
+        }
+
+        if (current_viewport_size != old_viewport_size) {
+            std::cout << "viewport resizing\n";
+            
+            has_to_resize = true;
+
+            old_viewport_size = current_viewport_size;
+        }
+
+        // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
+        // when the viewport window resizes.
         uint32_t current_frame = get_current_frame();
-        ImGui::Image(viewport_descriptor_sets[current_frame], ImGui::GetContentRegionAvail());
+        ImGui::Image(framebuffer_id[current_frame], { current_viewport_size.x, current_viewport_size.y });
     }
     ImGui::End();
 }
@@ -497,7 +522,7 @@ int main(int argc, char** argv)
     window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_t* renderer = create_renderer(window, buffer_mode::triple, vsync_mode::disabled);
+    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled_mailbox);
 
     std::string root_dir = "C:/Users/zakar/Projects/vmve/";
     vfs::get().mount("models", root_dir + "assets/models");
@@ -615,7 +640,7 @@ int main(int argc, char** argv)
 
     ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
 
-    for (auto& i : viewport_descriptor_sets)
+    for (auto& i : framebuffer_id)
         i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
@@ -717,6 +742,38 @@ int main(int argc, char** argv)
         set_buffer_data(g_scene_buffers, &scene);
 
 
+        // The viewport must resize before rendering to texture. If it were
+        // to resize within the UI functions then we would be attempting to
+        // recreate resources using a new size before submitting to the GPU
+        // which causes an error. Need to figure out how to do this properly.
+#if 1
+        if (has_to_resize) {
+
+            VkExtent2D extent = { current_viewport_size.x, current_viewport_size.y };
+
+            set_camera_projection(camera, extent.width, extent.height);
+
+            vk_check(vkDeviceWaitIdle(get_renderer_context().device.device));
+
+            destroy_image(viewport_color);
+            destroy_image(viewport_depth);
+            viewport_color = create_color_image(extent);
+            viewport_depth = create_depth_image(extent);
+
+            resize_framebuffers_color_and_depth(render_pass, framebuffers, viewport_color, viewport_depth);
+
+
+            for (auto& i : framebuffer_id) {
+                ImGui_ImplVulkan_RemoveTexture(i);
+                i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            }
+
+            has_to_resize = false;
+        }
+#endif
+
+
+
 
         // This is where the main rendering starts
         if (begin_rendering(ui_pass, ui_framebuffers, { window->width, window->height })) {
@@ -741,17 +798,12 @@ int main(int argc, char** argv)
                 render(cmd_buffer, billboardPipeline.layout, quad.index_count, sun_instance);
 
 
-
                 // Render the models
                 bind_pipeline(cmd_buffer, current_pipeline, g_descriptor_sets);
 
                 bind_material(cmd_buffer, current_pipeline.layout, model.textures);
                 bind_vertex_array(cmd_buffer, model.data);
                 render(cmd_buffer, current_pipeline.layout, model.data.index_count, model_instance);
-
-                //bind_material(cmd_buffer, current_pipeline.layout, model1_material);
-                //bind_vertex_array(cmd_buffer, model1);
-                //render(cmd_buffer, current_pipeline.layout, model1.index_count, model1_instance);
             }
             end_render_pass(cmd_buffer);
 
@@ -796,10 +848,6 @@ int main(int argc, char** argv)
     destroy_vertex_array(model.data);
     destroy_vertex_array(icosphere);
     destroy_vertex_array(quad);
-
-
-    //destroy_texture_buffer(file_texture);
-    //destroy_texture_buffer(folder_texture);
 
 
     // Destroy rendering resources
@@ -869,35 +917,8 @@ static bool mouse_moved(mouse_moved_event& e)
 
 static bool resize(window_resized_event& e)
 {
- 
-    set_camera_projection(camera, e.get_width(), e.get_height());
 
-    //VkExtent2D extent = {e.get_width(), e.get_height()};
 
-    //vkDeviceWaitIdle(get_renderer_context().device.device);
-
-    //destroy_image(viewport_color);
-    //destroy_image(viewport_depth);
-    //viewport_color = create_color_image({ 1280, 720 });
-    //viewport_depth = create_depth_image({ 1280, 720 });
-
-    //resize_framebuffers_color_and_depth(render_pass, framebuffers, viewport_color, viewport_depth);
-    
-   /*
-    if (get_resize_status()) {
-        printf("resizing %d %d\n", e.get_width(), e.get_height());
-
-        VkExtent2D extent = {e.get_width(), e.get_height()};
-
-        resize_framebuffers_color(ui_pass, ui_framebuffers, extent);
-        set_resize(false);
-    }
- */
-
-    //for (auto& i: viewport_descriptor_sets) {
-    //    ImGui_ImplVulkan_RemoveTexture(i);
-    //    i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    //}
 
 
 
