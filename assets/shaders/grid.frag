@@ -21,7 +21,7 @@ layout(binding = 1) uniform scene_ubo
 } scene;
 
 // size of one cell
-float gridCellSize = 0.5;
+float gridCellSize = 1.0;
 
 // color of thin lines
 vec4 gridColorThin = vec4(0.5, 0.5, 0.5, 1.0);
@@ -30,7 +30,7 @@ vec4 gridColorThin = vec4(0.5, 0.5, 0.5, 1.0);
 vec4 gridColorThick = vec4(0.0, 0.0, 0.0, 1.0);
 
 // minimum number of pixels between cell lines before LOD switch should occur.
-const float gridMinPixelsBetweenCells = 2.0;
+const float gridMinPixelsBetweenCells = 0.2;
 
 float log10(float x)
 {
@@ -63,9 +63,9 @@ vec4 grid_color(vec2 uv)
     float lodFade = fract(lodLevel);
 
     // cell sizes for lod0, lod1 and lod2
-    float lod0 = gridCellSize * pow(10.0, floor(lodLevel));
+    float lod0 = gridCellSize * pow(1.0, floor(lodLevel));
     float lod1 = lod0 * 10.0;
-    float lod2 = lod1 * 10.0;
+    float lod2 = lod1 * 200.0;
 
     // each anti-aliased line covers up to 4 pixels
     dudv *= 4.0;

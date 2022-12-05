@@ -87,6 +87,7 @@ static void parse_mesh(model_t& model, std::vector<vertex_t>& vertices,
 static model_t parse_model(aiNode* node, const aiScene* scene, const std::string& p)
 {
     model_t model;
+
     std::vector<vertex_t> vertices;
     std::vector<uint32_t> indices;
 

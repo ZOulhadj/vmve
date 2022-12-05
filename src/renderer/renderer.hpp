@@ -25,7 +25,6 @@ enum class vsync_mode {
     enabled_mailbox = 2
 };
 
-
 struct swapchain_t {
     VkSwapchainKHR handle;
 
@@ -97,7 +96,6 @@ void destroy_renderer(renderer_t* renderer);
 
 renderer_t* get_renderer();
 renderer_context_t& get_renderer_context();
-//uint32_t get_current_image();
 uint32_t get_current_frame();
 
 VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings);
@@ -127,7 +125,7 @@ void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer
 pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass);
 void destroy_pipeline(pipeline_t& pipeline);
 
-bool begin_rendering();
+bool begin_rendering(VkRenderPass p, std::vector<Framebuffer>& fb, VkExtent2D size);
 void end_rendering();
 
 

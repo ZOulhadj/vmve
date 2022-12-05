@@ -2,6 +2,12 @@
 #define MYENGINE_QUATERNION_CAMERA_HPP
 
 
+
+enum class camera_mode {
+    first_person,
+    look_at
+};
+
 struct view_projection
 {
     glm::mat4 view;

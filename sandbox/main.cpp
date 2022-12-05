@@ -119,9 +119,9 @@ static bool running   = true;
 static bool minimised = false;
 static bool in_viewport = false;
 static float uptime   = 0.0f;
+static double delta_time = 0.0f;
 
-
-
+static camera_mode cam_mode = camera_mode::first_person;
 
 VkDescriptorSet skysphere_dset;
 
@@ -320,30 +320,41 @@ static void render_left_window()
 {
     ImGuiIO& io = ImGui::GetIO();
 
+
+
+    static bool wireframe = false;
+    static bool vsync = true;
+    static bool depth = false;
+    static int swapchain_images = 3;
+
+    static bool lock_camera_frustum = false;
+
+
+
     ImGui::Begin(scene_window, &window_open, window_flags);
     {
-        ImGui::Text("Rendering");
-        ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::Text("Stats");
+        ImGui::Text("Uptime: %d s", (int)uptime);
+        ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::Text("Delta time: %.4f ms/frame", delta_time);
 
-        static bool wireframe = false;
-        static bool vsync = true;
-        static bool depth     = false;
+
+        ImGui::Separator();
+
+        ImGui::Text("Rendering");
+
 
         if (ImGui::Checkbox("Wireframe", &wireframe))
             wireframe ? current_pipeline = wireframePipeline : current_pipeline = basicPipeline;
 
         ImGui::Checkbox("VSync", &vsync);
-        static int swapchain_images = 3;
         ImGui::SliderInt("Swapchain images", &swapchain_images, 2, 3);
         
-        ImGui::Text("Rendering mode");
-        ImGui::RadioButton("Full", true);
-        ImGui::SameLine();
-        ImGui::RadioButton("Position", false);
-        ImGui::SameLine();
-        ImGui::RadioButton("Depth", false);
-        ImGui::SameLine();
-        ImGui::RadioButton("Normal", false);
+        enum render_mode { full, depth, position, normal };
+        static int current_render_mode = full;
+        const char* elems_names[4] = { "Full", "Depth", "Position", "Normal" };
+        const char* elem_name = (current_render_mode >= 0 && current_render_mode < 4) ? elems_names[current_render_mode] : "Unknown";
+        ImGui::SliderInt("Render mode", &current_render_mode, 0, 4 - 1, elem_name);
 
         ImGui::Separator();
         ImGui::Text("Day/Night");
@@ -357,18 +368,48 @@ static void render_left_window()
 //    ImGui::SliderFloat3("Light color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
         ImGui::Separator();
         ImGui::Text("Camera");
-        ImGui::Text("Camera mode %s", "Perspective");
-        ImGui::SliderFloat3("Position", glm::value_ptr(camera.position), -500.0f, 500.0f);
-        ImGui::SliderFloat("Movement speed", &camera.speed, 0.0f, 20.0f);
-        ImGui::SliderFloat("Roll speed", &camera.roll_speed, 0.0f, 20.0f);
-        ImGui::SliderFloat("Fov", &camera.fov, 1.0f, 120.0f);
-        ImGui::SliderFloat("Near", &camera.near, 0.1f, 10.0f);
+        if (ImGui::RadioButton("First person", cam_mode == camera_mode::first_person)) {
+            cam_mode = camera_mode::first_person;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Look at", cam_mode == camera_mode::look_at)) {
+            cam_mode = camera_mode::look_at;
+        }
 
+        ImGui::Text("Position");
+        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
+        ImGui::PopFont();
+        ImGui::SameLine();
+        ImGui::Text("%.2f", camera.position.x);
+        ImGui::SameLine();
+        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+        ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
+        ImGui::PopFont();
+        ImGui::SameLine();
+        ImGui::Text("%.2f", camera.position.y);
+        ImGui::SameLine();
+        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+        ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
+        ImGui::PopFont();
+        ImGui::SameLine();
+        ImGui::Text("%.2f", camera.position.z);
+
+        ImGui::SliderFloat("Speed", &camera.speed, 0.0f, 20.0f, "%.1f m/s");
+        float roll_rad = glm::radians(camera.roll_speed);
+        ImGui::SliderAngle("Roll Speed", &roll_rad, 0.0f, 45.0f);
+        float fov_rad = glm::radians(camera.fov);
+        ImGui::SliderAngle("Field of view", &fov_rad, 10.0f, 120.0f);
+        ImGui::SliderFloat("Near plane", &camera.near, 0.1f, 10.0f, "%.1f m");
+
+        ImGui::Checkbox("Lock frustum", &lock_camera_frustum);
+
+        ImGui::Separator();
 
         ImGui::Text("Skybox");
         static bool open = false;
         ImGui::SameLine();
-        if (ImGui::ImageButton(skysphere_dset, { 32, 32 }))
+        if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
             open = true;
 
         if (open)
@@ -378,6 +419,10 @@ static void render_left_window()
         static bool edit_shaders = false;
         if (ImGui::Button("Edit shaders"))
             edit_shaders = true;
+
+
+
+        ImGui::Text("Viewport mode: %s", in_viewport ? "Enabled" : "Disabled");
 
 
         if (edit_shaders) {
@@ -403,6 +448,11 @@ static void render_left_window()
 
             ImGui::End();
         }
+
+
+
+        ImGui::Separator();
+
         render_demo_window();
     }
     ImGui::End();
@@ -413,7 +463,6 @@ static void render_bottom_window()
     ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
     ImGui::Begin(console_window, &window_open, window_flags);
     {
-        ImGui::Text("Viewport mode: %s", in_viewport ? "Enabled" : "Disabled");
         ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "[Logging]: A normal message");
         ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "[Warning]: This is a warning");
         ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "[Error]: A failed example.");
@@ -448,7 +497,7 @@ int main(int argc, char** argv)
     window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_t* renderer = create_renderer(window, buffer_mode::triple, vsync_mode::enabled_mailbox);
+    renderer_t* renderer = create_renderer(window, buffer_mode::triple, vsync_mode::disabled);
 
     std::string root_dir = "C:/Users/zakar/Projects/vmve/";
     vfs::get().mount("models", root_dir + "assets/models");
@@ -460,11 +509,12 @@ int main(int argc, char** argv)
     ui_pass = create_ui_render_pass();
     ui_framebuffers = create_ui_framebuffers(ui_pass, { window->width, window->height });
 
-    viewport_sampler = create_sampler(VK_FILTER_LINEAR, 16);
-    viewport_color   = create_color_image({ window->width, window->height });
-    viewport_depth   = create_depth_image({ window->width, window->height });
 
     render_pass  = create_render_pass();
+
+    viewport_sampler = create_sampler(VK_FILTER_LINEAR, 16);
+    viewport_color = create_color_image({ 1920, 1080 });
+    viewport_depth = create_depth_image({ 1920, 1080 });
     framebuffers = create_framebuffers(render_pass, viewport_color, viewport_depth);
 
 
@@ -499,29 +549,21 @@ int main(int argc, char** argv)
 
 
     // Shaders and Pipeline
-    std::string gridVSCode      = load_text_file(vfs::get().get_path("/shaders/grid.vert"));
-    std::string gridFSCode      = load_text_file(vfs::get().get_path("/shaders/grid.frag"));
-    std::string objectVSCode    = load_text_file(vfs::get().get_path("/shaders/object.vert"));
-    std::string objectFSCode    = load_text_file(vfs::get().get_path("/shaders/object.frag"));
-    std::string skysphereVSCode = load_text_file(vfs::get().get_path("/shaders/skysphere.vert"));
-    std::string skysphereFSCode = load_text_file(vfs::get().get_path("/shaders/skysphere.frag"));
-    std::string billboardVSCode = load_text_file(vfs::get().get_path("/shaders/billboard.vert"));
-    std::string billboardFSCode = load_text_file(vfs::get().get_path("/shaders/billboard.frag"));
-
-    shader gridVS      = create_vertex_shader(gridVSCode);
-    shader gridFS      = create_fragment_shader(gridFSCode);
-    shader objectVS    = create_vertex_shader(objectVSCode);
-    shader objectFS    = create_fragment_shader(objectFSCode);
-    shader skysphereVS = create_vertex_shader(skysphereVSCode);
-    shader skysphereFS = create_fragment_shader(skysphereFSCode);
-    shader billboardVS = create_vertex_shader(billboardVSCode);
-    shader billboardFS = create_fragment_shader(billboardFSCode);
+    shader gridVS      = create_vertex_shader(load_text_file(vfs::get().get_path("/shaders/grid.vert")));
+    shader gridFS      = create_fragment_shader(load_text_file(vfs::get().get_path("/shaders/grid.frag")));
+    shader objectVS    = create_vertex_shader(load_text_file(vfs::get().get_path("/shaders/object.vert")));
+    shader objectFS    = create_fragment_shader(load_text_file(vfs::get().get_path("/shaders/object.frag")));
+    shader skysphereVS = create_vertex_shader(load_text_file(vfs::get().get_path("/shaders/skysphere.vert")));
+    shader skysphereFS = create_fragment_shader(load_text_file(vfs::get().get_path("/shaders/skysphere.frag")));
+    shader billboardVS = create_vertex_shader(load_text_file(vfs::get().get_path("/shaders/billboard.vert")));
+    shader billboardFS = create_fragment_shader(load_text_file(vfs::get().get_path("/shaders/billboard.frag")));
 
     const std::vector<VkFormat> binding_format{
         VK_FORMAT_R32G32B32_SFLOAT, // Position
-        VK_FORMAT_R32G32B32_SFLOAT, // Color
         VK_FORMAT_R32G32B32_SFLOAT, // Normal
-        VK_FORMAT_R32G32_SFLOAT     // UV
+        VK_FORMAT_R32G32_SFLOAT,     // UV
+        VK_FORMAT_R32G32B32_SFLOAT, // Tangent
+        VK_FORMAT_R32G32B32_SFLOAT // BiTangent
     };
 
     PipelineInfo info{};
@@ -550,14 +592,12 @@ int main(int argc, char** argv)
     }
     {
         info.shaders = { billboardVS, billboardFS };
-        info.cull_mode = VK_CULL_MODE_NONE;
         billboardPipeline = create_pipeline(info, render_pass);
     }
     {
         info.shaders = { skysphereVS, skysphereFS };
         info.depth_testing = false;
         info.wireframe = false;
-        info.cull_mode = VK_CULL_MODE_FRONT_BIT;
         skyspherePipeline = create_pipeline(info, render_pass);
     }
 
@@ -574,12 +614,6 @@ int main(int argc, char** argv)
 
 
     ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
-
-    //texture_buffer_t folder_texture = load_texture(vfs::get().get_path("/textures/icons/folder.png"));
-    //texture_buffer_t file_texture = load_texture(vfs::get().get_path("/textures/icons/file.png"));
-
-    //VkDescriptorSet folder_icon  = ImGui_ImplVulkan_AddTexture(folder_texture.sampler, folder_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    //VkDescriptorSet file_icon = ImGui_ImplVulkan_AddTexture(file_texture.sampler, file_texture.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     for (auto& i : viewport_descriptor_sets)
         i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -614,7 +648,7 @@ int main(int argc, char** argv)
     create_material(sun_material, g_object_material_layout);
 
     material_t skysphere_material;
-    skysphere_material.albedo = load_texture(vfs::get().get_path("/textures/skysphere.jpg"));
+    skysphere_material.albedo = load_texture(vfs::get().get_path("/textures/skysphere1.png"));
     create_material(skysphere_material, g_object_material_layout);
 
     skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere_material.albedo.sampler, skysphere_material.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -628,12 +662,12 @@ int main(int argc, char** argv)
 
 
     current_pipeline = basicPipeline;
-    camera = create_camera({0.0f, 2.0f, -5.0f}, 60.0f, 20.0f);
+    camera = create_camera({0.0f, 2.0f, -5.0f}, 60.0f, 5.0f);
 
     sandbox_scene scene {
-        .ambientStrength   = 0.1f,
-        .specularStrength  = 0.0f,
-        .specularShininess = 16.0f,
+        .ambientStrength   = 0.2f,
+        //.specularStrength  = 1.0f,
+        .specularShininess = 32.0f,
         .cameraPosition    = camera.position,
         .lightPosition     = glm::vec3(10.0f, 20.0, 10.0f),
         .lightColor        = glm::vec3(1.0f),
@@ -656,7 +690,7 @@ int main(int argc, char** argv)
         // Calculate the amount that has passed since the last frame. This value
         // is then used with inputs and physics to ensure that the result is the
         // same no matter how fast the CPU is running.
-        double delta_time = get_delta_time();
+        delta_time = get_delta_time();
         uptime += delta_time;
 
         // Only update movement and camera view when in viewport mode
@@ -685,7 +719,7 @@ int main(int argc, char** argv)
 
 
         // This is where the main rendering starts
-        if (begin_rendering()) {
+        if (begin_rendering(ui_pass, ui_framebuffers, { window->width, window->height })) {
             std::vector<VkCommandBuffer> cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
             {
                 // Render the skysphere
@@ -744,8 +778,6 @@ int main(int argc, char** argv)
 
             end_rendering();
         }
-
-
 
         update_window(window);
     }
@@ -808,11 +840,7 @@ static bool press(key_pressed_event& e)
     if (e.get_key_code() == GLFW_KEY_F1) {
         in_viewport = !in_viewport;
 
-        if (in_viewport) {
-            glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        } else {
-            glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
+        glfwSetInputMode(window->handle, GLFW_CURSOR, in_viewport ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
 
 
@@ -841,37 +869,35 @@ static bool mouse_moved(mouse_moved_event& e)
 
 static bool resize(window_resized_event& e)
 {
-    printf("resizing %d %d\n", e.get_width(), e.get_height());
-
+ 
     set_camera_projection(camera, e.get_width(), e.get_height());
 
-    VkExtent2D extent = {e.get_width(), e.get_height()};
+    //VkExtent2D extent = {e.get_width(), e.get_height()};
 
-    destroy_image(viewport_color);
-    destroy_image(viewport_depth);
-    viewport_color = create_color_image(extent);
-    viewport_depth = create_depth_image(extent);
+    //vkDeviceWaitIdle(get_renderer_context().device.device);
 
-    resize_framebuffers_color_and_depth(render_pass, framebuffers, viewport_color, viewport_depth);
-    resize_framebuffers_color(ui_pass, ui_framebuffers, extent);
+    //destroy_image(viewport_color);
+    //destroy_image(viewport_depth);
+    //viewport_color = create_color_image({ 1280, 720 });
+    //viewport_depth = create_depth_image({ 1280, 720 });
 
+    //resize_framebuffers_color_and_depth(render_pass, framebuffers, viewport_color, viewport_depth);
+    
+   /*
+    if (get_resize_status()) {
+        printf("resizing %d %d\n", e.get_width(), e.get_height());
 
-    for (auto& i: viewport_descriptor_sets) {
-        ImGui_ImplVulkan_RemoveTexture(i);
-        i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        VkExtent2D extent = {e.get_width(), e.get_height()};
+
+        resize_framebuffers_color(ui_pass, ui_framebuffers, extent);
+        set_resize(false);
     }
+ */
 
-
-    // Images, Render pass and Framebuffers
-    ui_pass = create_ui_render_pass();
-    ui_framebuffers = create_ui_framebuffers(ui_pass, { window->width, window->height });
-
-    viewport_sampler = create_sampler(VK_FILTER_LINEAR, 16);
-    viewport_color = create_color_image({ window->width, window->height });
-    viewport_depth = create_depth_image({ window->width, window->height });
-
-    render_pass = create_render_pass();
-    framebuffers = create_framebuffers(render_pass, viewport_color, viewport_depth);
+    //for (auto& i: viewport_descriptor_sets) {
+    //    ImGui_ImplVulkan_RemoveTexture(i);
+    //    i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    //}
 
 
 

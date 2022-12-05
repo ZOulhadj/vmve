@@ -177,16 +177,15 @@ static void DestroySwapchain(swapchain_t& swapchain)
     vkDestroySwapchainKHR(g_rc->device.device, swapchain.handle, nullptr);
 }
 
-static void RebuildSwapchain(swapchain_t& swapchain)
+static void RebuildSwapchain(swapchain_t& swapchain, VkRenderPass p, std::vector<Framebuffer>& fb, VkExtent2D size)
 {
     vk_check(vkDeviceWaitIdle(g_rc->device.device));
 
     DestroySwapchain(swapchain);
     swapchain = create_swapchain();
+
+    resize_framebuffers_color(p, fb, size);
 }
-
-
-
 
 static VkDescriptorPool create_descriptor_pool()
 {
@@ -523,6 +522,8 @@ void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer
 {
     destroy_framebuffers(framebuffers);
     framebuffers = create_ui_framebuffers(render_pass, extent);
+
+    std::cout << "recreated ui framebuffers with size (" << extent.width << ", " << extent.height << ")\n";
 }
 
 
@@ -950,13 +951,10 @@ uint32_t get_current_frame()
 }
 
 
-bool begin_rendering()
+bool begin_rendering(VkRenderPass p, std::vector<Framebuffer>& fb, VkExtent2D size)
 {
     // Wait for the GPU to finish all work before getting the next image
     vk_check(vkWaitForFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence, VK_TRUE, UINT64_MAX));
-
-    // reset fence when about to submit work to the GPU
-    vk_check(vkResetFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence));
 
     // Keep attempting to acquire the next frame.
     VkResult result = vkAcquireNextImageKHR(g_rc->device.device,
@@ -966,11 +964,14 @@ bool begin_rendering()
         nullptr,
         &currentImage);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        RebuildSwapchain(g_swapchain);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        RebuildSwapchain(g_swapchain, p, fb, size);
 
         return false;
     }
+
+    // reset fence when about to submit work to the GPU
+    vk_check(vkResetFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence));
 
     return true;
 }
@@ -1006,7 +1007,8 @@ void end_rendering()
     VkResult result = vkQueuePresentKHR(g_rc->device.graphics_queue, &present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        RebuildSwapchain(g_swapchain);
+        std::vector<Framebuffer> d;
+        RebuildSwapchain(g_swapchain, nullptr, d, {});
     }
 
 
