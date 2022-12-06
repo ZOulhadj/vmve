@@ -20,7 +20,6 @@ double get_delta_time()
     const double delta_time = std::chrono::duration_cast<ts>(current_time - last_time).count() / 1000.0f;
     last_time = current_time;
 #else
-    // todo: replace glfwGetTime() with C++ chrono
     static double lastTime;
     double currentTime = glfwGetTime();
     double delta_time = currentTime - lastTime;

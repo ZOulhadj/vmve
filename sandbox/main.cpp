@@ -161,6 +161,14 @@ const char* scene_window    = "Global";
 static bool editor_open = false;
 static bool window_open = true;
 
+model_t model;
+
+VkDescriptorSet a;
+VkDescriptorSet n;
+VkDescriptorSet s;
+
+
+
 static void render_begin_docking()
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -275,23 +283,42 @@ static void render_right_window()
 
 
             static bool open = false;
+            static VkDescriptorSet img_id = nullptr;
 
             ImGui::Text("Material");
             
             ImGui::Text("Albedo");
             ImGui::SameLine();
-            if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
+            if (ImGui::ImageButton(a, { 64, 64 })) {
                 open = true;
+                img_id = a;
+            }
+
 
             ImGui::Text("Normal");
             ImGui::SameLine();
-            if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
+            if (ImGui::ImageButton(n, { 64, 64 })) {
                 open = true;
+                img_id = n;
+            }
+
 
             ImGui::Text("Specular");
             ImGui::SameLine();
-            if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
+            if (ImGui::ImageButton(s, { 64, 64 })) {
                 open = true;
+                img_id = s;
+            }
+
+
+
+            if (open) {
+                ImGui::Begin("Image", &open);
+
+                ImGui::Image(img_id, ImGui::GetContentRegionAvail());
+
+                ImGui::End();
+            }
         }
     }
     ImGui::End();
@@ -520,25 +547,23 @@ int main(int argc, char** argv)
     mount_vfs("shaders", root_dir + "assets/shaders");
     mount_vfs("fonts", root_dir + "assets/fonts");
 
-    // Images, Render pass and Framebuffers
-    VkRenderPass render_pass  = create_render_pass();
-
+    // Frame buffers
     VkSampler viewport_sampler = create_sampler();
-    std::vector<image_buffer_t> viewport_color = create_color_images({ 800, 600 });
-    image_buffer_t viewport_depth = create_depth_image({ 800, 600 });
-    std::vector<framebuffer> framebuffers = create_framebuffers(render_pass, viewport_color, viewport_depth);
 
     VkRenderPass ui_pass = create_ui_render_pass();
-    std::vector<framebuffer> ui_framebuffers = create_ui_framebuffers(ui_pass, { window->width, window->height });
-   
+    VkRenderPass render_pass  = create_render_pass();
+
+    std::vector<render_target> ui_render_targets = create_ui_render_targets(ui_pass, { window->width, window->height });
+    std::vector<render_target> render_targets    = create_render_targets(render_pass, { 800, 600 });
+
+
 
     ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
 
 
     framebuffer_id.resize(get_swapchain_image_count());
     for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
-        framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
+        framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(viewport_sampler, render_targets[i].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
 
@@ -662,7 +687,7 @@ int main(int argc, char** argv)
     // create models
     vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
 
-    model_t model = load_model_new(get_vfs_path("/models/backpack/backpack.obj"));
+    model = load_model_new(get_vfs_path("/models/backpack/backpack.obj"));
     create_material(model.textures, material_layout);
 
     vertex_array_t icosphere = load_model(get_vfs_path("/models/sphere.obj"));
@@ -681,6 +706,11 @@ int main(int argc, char** argv)
     skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere_material.albedo.sampler, skysphere_material.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
+    // todo: temp
+    a = ImGui_ImplVulkan_AddTexture(model.textures.albedo.sampler, model.textures.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    n = ImGui_ImplVulkan_AddTexture(model.textures.normal.sampler, model.textures.normal.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    s = ImGui_ImplVulkan_AddTexture(model.textures.specular.sampler, model.textures.specular.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    
     // create instances
     instance_t skyboxsphere_instance;
     instance_t grid_instance;
@@ -693,7 +723,7 @@ int main(int argc, char** argv)
 
     sandbox_scene scene {
         .ambientStrength   = 0.2f,
-        //.specularStrength  = 1.0f,
+        .specularStrength  = 1.0f,
         .specularShininess = 32.0f,
         .cameraPosition    = camera.position,
         .lightPosition     = glm::vec3(10.0f, 20.0, 10.0f),
@@ -757,17 +787,12 @@ int main(int argc, char** argv)
 
             vk_check(vkDeviceWaitIdle(get_renderer_context().device.device));
 
-            destroy_images(viewport_color);
-            destroy_image(viewport_depth);
-            viewport_color = create_color_images(extent);
-            viewport_depth = create_depth_image(extent);
 
-            resize_framebuffers_color_and_depth(render_pass, framebuffers, viewport_color, viewport_depth);
-
+            recreate_render_targets(render_pass, render_targets, extent);
 
             for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
                 ImGui_ImplVulkan_RemoveTexture(framebuffer_id[i]);
-                framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(viewport_sampler, render_targets[i].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             }
 
             has_to_resize = false;
@@ -775,11 +800,13 @@ int main(int argc, char** argv)
 #endif
 
 
-
+        static bool begin_frame_ready = true;
 
         // This is where the main rendering starts
-        if (begin_rendering(ui_pass, ui_framebuffers, { window->width, window->height })) {
-            std::vector<VkCommandBuffer> cmd_buffer = begin_viewport_render_pass(render_pass, framebuffers);
+        if (begin_frame_ready = begin_rendering()) {
+
+            // 1st render pass
+            std::vector<VkCommandBuffer> cmd_buffer = begin_render_target(render_pass, render_targets);
             {
                 // Render the skysphere
                 bind_pipeline(cmd_buffer, skyspherePipeline, g_descriptor_sets);
@@ -807,10 +834,11 @@ int main(int argc, char** argv)
                 bind_vertex_array(cmd_buffer, model.data);
                 render(cmd_buffer, current_pipeline.layout, model.data.index_count, model_instance);
             }
-            end_render_pass(cmd_buffer);
+            end_render_target(cmd_buffer);
 
 
-            std::vector<VkCommandBuffer> ui_cmd_buffer = begin_ui_render_pass(ui_pass, ui_framebuffers);
+            // 2nd render pass
+            std::vector<VkCommandBuffer> ui_cmd_buffer = begin_ui_render_target(ui_pass, ui_render_targets);
             {
                 begin_ui();
 
@@ -827,11 +855,22 @@ int main(int argc, char** argv)
 
                 end_ui(ui_cmd_buffer);
             }
-            end_render_pass(ui_cmd_buffer);
+            end_render_target(ui_cmd_buffer);
+
+
+            // todo: copy image from last pass to swapchain image
 
 
             end_rendering();
         }
+
+
+        // todo: should this be here?
+        if (!begin_frame_ready) {
+            recreate_ui_render_targets(ui_pass, ui_render_targets, { window->width, window->height });
+            begin_frame_ready = true;
+        }
+
 
         update_window(window);
     }
@@ -865,15 +904,12 @@ int main(int argc, char** argv)
     destroy_pipeline(gridPipeline);
     destroy_pipeline(basicPipeline);
 
-
-    destroy_framebuffers(framebuffers);
-    destroy_render_pass(render_pass);
-    destroy_image(viewport_depth);
-    destroy_images(viewport_color);
-    destroy_sampler(viewport_sampler);
-    destroy_framebuffers(ui_framebuffers);
+    destroy_render_targets(ui_render_targets);
+    destroy_render_targets(render_targets);
     destroy_render_pass(ui_pass);
+    destroy_render_pass(render_pass);
 
+    destroy_sampler(viewport_sampler);
 
     // Destroy core systems
     destroy_user_interface(uiContext);
