@@ -13,8 +13,11 @@ void render_demo_window()
     if (show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 }
 
-void render_filesystem_window(const std::string& root_dir, bool* open)
+std::string render_filesystem_window(const std::string& root_dir, bool* open)
 {
+    std::string open_path;
+
+
     static std::string current_dir = root_dir;
     static std::vector<filesystem_node> files = get_files_in_directory(current_dir.c_str());
     static int index = 0;
@@ -24,11 +27,13 @@ void render_filesystem_window(const std::string& root_dir, bool* open)
     ImGui::Begin("Filesystem", open);
 
     if (ImGui::Button("Open")) {
+        //open_path = current_dir + '/' + file_name.c_str();
     }
 
     ImGui::SameLine();
 
     if (ImGui::Button("Refresh")) {
+        printf("%s\n", current_dir.c_str());
         files = get_files_in_directory(current_dir.c_str());
     }
 
@@ -79,6 +84,9 @@ void render_filesystem_window(const std::string& root_dir, bool* open)
 
 
     ImGui::End();
+
+
+    return open_path;
 }
 
 
