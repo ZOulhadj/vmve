@@ -11,9 +11,6 @@
 
 #include "../entity.hpp"
 
-
-constexpr uint32_t frames_in_flight = 2;
-
 enum class buffer_mode {
     standard = 2,
     triple   = 3
@@ -42,9 +39,16 @@ struct Frame {
 };
 
 
-struct Framebuffer {
+struct framebuffer {
     VkExtent2D extent;
     VkFramebuffer handle;
+};
+
+struct render_target {
+    VkRenderPass render_pass;
+
+    // framebuffer per frame
+    std::vector<framebuffer> framebuffers;
 };
 
 struct descriptor_set_layout
@@ -97,41 +101,43 @@ void destroy_renderer(renderer_t* renderer);
 renderer_t* get_renderer();
 renderer_context_t& get_renderer_context();
 uint32_t get_current_frame();
+uint32_t get_current_swapchain_image();
+uint32_t get_swapchain_image_count();
 
 VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings);
 void destroy_descriptor_set_layout(VkDescriptorSetLayout layout);
 
-std::vector<VkDescriptorSet> allocate_descriptor_set(VkDescriptorSetLayout layout, uint32_t frames);
+std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout);
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
-void update_descriptor_sets(const std::vector<std::vector<buffer_t>>& buffers, std::vector<VkDescriptorSet>& descriptor_sets);
+void write_buffer_resources(std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<std::vector<buffer_t>>& buffers);
 
 VkRenderPass create_ui_render_pass();
-std::vector<Framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent);
+std::vector<framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent);
 
 VkRenderPass create_render_pass();
-std::vector<Framebuffer> create_framebuffers(VkRenderPass render_pass,
-                                             image_buffer_t& images,
+std::vector<framebuffer> create_framebuffers(VkRenderPass render_pass,
+                                             std::vector<image_buffer_t>& images,
                                              image_buffer_t& depth);
 
 void destroy_render_pass(VkRenderPass render_pass);
-void destroy_framebuffers(std::vector<Framebuffer>& framebuffers);
+void destroy_framebuffers(std::vector<framebuffer>& framebuffers);
 
 
-void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, image_buffer_t& images,
+void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<framebuffer>& framebuffers, std::vector<image_buffer_t>& images,
                                          image_buffer_t& depth);
-void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, VkExtent2D extent);
+void resize_framebuffers_color(VkRenderPass render_pass, std::vector<framebuffer>& framebuffers, VkExtent2D extent);
 
 
 pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass);
 void destroy_pipeline(pipeline_t& pipeline);
 
-bool begin_rendering(VkRenderPass p, std::vector<Framebuffer>& fb, VkExtent2D size);
+bool begin_rendering(VkRenderPass p, std::vector<framebuffer>& fb, VkExtent2D size);
 void end_rendering();
 
 
 
-std::vector<VkCommandBuffer> begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers);
-std::vector<VkCommandBuffer> begin_ui_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers);
+std::vector<VkCommandBuffer> begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<framebuffer>& framebuffers);
+std::vector<VkCommandBuffer> begin_ui_render_pass(VkRenderPass render_pass, const std::vector<framebuffer>& framebuffers);
 void end_render_pass(std::vector<VkCommandBuffer>& buffers);
 
 void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, std::vector<VkDescriptorSet>& descriptorSets);

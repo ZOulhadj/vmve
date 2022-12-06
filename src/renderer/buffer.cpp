@@ -234,9 +234,14 @@ image_buffer_t create_image(VkExtent2D extent, VkFormat format, VkImageUsageFlag
     return image;
 }
 
-image_buffer_t create_color_image(VkExtent2D size)
+std::vector<image_buffer_t> create_color_images(VkExtent2D size)
 {
-    return create_image(size, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    std::vector<image_buffer_t> images(get_swapchain_image_count());
+
+    for (auto& image : images)
+        image = create_image(size, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+    return images;
 }
 
 image_buffer_t create_depth_image(VkExtent2D size)

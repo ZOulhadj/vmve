@@ -2,6 +2,8 @@
 #define MYENGINE_COMMON_HPP
 
 
+constexpr uint32_t frames_in_flight = 2;
+
 // This is a helper function used for all Vulkan related function calls that
 // return a VkResult value.
 static void vk_check(VkResult result)

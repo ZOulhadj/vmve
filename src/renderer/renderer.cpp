@@ -60,6 +60,29 @@ static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface)
     return actualExtent;
 }
 
+static uint32_t query_image_count(VkSurfaceCapabilitiesKHR capabilities, buffer_mode mode)
+{
+    const uint32_t min = capabilities.minImageCount + 1;
+    const uint32_t max = capabilities.maxImageCount;
+
+    const uint32_t requested = (uint32_t)mode;
+
+
+    // check if requested image count
+    if (min <= requested)
+        return requested;
+
+    // todo: check if actual image count is not above max limit
+
+    //   if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+    //    imageCount = swapChainSupport.capabilities.maxImageCount;
+    // 
+
+    assert("Code path not expected! Double check image values.");
+
+    return min;
+}
+
 static VkPresentModeKHR query_present_mode(const std::vector<VkPresentModeKHR>& present_modes, vsync_mode vsync)
 {
     if (vsync == vsync_mode::disabled)
@@ -92,6 +115,9 @@ static swapchain_t create_swapchain()
     VkSurfaceCapabilitiesKHR surface_properties{};
     vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(g_rc->device.gpu, g_rc->surface, &surface_properties));
 
+    const uint32_t image_count = query_image_count(surface_properties, g_buffering);
+
+
     uint32_t format_count = 0;
     vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(g_rc->device.gpu, g_rc->surface, &format_count, nullptr));
     std::vector<VkSurfaceFormatKHR> surface_formats(format_count);
@@ -103,11 +129,11 @@ static swapchain_t create_swapchain()
     vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(g_rc->device.gpu, g_rc->surface, &present_count, present_modes.data()));
 
     // Query surface capabilities
-    VkPresentModeKHR present_mode = query_present_mode(present_modes, g_vsync);
+    const VkPresentModeKHR present_mode = query_present_mode(present_modes, g_vsync);
 
     VkSwapchainCreateInfoKHR swapchain_info { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
     swapchain_info.surface               = g_rc->surface;
-    swapchain_info.minImageCount         = u32(g_buffering);
+    swapchain_info.minImageCount         = image_count;
     swapchain_info.imageFormat           = VK_FORMAT_B8G8R8A8_SRGB;
     swapchain_info.imageColorSpace       = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     swapchain_info.imageExtent           = get_surface_size(surface_properties);
@@ -167,7 +193,7 @@ static swapchain_t create_swapchain()
     return swapchain;
 }
 
-static void DestroySwapchain(swapchain_t& swapchain)
+static void destroy_swapchain(swapchain_t& swapchain)
 {
     for (auto& image : swapchain.images)
         vkDestroyImageView(g_rc->device.device, image.view, nullptr);
@@ -179,7 +205,7 @@ static void DestroySwapchain(swapchain_t& swapchain)
 
 static void resize_swapchain(swapchain_t& swapchain)
 {
-    DestroySwapchain(swapchain);
+    destroy_swapchain(swapchain);
     swapchain = create_swapchain();
 }
 
@@ -216,30 +242,6 @@ static VkDescriptorPool create_descriptor_pool()
 
     return pool;
 }
-
-
-
-
-//static void create_frame_barriers()
-//{
-//    VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-//    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-//
-//    VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
-//
-//    // create sync objects
-//    vk_check(vkCreateFence(g_rc->device.device, &fence_info, nullptr, &g_frame.submit_fence));
-//    vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &g_frame.acquired_semaphore));
-//    vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &g_frame.released_semaphore));
-//}
-//
-//static void DestroyFrameBarriers()
-//{
-//    vkDestroySemaphore(g_rc->device.device, g_frame.released_semaphore, nullptr);
-//    vkDestroySemaphore(g_rc->device.device, g_frame.acquired_semaphore, nullptr);
-//    vkDestroyFence(g_rc->device.device, g_frame.submit_fence, nullptr);
-//}
-
 
 static std::vector<Frame> create_frames(uint32_t frames_in_flight)
 {
@@ -281,24 +283,8 @@ static void create_command_pool()
 
 static void destroy_command_pool()
 {
-    //vkFreeCommandBuffers(g_rc->device.device, cmd_pool, 1, &ui_cmd_buffer);
-    //vkFreeCommandBuffers(g_rc->device.device, cmd_pool, 1, &viewport_cmd_buffer);
-
     vkDestroyCommandPool(g_rc->device.device, cmd_pool, nullptr);
 }
-
-
-
-//static void create_command_buffer()
-//{
-//    VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
-//    allocate_info.commandPool        = cmd_pool;
-//    allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-//    allocate_info.commandBufferCount = 1;
-//
-//    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &viewport_cmd_buffer));
-//    vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &ui_cmd_buffer));
-//}
 
 static void create_command_buffers()
 {
@@ -321,7 +307,7 @@ void destroy_render_pass(VkRenderPass render_pass)
     vkDestroyRenderPass(g_rc->device.device, render_pass, nullptr);
 }
 
-void destroy_framebuffers(std::vector<Framebuffer>& framebuffers)
+void destroy_framebuffers(std::vector<framebuffer>& framebuffers)
 {
     for (auto& framebuffer : framebuffers) {
         vkDestroyFramebuffer(g_rc->device.device, framebuffer.handle, nullptr);
@@ -333,7 +319,7 @@ VkRenderPass create_ui_render_pass()
 {
     VkRenderPass render_pass{};
 
-    std::vector<VkAttachmentDescription> attachments(1);
+    std::array<VkAttachmentDescription, 1> attachments{};
 
     // color attachment
     attachments[0].format = VK_FORMAT_B8G8R8A8_SRGB;
@@ -378,17 +364,16 @@ VkRenderPass create_ui_render_pass()
     return render_pass;
 }
 
-std::vector<Framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent)
+std::vector<framebuffer> create_ui_framebuffers(VkRenderPass render_pass, VkExtent2D extent)
 {
-    std::vector<Framebuffer> framebuffers(g_swapchain.images.size());
+    std::vector<framebuffer> framebuffers(g_swapchain.images.size());
 
-    // Create framebuffers with attachments.
-    for (std::size_t i = 0; i < g_swapchain.images.size(); ++i) {
-        std::vector<VkImageView> attachments { g_swapchain.images[i].view };
+    for (std::size_t i = 0; i < framebuffers.size(); ++i) {
+        std::array<VkImageView, 1> attachments = { g_swapchain.images[i].view };
 
         VkFramebufferCreateInfo framebuffer_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         framebuffer_info.renderPass = render_pass;
-        framebuffer_info.attachmentCount = 1;
+        framebuffer_info.attachmentCount = u32(attachments.size());
         framebuffer_info.pAttachments = attachments.data();
         framebuffer_info.width = extent.width;
         framebuffer_info.height = extent.height;
@@ -408,7 +393,7 @@ VkRenderPass create_render_pass()
 {
     VkRenderPass render_pass{};
 
-    std::vector<VkAttachmentDescription> attachments(2);
+    std::array<VkAttachmentDescription, 2> attachments;
 
     // color attachment
     attachments[0].format = VK_FORMAT_B8G8R8A8_SRGB;
@@ -440,7 +425,7 @@ VkRenderPass create_render_pass()
     depth_reference.attachment = 1;
     depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkSubpassDependency dependencies[2];
+    std::array<VkSubpassDependency, 2> dependencies;
 
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
@@ -471,8 +456,8 @@ VkRenderPass create_render_pass()
     render_pass_info.pAttachments = attachments.data();
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
-    render_pass_info.dependencyCount = 2;
-    render_pass_info.pDependencies = dependencies;
+    render_pass_info.dependencyCount = u32(dependencies.size());
+    render_pass_info.pDependencies = dependencies.data();
 
     vk_check(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr,
                                 &render_pass));
@@ -481,45 +466,44 @@ VkRenderPass create_render_pass()
 }
 
 
-std::vector<Framebuffer> create_framebuffers(VkRenderPass render_pass,
-                                             image_buffer_t& images,
+std::vector<framebuffer> create_framebuffers(VkRenderPass render_pass,
+                                             std::vector<image_buffer_t>& images,
                                              image_buffer_t& depth)
 {
-    std::vector<Framebuffer> framebuffers(g_swapchain.images.size());
+    std::vector<framebuffer> framebuffers(g_swapchain.images.size());
 
 
     for (std::size_t i = 0; i < framebuffers.size(); ++i) {
-        std::vector<VkImageView> attachments { images.view, depth.view };
+        std::array<VkImageView, 2> attachments { images[i].view, depth.view};
 
         VkFramebufferCreateInfo framebuffer_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         framebuffer_info.renderPass = render_pass;
         framebuffer_info.attachmentCount = u32(attachments.size());
         framebuffer_info.pAttachments = attachments.data();
-        framebuffer_info.width = images.extent.width;
-        framebuffer_info.height = images.extent.height;
+        framebuffer_info.width = images[i].extent.width;
+        framebuffer_info.height = images[i].extent.height;
         framebuffer_info.layers = 1;
 
         vk_check(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info,
                                      nullptr, &framebuffers[i].handle));
-        framebuffers[i].extent = images.extent;
+        framebuffers[i].extent = images[i].extent;
     }
 
     return framebuffers;
 }
 
-void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, image_buffer_t& images,
+void resize_framebuffers_color_and_depth(VkRenderPass render_pass, std::vector<framebuffer>& framebuffers, 
+                                         std::vector<image_buffer_t>& images,
                                          image_buffer_t& depth)
 {
     destroy_framebuffers(framebuffers);
     framebuffers = create_framebuffers(render_pass, images, depth);
 }
 
-void resize_framebuffers_color(VkRenderPass render_pass, std::vector<Framebuffer>& framebuffers, VkExtent2D extent)
+void resize_framebuffers_color(VkRenderPass render_pass, std::vector<framebuffer>& framebuffers, VkExtent2D extent)
 {
     destroy_framebuffers(framebuffers);
     framebuffers = create_ui_framebuffers(render_pass, extent);
-
-    std::cout << "recreated ui framebuffers with size (" << extent.width << ", " << extent.height << ")\n";
 }
 
 
@@ -548,9 +532,9 @@ void destroy_descriptor_set_layout(VkDescriptorSetLayout layout) {
     vkDestroyDescriptorSetLayout(g_rc->device.device, layout, nullptr);
 }
 
-std::vector<VkDescriptorSet> allocate_descriptor_set(VkDescriptorSetLayout layout, uint32_t frames)
+std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout)
 {
-    std::vector<VkDescriptorSet> descriptor_sets(frames);
+    std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
 
     for (auto& descriptor_set : descriptor_sets) {
         VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
@@ -576,12 +560,12 @@ VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout)
     allocate_info.pSetLayouts = &layout;
 
     vk_check(vkAllocateDescriptorSets(g_rc->device.device, &allocate_info,
-                                      &descriptor_set));
+        &descriptor_set));
 
     return descriptor_set;
 }
 
-void update_descriptor_sets(const std::vector<std::vector<buffer_t>>& buffers, std::vector<VkDescriptorSet>& descriptor_sets)
+void write_buffer_resources(std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<std::vector<buffer_t>>& buffers)
 {
     std::vector<VkWriteDescriptorSet> writes(buffers.size());
     std::vector<VkDescriptorBufferInfo> buffer_infos(descriptor_sets.size());
@@ -739,14 +723,14 @@ pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass)
     // We use dynamic states for the graphics pipeline as this will allow for
     // the viewport and scissor to change in size (in the event of a window
     // resize) without needing to fully recreate the pipeline and pipeline layout.
-    const VkDynamicState dynamic_states[2] = {
+    const std::array<VkDynamicState, 2> dynamic_states = {
             VK_DYNAMIC_STATE_VIEWPORT,
             VK_DYNAMIC_STATE_SCISSOR
     };
 
     VkPipelineDynamicStateCreateInfo dynamic_state_info { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
-    dynamic_state_info.dynamicStateCount = 2;
-    dynamic_state_info.pDynamicStates    = dynamic_states;
+    dynamic_state_info.dynamicStateCount = u32(dynamic_states.size());
+    dynamic_state_info.pDynamicStates    = dynamic_states.data();
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_info {VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
     graphics_pipeline_info.stageCount          = u32(shader_infos.size());
@@ -898,14 +882,10 @@ renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, 
 
     renderer->descriptor_pool = create_descriptor_pool();
 
-    //create_frame_barriers();
+    g_frames = create_frames(frames_in_flight);
 
-    g_frames = create_frames(frames_in_flight); //
-
-    create_command_pool();
-    //create_command_buffer();
-    
-    create_command_buffers(); //
+    create_command_pool();    
+    create_command_buffers();
 
     g_r = renderer;
 
@@ -926,7 +906,7 @@ void destroy_renderer(renderer_t* renderer)
     destroy_frames(g_frames);
 
     //DestroyFrameBarriers();
-    DestroySwapchain(g_swapchain);
+    destroy_swapchain(g_swapchain);
 
     destroy_renderer_context(&renderer->ctx);
 }
@@ -946,8 +926,17 @@ uint32_t get_current_frame()
     return current_frame;
 }
 
+uint32_t get_current_swapchain_image()
+{
+    return currentImage;
+}
 
-bool begin_rendering(VkRenderPass p, std::vector<Framebuffer>& fb, VkExtent2D size)
+uint32_t get_swapchain_image_count()
+{
+    return g_swapchain.images.size();
+}
+
+bool begin_rendering(VkRenderPass p, std::vector<framebuffer>& fb, VkExtent2D size)
 {
     // Wait for the GPU to finish all work before getting the next image
     vk_check(vkWaitForFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence, VK_TRUE, UINT64_MAX));
@@ -973,8 +962,11 @@ bool begin_rendering(VkRenderPass p, std::vector<Framebuffer>& fb, VkExtent2D si
         return false;
     }
 
+
     // reset fence when about to submit work to the GPU
     vk_check(vkResetFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence));
+
+
 
     return true;
 }
@@ -1024,7 +1016,7 @@ void end_rendering()
     current_frame = (current_frame + 1) % frames_in_flight;
 }
 
-std::vector<VkCommandBuffer> begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers)
+std::vector<VkCommandBuffer> begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<framebuffer>& framebuffers)
 {
     vk_check(vkResetCommandBuffer(viewport_cmd_buffers[current_frame], 0));
 
@@ -1050,7 +1042,7 @@ std::vector<VkCommandBuffer> begin_viewport_render_pass(VkRenderPass render_pass
 
     const VkClearValue clear_color = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
     const VkClearValue clear_depth = { 0.0f, 0 };
-    const VkClearValue clear_buffers[2] = { clear_color, clear_depth };
+    const std::array<VkClearValue, 2> clear_buffers = { clear_color, clear_depth };
 
     VkRect2D render_area{};
     render_area.offset = { 0, 0 };
@@ -1061,8 +1053,8 @@ std::vector<VkCommandBuffer> begin_viewport_render_pass(VkRenderPass render_pass
     renderPassInfo.renderPass      = render_pass;
     renderPassInfo.framebuffer     = framebuffers[currentImage].handle;
     renderPassInfo.renderArea      = render_area;
-    renderPassInfo.clearValueCount = 2;
-    renderPassInfo.pClearValues    = clear_buffers;
+    renderPassInfo.clearValueCount = clear_buffers.size();
+    renderPassInfo.pClearValues    = clear_buffers.data();
 
     vkCmdBeginRenderPass(viewport_cmd_buffers[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -1070,7 +1062,7 @@ std::vector<VkCommandBuffer> begin_viewport_render_pass(VkRenderPass render_pass
 }
 
 
-std::vector<VkCommandBuffer> begin_ui_render_pass(VkRenderPass render_pass, const std::vector<Framebuffer>& framebuffers)
+std::vector<VkCommandBuffer> begin_ui_render_pass(VkRenderPass render_pass, const std::vector<framebuffer>& framebuffers)
 {
     vk_check(vkResetCommandBuffer(ui_cmd_buffers[current_frame], 0));
 

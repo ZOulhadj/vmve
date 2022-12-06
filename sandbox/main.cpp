@@ -41,13 +41,7 @@ constexpr float scaleMax = 10.0f;
 
 static window_t* window = nullptr;
 
-
-VkSampler viewport_sampler;
-image_buffer_t viewport_color{};
-image_buffer_t viewport_depth{};
-VkRenderPass render_pass = nullptr;
-std::vector<Framebuffer> framebuffers;
-std::vector<VkDescriptorSet> framebuffer_id(frames_in_flight);
+std::vector<VkDescriptorSet> framebuffer_id;
 
 
 // temp
@@ -55,9 +49,6 @@ glm::vec2 old_viewport_size{};
 glm::vec2 current_viewport_size{};
 bool has_to_resize = false;
 glm::vec2 resize_extent;
-
-VkRenderPass ui_pass = nullptr;
-std::vector<Framebuffer> ui_framebuffers;
 
 
 pipeline_t basicPipeline{};
@@ -68,22 +59,6 @@ pipeline_t wireframePipeline{};
 
 pipeline_t current_pipeline{};
 
-// This is a global descriptor set that will be used for all draw calls and
-// will contain descriptors such as a projection view matrix, global scene
-// information including lighting.
-static VkDescriptorSetLayout g_layout;
-
-// This is the actual descriptor set/collection that will hold the descriptors
-// also known as resources. Since this is the global descriptor set, this will
-// hold the resources for projection view matrix, scene lighting etc. The reason
-// why this is an array is so that each frame has its own descriptor set.
-static std::vector<VkDescriptorSet> g_descriptor_sets;
-
-static VkDescriptorSetLayout g_object_material_layout;
-
-// The resources that will be part of the global descriptor set
-static std::vector<buffer_t> g_camera_buffers;
-static std::vector<buffer_t> g_scene_buffers;
 
 camera_t camera{};
 
@@ -249,10 +224,10 @@ static void render_main_menu()
 
 
     if (load_model_open)
-        render_filesystem_window(vfs::get().get_path("/models"), &load_model_open);
+        render_filesystem_window(get_vfs_path("/models"), &load_model_open);
 
     if (export_model_open)
-        render_filesystem_window(vfs::get().get_path("/models"), &export_model_open);
+        render_filesystem_window(get_vfs_path("/models"), &export_model_open);
 }
 
 static void render_dockspace()
@@ -354,13 +329,19 @@ static void render_left_window()
             wireframe ? current_pipeline = wireframePipeline : current_pipeline = basicPipeline;
 
         ImGui::Checkbox("VSync", &vsync);
-        ImGui::SliderInt("Swapchain images", &swapchain_images, 2, 3);
-        
-        enum render_mode { full, depth, position, normal };
-        static int current_render_mode = full;
-        const char* elems_names[4] = { "Full", "Depth", "Position", "Normal" };
-        const char* elem_name = (current_render_mode >= 0 && current_render_mode < 4) ? elems_names[current_render_mode] : "Unknown";
-        ImGui::SliderInt("Render mode", &current_render_mode, 0, 4 - 1, elem_name);
+
+        enum class buf_mode { double_buffering, triple_buffering };
+        static int current_buffer_mode = (int)buf_mode::triple_buffering;
+        std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
+        //ImGui::SliderInt("Swapchain images", &swapchain_images, 2, 3);
+        ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
+        enum class render_mode { full, depth, position, normal };
+        static int current_render_mode = (int)render_mode::full;
+        std::array<const char*, 4> elems_names = { "Full", "Depth", "Position", "Normal" };
+        //const char* elem_name = (current_render_mode >= 0 && current_render_mode < 4) ? elems_names[current_render_mode] : "Unknown";
+        //ImGui::SliderInt("Render mode", &current_render_mode, 0, 4 - 1, elem_name);
+
+        ImGui::Combo("Render mode", &current_render_mode, elems_names.data(), elems_names.size());
 
         ImGui::Separator();
         ImGui::Text("Day/Night");
@@ -419,7 +400,7 @@ static void render_left_window()
             open = true;
 
         if (open)
-            render_filesystem_window(vfs::get().get_path("/textures"), &open);
+            render_filesystem_window(get_vfs_path("/textures"), &open);
 
 
         static bool edit_shaders = false;
@@ -499,8 +480,6 @@ static void render_viewport_window()
         }
 
         if (current_viewport_size != old_viewport_size) {
-            std::cout << "viewport resizing\n";
-            
             has_to_resize = true;
 
             old_viewport_size = current_viewport_size;
@@ -508,7 +487,7 @@ static void render_viewport_window()
 
         // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
         // when the viewport window resizes.
-        uint32_t current_frame = get_current_frame();
+        uint32_t current_frame = get_current_swapchain_image();
         ImGui::Image(framebuffer_id[current_frame], { current_viewport_size.x, current_viewport_size.y });
     }
     ImGui::End();
@@ -519,69 +498,88 @@ static void render_viewport_window()
 
 int main(int argc, char** argv)
 {
+    // Initialize core systems
     window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
 
-    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled_mailbox);
+    renderer_t* renderer = create_renderer(window, buffer_mode::triple, vsync_mode::enabled_mailbox);
 
-    std::string root_dir = "C:/Users/zakar/Projects/vmve/";
-    vfs::get().mount("models", root_dir + "assets/models");
-    vfs::get().mount("textures", root_dir + "assets/textures");
-    vfs::get().mount("shaders", root_dir + "assets/shaders");
-    vfs::get().mount("fonts", root_dir + "assets/fonts");
+    // Mount specific VFS folders
+    const std::string root_dir = "C:/Users/zakar/Projects/vmve/";
+    mount_vfs("models", root_dir + "assets/models");
+    mount_vfs("textures", root_dir + "assets/textures");
+    mount_vfs("shaders", root_dir + "assets/shaders");
+    mount_vfs("fonts", root_dir + "assets/fonts");
 
     // Images, Render pass and Framebuffers
-    ui_pass = create_ui_render_pass();
-    ui_framebuffers = create_ui_framebuffers(ui_pass, { window->width, window->height });
+    VkRenderPass render_pass  = create_render_pass();
+
+    VkSampler viewport_sampler = create_sampler();
+    std::vector<image_buffer_t> viewport_color = create_color_images({ 800, 600 });
+    image_buffer_t viewport_depth = create_depth_image({ 800, 600 });
+    std::vector<framebuffer> framebuffers = create_framebuffers(render_pass, viewport_color, viewport_depth);
+
+    VkRenderPass ui_pass = create_ui_render_pass();
+    std::vector<framebuffer> ui_framebuffers = create_ui_framebuffers(ui_pass, { window->width, window->height });
+   
+
+    ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
 
 
-    render_pass  = create_render_pass();
+    framebuffer_id.resize(get_swapchain_image_count());
+    for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
+        framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    viewport_sampler = create_sampler(VK_FILTER_LINEAR, 16);
-    viewport_color = create_color_image({ 1920, 1080 });
-    viewport_depth = create_depth_image({ 1920, 1080 });
-    framebuffers = create_framebuffers(render_pass, viewport_color, viewport_depth);
-
-
-
+    }
 
 
     // Global
-    const std::vector<descriptor_set_layout> global_layout {
+    const std::vector<descriptor_set_layout> global_desc_layout {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT },                                // projection view
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
     };
 
-    g_layout          = create_descriptor_set_layout(global_layout);
-    g_descriptor_sets = allocate_descriptor_set(g_layout, frames_in_flight);
 
-    g_camera_buffers = create_uniform_buffers<view_projection>(frames_in_flight);
-    g_scene_buffers  = create_uniform_buffers<sandbox_scene>(frames_in_flight);
+    // This is a global descriptor set that will be used for all draw calls and
+    // will contain descriptors such as a projection view matrix, global scene
+    // information including lighting.
+    VkDescriptorSetLayout global_layout = create_descriptor_set_layout(global_desc_layout);
 
-    update_descriptor_sets({ g_camera_buffers, g_scene_buffers }, g_descriptor_sets);
+    // This is the actual descriptor set/collection that will hold the descriptors
+    // also known as resources. Since this is the global descriptor set, this will
+    // hold the resources for projection view matrix, scene lighting etc. The reason
+    // why this is an array is so that each frame has its own descriptor set.
+    std::vector<VkDescriptorSet> g_descriptor_sets = allocate_descriptor_sets(global_layout);
+
+
+    // The resources that will be part of the global descriptor set
+    std::vector<buffer_t> camera_ubo = create_uniform_buffer<view_projection>();
+    std::vector<buffer_t> scene_ubo  = create_uniform_buffer<sandbox_scene>();
+
+    write_buffer_resources(g_descriptor_sets, { camera_ubo, scene_ubo });
 
     // Global material descriptor set
-    const std::vector<descriptor_set_layout> per_material_layout{
+    const std::vector<descriptor_set_layout> material_desc_layout{
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }, // albedo
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }, // normal
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }, // specular
     };
 
-    g_object_material_layout = create_descriptor_set_layout(per_material_layout);
+    VkDescriptorSetLayout material_layout = create_descriptor_set_layout(material_desc_layout);
 
 
 
 
 
     // Shaders and Pipeline
-    shader gridVS      = create_vertex_shader(load_text_file(vfs::get().get_path("/shaders/grid.vert")));
-    shader gridFS      = create_fragment_shader(load_text_file(vfs::get().get_path("/shaders/grid.frag")));
-    shader objectVS    = create_vertex_shader(load_text_file(vfs::get().get_path("/shaders/object.vert")));
-    shader objectFS    = create_fragment_shader(load_text_file(vfs::get().get_path("/shaders/object.frag")));
-    shader skysphereVS = create_vertex_shader(load_text_file(vfs::get().get_path("/shaders/skysphere.vert")));
-    shader skysphereFS = create_fragment_shader(load_text_file(vfs::get().get_path("/shaders/skysphere.frag")));
-    shader billboardVS = create_vertex_shader(load_text_file(vfs::get().get_path("/shaders/billboard.vert")));
-    shader billboardFS = create_fragment_shader(load_text_file(vfs::get().get_path("/shaders/billboard.frag")));
+    shader gridVS      = create_vertex_shader(load_text_file(get_vfs_path("/shaders/grid.vert")));
+    shader gridFS      = create_fragment_shader(load_text_file(get_vfs_path("/shaders/grid.frag")));
+    shader objectVS    = create_vertex_shader(load_text_file(get_vfs_path("/shaders/object.vert")));
+    shader objectFS    = create_fragment_shader(load_text_file(get_vfs_path("/shaders/object.frag")));
+    shader skysphereVS = create_vertex_shader(load_text_file(get_vfs_path("/shaders/skysphere.vert")));
+    shader skysphereFS = create_fragment_shader(load_text_file(get_vfs_path("/shaders/skysphere.frag")));
+    shader billboardVS = create_vertex_shader(load_text_file(get_vfs_path("/shaders/billboard.vert")));
+    shader billboardFS = create_fragment_shader(load_text_file(get_vfs_path("/shaders/billboard.frag")));
 
     const std::vector<VkFormat> binding_format{
         VK_FORMAT_R32G32B32_SFLOAT, // Position
@@ -592,7 +590,7 @@ int main(int argc, char** argv)
     };
 
     PipelineInfo info{};
-    info.descriptor_layouts = { g_layout, g_object_material_layout };
+    info.descriptor_layouts = { global_layout, material_layout };
     info.push_constant_size = sizeof(glm::mat4);
     info.binding_layout_size = sizeof(vertex_t);
     info.binding_format = binding_format;
@@ -638,11 +636,6 @@ int main(int argc, char** argv)
     destroy_shader(gridVS);
 
 
-    ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
-
-    for (auto& i : framebuffer_id)
-        i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
 
     // Built-in resources
     std::vector<vertex_t> quad_vertices {
@@ -660,21 +653,21 @@ int main(int argc, char** argv)
     // create models
     vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
 
-    model_t model = load_model_new(vfs::get().get_path("/models/backpack/backpack.obj"));
-    create_material(model.textures, g_object_material_layout);
+    model_t model = load_model_new(get_vfs_path("/models/backpack/backpack.obj"));
+    create_material(model.textures, material_layout);
 
-    vertex_array_t icosphere = load_model(vfs::get().get_path("/models/sphere.obj"));
+    vertex_array_t icosphere = load_model(get_vfs_path("/models/sphere.obj"));
 
 
 
     // create materials
     material_t sun_material;
-    sun_material.albedo = load_texture(vfs::get().get_path("/textures/sun.png"));
-    create_material(sun_material, g_object_material_layout);
+    sun_material.albedo = load_texture(get_vfs_path("/textures/sun.png"));
+    create_material(sun_material, material_layout);
 
     material_t skysphere_material;
-    skysphere_material.albedo = load_texture(vfs::get().get_path("/textures/skysphere1.png"));
-    create_material(skysphere_material, g_object_material_layout);
+    skysphere_material.albedo = load_texture(get_vfs_path("/textures/skysphere1.png"));
+    create_material(skysphere_material, material_layout);
 
     skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere_material.albedo.sampler, skysphere_material.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -738,8 +731,8 @@ int main(int argc, char** argv)
         rotate(model_instance, 10.0f * uptime, { 0.0f, 1.0f, 0.0f });
 
         // copy data into uniform buffer
-        set_buffer_data(g_camera_buffers, &camera.viewProj);
-        set_buffer_data(g_scene_buffers, &scene);
+        set_buffer_data(camera_ubo, &camera.viewProj);
+        set_buffer_data(scene_ubo, &scene);
 
 
         // The viewport must resize before rendering to texture. If it were
@@ -755,17 +748,17 @@ int main(int argc, char** argv)
 
             vk_check(vkDeviceWaitIdle(get_renderer_context().device.device));
 
-            destroy_image(viewport_color);
+            destroy_images(viewport_color);
             destroy_image(viewport_depth);
-            viewport_color = create_color_image(extent);
+            viewport_color = create_color_images(extent);
             viewport_depth = create_depth_image(extent);
 
             resize_framebuffers_color_and_depth(render_pass, framebuffers, viewport_color, viewport_depth);
 
 
-            for (auto& i : framebuffer_id) {
-                ImGui_ImplVulkan_RemoveTexture(i);
-                i = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
+                ImGui_ImplVulkan_RemoveTexture(framebuffer_id[i]);
+                framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(viewport_sampler, viewport_color[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             }
 
             has_to_resize = false;
@@ -786,16 +779,16 @@ int main(int argc, char** argv)
                 render(cmd_buffer, skyspherePipeline.layout, icosphere.index_count, skyboxsphere_instance);
 
                 // Render the grid floor
-                bind_pipeline(cmd_buffer, gridPipeline, g_descriptor_sets);
-                bind_vertex_array(cmd_buffer, quad);
-                render(cmd_buffer, gridPipeline.layout, quad.index_count, grid_instance);
+                //bind_pipeline(cmd_buffer, gridPipeline, g_descriptor_sets);
+                //bind_vertex_array(cmd_buffer, quad);
+                //render(cmd_buffer, gridPipeline.layout, quad.index_count, grid_instance);
 
 
                 // Render the sun
-                bind_pipeline(cmd_buffer, billboardPipeline, g_descriptor_sets);
-                bind_material(cmd_buffer, billboardPipeline.layout, sun_material);
-                bind_vertex_array(cmd_buffer, quad);
-                render(cmd_buffer, billboardPipeline.layout, quad.index_count, sun_instance);
+                //bind_pipeline(cmd_buffer, billboardPipeline, g_descriptor_sets);
+                //bind_material(cmd_buffer, billboardPipeline.layout, sun_material);
+                //bind_vertex_array(cmd_buffer, quad);
+                //render(cmd_buffer, billboardPipeline.layout, quad.index_count, sun_instance);
 
 
                 // Render the models
@@ -851,11 +844,11 @@ int main(int argc, char** argv)
 
 
     // Destroy rendering resources
-    destroy_buffers(g_scene_buffers);
-    destroy_buffers(g_camera_buffers);
+    destroy_buffers(scene_ubo);
+    destroy_buffers(camera_ubo);
 
-    destroy_descriptor_set_layout(g_object_material_layout);
-    destroy_descriptor_set_layout(g_layout);
+    destroy_descriptor_set_layout(material_layout);
+    destroy_descriptor_set_layout(global_layout);
 
     destroy_pipeline(wireframePipeline);
     destroy_pipeline(skyspherePipeline);
@@ -867,7 +860,7 @@ int main(int argc, char** argv)
     destroy_framebuffers(framebuffers);
     destroy_render_pass(render_pass);
     destroy_image(viewport_depth);
-    destroy_image(viewport_color);
+    destroy_images(viewport_color);
     destroy_sampler(viewport_sampler);
     destroy_framebuffers(ui_framebuffers);
     destroy_render_pass(ui_pass);

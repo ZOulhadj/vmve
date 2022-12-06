@@ -13,13 +13,21 @@ std::string load_text_file(std::string_view path)
 
 double get_delta_time()
 {
+#if 1
+    static auto last_time = std::chrono::high_resolution_clock::now();
+    const auto current_time = std::chrono::high_resolution_clock::now();
+    using ts = std::chrono::duration<double, std::milli>;
+    const double delta_time = std::chrono::duration_cast<ts>(current_time - last_time).count() / 1000.0f;
+    last_time = current_time;
+#else
     // todo: replace glfwGetTime() with C++ chrono
     static double lastTime;
     double currentTime = glfwGetTime();
-    double deltaTime = currentTime - lastTime;
+    double delta_time = currentTime - lastTime;
     lastTime = currentTime;
+#endif
 
-    return deltaTime;
+    return delta_time;
 }
 
 glm::vec2 world_to_screen(window_t* window,

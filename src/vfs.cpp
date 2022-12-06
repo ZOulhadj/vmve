@@ -90,3 +90,13 @@ std::string vfs::get_path(const std::string& virtual_path)
     return file_path;
 }
 
+
+void mount_vfs(const std::string& virtual_path, const std::string& real_path)
+{
+    vfs::get().mount(virtual_path, real_path);
+}
+
+std::string get_vfs_path(const std::string& virtual_path)
+{
+    return vfs::get().get_path(virtual_path);
+}

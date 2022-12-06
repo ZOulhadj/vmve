@@ -22,4 +22,7 @@ private:
     std::unordered_map<std::string, std::vector<std::string>> _mount_points;
 };
 
+void mount_vfs(const std::string& virtual_path, const std::string& real_path);
+std::string get_vfs_path(const std::string& virtual_path);
+
 #endif
