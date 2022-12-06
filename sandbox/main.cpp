@@ -309,8 +309,15 @@ static void render_left_window()
     static int swapchain_images = 3;
 
     static bool lock_camera_frustum = false;
+    static bool first_time = true;
+    static std::string gpu_name;
+    if (first_time) {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(get_renderer_context().device.gpu, &properties);
+        gpu_name = std::string(properties.deviceName);
 
-
+        first_time = false;
+    }
 
     ImGui::Begin(scene_window, &window_open, window_flags);
     {
@@ -318,6 +325,8 @@ static void render_left_window()
         ImGui::Text("Uptime: %d s", (int)uptime);
         ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::Text("Delta time: %.4f ms/frame", delta_time);
+        ImGui::Text("GPU: %s", gpu_name.c_str());
+
 
 
         ImGui::Separator();
