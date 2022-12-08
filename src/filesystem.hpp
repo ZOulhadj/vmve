@@ -18,6 +18,6 @@ struct filesystem_node
     std::size_t size;
 };
 
-std::vector<filesystem_node> get_files_in_directory(const char* directory);
+std::vector<filesystem_node> get_files_in_directory(const std::string& directory);
 
 #endif

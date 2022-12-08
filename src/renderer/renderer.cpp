@@ -446,7 +446,7 @@ std::vector<render_target> create_render_targets(VkRenderPass render_pass, VkExt
 
 
         // Create render target framebuffer
-        std::array<VkImageView, 2> attachments{ render_targets[i].image.view, render_targets[i].depth.view};
+        const std::array<VkImageView, 2> attachments{ render_targets[i].image.view, render_targets[i].depth.view};
 
         VkFramebufferCreateInfo framebuffer_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         framebuffer_info.renderPass = render_pass;
@@ -495,7 +495,7 @@ std::vector<render_target> create_ui_render_targets(VkRenderPass render_pass, Vk
         render_targets[i].image = create_image(extent, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
         // Create render target framebuffer
-        std::array<VkImageView, 1> attachments{ g_swapchain.images[i].view };
+        const std::array<VkImageView, 1> attachments{ g_swapchain.images[i].view };
 
         VkFramebufferCreateInfo framebuffer_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         framebuffer_info.renderPass = render_pass;
@@ -522,6 +522,7 @@ void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_tar
 VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings)
 {
     VkDescriptorSetLayout layout{};
+
     std::vector<VkDescriptorSetLayoutBinding> layout_bindings(bindings.size());
 
     for (std::size_t i = 0; i < layout_bindings.size(); ++i) {
@@ -1128,6 +1129,12 @@ void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint
 {
     vkCmdPushConstants(buffers[current_frame], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
     vkCmdDrawIndexed(buffers[current_frame], index_count, 1, 0, 0, 0);
+}
+
+
+void renderer_wait()
+{
+    vk_check(vkDeviceWaitIdle(g_rc->device.device));
 }
 
 static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,

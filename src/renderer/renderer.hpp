@@ -144,6 +144,8 @@ void end_render_target(std::vector<VkCommandBuffer>& buffers);
 void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, std::vector<VkDescriptorSet>& descriptorSets);
 void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, instance_t& instance);
 
-
+// Indicates to the GPU to wait for all commands to finish before continuing.
+// Often used when create or destroying resources in device local memory.
+void renderer_wait();
 
 #endif

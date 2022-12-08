@@ -54,5 +54,5 @@ void main()
     tangentFragPos  = TBN * vertex_position;
 
 
-    gl_Position = mvp.proj * mvp.view * obj.model * vec4(position, 1.0);
+    gl_Position = mvp.proj * mvp.view * vec4(vertex_position, 1.0);
 }

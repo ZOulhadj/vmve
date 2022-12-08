@@ -43,13 +43,13 @@ static window_t* window = nullptr;
 
 std::vector<VkDescriptorSet> framebuffer_id;
 
+VkDescriptorSetLayout material_layout{};
 
 // temp
 glm::vec2 old_viewport_size{};
 glm::vec2 current_viewport_size{};
-bool has_to_resize = false;
+bool resize_viewport = false;
 glm::vec2 resize_extent;
-
 
 pipeline_t basicPipeline{};
 pipeline_t gridPipeline{};
@@ -81,6 +81,7 @@ struct sandbox_scene {
 
 };
 
+std::vector<model_t> g_models;
 
 //glm::vec3 objectTranslation = glm::vec3(0.0f);
 //glm::vec3 objectRotation = glm::vec3(0.0f);
@@ -161,11 +162,11 @@ const char* scene_window    = "Global";
 static bool editor_open = false;
 static bool window_open = true;
 
-model_t model;
+//model_t model;
 
-VkDescriptorSet a;
-VkDescriptorSet n;
-VkDescriptorSet s;
+//VkDescriptorSet a;
+//VkDescriptorSet n;
+//VkDescriptorSet s;
 
 
 
@@ -231,8 +232,20 @@ static void render_main_menu()
 
 
 
-    if (load_model_open)
-        render_filesystem_window(get_vfs_path("/models"), &load_model_open);
+    if (load_model_open) {
+        std::string model_path = render_filesystem_window(get_vfs_path("/models"), &load_model_open);
+
+        if (!model_path.empty()) {
+            // todo: is renderer_wait required here?
+            // create and push new model into list
+            model_t model = load_model_new(model_path);
+            create_material(model.textures, material_layout);
+            g_models.push_back(model);  
+            std::cout << "pushing model into list\n";
+
+            load_model_open = false;
+        }
+    }
 
     if (export_model_open)
         render_filesystem_window(get_vfs_path("/models"), &export_model_open);
@@ -282,43 +295,43 @@ static void render_right_window()
 
 
 
-            static bool open = false;
-            static VkDescriptorSet img_id = nullptr;
+            //static bool open = false;
+            //static VkDescriptorSet img_id = nullptr;
 
-            ImGui::Text("Material");
-            
-            ImGui::Text("Albedo");
-            ImGui::SameLine();
-            if (ImGui::ImageButton(a, { 64, 64 })) {
-                open = true;
-                img_id = a;
-            }
-
-
-            ImGui::Text("Normal");
-            ImGui::SameLine();
-            if (ImGui::ImageButton(n, { 64, 64 })) {
-                open = true;
-                img_id = n;
-            }
+            //ImGui::Text("Material");
+            //
+            //ImGui::Text("Albedo");
+            //ImGui::SameLine();
+            //if (ImGui::ImageButton(a, { 64, 64 })) {
+            //    open = true;
+            //    img_id = a;
+            //}
 
 
-            ImGui::Text("Specular");
-            ImGui::SameLine();
-            if (ImGui::ImageButton(s, { 64, 64 })) {
-                open = true;
-                img_id = s;
-            }
+            //ImGui::Text("Normal");
+            //ImGui::SameLine();
+            //if (ImGui::ImageButton(n, { 64, 64 })) {
+            //    open = true;
+            //    img_id = n;
+            //}
+
+
+            //ImGui::Text("Specular");
+            //ImGui::SameLine();
+            //if (ImGui::ImageButton(s, { 64, 64 })) {
+            //    open = true;
+            //    img_id = s;
+            //}
 
 
 
-            if (open) {
-                ImGui::Begin("Image", &open);
+            //if (open) {
+            //    ImGui::Begin("Image", &open);
 
-                ImGui::Image(img_id, ImGui::GetContentRegionAvail());
+            //    ImGui::Image(img_id, ImGui::GetContentRegionAvail());
 
-                ImGui::End();
-            }
+            //    ImGui::End();
+            //}
         }
     }
     ImGui::End();
@@ -423,6 +436,8 @@ static void render_left_window()
         ImGui::SliderAngle("Roll Speed", &roll_rad, 0.0f, 45.0f);
         float fov_rad = glm::radians(camera.fov);
         ImGui::SliderAngle("Field of view", &fov_rad, 10.0f, 120.0f);
+        camera.fov = glm::degrees(fov_rad);
+
         ImGui::SliderFloat("Near plane", &camera.near, 0.1f, 10.0f, "%.1f m");
 
         ImGui::Checkbox("Lock frustum", &lock_camera_frustum);
@@ -435,9 +450,16 @@ static void render_left_window()
         if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
             open = true;
 
-        if (open)
-            render_filesystem_window(get_vfs_path("/textures"), &open);
+        if (open) {
+            std::string path = render_filesystem_window(get_vfs_path("/textures"), &open);
 
+
+            // If a valid path is found, delete current texture, load and create the new texture
+            if (!path.empty()) {
+                open = false;
+            }
+
+        }
 
         static bool edit_shaders = false;
         if (ImGui::Button("Edit shaders"))
@@ -476,7 +498,7 @@ static void render_left_window()
 
         ImGui::Separator();
 
-        render_demo_window();
+        show_demo_window();
     }
     ImGui::End();
 }
@@ -516,7 +538,7 @@ static void render_viewport_window()
         }
 
         if (current_viewport_size != old_viewport_size) {
-            has_to_resize = true;
+            resize_viewport = true;
 
             old_viewport_size = current_viewport_size;
         }
@@ -599,7 +621,7 @@ int main(int argc, char** argv)
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT }, // specular
     };
 
-    VkDescriptorSetLayout material_layout = create_descriptor_set_layout(material_desc_layout);
+    material_layout = create_descriptor_set_layout(material_desc_layout);
 
 
 
@@ -687,8 +709,8 @@ int main(int argc, char** argv)
     // create models
     vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
 
-    model = load_model_new(get_vfs_path("/models/backpack/backpack.obj"));
-    create_material(model.textures, material_layout);
+    //model = load_model_new(get_vfs_path("/models/backpack/backpack.obj"));
+    //create_material(model.textures, material_layout);
 
     vertex_array_t icosphere = load_model(get_vfs_path("/models/sphere.obj"));
 
@@ -700,16 +722,16 @@ int main(int argc, char** argv)
     create_material(sun_material, material_layout);
 
     material_t skysphere_material;
-    skysphere_material.albedo = load_texture(get_vfs_path("/textures/skysphere1.png"));
+    skysphere_material.albedo = load_texture(get_vfs_path("/textures/skysphere.jpg"));
     create_material(skysphere_material, material_layout);
 
     skysphere_dset = ImGui_ImplVulkan_AddTexture(skysphere_material.albedo.sampler, skysphere_material.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
     // todo: temp
-    a = ImGui_ImplVulkan_AddTexture(model.textures.albedo.sampler, model.textures.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    n = ImGui_ImplVulkan_AddTexture(model.textures.normal.sampler, model.textures.normal.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    s = ImGui_ImplVulkan_AddTexture(model.textures.specular.sampler, model.textures.specular.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    //a = ImGui_ImplVulkan_AddTexture(model.textures.albedo.sampler, model.textures.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    //n = ImGui_ImplVulkan_AddTexture(model.textures.normal.sampler, model.textures.normal.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    //s = ImGui_ImplVulkan_AddTexture(model.textures.specular.sampler, model.textures.specular.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     
     // create instances
     instance_t skyboxsphere_instance;
@@ -758,6 +780,7 @@ int main(int argc, char** argv)
         }
 
         update_camera(camera);
+        update_projection(camera);
 
         scene.cameraPosition = camera.position;
 
@@ -774,36 +797,11 @@ int main(int argc, char** argv)
         set_buffer_data(scene_ubo, &scene);
 
 
-        // The viewport must resize before rendering to texture. If it were
-        // to resize within the UI functions then we would be attempting to
-        // recreate resources using a new size before submitting to the GPU
-        // which causes an error. Need to figure out how to do this properly.
-#if 1
-        if (has_to_resize) {
 
-            VkExtent2D extent = { current_viewport_size.x, current_viewport_size.y };
-
-            set_camera_projection(camera, extent.width, extent.height);
-
-            vk_check(vkDeviceWaitIdle(get_renderer_context().device.device));
-
-
-            recreate_render_targets(render_pass, render_targets, extent);
-
-            for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
-                ImGui_ImplVulkan_RemoveTexture(framebuffer_id[i]);
-                framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(viewport_sampler, render_targets[i].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            }
-
-            has_to_resize = false;
-        }
-#endif
-
-
-        static bool begin_frame_ready = true;
+        static bool resize_swapchain = true;
 
         // This is where the main rendering starts
-        if (begin_frame_ready = begin_rendering()) {
+        if (resize_swapchain = begin_rendering()) {
 
             // 1st render pass
             std::vector<VkCommandBuffer> cmd_buffer = begin_render_target(render_pass, render_targets);
@@ -829,10 +827,12 @@ int main(int argc, char** argv)
 
                 // Render the models
                 bind_pipeline(cmd_buffer, current_pipeline, g_descriptor_sets);
-
-                bind_material(cmd_buffer, current_pipeline.layout, model.textures);
-                bind_vertex_array(cmd_buffer, model.data);
-                render(cmd_buffer, current_pipeline.layout, model.data.index_count, model_instance);
+                // todo: loop over multiple models and render each one
+                for (std::size_t i = 0; i < g_models.size(); ++i) {
+                    bind_material(cmd_buffer, current_pipeline.layout, g_models[i].textures);
+                    bind_vertex_array(cmd_buffer, g_models[i].data);
+                    render(cmd_buffer, current_pipeline.layout, g_models[i].data.index_count, model_instance);
+                }
             }
             end_render_target(cmd_buffer);
 
@@ -866,10 +866,31 @@ int main(int argc, char** argv)
 
 
         // todo: should this be here?
-        if (!begin_frame_ready) {
+        if (!resize_swapchain) {
             recreate_ui_render_targets(ui_pass, ui_render_targets, { window->width, window->height });
-            begin_frame_ready = true;
+            resize_swapchain = true;
         }
+
+        // The viewport must resize before rendering to texture. If it were
+        // to resize within the UI functions then we would be attempting to
+        // recreate resources using a new size before submitting to the GPU
+        // which causes an error. Need to figure out how to do this properly.
+#if 1
+        if (resize_viewport) {
+            VkExtent2D extent = { current_viewport_size.x, current_viewport_size.y };
+            set_camera_projection(camera, extent.width, extent.height);
+            vk_check(vkDeviceWaitIdle(get_renderer_context().device.device));
+            recreate_render_targets(render_pass, render_targets, extent);
+
+            for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
+                ImGui_ImplVulkan_RemoveTexture(framebuffer_id[i]);
+                framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(viewport_sampler, render_targets[i].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            }
+
+            resize_viewport = false;
+        }
+#endif
+
 
 
         update_window(window);
@@ -878,15 +899,17 @@ int main(int argc, char** argv)
 
 
     // Wait until all GPU commands have finished
-    vk_check(vkDeviceWaitIdle(renderer->ctx.device.device));
+    renderer_wait();
 
+    for (auto& model : g_models) {
+        destroy_material(model.textures);
+        destroy_vertex_array(model.data);
+    }
 
-    destroy_material(model.textures);
     destroy_material(sun_material);
     destroy_material(skysphere_material);
 
 
-    destroy_vertex_array(model.data);
     destroy_vertex_array(icosphere);
     destroy_vertex_array(quad);
 
