@@ -14,7 +14,7 @@ struct material_t
 };
 
 
-void create_material(material_t& material, VkDescriptorSetLayout layout);
+void create_material(material_t& material, VkDescriptorSetLayout layout, bool color_only);
 void destroy_material(material_t& material);
 
 void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, material_t& material);

@@ -39,10 +39,10 @@ struct Frame {
 };
 
 
-struct framebuffer {
-    VkExtent2D extent;
-    VkFramebuffer handle;
-};
+//struct framebuffer {
+//    VkExtent2D extent;
+//    VkFramebuffer handle;
+//};
 
 struct render_target {
     image_buffer_t image;
@@ -54,6 +54,18 @@ struct render_target {
     VkFramebuffer fb;
 };
 
+struct framebuffer_t {
+    VkFramebuffer framebuffer;
+    VkExtent2D extent;
+
+    image_buffer_t position;
+    image_buffer_t normal;
+    image_buffer_t color;
+
+    image_buffer_t depth;
+};
+
+
 struct descriptor_set_layout
 {
     VkDescriptorType   type;
@@ -64,6 +76,7 @@ struct descriptor_set_layout
 struct PipelineInfo {
     std::vector<VkDescriptorSetLayout> descriptor_layouts;
     uint32_t push_constant_size;
+    VkShaderStageFlags push_stages;
     uint32_t binding_layout_size;
     std::vector<VkFormat> binding_format;
 
@@ -112,12 +125,19 @@ void destroy_descriptor_set_layout(VkDescriptorSetLayout layout);
 
 std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout);
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
-void write_buffer_resources(std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<std::vector<buffer_t>>& buffers);
+void set_buffer(uint32_t binding, const std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<buffer_t>& buffers);
+void set_buffer(uint32_t binding, VkDescriptorSet descriptor_set, const buffer_t& buffer);
+void set_texture(uint32_t binding, VkDescriptorSet descriptor_set, VkSampler sampler, const image_buffer_t& buffer, VkImageLayout layout);
 
 VkRenderPass create_ui_render_pass();
 VkRenderPass create_render_pass();
 void destroy_render_pass(VkRenderPass render_pass);
 
+VkRenderPass create_deferred_render_pass();
+std::vector<framebuffer_t> create_deferred_render_targets(VkRenderPass render_pass, VkExtent2D extent);
+std::vector<VkCommandBuffer> begin_deferred_render_targets(VkRenderPass render_pass, const std::vector<framebuffer_t>& render_targets);
+void destroy_deferred_render_targets(std::vector<framebuffer_t>& render_targets);
+void recreate_deferred_renderer_targets(VkRenderPass render_pass, std::vector<framebuffer_t>& render_targets, VkExtent2D extent);
 
 std::vector<render_target> create_render_targets(VkRenderPass render_pass, VkExtent2D extent);
 void recreate_render_targets(VkRenderPass render_pass, std::vector<render_target>& render_targets, VkExtent2D extent);
@@ -128,7 +148,7 @@ void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_tar
 void destroy_render_targets(std::vector<render_target>& render_targets);
 
 
-pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass);
+pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass, bool deferred = false);
 void destroy_pipeline(pipeline_t& pipeline);
 
 bool begin_rendering();
@@ -143,7 +163,7 @@ void end_render_target(std::vector<VkCommandBuffer>& buffers);
 
 void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, std::vector<VkDescriptorSet>& descriptorSets);
 void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, instance_t& instance);
-
+void render_draw(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode);
 // Indicates to the GPU to wait for all commands to finish before continuing.
 // Often used when create or destroying resources in device local memory.
 void renderer_wait();

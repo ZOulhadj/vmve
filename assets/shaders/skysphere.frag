@@ -8,6 +8,5 @@ layout(set = 1, binding = 0) uniform sampler2D tex;
 
 void main()
 {
-    vec3 texel = texture(tex, texture_coord).xyz;
-    final_color = vec4(texel, 1.0);
+    final_color = vec4(texture(tex, texture_coord).rgb, 1.0);
 }

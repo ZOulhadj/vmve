@@ -11,16 +11,7 @@ static vsync_mode g_vsync{};
 
 static swapchain_t g_swapchain{};
 
-//VkDescriptorPool g_pool;
 static VkCommandPool cmd_pool;
-
-//static VkCommandBuffer viewport_cmd_buffer;
-//static VkCommandBuffer ui_cmd_buffer;
-
-
-
-//static Frame g_frame;
-
 
 static std::vector<Frame> g_frames;
 
@@ -35,6 +26,7 @@ static uint32_t currentImage = 0;
 static uint32_t current_frame = 0;
 
 
+static std::vector<VkCommandBuffer> geometry_cmd_buffers;
 static std::vector<VkCommandBuffer> viewport_cmd_buffers;
 static std::vector<VkCommandBuffer> ui_cmd_buffers;
 
@@ -288,6 +280,7 @@ static void destroy_command_pool()
 
 static void create_command_buffers()
 {
+    geometry_cmd_buffers.resize(frames_in_flight);
     viewport_cmd_buffers.resize(frames_in_flight);
     ui_cmd_buffers.resize(frames_in_flight);
 
@@ -297,6 +290,8 @@ static void create_command_buffers()
     allocate_info.commandBufferCount = 1;
 
     for (std::size_t i = 0; i < frames_in_flight; ++i) {
+        vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &geometry_cmd_buffers[i]));
+
         vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &viewport_cmd_buffers[i]));
         vk_check(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &ui_cmd_buffers[i]));
     }
@@ -355,7 +350,7 @@ VkRenderPass create_render_pass()
 {
     VkRenderPass render_pass{};
 
-    std::array<VkAttachmentDescription, 2> attachments;
+    std::array<VkAttachmentDescription, 1> attachments{};
 
     // color attachment
     attachments[0].format = VK_FORMAT_B8G8R8A8_SRGB;
@@ -372,46 +367,144 @@ VkRenderPass create_render_pass()
     color_reference.attachment = 0;
     color_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    // Depth attachment
-    attachments[1].format = VK_FORMAT_D32_SFLOAT;
-    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    //// Depth attachment
+    //attachments[1].format = VK_FORMAT_D32_SFLOAT;
+    //attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    //attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    //attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    //attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    //attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    //attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    //attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    // Depth reference
-    VkAttachmentReference depth_reference{};
-    depth_reference.attachment = 1;
-    depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    //// Depth reference
+    //VkAttachmentReference depth_reference{};
+    //depth_reference.attachment = 1;
+    //depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    std::array<VkSubpassDependency, 2> dependencies;
+    //std::array<VkSubpassDependency, 2> dependencies{};
 
-    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[0].dstSubpass = 0;
-    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    //dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    //dependencies[0].dstSubpass = 0;
+    //dependencies[0].srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    //dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //dependencies[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    //dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    //dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-    dependencies[1].srcSubpass = 0;
-    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    //dependencies[1].srcSubpass = 0;
+    //dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    //dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //dependencies[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    //dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    //dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    //dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-
+    // todo: added here for some reason
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0; // or VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_reference;
+    subpass.pDepthStencilAttachment = nullptr;
+
+    VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+    render_pass_info.attachmentCount = u32(attachments.size());
+    render_pass_info.pAttachments = attachments.data();
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
+
+    vk_check(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr,
+                                &render_pass));
+
+    return render_pass;
+}
+
+void destroy_render_pass(VkRenderPass render_pass)
+{
+    vkDestroyRenderPass(g_rc->device.device, render_pass, nullptr);
+}
+
+
+VkRenderPass create_deferred_render_pass()
+{
+    VkRenderPass render_pass{};
+
+    // For the first three attachments (position, normal, color)
+    // Separate final attachment for depth
+
+    std::array<VkAttachmentDescription, 4> attachments{};
+
+    // todo:
+    // Manually set image formats
+    attachments[0].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    attachments[1].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    attachments[2].format = VK_FORMAT_B8G8R8A8_SRGB;
+    attachments[3].format = VK_FORMAT_D32_SFLOAT;
+
+    // position, normal and color
+    for (std::size_t i = 0; i < 4; ++i) {
+        attachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
+        attachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+        // only for the first 3 attachments, depth is overwritten below
+        attachments[i].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[i].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
+    // depth
+    attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[3].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+
+    
+    // color attachment references
+    std::array<VkAttachmentReference, 3> color_references {
+        VkAttachmentReference{ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
+        VkAttachmentReference{ 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
+        VkAttachmentReference{ 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
+    };
+
+    // depth attachment reference
+    VkAttachmentReference depth_reference{};
+    depth_reference.attachment = 3;
+    depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = u32(color_references.size());
+    subpass.pColorAttachments = color_references.data();
     subpass.pDepthStencilAttachment = &depth_reference;
+
+    std::array<VkSubpassDependency, 2> dependencies;
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;;
+    dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
     VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
     render_pass_info.attachmentCount = u32(attachments.size());
@@ -425,11 +518,119 @@ VkRenderPass create_render_pass()
                                 &render_pass));
 
     return render_pass;
+
 }
 
-void destroy_render_pass(VkRenderPass render_pass)
+std::vector<framebuffer_t> create_deferred_render_targets(VkRenderPass render_pass, VkExtent2D extent)
 {
-    vkDestroyRenderPass(g_rc->device.device, render_pass, nullptr);
+    std::vector<framebuffer_t> render_targets(g_swapchain.images.size());
+
+    // TODO: Currently we create multiple depth images for all frames
+    // is there a better way to have only a single depth image across all render targets.
+
+    for (std::size_t i = 0; i < render_targets.size(); ++i) {
+        // Create render target image resources
+        render_targets[i].position = create_image(extent, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        render_targets[i].normal = create_image(extent, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        render_targets[i].color = create_image(extent, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+        render_targets[i].depth = create_image(extent, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+
+        // Create render target framebuffer
+        std::array<VkImageView, 4> attachments;
+        attachments[0] = render_targets[i].position.view;
+        attachments[1] = render_targets[i].normal.view;
+        attachments[2] = render_targets[i].color.view;
+        attachments[3] = render_targets[i].depth.view;
+
+        VkFramebufferCreateInfo framebuffer_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+        framebuffer_info.renderPass = render_pass;
+        framebuffer_info.attachmentCount = u32(attachments.size());
+        framebuffer_info.pAttachments = attachments.data();
+        framebuffer_info.width = extent.width;
+        framebuffer_info.height = extent.height;
+        framebuffer_info.layers = 1;
+
+        vk_check(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info, nullptr, &render_targets[i].framebuffer));
+        render_targets[i].extent = extent;
+    }
+
+    return render_targets;
+
+}
+
+
+std::vector<VkCommandBuffer> begin_deferred_render_targets(VkRenderPass render_pass, const std::vector<framebuffer_t>& render_targets)
+{
+    vk_check(vkResetCommandBuffer(geometry_cmd_buffers[current_frame], 0));
+
+    VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vk_check(vkBeginCommandBuffer(geometry_cmd_buffers[current_frame], &begin_info));
+
+
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float)render_targets[currentImage].extent.width;
+    viewport.height = (float)render_targets[currentImage].extent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = render_targets[currentImage].extent;
+
+    vkCmdSetViewport(geometry_cmd_buffers[current_frame], 0, 1, &viewport);
+    vkCmdSetScissor(geometry_cmd_buffers[current_frame], 0, 1, &scissor);
+
+    std::array<VkClearValue, 4> clear_values{};
+    clear_values[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f, } };
+    clear_values[1].color = { { 0.0f, 0.0f, 0.0f, 0.0f, } };
+    clear_values[2].color = { { 0.0f, 0.0f, 0.0f, 0.0f, } };
+    clear_values[3].depthStencil = { 0.0f, 0 };
+ 
+
+    VkRect2D render_area{};
+    render_area.offset = { 0, 0 };
+    render_area.extent.width = render_targets[currentImage].extent.width;
+    render_area.extent.height = render_targets[currentImage].extent.height;
+
+    VkRenderPassBeginInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+    renderPassInfo.renderPass = render_pass;
+    renderPassInfo.framebuffer = render_targets[currentImage].framebuffer;
+    renderPassInfo.renderArea = render_area;
+    renderPassInfo.clearValueCount = u32(clear_values.size());
+    renderPassInfo.pClearValues = clear_values.data();
+
+    vkCmdBeginRenderPass(geometry_cmd_buffers[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    return geometry_cmd_buffers;
+
+}
+
+
+void destroy_deferred_render_targets(std::vector<framebuffer_t>& render_targets)
+{
+    for (auto& rt : render_targets) {
+        vkDestroyFramebuffer(g_rc->device.device, rt.framebuffer, nullptr);
+
+        destroy_image(rt.depth);
+        destroy_image(rt.color);
+        destroy_image(rt.normal);
+        destroy_image(rt.position);
+    }
+    render_targets.clear();
+
+}
+
+
+void recreate_deferred_renderer_targets(VkRenderPass render_pass, std::vector<framebuffer_t>& render_targets, VkExtent2D extent)
+{
+    destroy_deferred_render_targets(render_targets);
+
+    render_targets = create_deferred_render_targets(render_pass, extent);
 }
 
 std::vector<render_target> create_render_targets(VkRenderPass render_pass, VkExtent2D extent)
@@ -442,11 +643,11 @@ std::vector<render_target> create_render_targets(VkRenderPass render_pass, VkExt
     for (std::size_t i = 0; i < render_targets.size(); ++i) {
         // Create render target image resources
         render_targets[i].image = create_image(extent, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-        render_targets[i].depth = create_image(extent, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        //render_targets[i].depth = create_image(extent, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
 
         // Create render target framebuffer
-        const std::array<VkImageView, 2> attachments{ render_targets[i].image.view, render_targets[i].depth.view};
+        const std::array<VkImageView, 1> attachments{ render_targets[i].image.view };
 
         VkFramebufferCreateInfo framebuffer_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         framebuffer_info.renderPass = render_pass;
@@ -486,9 +687,6 @@ void recreate_render_targets(VkRenderPass render_pass, std::vector<render_target
 std::vector<render_target> create_ui_render_targets(VkRenderPass render_pass, VkExtent2D extent)
 {
     std::vector<render_target> render_targets(g_swapchain.images.size());
-
-    // TODO: Currently we create multiple depth images for all frames
-    // is there a better way to have only a single depth image across all render targets.
 
     for (std::size_t i = 0; i < render_targets.size(); ++i) {
         // Create render target image resources
@@ -578,56 +776,103 @@ VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout)
     return descriptor_set;
 }
 
-void write_buffer_resources(std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<std::vector<buffer_t>>& buffers)
+void set_buffer(uint32_t binding, const std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<buffer_t>& buffers)
 {
-    std::vector<VkWriteDescriptorSet> writes(buffers.size());
+    // same as frames_in_flight
     std::vector<VkDescriptorBufferInfo> buffer_infos(descriptor_sets.size());
 
-    for (std::size_t i = 0; i < writes.size(); ++i) {
+    for (std::size_t i = 0; i < buffer_infos.size(); ++i) {
+        buffer_infos[i].buffer = buffers[i].buffer;
+        buffer_infos[i].offset = 0;
+        buffer_infos[i].range = VK_WHOLE_SIZE; // or sizeof(struct)
 
-        // per frame in buffers
-        for (std::size_t j = 0; j < descriptor_sets.size(); ++j) {
-            buffer_infos[j].buffer = buffers[i][j].buffer;
-            buffer_infos[j].offset = 0;
-            buffer_infos[j].range = VK_WHOLE_SIZE; // or sizeof(struct)
+        // todo: Figure out a better way of converting for buffer usage to descriptor type
+        VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+        if (buffers[i].usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+            descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
-            // todo: Figure out a better way of converting for buffer usage to descriptor type
-            VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-            if (buffers[i][j].usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-                descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        assert(descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
 
-            assert(descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
+        VkWriteDescriptorSet write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        write.dstSet = descriptor_sets[i];
+        write.dstBinding = binding;
+        write.dstArrayElement = 0;
+        write.descriptorType = descriptor_type;
+        write.descriptorCount = 1;
+        write.pBufferInfo = &buffer_infos[i];
 
-            writes[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writes[j].dstSet = descriptor_sets[j];
-            writes[j].dstBinding = i;
-            writes[j].dstArrayElement = 0;
-            writes[j].descriptorType = descriptor_type;
-            writes[j].descriptorCount = 1;
-            writes[j].pBufferInfo = &buffer_infos[j];
-        }
-
-        vkUpdateDescriptorSets(g_rc->device.device, writes.size(), writes.data(), 0, nullptr);
+        vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
     }
+
 };
 
 
-pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass)
+void set_buffer(uint32_t binding, VkDescriptorSet descriptor_set, const buffer_t& buffer)
+{
+    // same as frames_in_flight
+    VkDescriptorBufferInfo buffer_info{};
+    buffer_info.buffer = buffer.buffer;
+    buffer_info.offset = 0;
+    buffer_info.range = VK_WHOLE_SIZE; // or sizeof(struct)
+
+    // todo: Figure out a better way of converting for buffer usage to descriptor type
+    VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+    if (buffer.usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+        descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+    assert(descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
+
+    VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+    write.dstSet = descriptor_set;
+    write.dstBinding = binding;
+    write.dstArrayElement = 0;
+    write.descriptorType = descriptor_type;
+    write.descriptorCount = 1;
+    write.pBufferInfo = &buffer_info;
+
+    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
+
+}
+
+void set_texture(uint32_t binding, VkDescriptorSet descriptor_set, VkSampler sampler, const image_buffer_t& buffer, VkImageLayout layout)
+{
+    // same as frames_in_flight
+    VkDescriptorImageInfo buffer_info{};
+    buffer_info.imageLayout = layout;
+    buffer_info.imageView = buffer.view;
+    buffer_info.sampler = sampler;
+
+    VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+    write.dstSet = descriptor_set;
+    write.dstBinding = binding;
+    write.dstArrayElement = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write.descriptorCount = 1;
+    write.pImageInfo = &buffer_info;
+
+    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
+}
+
+pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass, bool deferred)
 {
     pipeline_t pipeline{};
-
-    // push constant
-    VkPushConstantRange push_constant{};
-    push_constant.offset     = 0;
-    push_constant.size       = pipelineInfo.push_constant_size;
-    push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     // create pipeline layout
     VkPipelineLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     layout_info.setLayoutCount = u32(pipelineInfo.descriptor_layouts.size());
     layout_info.pSetLayouts    = pipelineInfo.descriptor_layouts.data();
-    layout_info.pushConstantRangeCount = 1;
-    layout_info.pPushConstantRanges    = &push_constant;
+
+    // push constant
+    VkPushConstantRange push_constant{};
+    if (pipelineInfo.push_constant_size > 0) {
+        push_constant.offset = 0;
+        push_constant.size = pipelineInfo.push_constant_size;
+        push_constant.stageFlags = pipelineInfo.push_stages;
+
+        layout_info.pushConstantRangeCount = 1;
+        layout_info.pPushConstantRanges = &push_constant;
+    }
+
 
     vk_check(vkCreatePipelineLayout(g_rc->device.device, &layout_info, nullptr,
                                     &pipeline.layout));
@@ -637,27 +882,30 @@ pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass)
     std::vector<VkVertexInputBindingDescription> bindings;
     std::vector<VkVertexInputAttributeDescription> attributes;
 
-    for (std::size_t i = 0; i < 1; ++i) {
-        VkVertexInputBindingDescription binding{};
-        binding.binding   = u32(i);
-        binding.stride    = pipelineInfo.binding_layout_size;
-        binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    if (pipelineInfo.binding_layout_size > 0) {
+        for (std::size_t i = 0; i < 1; ++i) {
+            VkVertexInputBindingDescription binding{};
+            binding.binding = u32(i);
+            binding.stride = pipelineInfo.binding_layout_size;
+            binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-        bindings.push_back(binding);
+            bindings.push_back(binding);
 
-        uint32_t offset = 0;
-        for (std::size_t j = 0; j < pipelineInfo.binding_format.size(); ++j) {
-            VkVertexInputAttributeDescription attribute{};
-            attribute.location = u32(j);
-            attribute.binding  = binding.binding;
-            attribute.format   = pipelineInfo.binding_format[i];
-            attribute.offset   = offset;
+            uint32_t offset = 0;
+            for (std::size_t j = 0; j < pipelineInfo.binding_format.size(); ++j) {
+                VkVertexInputAttributeDescription attribute{};
+                attribute.location = u32(j);
+                attribute.binding = binding.binding;
+                attribute.format = pipelineInfo.binding_format[i];
+                attribute.offset = offset;
 
-            offset += format_to_size(attribute.format);
+                offset += format_to_size(attribute.format);
 
-            attributes.push_back(attribute);
+                attributes.push_back(attribute);
+            }
         }
     }
+
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
     vertex_input_info.vertexBindingDescriptionCount   = u32(bindings.size());
@@ -723,11 +971,24 @@ pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass)
                                                  VK_COLOR_COMPONENT_B_BIT |
                                                  VK_COLOR_COMPONENT_A_BIT;
 
+    std::array<VkPipelineColorBlendAttachmentState, 3> color_blend_attachments;
+    if (deferred) {
+        color_blend_attachments[0] = color_blend_attachment; // position
+        color_blend_attachments[1] = color_blend_attachment; // normal
+        color_blend_attachments[2] = color_blend_attachment; // color
+    }
     VkPipelineColorBlendStateCreateInfo color_blend_state_info { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
     color_blend_state_info.logicOpEnable     = VK_FALSE;
     color_blend_state_info.logicOp           = VK_LOGIC_OP_COPY;
-    color_blend_state_info.attachmentCount   = 1;
-    color_blend_state_info.pAttachments      = &color_blend_attachment;
+    if (deferred) {
+        color_blend_state_info.attachmentCount   = u32(color_blend_attachments.size());
+        color_blend_state_info.pAttachments      = color_blend_attachments.data();
+
+    } else {
+        color_blend_state_info.attachmentCount = 1;
+        color_blend_state_info.pAttachments      = &color_blend_attachment;
+
+    }
     color_blend_state_info.blendConstants[0] = 0.0f;
     color_blend_state_info.blendConstants[1] = 0.0f;
     color_blend_state_info.blendConstants[2] = 0.0f;
@@ -825,8 +1086,7 @@ static VkDebugUtilsMessengerEXT create_debug_messenger(PFN_vkDebugUtilsMessenger
                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-    ci.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    ci.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
     //VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
     ci.pfnUserCallback = callback;
     ci.pUserData       = nullptr;
@@ -981,7 +1241,8 @@ bool begin_rendering()
 
 void end_rendering()
 {
-    const std::array<VkCommandBuffer, 2> cmd_buffers{
+    const std::array<VkCommandBuffer, 3> cmd_buffers{
+        geometry_cmd_buffers[current_frame],
         viewport_cmd_buffers[current_frame],
         ui_cmd_buffers[current_frame]
     };
@@ -1049,8 +1310,6 @@ std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, const
     vkCmdSetScissor(viewport_cmd_buffers[current_frame], 0, 1, &scissor);
 
     const VkClearValue clear_color = { {{ 0.0f, 0.0f, 0.0f, 1.0f }} };
-    const VkClearValue clear_depth = { 0.0f, 0 };
-    const std::array<VkClearValue, 2> clear_buffers = { clear_color, clear_depth };
 
     VkRect2D render_area{};
     render_area.offset = { 0, 0 };
@@ -1061,8 +1320,8 @@ std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, const
     renderPassInfo.renderPass = render_pass;
     renderPassInfo.framebuffer = render_targets[currentImage].fb;
     renderPassInfo.renderArea = render_area;
-    renderPassInfo.clearValueCount = clear_buffers.size();
-    renderPassInfo.pClearValues = clear_buffers.data();
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clear_color;
 
     vkCmdBeginRenderPass(viewport_cmd_buffers[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -1132,6 +1391,12 @@ void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint
 }
 
 
+void render_draw(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode)
+{
+    vkCmdPushConstants(buffers[current_frame], layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(int), &draw_mode);
+    vkCmdDraw(buffers[current_frame], 3, 1, 0, 0);
+}
+
 void renderer_wait()
 {
     vk_check(vkDeviceWaitIdle(g_rc->device.device));
@@ -1142,7 +1407,7 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
                                const VkDebugUtilsMessengerCallbackDataEXT*  pCallbackData,
                                void*                                        pUserData)
 {
-    printf("Debug callback: %s\n", pCallbackData->pMessage);
+    printf("Debug callback: %s\n\n\n", pCallbackData->pMessage);
 
     return VK_FALSE;
 }
