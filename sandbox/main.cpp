@@ -530,8 +530,8 @@ static void render_bottom_window()
         static const ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
         static const ImVec4 yellow = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
         static const ImVec4 red = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-
-        ImGui::BeginChild("Logs");
+        
+        ImGui::BeginChild("Logs", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
         for (auto& log : logger::get_logs()) {
             ImVec4 log_color;
             if (log.type == log_type::info) {
@@ -542,9 +542,9 @@ static void render_bottom_window()
                 log_color = red;
             }
 
-            ImGui::PushTextWrapPos();
+            //ImGui::PushTextWrapPos();
             ImGui::TextColored(log_color, log.message.c_str());
-            ImGui::PopTextWrapPos();
+            //ImGui::PopTextWrapPos();
         }
 
 

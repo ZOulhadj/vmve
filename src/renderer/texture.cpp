@@ -5,6 +5,8 @@
 
 #include "renderer.hpp"
 
+#include "../logging.hpp"
+
 texture_buffer_t load_texture(const std::string& path, bool flip_y, VkFormat format)
 {
     texture_buffer_t buffer{};
@@ -14,7 +16,7 @@ texture_buffer_t load_texture(const std::string& path, bool flip_y, VkFormat for
     stbi_set_flip_vertically_on_load(flip_y);
     unsigned char* texture = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
-        printf("Failed to load texture at path: %s\n", path.c_str());
+        logger::err("Failed to load texture at path: {}", path.c_str());
 
         stbi_image_free(texture);
 
@@ -121,7 +123,7 @@ void destroy_texture_buffer(texture_buffer_t& texture)
     destroy_sampler(texture.sampler);
 }
 
-VkSampler create_sampler(VkFilter filtering, uint32_t anisotropic_level)
+VkSampler create_sampler(VkFilter filtering, const uint32_t anisotropic_level)
 {
     VkSampler sampler{};
 
@@ -131,10 +133,11 @@ VkSampler create_sampler(VkFilter filtering, uint32_t anisotropic_level)
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(rc.device.gpu, &properties);
 
+    uint32_t ansi_level = anisotropic_level;
     if (anisotropic_level > properties.limits.maxSamplerAnisotropy) {
-        anisotropic_level = properties.limits.maxSamplerAnisotropy;
+        ansi_level = properties.limits.maxSamplerAnisotropy;
 
-        printf("Warning: Reducing sampler anisotropic level to %u.\n", anisotropic_level);
+        logger::warn("Anisotropic level of {} not supported. Using the maximum level of {} instead", anisotropic_level, ansi_level);
     }
 
     VkSamplerCreateInfo sampler_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
@@ -143,8 +146,8 @@ VkSampler create_sampler(VkFilter filtering, uint32_t anisotropic_level)
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.anisotropyEnable = anisotropic_level > 0 ? VK_TRUE : VK_FALSE;
-    sampler_info.maxAnisotropy = static_cast<float>(anisotropic_level);
+    sampler_info.anisotropyEnable = ansi_level > 0 ? VK_TRUE : VK_FALSE;
+    sampler_info.maxAnisotropy = (float)ansi_level;
     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
     sampler_info.compareEnable = VK_FALSE;

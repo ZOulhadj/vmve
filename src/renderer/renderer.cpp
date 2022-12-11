@@ -449,7 +449,7 @@ VkRenderPass create_deferred_render_pass()
 
     // todo:
     // Manually set image formats
-    attachments[0].format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    attachments[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     attachments[1].format = VK_FORMAT_R16G16B16A16_SFLOAT;
     attachments[2].format = VK_FORMAT_B8G8R8A8_SRGB;
     attachments[3].format = VK_FORMAT_D32_SFLOAT;
@@ -533,7 +533,7 @@ std::vector<framebuffer_t> create_deferred_render_targets(VkRenderPass render_pa
 
     for (std::size_t i = 0; i < render_targets.size(); ++i) {
         // Create render target image resources
-        render_targets[i].position = create_image(extent, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        render_targets[i].position = create_image(extent, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         render_targets[i].normal = create_image(extent, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         render_targets[i].color = create_image(extent, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
@@ -1132,9 +1132,10 @@ renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, 
     const std::vector<const char*> device_extensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 
-    const VkPhysicalDeviceFeatures features {
+    const VkPhysicalDeviceFeatures features{
         .fillModeNonSolid = true,
         .samplerAnisotropy = true,
+        .shaderFloat64 = true
     };
 
     renderer->ctx    = create_renderer_context(VK_API_VERSION_1_3,
@@ -1248,6 +1249,16 @@ bool begin_rendering()
 
 void end_rendering()
 {
+    // TODO: sync each set of command buffers so that one does not run before 
+    // the other has finished.
+    //
+    // For example, command buffers should run in the following order
+    // 1. Geometry
+    // 2. Lighting
+    // 3. Viewport
+    //
+
+#if 1
     const std::array<VkCommandBuffer, 3> cmd_buffers{
         geometry_cmd_buffers[current_frame],
         viewport_cmd_buffers[current_frame],
@@ -1263,12 +1274,38 @@ void end_rendering()
     submit_info.pCommandBuffers      = cmd_buffers.data();
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores    = &g_frames[current_frame].released_semaphore;
-
-
     vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frames[current_frame].submit_fence));
+#else
+    const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    submit_info.pWaitDstStageMask = &wait_stage;
+    submit_info.commandBufferCount = 1;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.signalSemaphoreCount = 1;
+
+    {
+        submit_info.pWaitSemaphores = &g_frames[current_frame].acquired_semaphore;
+        submit_info.pSignalSemaphores = &g_frames[current_frame].released_semaphore;
+        submit_info.pCommandBuffers = &geometry_cmd_buffers[current_frame];
+        vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frames[current_frame].submit_fence));
+    }
+    {
+        submit_info.pWaitSemaphores = &g_frames[current_frame].acquired_semaphore;
+        submit_info.pCommandBuffers = &viewport_cmd_buffers[current_frame];
+        submit_info.pSignalSemaphores = &g_frames[current_frame].released_semaphore;
+        vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frames[current_frame].submit_fence));
+
+    }
+    {
+        submit_info.pWaitSemaphores = &g_frames[current_frame].acquired_semaphore;
+        submit_info.pCommandBuffers = &ui_cmd_buffers[current_frame];
+        submit_info.pSignalSemaphores = &g_frames[current_frame].released_semaphore;
+        vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frames[current_frame].submit_fence));
+    }
+#endif
 
 
-
+    // request the GPU to present the rendered image onto the screen
     VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores    = &g_frames[current_frame].released_semaphore;
@@ -1276,8 +1313,6 @@ void end_rendering()
     present_info.pSwapchains        = &g_swapchain.handle;
     present_info.pImageIndices      = &currentImage;
     present_info.pResults           = nullptr;
-
-    // request the GPU to present the rendered image onto the screen
     VkResult result = vkQueuePresentKHR(g_rc->device.graphics_queue, &present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
