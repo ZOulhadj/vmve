@@ -3,6 +3,9 @@
 #include "common.hpp"
 
 
+#include "../logging.hpp"
+
+
 static renderer_t* g_r = nullptr;
 static renderer_context_t* g_rc  = nullptr;
 
@@ -1113,6 +1116,8 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
 
 renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, vsync_mode sync_mode)
 {
+    logger::info("Initializing Vulkan renderer");
+
     renderer_t* renderer = (renderer_t*)malloc(sizeof(renderer_t));
 
     const std::vector<const char*> layers {
@@ -1167,6 +1172,8 @@ renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, 
 
 void destroy_renderer(renderer_t* renderer)
 {
+    logger::info("Terminating Vulkan renderer");
+
     destroy_command_pool();
 
 
@@ -1407,7 +1414,13 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
                                const VkDebugUtilsMessengerCallbackDataEXT*  pCallbackData,
                                void*                                        pUserData)
 {
-    printf("Debug callback: %s\n\n\n", pCallbackData->pMessage);
+    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+        logger::info("{}", pCallbackData->pMessage);
+    } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        logger::warn("{}", pCallbackData->pMessage);
+    } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        logger::err("{}", pCallbackData->pMessage);
+    }
 
     return VK_FALSE;
 }

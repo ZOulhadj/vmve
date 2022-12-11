@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <thread>
 #include <future>
+#include <format>
 
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>

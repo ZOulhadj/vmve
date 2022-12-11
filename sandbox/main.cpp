@@ -19,6 +19,7 @@
 #include "../src/vfs.hpp"
 #include "../src/filesystem.hpp"
 #include "../src/material.hpp"
+#include "../src/logging.hpp"
 
 // Application specific header files
 #include "ui.hpp"
@@ -191,6 +192,21 @@ static void render_end_docking()
     ImGui::End();
 }
 
+static std::vector<std::future<void>> futures;
+static std::mutex model_mutex;
+static void load_mesh(std::vector<model_t>& models, std::string path)
+{
+    logger::info("Loading mesh {}", path);
+
+    model_t model = load_model_new(path);
+    create_material(model.textures, material_layout, false);
+
+    std::lock_guard<std::mutex> lock(model_mutex);
+    models.push_back(model);
+
+    logger::info("Loading mesh complete {}", path);
+};
+
 static void render_main_menu()
 {
     static bool load_model_open = false;
@@ -234,18 +250,13 @@ static void render_main_menu()
 
 
 
-
     if (load_model_open) {
         std::string model_path = render_filesystem_window(get_vfs_path("/models"), &load_model_open);
 
         if (!model_path.empty()) {
             // todo: is renderer_wait required here?
             // create and push new model into list
-            auto future = std::async(load_model_new, model_path);
-            model_t model = future.get();
-
-            create_material(model.textures, material_layout, false);
-            g_models.push_back(model);  
+            futures.push_back(std::async(std::launch::async, load_mesh, std::ref(g_models), model_path));
 
             load_model_open = false;
         }
@@ -413,21 +424,21 @@ static void render_left_window()
         }
 
         ImGui::Text("Position");
-        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+        //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
         ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
-        ImGui::PopFont();
+        //ImGui::PopFont();
         ImGui::SameLine();
         ImGui::Text("%.2f", camera.position.x);
         ImGui::SameLine();
-        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+        //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
         ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
-        ImGui::PopFont();
+        //ImGui::PopFont();
         ImGui::SameLine();
         ImGui::Text("%.2f", camera.position.y);
         ImGui::SameLine();
-        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+        //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
         ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
-        ImGui::PopFont();
+        //ImGui::PopFont();
         ImGui::SameLine();
         ImGui::Text("%.2f", camera.position.z);
 
@@ -505,15 +516,51 @@ static void render_left_window()
 
 static void render_bottom_window()
 {
-    ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+    static bool auto_scroll = true;
+
     ImGui::Begin(console_window, &window_open, window_flags);
     {
-        ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "[Logging]: A normal message");
-        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "[Warning]: This is a warning");
-        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "[Error]: A failed example.");
+        if (ImGui::Button("Clear"))
+            logger::clear_logs();
+
+        ImGui::SameLine();
+        ImGui::Checkbox("Auto-scroll", &auto_scroll);
+        ImGui::Separator();
+
+        static const ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+        static const ImVec4 yellow = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
+        static const ImVec4 red = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+        ImGui::BeginChild("Logs");
+        for (auto& log : logger::get_logs()) {
+            ImVec4 log_color;
+            if (log.type == log_type::info) {
+                log_color = white;
+            } else if (log.type == log_type::warning) {
+                log_color = yellow;
+            } else if (log.type == log_type::error) {
+                log_color = red;
+            }
+
+            ImGui::PushTextWrapPos();
+            ImGui::TextColored(log_color, log.message.c_str());
+            ImGui::PopTextWrapPos();
+        }
+
+
+        // TODO: Allow the user to disable auto scroll checkbox even if the 
+        // scrollbar is at the bottom.
+
+        // Scroll to bottom of console window to view the most recent logs
+        if (auto_scroll)
+            ImGui::SetScrollHereY(1.0f);
+
+        auto_scroll = ImGui::GetScrollY() == ImGui::GetScrollMaxY();
+
+    
+        ImGui::EndChild();
     }
     ImGui::End();
-    ImGui::PopFont();
 }
 
 static void render_viewport_window()
@@ -556,6 +603,8 @@ static void render_viewport_window()
 
 int main(int argc, char** argv)
 {
+    logger::info("Initializing application");
+
     // Initialize core systems
     window = create_window(APP_NAME, APP_WIDTH, APP_HEIGHT);
     window->event_callback = event_callback;
@@ -981,6 +1030,9 @@ int main(int argc, char** argv)
 
 
 
+    logger::info("Terminating application");
+
+
     // Wait until all GPU commands have finished
     renderer_wait();
 
@@ -1043,7 +1095,6 @@ static bool press(key_pressed_event& e)
 
         glfwSetInputMode(window->handle, GLFW_CURSOR, in_viewport ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
-
 
     return true;
 }

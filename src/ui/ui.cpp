@@ -5,6 +5,8 @@
 
 #include "../vfs.hpp"
 
+#include "../logging.hpp"
+
 static void custom_style() {
     ImGuiStyle& style = ImGui::GetStyle();
 
@@ -75,11 +77,9 @@ static void custom_colors() {
 
 ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass renderPass)
 {
+    logger::info("Initializing user interface");
+
     ImGuiContext* context{};
-
-
-    std::string font1 = vfs::get().get_path("fonts/source_sans_pro/SourceSansPro-Regular.ttf");
-    std::string font2 = vfs::get().get_path("fonts/source_sans_pro/SourceSansPro-Bold.ttf");
 
     IMGUI_CHECKVERSION();
     context = ImGui::CreateContext();
@@ -90,9 +90,8 @@ ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass ren
     //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigDockingWithShift = true;
     //io.IniFilename = nullptr;
-    io.FontDefault = io.Fonts->AddFontFromFileTTF(font1.c_str(), 16);
-    io.Fonts->AddFontFromFileTTF(font2.c_str(), 16);
-
+    io.Fonts->AddFontDefault();
+    
     //ImGui::StyleColorsDark();
     custom_style();
     custom_colors();
@@ -131,6 +130,9 @@ void destroy_user_interface(ImGuiContext* context)
 {
     if (!context)
         return;
+
+
+    logger::info("Terminating user interface");
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();

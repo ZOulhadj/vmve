@@ -13,7 +13,10 @@ std::string load_text_file(std::string_view path)
 
 double get_delta_time()
 {
-#if 1
+
+
+#define CHRONO 1
+#if CHRONO
     static auto last_time = std::chrono::high_resolution_clock::now();
     const auto current_time = std::chrono::high_resolution_clock::now();
     using ts = std::chrono::duration<double, std::milli>;

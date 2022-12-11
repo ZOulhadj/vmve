@@ -129,7 +129,8 @@ model_t load_model_new(const std::string& path)
 {
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(path, aiProcess_PreTransformVertices |
+    const aiScene* scene = importer.ReadFile(path,
+        aiProcess_PreTransformVertices |
         aiProcessPreset_TargetRealtime_Fast |
         aiProcess_FlipWindingOrder |
         aiProcess_MakeLeftHanded

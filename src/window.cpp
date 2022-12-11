@@ -5,6 +5,9 @@
 #include "events/mouse_event.hpp"
 
 
+#include "logging.hpp"
+
+
 static void glfw_error_callback(int code, const char* description)
 {
      printf("(%d) %s\n", code, description);
@@ -195,6 +198,8 @@ window_t* create_window(const char* name, uint32_t width, uint32_t height)
     glfwSetCursorPosCallback(window->handle, window_cursor_pos_callback);
     glfwSetCursorEnterCallback(window->handle, window_cursor_enter_callback);
 
+    logger::info("Created window ({}, {})", window->width, window->height);
+
     return window;
 }
 
@@ -203,6 +208,8 @@ void destroy_window(window_t* window)
 {
     if (!window)
         return;
+
+    logger::info("Destroying window");
 
     glfwDestroyWindow(window->handle);
     glfwTerminate();

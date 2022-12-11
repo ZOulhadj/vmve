@@ -3,6 +3,8 @@
 #include "common.hpp"
 #include "renderer.hpp"
 
+#include "../logging.hpp"
+
 static shaderc_shader_kind convert_shader_type(VkShaderStageFlagBits type)
 {
     switch (type) {
@@ -74,7 +76,7 @@ shader create_shader(VkShaderStageFlagBits type, const std::string& code)
     status = shaderc_result_get_compilation_status(result);
 
     if (status != shaderc_compilation_status_success) {
-        printf("Failed to compile shader: %s\n", shaderc_result_get_error_message(result));
+        logger::err("Failed to compile shader {}", shaderc_result_get_error_message(result));
         return {};
     }
 
