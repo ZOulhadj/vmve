@@ -856,7 +856,7 @@ void set_texture(uint32_t binding, VkDescriptorSet descriptor_set, VkSampler sam
     vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
 }
 
-pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass, bool deferred)
+pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass)
 {
     pipeline_t pipeline{};
 
@@ -961,37 +961,26 @@ pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass,
     depth_stencil_state_info.maxDepthBounds        = 1.0f;
     depth_stencil_state_info.stencilTestEnable     = VK_FALSE;
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment {};
-    color_blend_attachment.blendEnable         = true;
-    color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    color_blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    color_blend_attachment.colorBlendOp        = VK_BLEND_OP_ADD;
-    color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    color_blend_attachment.alphaBlendOp        = VK_BLEND_OP_SUBTRACT;
-    color_blend_attachment.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT |
-                                                 VK_COLOR_COMPONENT_G_BIT |
-                                                 VK_COLOR_COMPONENT_B_BIT |
-                                                 VK_COLOR_COMPONENT_A_BIT;
-
-    std::array<VkPipelineColorBlendAttachmentState, 3> color_blend_attachments;
-    if (deferred) {
-        color_blend_attachments[0] = color_blend_attachment; // position
-        color_blend_attachments[1] = color_blend_attachment; // normal
-        color_blend_attachments[2] = color_blend_attachment; // color
+    std::vector<VkPipelineColorBlendAttachmentState> color_blends(pipelineInfo.blend_count);
+    for (auto& blend : color_blends) {
+        blend.blendEnable = true;
+        blend.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        blend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        blend.colorBlendOp = VK_BLEND_OP_ADD;
+        blend.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        blend.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        blend.alphaBlendOp = VK_BLEND_OP_SUBTRACT;
+        blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+            VK_COLOR_COMPONENT_G_BIT |
+            VK_COLOR_COMPONENT_B_BIT |
+            VK_COLOR_COMPONENT_A_BIT;
     }
+
     VkPipelineColorBlendStateCreateInfo color_blend_state_info { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
     color_blend_state_info.logicOpEnable     = VK_FALSE;
     color_blend_state_info.logicOp           = VK_LOGIC_OP_COPY;
-    if (deferred) {
-        color_blend_state_info.attachmentCount   = u32(color_blend_attachments.size());
-        color_blend_state_info.pAttachments      = color_blend_attachments.data();
-
-    } else {
-        color_blend_state_info.attachmentCount = 1;
-        color_blend_state_info.pAttachments      = &color_blend_attachment;
-
-    }
+    color_blend_state_info.attachmentCount   = u32(color_blends.size());
+    color_blend_state_info.pAttachments      = color_blends.data();
     color_blend_state_info.blendConstants[0] = 0.0f;
     color_blend_state_info.blendConstants[1] = 0.0f;
     color_blend_state_info.blendConstants[2] = 0.0f;

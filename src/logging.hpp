@@ -38,9 +38,9 @@ public:
     static void clear_logs();
 private:
     static void check_log_limit();
-    static void log(log_type type, std::string message);
+    static void log(log_type type, const std::string& message);
 private:
-    static const std::size_t log_limit = 500;
+    static const std::size_t log_limit = 200;
 
     static std::vector<log_message> _logs;
 };

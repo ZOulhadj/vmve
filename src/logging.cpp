@@ -14,7 +14,7 @@ void logger::check_log_limit()
     _logs.erase(_logs.begin());
 }
 
-void logger::log(log_type type, std::string message)
+void logger::log(log_type type, const std::string& message)
 {
     check_log_limit();
 

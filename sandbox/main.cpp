@@ -641,33 +641,17 @@ int main(int argc, char** argv)
         framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(sampler, lighting_render_targets[i].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
-
-    //// Global
-    //const std::vector<descriptor_set_layout> global_desc_layout {
-    //    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT },                                // projection view
-    //    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT }, // scene lighting
-    //};
-    //// This is a global descriptor set that will be used for all draw calls and
-    //// will contain descriptors such as a projection view matrix, global scene
-    //// information including lighting.
-    //VkDescriptorSetLayout global_layout = create_descriptor_set_layout(global_desc_layout);
-
-    //// This is the actual descriptor set/collection that will hold the descriptors
-    //// also known as resources. Since this is the global descriptor set, this will
-    //// hold the resources for projection view matrix, scene lighting etc. The reason
-    //// why this is an array is so that each frame has its own descriptor set.
-    //std::vector<VkDescriptorSet> g_descriptor_sets = allocate_descriptor_sets(global_layout);
-
-    /* write_buffer_resources(g_descriptor_sets, camera_ubo, 0);
-     write_buffer_resources(g_descriptor_sets, scene_ubo, 1);*/
-
-
-
-
      // The resources that will be part of the global descriptor set
     std::vector<buffer_t> camera_ubo = create_uniform_buffer<view_projection>();
     std::vector<buffer_t> scene_ubo = create_uniform_buffer<sandbox_scene>();
 
+    /*
+    
+    pipeline_resource_layout resources;
+    resources.add_uniform_buffer(shader_stage::vertex | shader_stage::fragment);
+    resources.add_sampler();
+    
+    */
     const std::vector<descriptor_set_layout> geometry_desc_layout {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT }, // projection view
     };
@@ -712,23 +696,19 @@ int main(int argc, char** argv)
 
 
 
-
-
     // Shaders and Pipeline
+    //shader_pipeline_t geom_shader_pipeline;
+    //geom_shader_pipeline.add_vertex_shader();
+    //geom_shader_pipeline.add_pixel_shader();
+
+
     shader geometry_vs = create_vertex_shader(load_text_file(get_vfs_path("/shaders/deferred/geometry.vert")));
     shader geometry_fs = create_fragment_shader(load_text_file(get_vfs_path("/shaders/deferred/geometry.frag")));
     shader lighting_vs = create_vertex_shader(load_text_file(get_vfs_path("/shaders/deferred/lighting.vert")));
     shader lighting_fs = create_fragment_shader(load_text_file(get_vfs_path("/shaders/deferred/lighting.frag")));
 
-
-    //shader gridVS      = create_vertex_shader(load_text_file(get_vfs_path("/shaders/grid.vert")));
-    //shader gridFS      = create_fragment_shader(load_text_file(get_vfs_path("/shaders/grid.frag")));
-    //shader objectVS    = create_vertex_shader(load_text_file(get_vfs_path("/shaders/object.vert")));
-    //shader objectFS    = create_fragment_shader(load_text_file(get_vfs_path("/shaders/object.frag")));
     shader skysphereVS = create_vertex_shader(load_text_file(get_vfs_path("/shaders/skysphere.vert")));
     shader skysphereFS = create_fragment_shader(load_text_file(get_vfs_path("/shaders/skysphere.frag")));
-    //shader billboardVS = create_vertex_shader(load_text_file(get_vfs_path("/shaders/billboard.vert")));
-    //shader billboardFS = create_fragment_shader(load_text_file(get_vfs_path("/shaders/billboard.frag")));
 
     const std::vector<VkFormat> binding_format{
         VK_FORMAT_R32G32B32_SFLOAT, // Position
@@ -738,6 +718,16 @@ int main(int argc, char** argv)
         VK_FORMAT_R32G32B32_SFLOAT // BiTangent
     };
 
+
+    //binding_descriptor<vertex_t> vert;
+    //vert.push_attribute<glm::vec3>();
+    //vert.push_attribute<glm::vec3>();
+    //vert.push_attribute<glm::vec2>();
+    //vert.push_attribute<glm::vec3>();
+    //vert.push_attribute<glm::vec3>();
+
+
+
     PipelineInfo info{};
     info.push_constant_size = sizeof(glm::mat4);
     info.push_stages = VK_SHADER_STAGE_VERTEX_BIT;
@@ -745,6 +735,7 @@ int main(int argc, char** argv)
     info.binding_format = binding_format;
     info.wireframe = false;
     info.depth_testing = true;
+    info.blend_count = 3;
     info.cull_mode = VK_CULL_MODE_BACK_BIT;
 
     //{
@@ -755,7 +746,7 @@ int main(int argc, char** argv)
         info.descriptor_layouts = { geometry_layout, material_layout };
         info.shaders = { geometry_vs, geometry_fs };
         info.wireframe = true;
-        wireframePipeline = create_pipeline(info, geometry_pass, true);
+        wireframePipeline = create_pipeline(info, geometry_pass);
     }
     //{
     //    info.shaders = { gridVS, gridFS };
@@ -768,17 +759,18 @@ int main(int argc, char** argv)
     //    billboardPipeline = create_pipeline(info, lighting_pass);
     //}
     {
-        info.wireframe = false;
+        /*info.wireframe = false;
         info.descriptor_layouts = { geometry_layout, material_layout };
         info.shaders = { skysphereVS, skysphereFS };
-        info.depth_testing = false;
+        info.depth_testing = false;*/
         //skyspherePipeline = create_pipeline(info, geometry_pass, true);
     }
     {
+        info.wireframe = false;
         info.depth_testing = true;
         info.descriptor_layouts = { geometry_layout, material_layout };
         info.shaders = { geometry_vs, geometry_fs };
-        geometry_pipeline = create_pipeline(info, geometry_pass, true);
+        geometry_pipeline = create_pipeline(info, geometry_pass);
     }
     {
         info.depth_testing = false;
@@ -788,6 +780,7 @@ int main(int argc, char** argv)
         info.push_constant_size = sizeof(int);
         info.push_stages = VK_SHADER_STAGE_FRAGMENT_BIT;
         info.binding_layout_size = 0;
+        info.blend_count = 1;
         lighting_pipeline = create_pipeline(info, lighting_pass);
     }
 

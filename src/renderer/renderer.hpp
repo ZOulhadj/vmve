@@ -79,7 +79,7 @@ struct PipelineInfo {
     VkShaderStageFlags push_stages;
     uint32_t binding_layout_size;
     std::vector<VkFormat> binding_format;
-
+    uint32_t blend_count;
     std::vector<shader> shaders;
     bool wireframe;
     bool depth_testing;
@@ -148,7 +148,7 @@ void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_tar
 void destroy_render_targets(std::vector<render_target>& render_targets);
 
 
-pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass, bool deferred = false);
+pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass);
 void destroy_pipeline(pipeline_t& pipeline);
 
 bool begin_rendering();

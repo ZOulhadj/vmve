@@ -65,6 +65,7 @@ static void window_resize_callback(GLFWwindow* window, int width, int height)
     // todo: window resizing is done within the framebuffer callback since that
     // todo: returns the actual pixel count of the display. This ensures that
     // todo: for monitors with a high DPI we return the real pixels.
+    logger::info("Window resizing ({}, {})", width, height);
 }
 
 static void window_framebuffer_resize_callback(GLFWwindow* window, int width, int height)
