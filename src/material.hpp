@@ -2,19 +2,32 @@
 #define MYENGINE_MATERIAL_HPP
 
 
-#include "renderer/texture.hpp"
+#include "renderer/buffer.hpp"
+
+#include "renderer/descriptor_sets.hpp"
+
+
+// order of images are as follows
+//
+// albedo
+// normal
+// specular
+// ... 
+
 
 struct material_t
 {
     VkDescriptorSet descriptor_set = nullptr;
 
-    texture_buffer_t albedo;
-    texture_buffer_t normal;
-    texture_buffer_t specular;
+    std::vector<image_buffer_t> textures;
+
+    //image_buffer_t albedo;
+    //image_buffer_t normal;
+    //image_buffer_t specular;
 };
 
 
-void create_material(material_t& material, VkDescriptorSetLayout layout, bool color_only);
+void create_material(material_t& material, DescriptorSetBuilder& dsets_builder);
 void destroy_material(material_t& material);
 
 void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, material_t& material);

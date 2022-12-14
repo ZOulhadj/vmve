@@ -7,47 +7,16 @@
 
 #include "../logging.hpp"
 
-texture_buffer_t load_texture(const std::string& path, bool flip_y, VkFormat format)
+static image_buffer_t create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
 {
-    texture_buffer_t buffer{};
-
-    // Load the texture from the file system.
-    int width, height, channels;
-    stbi_set_flip_vertically_on_load(flip_y);
-    unsigned char* texture = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-    if (!texture) {
-        logger::err("Failed to load texture at path: {}", path.c_str());
-
-        stbi_image_free(texture);
-
-        return {};
-    }
-
-    // Store texture data into GPU memory.
-    buffer = create_texture_buffer(texture, width, height, format);
-
-    buffer.sampler = create_sampler(VK_FILTER_LINEAR, 16);
-    buffer.descriptor.sampler = buffer.sampler;
-    buffer.descriptor.imageView = buffer.image.view;
-    buffer.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    // Now that the texture data has been copied into GPU memory we can safely
-    // delete that texture from the CPU.
-    stbi_image_free(texture);
-
-    return buffer;
-}
-
-
-texture_buffer_t create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
-{
-    texture_buffer_t buffer{};
+    image_buffer_t buffer{};
 
     const renderer_t* renderer = get_renderer();
 
+    // We do "* 4" because each pixel has four channels red, green, blue and alpha
     buffer_t staging_buffer = create_staging_buffer(texture, (width * height) * 4);
 
-    buffer.image = create_image({width, height}, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    buffer = create_image({width, height}, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     // Upload texture data into GPU memory by doing a layout transition
     submit_to_gpu([&]() {
@@ -58,7 +27,7 @@ texture_buffer_t create_texture_buffer(unsigned char* texture, uint32_t width, u
                 VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
         imageBarrier_toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageBarrier_toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        imageBarrier_toTransfer.image = buffer.image.handle;
+        imageBarrier_toTransfer.image = buffer.handle;
         imageBarrier_toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         imageBarrier_toTransfer.subresourceRange.baseMipLevel = 0;
         imageBarrier_toTransfer.subresourceRange.levelCount = 1;
@@ -90,7 +59,7 @@ texture_buffer_t create_texture_buffer(unsigned char* texture, uint32_t width, u
         //copy the buffer into the image
         vkCmdCopyBufferToImage(renderer->submit.CmdBuffer,
                                staging_buffer.buffer,
-                               buffer.image.handle,
+                               buffer.handle,
                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                                &copyRegion);
 
@@ -117,11 +86,41 @@ texture_buffer_t create_texture_buffer(unsigned char* texture, uint32_t width, u
     return buffer;
 }
 
-void destroy_texture_buffer(texture_buffer_t& texture)
+
+
+
+
+image_buffer_t load_texture(const std::string& path, bool flip_y, VkFormat format)
 {
-    destroy_image(texture.image);
-    destroy_sampler(texture.sampler);
+    image_buffer_t buffer{};
+
+    // Load the texture from the file system.
+    int width, height, channels;
+    stbi_set_flip_vertically_on_load(flip_y);
+    unsigned char* texture = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+    if (!texture) {
+        logger::err("Failed to load texture at path: {}", path.c_str());
+
+        stbi_image_free(texture);
+
+        return {};
+    }
+
+    // Store texture data into GPU memory.
+    buffer = create_texture_buffer(texture, width, height, format);
+
+    //buffer.sampler = create_sampler(VK_FILTER_LINEAR, 16);
+    //buffer.descriptor.sampler = buffer.sampler;
+    //buffer.descriptor.imageView = buffer.image.view;
+    //buffer.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    // Now that the texture data has been copied into GPU memory we can safely
+    // delete that texture from the CPU.
+    stbi_image_free(texture);
+
+    return buffer;
 }
+
 
 VkSampler create_sampler(VkFilter filtering, const uint32_t anisotropic_level)
 {

@@ -5,67 +5,19 @@
 
 
 
-void create_material(material_t& material, VkDescriptorSetLayout layout, bool color_only)
+void create_material(material_t& material, DescriptorSetBuilder& dsets_builder)
 {
     const renderer_context_t& rc = get_renderer_context();
-    
-    material.descriptor_set = allocate_descriptor_set(layout);
 
-    std::vector<VkWriteDescriptorSet> write{};
-    {
-        VkWriteDescriptorSet albedo{};
-        albedo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        albedo.dstSet = material.descriptor_set;
-        albedo.dstBinding = 0;
-        albedo.dstArrayElement = 0;
-        albedo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        albedo.descriptorCount = 1;
-        albedo.pImageInfo = &material.albedo.descriptor;
+    for (std::size_t i = 0; i < material.textures.size(); ++i)
+        dsets_builder.FillBinding(i, material.textures[i]);
 
-        write.push_back(albedo);
-    }
-
-
-    if (color_only) {
-
-        vkUpdateDescriptorSets(rc.device.device, u32(write.size()), write.data(), 0, nullptr);
-        return;
-    }
-   
-    {
-        VkWriteDescriptorSet normal{};
-        normal.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        normal.dstSet = material.descriptor_set;
-        normal.dstBinding = 1;
-        normal.dstArrayElement = 0;
-        normal.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        normal.descriptorCount = 1;
-        normal.pImageInfo = &material.normal.descriptor;
-
-        write.push_back(normal);
-    }
-
-    {
-        VkWriteDescriptorSet specular{};
-        specular.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        specular.dstSet = material.descriptor_set;
-        specular.dstBinding = 2;
-        specular.dstArrayElement = 0;
-        specular.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        specular.descriptorCount = 1;
-        specular.pImageInfo = &material.specular.descriptor;
-
-        write.push_back(specular);
-    }
-
-    vkUpdateDescriptorSets(rc.device.device, u32(write.size()), write.data(), 0, nullptr);
+    dsets_builder.Build(&material.descriptor_set);
 }
 
 void destroy_material(material_t& material)
 {
-    destroy_texture_buffer(material.specular);
-    destroy_texture_buffer(material.normal);
-    destroy_texture_buffer(material.albedo);
+    destroy_images(material.textures);
 }
 
 void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, material_t& material)

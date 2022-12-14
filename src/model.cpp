@@ -1,12 +1,12 @@
 #include "model.hpp"
 
 #include "vertex.hpp"
-
+#include "renderer/texture.hpp"
 #include "vfs.hpp"
 
-static texture_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureType type, std::string_view path)
+static image_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureType type, std::string_view path)
 {
-    texture_buffer_t texture;
+    image_buffer_t texture;
 
     for (std::size_t i = 0; i < material->GetTextureCount(type); ++i) {
         aiString ai_path;
@@ -74,12 +74,12 @@ static void parse_mesh(model_t& model, std::vector<vertex_t>& vertices,
 
 
     // process materials
-    for (std::size_t i = 0; i < scene->mNumMaterials; ++i) {
+    for (std::size_t i = 1; i < scene->mNumMaterials; ++i) {
         const aiMaterial* material = scene->mMaterials[i];
 
-        model.textures.albedo = load_mesh_texture(material, aiTextureType_DIFFUSE, p);
-        model.textures.normal = load_mesh_texture(material, aiTextureType_HEIGHT, p);
-        model.textures.specular = load_mesh_texture(material, aiTextureType_SPECULAR, p);
+        model.textures.textures.push_back(load_mesh_texture(material, aiTextureType_DIFFUSE, p));
+        model.textures.textures.push_back(load_mesh_texture(material, aiTextureType_HEIGHT, p));
+        model.textures.textures.push_back(load_mesh_texture(material, aiTextureType_SPECULAR, p));
     }
 
 }

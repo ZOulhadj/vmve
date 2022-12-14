@@ -42,23 +42,6 @@ layout(push_constant) uniform constant
 } view_mode;
 
 
-
-vec3 phong_lighting(vec3 albedo)
-{
-	vec3 ambient = scene.ambientStrength * albedo * scene.lightColor;
-
-
-//    vec3 viewDir    = normalize(tangentViewPos - tangentFragPos);
-//    vec3 lightDir   = normalize(tangentLightPos - tangentFragPos);
-//    vec3 diffuse = max(dot(lightDir, normal), 0.0) * albedo * scene.lightColor;
-//
-
-	return ambient;
-}
-
-
-
-
 void main()
 {
 
@@ -68,9 +51,22 @@ void main()
 	vec3 color = texture(samplerAlbedo, inUV).rgb;
 	float depth = texture(samplerDepth, inUV).r;
 
+
+
+	vec3 ambient = scene.ambientStrength * color * scene.lightColor;
+
+
+
+    vec3 viewDir    = normalize(scene.lightPosition - position);
+    vec3 lightDir   = normalize(scene.lightPosition - position);
+    vec3 diffuse = max(dot(lightDir, normal), 0.0) * color * scene.lightColor;
+
+
+
+
 	vec3 final_color = vec3(0.0);
 	if (view_mode.mode == 0) {
-		final_color = phong_lighting(color);
+		final_color = vec3(ambient + diffuse);
 	} else if (view_mode.mode == 1) {
 		final_color = color;
 	} else if (view_mode.mode == 2) {

@@ -9,6 +9,7 @@ layout(location = 4) in vec3 biTangent;
 layout(location = 0) out vec2 texture_coord;
 layout(location = 1) out vec3 vertex_position;
 layout(location = 2) out vec3 vertex_normal;
+layout(location = 3) out vec3 vertex_tangent;
 
 //layout(location = 3) out vec3 tangentLightPos;
 //layout(location = 4) out vec3 tangentViewPos;
@@ -29,20 +30,10 @@ void main()
 {
     vertex_position = vec3(obj.model * vec4(position, 1.0));
     texture_coord   = uv;
-    vertex_normal = normal;
 
-//    mat3 M = transpose(inverse(mat3(obj.model)));
-//    vec3 T = normalize(M * tangent);
-//    vec3 N = normalize(M * normal);
-//    
-//    T = normalize(T - dot(T, N) * N);
-//    vec3 B = cross(N, T);
-//
-//    mat3 TBN = transpose(mat3(T, B, N));
-//    tangentLightPos = TBN * scene.lightPosition;
-//    tangentViewPos  = TBN * scene.cameraPosition;
-//    tangentFragPos  = TBN * vertex_position;
-////
+    mat3 M = transpose(inverse(mat3(obj.model)));
+    vertex_normal = M * normalize(normal);
+    vertex_tangent = M * normalize(tangent);
 
     gl_Position = mvp.proj * mvp.view * vec4(vertex_position, 1.0);
 }

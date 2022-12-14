@@ -209,29 +209,26 @@ static VkDescriptorPool create_descriptor_pool()
     VkDescriptorPool pool{};
 
     // todo: temp
+    const uint32_t max_sizes = 100;
     const std::vector<VkDescriptorPoolSize> pool_sizes {
-            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+            { VK_DESCRIPTOR_TYPE_SAMPLER, max_sizes },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, max_sizes },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, max_sizes },
+            //{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, max_sizes },
+            //{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, max_sizes },
+            //{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, max_sizes },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, max_sizes },
+            //{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, max_sizes },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, max_sizes },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, max_sizes },
+            //{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, max_sizes }
     };
-
-
-
-
 
     VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
     pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     pool_info.poolSizeCount = u32(pool_sizes.size());
     pool_info.pPoolSizes    = pool_sizes.data();
-    pool_info.maxSets       = pool_info.poolSizeCount * 1000;
+    pool_info.maxSets       = pool_info.poolSizeCount * max_sizes;
 
     vk_check(vkCreateDescriptorPool(g_rc->device.device, &pool_info, nullptr, &pool));
 
@@ -720,141 +717,134 @@ void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_tar
     render_targets = create_ui_render_targets(render_pass, extent);
 }
 
-VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings)
-{
-    VkDescriptorSetLayout layout{};
-
-    std::vector<VkDescriptorSetLayoutBinding> layout_bindings(bindings.size());
-
-    for (std::size_t i = 0; i < layout_bindings.size(); ++i) {
-        layout_bindings[i].binding = i;
-        layout_bindings[i].descriptorType = bindings[i].type;
-        layout_bindings[i].descriptorCount = 1;
-        layout_bindings[i].stageFlags = bindings[i].stages;
-    }
-
-    VkDescriptorSetLayoutCreateInfo info{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-    info.bindingCount = u32(layout_bindings.size());
-    info.pBindings    = layout_bindings.data();
-
-    vk_check(vkCreateDescriptorSetLayout(g_rc->device.device, &info, nullptr, &layout));
-
-    return layout;
-}
-
-void destroy_descriptor_set_layout(VkDescriptorSetLayout layout) {
-    vkDestroyDescriptorSetLayout(g_rc->device.device, layout, nullptr);
-}
-
-std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout)
-{
-    std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
-
-    for (auto& descriptor_set : descriptor_sets) {
-        VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        allocate_info.descriptorPool = g_r->descriptor_pool;
-        allocate_info.descriptorSetCount = 1;
-        allocate_info.pSetLayouts = &layout;
-
-        vk_check(vkAllocateDescriptorSets(g_rc->device.device, &allocate_info,
-                                          &descriptor_set));
-
-    }
-
-    return descriptor_sets;
-}
-
-VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout)
-{
-    VkDescriptorSet descriptor_set{};
-
-    VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-    allocate_info.descriptorPool = g_r->descriptor_pool;
-    allocate_info.descriptorSetCount = 1;
-    allocate_info.pSetLayouts = &layout;
-
-    vk_check(vkAllocateDescriptorSets(g_rc->device.device, &allocate_info,
-        &descriptor_set));
-
-    return descriptor_set;
-}
-
-void set_buffer(uint32_t binding, const std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<buffer_t>& buffers)
-{
-    // same as frames_in_flight
-    std::vector<VkDescriptorBufferInfo> buffer_infos(descriptor_sets.size());
-
-    for (std::size_t i = 0; i < buffer_infos.size(); ++i) {
-        buffer_infos[i].buffer = buffers[i].buffer;
-        buffer_infos[i].offset = 0;
-        buffer_infos[i].range = VK_WHOLE_SIZE; // or sizeof(struct)
-
-        // todo: Figure out a better way of converting for buffer usage to descriptor type
-        VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-        if (buffers[i].usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-            descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-        assert(descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
-
-        VkWriteDescriptorSet write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-        write.dstSet = descriptor_sets[i];
-        write.dstBinding = binding;
-        write.dstArrayElement = 0;
-        write.descriptorType = descriptor_type;
-        write.descriptorCount = 1;
-        write.pBufferInfo = &buffer_infos[i];
-
-        vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
-    }
-
-};
-
-
-void set_buffer(uint32_t binding, VkDescriptorSet descriptor_set, const buffer_t& buffer)
-{
-    // same as frames_in_flight
-    VkDescriptorBufferInfo buffer_info{};
-    buffer_info.buffer = buffer.buffer;
-    buffer_info.offset = 0;
-    buffer_info.range = VK_WHOLE_SIZE; // or sizeof(struct)
-
-    // todo: Figure out a better way of converting for buffer usage to descriptor type
-    VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-    if (buffer.usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-        descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-    assert(descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
-
-    VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-    write.dstSet = descriptor_set;
-    write.dstBinding = binding;
-    write.dstArrayElement = 0;
-    write.descriptorType = descriptor_type;
-    write.descriptorCount = 1;
-    write.pBufferInfo = &buffer_info;
-
-    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
-
-}
-
-void set_texture(uint32_t binding, VkDescriptorSet descriptor_set, VkSampler sampler, const image_buffer_t& buffer, VkImageLayout layout)
-{
-    // same as frames_in_flight
-    VkDescriptorImageInfo buffer_info{};
-    buffer_info.imageLayout = layout;
-    buffer_info.imageView = buffer.view;
-    buffer_info.sampler = sampler;
-
-    VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-    write.dstSet = descriptor_set;
-    write.dstBinding = binding;
-    write.dstArrayElement = 0;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write.descriptorCount = 1;
-    write.pImageInfo = &buffer_info;
-
-    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
-}
+//VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings)
+//{
+//    VkDescriptorSetLayout layout{};
+//
+//    std::vector<VkDescriptorSetLayoutBinding> layout_bindings(bindings.size());
+//
+//    for (std::size_t i = 0; i < layout_bindings.size(); ++i) {
+//        layout_bindings[i].binding = i;
+//        layout_bindings[i].descriptorType = bindings[i].type;
+//        layout_bindings[i].descriptorCount = 1;
+//        layout_bindings[i].stageFlags = bindings[i].stages;
+//    }
+//
+//    VkDescriptorSetLayoutCreateInfo info{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+//    info.bindingCount = u32(layout_bindings.size());
+//    info.pBindings    = layout_bindings.data();
+//
+//    vk_check(vkCreateDescriptorSetLayout(g_rc->device.device, &info, nullptr, &layout));
+//
+//    return layout;
+//}
+//void destroy_descriptor_set_layout(VkDescriptorSetLayout layout) {
+//    vkDestroyDescriptorSetLayout(g_rc->device.device, layout, nullptr);
+//}
+//std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout)
+//{
+//    std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
+//
+//    for (auto& descriptor_set : descriptor_sets) {
+//        VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+//        allocate_info.descriptorPool = g_r->descriptor_pool;
+//        allocate_info.descriptorSetCount = 1;
+//        allocate_info.pSetLayouts = &layout;
+//
+//        vk_check(vkAllocateDescriptorSets(g_rc->device.device, &allocate_info,
+//                                          &descriptor_set));
+//
+//    }
+//
+//    return descriptor_sets;
+//}
+//VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout)
+//{
+//    VkDescriptorSet descriptor_set{};
+//
+//    VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+//    allocate_info.descriptorPool = g_r->descriptor_pool;
+//    allocate_info.descriptorSetCount = 1;
+//    allocate_info.pSetLayouts = &layout;
+//
+//    vk_check(vkAllocateDescriptorSets(g_rc->device.device, &allocate_info,
+//        &descriptor_set));
+//
+//    return descriptor_set;
+//}
+//void set_buffer(uint32_t binding, const std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<buffer_t>& buffers)
+//{
+//    // same as frames_in_flight
+//    std::vector<VkDescriptorBufferInfo> buffer_infos(descriptor_sets.size());
+//
+//    for (std::size_t i = 0; i < buffer_infos.size(); ++i) {
+//        buffer_infos[i].buffer = buffers[i].buffer;
+//        buffer_infos[i].offset = 0;
+//        buffer_infos[i].range = VK_WHOLE_SIZE; // or sizeof(struct)
+//
+//        // todo: Figure out a better way of converting for buffer usage to descriptor type
+//        VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+//        if (buffers[i].usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+//            descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//
+//        assert(descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
+//
+//        VkWriteDescriptorSet write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+//        write.dstSet = descriptor_sets[i];
+//        write.dstBinding = binding;
+//        write.dstArrayElement = 0;
+//        write.descriptorType = descriptor_type;
+//        write.descriptorCount = 1;
+//        write.pBufferInfo = &buffer_infos[i];
+//
+//        vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
+//    }
+//
+//};
+//void set_buffer(uint32_t binding, VkDescriptorSet descriptor_set, const buffer_t& buffer)
+//{
+//    // same as frames_in_flight
+//    VkDescriptorBufferInfo buffer_info{};
+//    buffer_info.buffer = buffer.buffer;
+//    buffer_info.offset = 0;
+//    buffer_info.range = VK_WHOLE_SIZE; // or sizeof(struct)
+//
+//    // todo: Figure out a better way of converting for buffer usage to descriptor type
+//    VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
+//    if (buffer.usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+//        descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//
+//    assert(descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
+//
+//    VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+//    write.dstSet = descriptor_set;
+//    write.dstBinding = binding;
+//    write.dstArrayElement = 0;
+//    write.descriptorType = descriptor_type;
+//    write.descriptorCount = 1;
+//    write.pBufferInfo = &buffer_info;
+//
+//    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
+//
+//}
+//void set_texture(uint32_t binding, VkDescriptorSet descriptor_set, VkSampler sampler, const image_buffer_t& buffer, VkImageLayout layout)
+//{
+//    // same as frames_in_flight
+//    VkDescriptorImageInfo buffer_info{};
+//    buffer_info.imageLayout = layout;
+//    buffer_info.imageView = buffer.view;
+//    buffer_info.sampler = sampler;
+//
+//    VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+//    write.dstSet = descriptor_set;
+//    write.dstBinding = binding;
+//    write.dstArrayElement = 0;
+//    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+//    write.descriptorCount = 1;
+//    write.pImageInfo = &buffer_info;
+//
+//    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
+//}
 
 pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass)
 {
@@ -1220,7 +1210,7 @@ bool begin_rendering()
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         // Wait for all GPU operations to complete before destroy and recreating
         // any resources.
-        vk_check(vkDeviceWaitIdle(g_rc->device.device));
+        renderer_wait();
 
         resize_swapchain(g_swapchain);
 
@@ -1409,7 +1399,7 @@ void end_render_target(std::vector<VkCommandBuffer>& buffers)
     vk_check(vkEndCommandBuffer(buffers[current_frame]));
 }
 
-void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, std::vector<VkDescriptorSet>& descriptorSets)
+void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, const std::vector<VkDescriptorSet>& descriptorSets)
 {
     vkCmdBindPipeline(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
     vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets[current_frame], 0, nullptr);

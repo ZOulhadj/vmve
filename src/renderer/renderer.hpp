@@ -120,14 +120,14 @@ uint32_t get_current_frame();
 uint32_t get_current_swapchain_image();
 uint32_t get_swapchain_image_count();
 
-VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings);
-void destroy_descriptor_set_layout(VkDescriptorSetLayout layout);
-
-std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout);
-VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
-void set_buffer(uint32_t binding, const std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<buffer_t>& buffers);
-void set_buffer(uint32_t binding, VkDescriptorSet descriptor_set, const buffer_t& buffer);
-void set_texture(uint32_t binding, VkDescriptorSet descriptor_set, VkSampler sampler, const image_buffer_t& buffer, VkImageLayout layout);
+//VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings);
+//void destroy_descriptor_set_layout(VkDescriptorSetLayout layout);
+//
+//std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout);
+//VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
+//void set_buffer(uint32_t binding, const std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<buffer_t>& buffers);
+//void set_buffer(uint32_t binding, VkDescriptorSet descriptor_set, const buffer_t& buffer);
+//void set_texture(uint32_t binding, VkDescriptorSet descriptor_set, VkSampler sampler, const image_buffer_t& buffer, VkImageLayout layout);
 
 VkRenderPass create_ui_render_pass();
 VkRenderPass create_render_pass();
@@ -161,7 +161,7 @@ std::vector<VkCommandBuffer> begin_ui_render_target(VkRenderPass render_pass, co
 //std::vector<VkCommandBuffer> begin_ui_render_pass(VkRenderPass render_pass, const std::vector<framebuffer>& framebuffers);
 void end_render_target(std::vector<VkCommandBuffer>& buffers);
 
-void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, std::vector<VkDescriptorSet>& descriptorSets);
+void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
 void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, instance_t& instance);
 void render_draw(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode);
 // Indicates to the GPU to wait for all commands to finish before continuing.

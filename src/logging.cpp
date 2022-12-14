@@ -23,6 +23,10 @@ void logger::log(log_type type, const std::string& message)
     msg.message = message;
 
     _logs.push_back(msg);
+
+#if defined(_DEBUG)
+    printf("%s\n", message.c_str());
+#endif
 }
 
 std::vector<log_message>& logger::get_logs()

@@ -25,12 +25,6 @@ struct image_buffer_t
 
 buffer_t create_buffer(uint32_t size, VkBufferUsageFlags type);
 
-//template <typename T>
-//buffer_t create_uniform_buffer()
-//{
-//    return create_buffer(sizeof(T), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-//}
-
 template <typename T>
 std::vector<buffer_t> create_uniform_buffer()
 {
