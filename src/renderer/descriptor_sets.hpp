@@ -1,21 +1,7 @@
 #ifndef MY_ENGINE_DESCRIPTOR_SETS_HPP
 #define MY_ENGINE_DESCRIPTOR_SETS_HPP
 
-
 #include "buffer.hpp"
-
-// Certain variables will be not initialized on purpose
-// depending on if the binding is a buffer or image
-//struct descriptor_binding
-//{
-//    VkDescriptorSetLayoutBinding layout_binding;
-//    std::vector<VkBuffer> buffer;
-//
-//
-//    std::vector<VkImageView> image_view;
-//    VkSampler sampler;
-//    VkImageLayout image_layout;
-//};
 
 enum class BindingType
 {

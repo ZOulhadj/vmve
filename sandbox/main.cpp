@@ -23,6 +23,7 @@
 #include "../src/renderer/descriptor_sets.hpp"
 
 // Application specific header files
+#include "variables.hpp"
 #include "ui.hpp"
 #include "security.hpp"
 
@@ -203,14 +204,17 @@ static void load_mesh(std::vector<model_t>& models, std::string path)
 
 static void render_main_menu()
 {
+    static bool about_open = false;
     static bool load_model_open = false;
     static bool export_model_open = false;
+    static bool enter_key_open = false;
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
 
             load_model_open = ImGui::MenuItem("Load model");
             export_model_open = ImGui::MenuItem("Export model");
+            enter_key_open = ImGui::MenuItem("Enter key");
 
             ImGui::MenuItem("Exit");
 
@@ -219,10 +223,19 @@ static void render_main_menu()
 
         if (ImGui::BeginMenu("Settings")) {
             if (ImGui::BeginMenu("Theme")) {
-                static bool sel = true;
-                ImGui::MenuItem("Dark", "", &sel);
-                ImGui::MenuItem("Light");
+                static bool isDark = true;
+                static bool isLight = false;
 
+
+                if (ImGui::MenuItem("Dark", "", &isDark)) {
+                    ImGui::StyleColorsDark();
+                    isLight = false;
+                }
+                
+                if (ImGui::MenuItem("Light", "", &isLight)) {
+                    ImGui::StyleColorsLight();
+                    isDark = false;
+                }
 
                 ImGui::EndMenu();
             }
@@ -231,8 +244,10 @@ static void render_main_menu()
         }
 
         if (ImGui::BeginMenu("Help")) {
+            if (ImGui::MenuItem("About"))
+                about_open = true;
 
-            ImGui::MenuItem("Keybindings");
+            ImGui::MenuItem("Shortcuts");
 
             ImGui::EndMenu();
         }
@@ -242,6 +257,15 @@ static void render_main_menu()
         ImGui::EndMenuBar();
     }
 
+
+    if (about_open)
+    {
+        ImGui::Begin("About", &about_open);
+        ImGui::Text("Build version: %s", buildVersion);
+        ImGui::Text("Author: %s", authorName);
+        ImGui::Text("Description: %s", applicationAbout);
+        ImGui::End();
+    }
 
 
     if (load_model_open) {
@@ -258,6 +282,40 @@ static void render_main_menu()
 
     if (export_model_open)
         render_filesystem_window(get_vfs_path("/models"), &export_model_open);
+
+    if (enter_key_open)
+    {
+        static char key[20];
+        static bool show_key = false;
+        static bool encryptionMode = false;
+
+        ImGui::Begin("Enter key", &enter_key_open);
+
+        ImGui::Button("Generate key");
+        ImGui::InputText("Key", key, 20, show_key ? ImGuiInputTextFlags_None : ImGuiInputTextFlags_Password);
+        ImGui::Checkbox("Show key", &show_key);
+
+
+        ImGui::Text("Encryption mode");
+        ImGui::Checkbox("AES", &encryptionMode);
+        ImGui::SameLine();
+        ImGui::Checkbox("DH", &encryptionMode);
+        ImGui::SameLine();
+        ImGui::Checkbox("GCM", &encryptionMode);
+        ImGui::SameLine();
+        ImGui::Checkbox("RC6", &encryptionMode);
+
+
+        ImGui::Button("Apply");
+
+
+
+
+
+
+        ImGui::End();
+    }
+        
 }
 
 static void render_dockspace()

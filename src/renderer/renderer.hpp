@@ -38,12 +38,6 @@ struct Frame {
     VkSemaphore released_semaphore;
 };
 
-
-//struct framebuffer {
-//    VkExtent2D extent;
-//    VkFramebuffer handle;
-//};
-
 struct render_target {
     image_buffer_t image;
     image_buffer_t depth;
@@ -119,15 +113,6 @@ renderer_context_t& get_renderer_context();
 uint32_t get_current_frame();
 uint32_t get_current_swapchain_image();
 uint32_t get_swapchain_image_count();
-
-//VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings);
-//void destroy_descriptor_set_layout(VkDescriptorSetLayout layout);
-//
-//std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout);
-//VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
-//void set_buffer(uint32_t binding, const std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<buffer_t>& buffers);
-//void set_buffer(uint32_t binding, VkDescriptorSet descriptor_set, const buffer_t& buffer);
-//void set_texture(uint32_t binding, VkDescriptorSet descriptor_set, VkSampler sampler, const image_buffer_t& buffer, VkImageLayout layout);
 
 VkRenderPass create_ui_render_pass();
 VkRenderPass create_render_pass();
