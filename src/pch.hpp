@@ -25,6 +25,12 @@
 #include <thread>
 #include <future>
 #include <format>
+#include <tuple>
+
+
+#include <windows.h>
+#undef far
+#undef near
 
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
@@ -68,7 +74,7 @@
 #include <cryptopp/integer.h>
 
 
-#include "ImGuizmo.h"
+#include <ImGuizmo.h>
 
 
 #if defined(_MSC_VER)

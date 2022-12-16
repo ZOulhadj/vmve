@@ -22,21 +22,15 @@
 #include "../src/logging.hpp"
 #include "../src/renderer/descriptor_sets.hpp"
 
+#if defined(_WIN32)
+#include "../src/platform/windows.hpp"
+#endif
+
+#include "../src/time.hpp"
+
 // Application specific header files
 #include "variables.hpp"
-#include "ui.hpp"
 #include "security.hpp"
-
-
-// Limits
-constexpr float translateMin = -20.0f;
-constexpr float translateMax =  20.0f;
-
-constexpr float rotationMin = -180.0f;
-constexpr float rotationMax =  180.0f;
-
-constexpr float scaleMin = 1.0f;
-constexpr float scaleMax = 10.0f;
 
 
 static window_t* window = nullptr;
@@ -75,7 +69,7 @@ camera_t camera{};
 //
 // Padding is equally important and hence the usage of the "alignas" keyword.
 //
-struct sandbox_scene {
+struct SandboxScene {
     float ambientStrength   = 0.1f;
     float specularStrength  = 1.0f;
     float specularShininess = 32.0f;
@@ -84,52 +78,29 @@ struct sandbox_scene {
     alignas(16) glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 } scene;
 
-std::vector<model_t> g_models;
+std::vector<model_t> gModels;
 
 //glm::vec3 objectTranslation = glm::vec3(0.0f);
 //glm::vec3 objectRotation = glm::vec3(0.0f);
 //glm::vec3 objectScale = glm::vec3(1.0f);
 
-static int time_of_day = 10;
-static int current_render_mode = 0;
 
-static void event_callback(event& e);
+static float temperature = 23.5;
+static float windSpeed = 2.0f;
+static int timeOfDay = 10;
+static int renderMode = 0;
 
 
 static bool running   = true;
 static bool minimised = false;
 static bool in_viewport = false;
-static float uptime   = 0.0f;
+static std::chrono::high_resolution_clock::time_point startTime;
+//static float uptime   = 0.0f;
 static double delta_time = 0.0f;
 
 static camera_mode cam_mode = camera_mode::first_person;
 
 VkDescriptorSet skysphere_dset;
-
-
-static void handle_input(camera_t& camera, double deltaTime)
-{
-    float dt = camera.speed * deltaTime;
-    if (is_key_down(GLFW_KEY_W))
-        camera.position += camera.front_vector * dt;
-    if (is_key_down(GLFW_KEY_S))
-        camera.position -= camera.front_vector * dt;
-    if (is_key_down(GLFW_KEY_A))
-        camera.position -= camera.right_vector * dt;
-    if (is_key_down(GLFW_KEY_D))
-        camera.position += camera.right_vector * dt;
-    if (is_key_down(GLFW_KEY_SPACE))
-        camera.position += camera.up_vector * dt;
-    if (is_key_down(GLFW_KEY_LEFT_CONTROL) || is_key_down(GLFW_KEY_CAPS_LOCK))
-        camera.position -= camera.up_vector * dt;
-//    if (is_key_down(GLFW_KEY_Q))
-//        camera.roll -= camera.roll_speed * deltaTime;
-//    if (is_key_down(GLFW_KEY_E))
-//        camera.roll += camera.roll_speed * deltaTime;
-}
-
-
-
 
 // Global GUI flags and settings
 
@@ -149,25 +120,39 @@ static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNo
 
 static ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
 
-
-
-
 const char* object_window   = "Object";
 const char* console_window  = "Console";
 const char* viewport_window = "Viewport";
 const char* scene_window    = "Global";
 
-
 static bool editor_open = false;
 static bool window_open = true;
-
-//model_t model;
 
 //VkDescriptorSet a;
 //VkDescriptorSet n;
 //VkDescriptorSet s;
 
 
+static void handle_input(camera_t& camera, double deltaTime)
+{
+    float dt = camera.speed * deltaTime;
+    if (is_key_down(GLFW_KEY_W))
+        camera.position += camera.front_vector * dt;
+    if (is_key_down(GLFW_KEY_S))
+        camera.position -= camera.front_vector * dt;
+    if (is_key_down(GLFW_KEY_A))
+        camera.position -= camera.right_vector * dt;
+    if (is_key_down(GLFW_KEY_D))
+        camera.position += camera.right_vector * dt;
+    if (is_key_down(GLFW_KEY_SPACE))
+        camera.position += camera.up_vector * dt;
+    if (is_key_down(GLFW_KEY_LEFT_CONTROL) || is_key_down(GLFW_KEY_CAPS_LOCK))
+        camera.position -= camera.up_vector * dt;
+    //    if (is_key_down(GLFW_KEY_Q))
+    //        camera.roll -= camera.roll_speed * deltaTime;
+    //    if (is_key_down(GLFW_KEY_E))
+    //        camera.roll += camera.roll_speed * deltaTime;
+}
 
 static void render_begin_docking()
 {
@@ -262,26 +247,30 @@ static void render_main_menu()
     {
         ImGui::Begin("About", &about_open);
         ImGui::Text("Build version: %s", buildVersion);
+        ImGui::Text("Build date: %s", buildDate);
+        ImGui::Separator();
         ImGui::Text("Author: %s", authorName);
-        ImGui::Text("Description: %s", applicationAbout);
+        ImGui::Text("Contact: %s", authorEmail);
+        ImGui::Separator();
+        ImGui::TextWrapped("Description: %s", applicationAbout);
         ImGui::End();
     }
 
 
     if (load_model_open) {
-        std::string model_path = render_filesystem_window(get_vfs_path("/models"), &load_model_open);
+        std::string model_path = RenderFileExplorer(get_vfs_path("/models"), &load_model_open);
 
         if (!model_path.empty()) {
             // todo: is renderer_wait required here?
             // create and push new model into list
-            futures.push_back(std::async(std::launch::async, load_mesh, std::ref(g_models), model_path));
+            futures.push_back(std::async(std::launch::async, load_mesh, std::ref(gModels), model_path));
 
             load_model_open = false;
         }
     }
 
     if (export_model_open)
-        render_filesystem_window(get_vfs_path("/models"), &export_model_open);
+        RenderFileExplorer(get_vfs_path("/models"), &export_model_open);
 
     if (enter_key_open)
     {
@@ -408,8 +397,6 @@ static void render_left_window()
 {
     ImGuiIO& io = ImGui::GetIO();
 
-
-
     static bool wireframe = false;
     static bool vsync = true;
     static bool depth = false;
@@ -428,113 +415,131 @@ static void render_left_window()
 
     ImGui::Begin(scene_window, &window_open, window_flags);
     {
-        ImGui::Text("Stats");
-        ImGui::Text("Uptime: %d s", (int)uptime);
-        ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::Text("Delta time: %.4f ms/frame", delta_time);
-        ImGui::Text("GPU: %s", gpu_name.c_str());
+        if (ImGui::CollapsingHeader("Application"))
+        {
+            const auto [hours, minutes, seconds] = GetDuration(startTime);
 
+            ImGui::Text("Uptime: %d:%d:%d", hours, minutes, seconds);
 
+#if defined(_WIN32)
+            const MEMORYSTATUSEX memoryStatus = GetMemoryStatus();
 
-        ImGui::Separator();
+            const float memoryUsage = memoryStatus.dwMemoryLoad / 100.0f;
+            const int64_t totalMemory = memoryStatus.ullTotalPhys / 1'000'000'000;
 
-        ImGui::Text("Rendering");
+            char buf[32];
+            sprintf(buf, "%.1f GB/%lld GB", (memoryUsage * totalMemory), totalMemory);
+            ImGui::ProgressBar(memoryUsage, ImVec2(0.f, 0.f), buf);
+            ImGui::SameLine();
+            ImGui::Text("System memory");
+#endif
 
-
-        if (ImGui::Checkbox("Wireframe", &wireframe))
-            wireframe ? current_pipeline = wireframePipeline : current_pipeline = geometry_pipeline;
-
-        ImGui::Checkbox("VSync", &vsync);
-
-        enum class buf_mode { double_buffering, triple_buffering };
-        static int current_buffer_mode = (int)buf_mode::triple_buffering;
-        static std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
-        ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
-        enum class render_mode { full, color, position, normal, depth };
-        static std::array<const char*, 5> elems_names = { "Full", "Color", "Position", "Normal", "Depth" };
-
-        ImGui::Combo("Render mode", &current_render_mode, elems_names.data(), elems_names.size());
-
-        ImGui::Separator();
-        ImGui::Text("Day/Night");
-        ImGui::SliderInt("Time", &time_of_day, 0.0f, 24.0f);
-        ImGui::Separator();
-        ImGui::Text("Lighting");
-        ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 1.0f);
-        ImGui::SliderFloat("Specular strength", &scene.specularStrength, 0.0f, 1.0f);
-        ImGui::SliderFloat("Specular shininess", &scene.specularShininess, 0.0f, 512.0f);
-        ImGui::SliderFloat3("Light position", glm::value_ptr(scene.lightPosition), -100.0f, 100.0f);
-        ImGui::SliderFloat3("Light color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
-        ImGui::Separator();
-        ImGui::Text("Camera");
-        if (ImGui::RadioButton("First person", cam_mode == camera_mode::first_person)) {
-            cam_mode = camera_mode::first_person;
-        }
-        ImGui::SameLine();
-        if (ImGui::RadioButton("Look at", cam_mode == camera_mode::look_at)) {
-            cam_mode = camera_mode::look_at;
         }
 
-        ImGui::Text("Position");
-        //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
-        //ImGui::PopFont();
-        ImGui::SameLine();
-        ImGui::Text("%.2f", camera.position.x);
-        ImGui::SameLine();
-        //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-        ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
-        //ImGui::PopFont();
-        ImGui::SameLine();
-        ImGui::Text("%.2f", camera.position.y);
-        ImGui::SameLine();
-        //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-        ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
-        //ImGui::PopFont();
-        ImGui::SameLine();
-        ImGui::Text("%.2f", camera.position.z);
+        if (ImGui::CollapsingHeader("Renderer"))
+        {
+            ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+            ImGui::Text("Delta time: %.4f ms/frame", delta_time);
+            ImGui::Text("GPU: %s", gpu_name.c_str());
 
-        ImGui::Text("Direction");
-        ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
-        ImGui::SameLine();
-        ImGui::Text("%.2f", camera.front_vector.x);
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
-        ImGui::SameLine();
-        ImGui::Text("%.2f", camera.front_vector.y);
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
-        ImGui::SameLine();
-        ImGui::Text("%.2f", camera.front_vector.z);
+            if (ImGui::Checkbox("Wireframe", &wireframe))
+                wireframe ? current_pipeline = wireframePipeline : current_pipeline = geometry_pipeline;
 
-        ImGui::SliderFloat("Speed", &camera.speed, 0.0f, 20.0f, "%.1f m/s");
-        float roll_rad = glm::radians(camera.roll_speed);
-        ImGui::SliderAngle("Roll Speed", &roll_rad, 0.0f, 45.0f);
-        float fov_rad = glm::radians(camera.fov);
-        ImGui::SliderAngle("Field of view", &fov_rad, 10.0f, 120.0f);
-        camera.fov = glm::degrees(fov_rad);
+            ImGui::Checkbox("VSync", &vsync);
 
-        ImGui::SliderFloat("Near plane", &camera.near, 0.1f, 10.0f, "%.1f m");
+            enum class buf_mode { double_buffering, triple_buffering };
+            static int current_buffer_mode = (int)buf_mode::triple_buffering;
+            static std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
+            ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
+            enum class render_mode { full, color, position, normal, depth };
+            static std::array<const char*, 5> elems_names = { "Full", "Color", "Position", "Normal", "Depth" };
 
-        ImGui::Checkbox("Lock frustum", &lock_camera_frustum);
+            ImGui::Combo("Render mode", &renderMode, elems_names.data(), elems_names.size());
+        }
 
-        ImGui::Separator();
+        if (ImGui::CollapsingHeader("Environment"))
+        {
+            // todo: Maybe we could use std::chrono for the time here?
+            ImGui::SliderInt("Time of day", &timeOfDay, 0.0f, 23.0f, "%d:00");
+            ImGui::SliderFloat("Temperature", &temperature, -20.0f, 50.0f, "%.1f C");
+            ImGui::SliderFloat("Wind speed", &windSpeed, 0.0f, 15.0f, "%.1f m/s");
+            ImGui::Separator();
+            ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 1.0f);
+            ImGui::SliderFloat("Specular strength", &scene.specularStrength, 0.0f, 1.0f);
+            ImGui::SliderFloat("Specular shininess", &scene.specularShininess, 0.0f, 512.0f);
+            ImGui::SliderFloat3("Light position", glm::value_ptr(scene.lightPosition), -100.0f, 100.0f);
+            ImGui::SliderFloat3("Light color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
 
-        ImGui::Text("Skybox");
-        static bool open = false;
-        ImGui::SameLine();
-        if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
-            open = true;
+            ImGui::Text("Skybox");
+            static bool open = false;
+            ImGui::SameLine();
+            if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
+                open = true;
 
-        if (open) {
-            std::string path = render_filesystem_window(get_vfs_path("/textures"), &open);
+            if (open) {
+                std::string path = RenderFileExplorer(get_vfs_path("/textures"), &open);
 
 
-            // If a valid path is found, delete current texture, load and create the new texture
-            if (!path.empty()) {
-                open = false;
+                // If a valid path is found, delete current texture, load and create the new texture
+                if (!path.empty()) {
+                    open = false;
+                }
+
+            }
+        }
+
+        if (ImGui::CollapsingHeader("Camera"))
+        {
+            if (ImGui::RadioButton("First person", cam_mode == camera_mode::first_person)) {
+                cam_mode = camera_mode::first_person;
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Look at", cam_mode == camera_mode::look_at)) {
+                cam_mode = camera_mode::look_at;
             }
 
+            ImGui::Text("Position");
+            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
+            //ImGui::PopFont();
+            ImGui::SameLine();
+            ImGui::Text("%.2f", camera.position.x);
+            ImGui::SameLine();
+            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
+            //ImGui::PopFont();
+            ImGui::SameLine();
+            ImGui::Text("%.2f", camera.position.y);
+            ImGui::SameLine();
+            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+            ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
+            //ImGui::PopFont();
+            ImGui::SameLine();
+            ImGui::Text("%.2f", camera.position.z);
+
+            ImGui::Text("Direction");
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
+            ImGui::SameLine();
+            ImGui::Text("%.2f", camera.front_vector.x);
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
+            ImGui::SameLine();
+            ImGui::Text("%.2f", camera.front_vector.y);
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
+            ImGui::SameLine();
+            ImGui::Text("%.2f", camera.front_vector.z);
+
+            ImGui::SliderFloat("Speed", &camera.speed, 0.0f, 20.0f, "%.1f m/s");
+            float roll_rad = glm::radians(camera.roll_speed);
+            ImGui::SliderAngle("Roll Speed", &roll_rad, 0.0f, 45.0f);
+            float fov_rad = glm::radians(camera.fov);
+            ImGui::SliderAngle("Field of view", &fov_rad, 10.0f, 120.0f);
+            camera.fov = glm::degrees(fov_rad);
+
+            ImGui::SliderFloat("Near plane", &camera.near, 0.1f, 10.0f, "%.1f m");
+
+            ImGui::Checkbox("Lock frustum", &lock_camera_frustum);
         }
 
         static bool edit_shaders = false;
@@ -574,7 +579,7 @@ static void render_left_window()
 
         ImGui::Separator();
 
-        show_demo_window();
+        RenderDemoWindow();
     }
     ImGui::End();
 }
@@ -663,12 +668,19 @@ static void render_viewport_window()
     ImGui::End();
 }
 
+static void event_callback(event& e);
 
 
 
 int main(int argc, char** argv)
 {
     logger::info("Initializing application");
+
+    // Start timers
+    startTime = std::chrono::high_resolution_clock::now();
+
+
+
 
     // Initialize core systems
     window = create_window("VMVE", 1280, 720);
@@ -709,7 +721,7 @@ int main(int argc, char** argv)
 
      // The cretae shader resources
     std::vector<buffer_t> camera_ubo = create_uniform_buffer<view_projection>();
-    std::vector<buffer_t> scene_ubo = create_uniform_buffer<sandbox_scene>();
+    std::vector<buffer_t> scene_ubo = create_uniform_buffer<SandboxScene>();
 
     std::vector<image_buffer_t> positions, normals, colors, depths;
     for (auto& fb : geometry_render_targets) {
@@ -860,6 +872,16 @@ int main(int argc, char** argv)
     vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
     vertex_array_t icosphere = load_model(get_vfs_path("/models/sphere.obj"));
 
+    // TEMP: Don't want to have to manually load the model each time so I will do it
+    // here instead for the time-being.
+    futures.push_back(std::async(
+        std::launch::async, 
+        load_mesh, 
+        std::ref(gModels), 
+        get_vfs_path("/models/backpack/backpack.obj"))
+    );
+    
+    
     // create materials
     material_t sun_material;
     sun_material.textures.push_back(load_texture(get_vfs_path("/textures/sun.png")));
@@ -889,7 +911,6 @@ int main(int argc, char** argv)
 
 
     running = true;
-    uptime  = 0.0f;
 
     while (running) {
         // If the application is minimized then only wait for events and don't
@@ -905,7 +926,6 @@ int main(int argc, char** argv)
         // is then used with inputs and physics to ensure that the result is the
         // same no matter how fast the CPU is running.
         delta_time = get_delta_time();
-        uptime += delta_time;
 
         // Only update movement and camera view when in viewport mode
         if (in_viewport) {
@@ -925,7 +945,7 @@ int main(int argc, char** argv)
         //scale(sun_instance, 1.0f);
 
         translate(model_instance, { 0.0f, 2.0f, 0.0f });
-        rotate(model_instance, 10.0f * uptime, { 0.0f, 1.0f, 0.0f });
+        //rotate(model_instance, 10.0f * uptime, { 0.0f, 1.0f, 0.0f });
 
         // copy data into uniform buffer
         set_buffer_data(camera_ubo, &camera.viewProj);
@@ -972,10 +992,10 @@ int main(int argc, char** argv)
                 // Render the models
                 bind_pipeline(cmd_buffer, current_pipeline, geom_sets);
                 // todo: loop over multiple models and render each one
-                for (std::size_t i = 0; i < g_models.size(); ++i) {
-                    bind_material(cmd_buffer, current_pipeline.layout, g_models[i].textures);
-                    bind_vertex_array(cmd_buffer, g_models[i].data);
-                    render(cmd_buffer, current_pipeline.layout, g_models[i].data.index_count, model_instance);
+                for (std::size_t i = 0; i < gModels.size(); ++i) {
+                    bind_material(cmd_buffer, current_pipeline.layout, gModels[i].textures);
+                    bind_vertex_array(cmd_buffer, gModels[i].data);
+                    render(cmd_buffer, current_pipeline.layout, gModels[i].data.index_count, model_instance);
                 }
 
 
@@ -988,7 +1008,7 @@ int main(int argc, char** argv)
             {
                 std::vector<VkCommandBuffer> cmd_buffer = begin_render_target(lighting_pass, lighting_render_targets);
                 bind_pipeline(cmd_buffer, lighting_pipeline, light_sets);
-                render_draw(cmd_buffer, lighting_pipeline.layout, current_render_mode);
+                render_draw(cmd_buffer, lighting_pipeline.layout, renderMode);
                 end_render_target(cmd_buffer);
             }
 
@@ -1074,7 +1094,7 @@ int main(int argc, char** argv)
     // Wait until all GPU commands have finished
     renderer_wait();
 
-    for (auto& model : g_models) {
+    for (auto& model : gModels) {
         destroy_material(model.textures);
         destroy_vertex_array(model.data);
     }

@@ -71,7 +71,7 @@ add_executable(${PROJECT_NAME}
         # precompiled header
         # note: this is required to compile header only files such as STB, VMA
         # note: this will be removed in the future.
-        "src/pch.cpp" "src/renderer/descriptor_sets.cpp")
+        "src/pch.cpp" "src/renderer/descriptor_sets.cpp" "src/platform/windows.cpp" "src/time.cpp")
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
