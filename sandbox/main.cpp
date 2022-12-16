@@ -594,6 +594,8 @@ static void render_bottom_window()
             logger::clear_logs();
 
         ImGui::SameLine();
+        ImGui::Button("Export");
+        ImGui::SameLine();
         ImGui::Checkbox("Auto-scroll", &auto_scroll);
         ImGui::Separator();
 
@@ -763,61 +765,32 @@ int main(int argc, char** argv)
     shader skysphereVS = create_vertex_shader(load_text_file(get_vfs_path("/shaders/skysphere.vert")));
     shader skysphereFS = create_fragment_shader(load_text_file(get_vfs_path("/shaders/skysphere.frag")));
 
-    const std::vector<VkFormat> binding_format{
-        VK_FORMAT_R32G32B32_SFLOAT, // Position
-        VK_FORMAT_R32G32B32_SFLOAT, // Normal
-        VK_FORMAT_R32G32_SFLOAT,     // UV
-        VK_FORMAT_R32G32B32_SFLOAT, // Tangent
-        VK_FORMAT_R32G32B32_SFLOAT // BiTangent
-    };
 
+    VertexBinding<vertex_t> vert(VK_VERTEX_INPUT_RATE_VERTEX);
+    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
+    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
+    vert.AddAttribute(VK_FORMAT_R32G32_SFLOAT,    "UV");
+    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
+    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "BiTangent");
 
-    //binding_descriptor<vertex_t> vert;
-    //vert.push_attribute<glm::vec3>();
-    //vert.push_attribute<glm::vec3>();
-    //vert.push_attribute<glm::vec2>();
-    //vert.push_attribute<glm::vec3>();
-    //vert.push_attribute<glm::vec3>();
+    PushConstant<glm::mat4> pc(VK_SHADER_STAGE_VERTEX_BIT);
 
+    RenderState geometryState;
 
 
     PipelineInfo info{};
-    info.push_constant_size = sizeof(glm::mat4);
-    info.push_stages = VK_SHADER_STAGE_VERTEX_BIT;
-    info.binding_layout_size = sizeof(vertex_t);
-    info.binding_format = binding_format;
+    info.push_constant_size = pc.size;
+    info.push_stages = pc.stages;
+
+    info.binding_layout_size = vert.bindingSize;
+    info.binding_format = vert.attributes;
     info.wireframe = false;
     info.depth_testing = true;
     info.blend_count = 3;
     info.cull_mode = VK_CULL_MODE_BACK_BIT;
 
-    //{
-    //    info.shaders = { objectVS, objectFS };
-    //    basicPipeline = create_pipeline(info, lighting_pass);
-    //}
-    {
-        info.descriptor_layouts = { geom_builder.GetLayout(), model_dsets.GetLayout() };
-        info.shaders = { geometry_vs, geometry_fs };
-        info.wireframe = true;
-        wireframePipeline = create_pipeline(info, geometry_pass);
-    }
-    //{
-    //    info.shaders = { gridVS, gridFS };
-    //    info.cull_mode = VK_CULL_MODE_NONE;
-    //    info.wireframe = false;
-    //    gridPipeline = create_pipeline(info, geometry_pass, true);
-    //}
-    //{
-    //    info.shaders = { billboardVS, billboardFS };
-    //    billboardPipeline = create_pipeline(info, lighting_pass);
-    //}
-    {
-        info.wireframe = false;
-        info.descriptor_layouts = { geom_builder.GetLayout(), model_dsets.GetLayout() };
-        info.shaders = { skysphereVS, skysphereFS };
-        info.depth_testing = false;
-        skyspherePipeline = create_pipeline(info, geometry_pass);
-    }
+
+    // Deferred shading pipelines
     {
         info.wireframe = false;
         info.depth_testing = true;
@@ -837,6 +810,29 @@ int main(int argc, char** argv)
         info.wireframe = false;
         lighting_pipeline = create_pipeline(info, lighting_pass);
     }
+
+
+    {
+        info.binding_layout_size = vert.bindingSize;
+        info.binding_format = vert.attributes;
+        info.push_constant_size = pc.size;
+        info.push_stages = pc.stages;
+        info.blend_count = 3;
+        info.descriptor_layouts = { geom_builder.GetLayout(), model_dsets.GetLayout() };
+        info.shaders = { geometry_vs, geometry_fs };
+        info.wireframe = true;
+        info.depth_testing = true;
+        wireframePipeline = create_pipeline(info, geometry_pass);
+    }
+    {
+        info.wireframe = false;
+        info.descriptor_layouts = { geom_builder.GetLayout(), model_dsets.GetLayout() };
+        info.shaders = { skysphereVS, geometry_fs };
+        info.depth_testing = false;
+        info.cull_mode = VK_CULL_MODE_NONE;
+        skyspherePipeline = create_pipeline(info, geometry_pass);
+    }
+
 
     // Delete all individual shaders since they are now part of the various pipelines
     //destroy_shader(billboardFS);
@@ -880,15 +876,18 @@ int main(int argc, char** argv)
         std::ref(gModels), 
         get_vfs_path("/models/backpack/backpack.obj"))
     );
-    
+    //
     
     // create materials
-    material_t sun_material;
-    sun_material.textures.push_back(load_texture(get_vfs_path("/textures/sun.png")));
-    create_material(sun_material, model_dsets);
+    //material_t sun_material;
+    //sun_material.textures.push_back(load_texture(get_vfs_path("/textures/sun.png")));
+    //create_material(sun_material, model_dsets);
 
     material_t skysphere_material;
-    skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/skysphere.jpg")));
+    skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/skysphere1.png")));
+    skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/null_normal.png")));
+    skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/null_normal.png")));
+
     create_material(skysphere_material, model_dsets);
 
     skysphere_dset = ImGui_ImplVulkan_AddTexture(g_sampler, skysphere_material.textures[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -967,8 +966,6 @@ int main(int argc, char** argv)
                 render(cmd_buffer, skyspherePipeline.layout, icosphere.index_count, skyboxsphere_instance);
 
 
-
-
                 // Render the grid floor
                 //bind_pipeline(deferred_cmd_buffers, gridPipeline, geometry_desc_sets);
                 //bind_vertex_array(deferred_cmd_buffers, quad);
@@ -997,6 +994,7 @@ int main(int argc, char** argv)
                     bind_vertex_array(cmd_buffer, gModels[i].data);
                     render(cmd_buffer, current_pipeline.layout, gModels[i].data.index_count, model_instance);
                 }
+
 
 
                 end_render_target(cmd_buffer);
@@ -1099,7 +1097,7 @@ int main(int argc, char** argv)
         destroy_vertex_array(model.data);
     }
 
-    destroy_material(sun_material);
+    //destroy_material(sun_material);
     destroy_material(skysphere_material);
 
 

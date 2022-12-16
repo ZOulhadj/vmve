@@ -11,6 +11,10 @@
 
 #include "../entity.hpp"
 
+
+#include "../logging.hpp"
+
+
 enum class buffer_mode {
     standard = 2,
     triple   = 3
@@ -66,6 +70,51 @@ struct descriptor_set_layout
     VkShaderStageFlags stages;
 };
 
+
+// TODO: Add support for adding specific offsets
+template<typename T>
+struct VertexBinding
+{
+    VertexBinding(VkVertexInputRate rate)
+        : inputRate(rate), bindingSize(sizeof(T))
+    {}
+
+    // TODO: Make use of actual type instead of a VkFormat
+    void AddAttribute(VkFormat format, std::string_view = nullptr)
+    {
+        static std::size_t attributeSize = 0;
+
+        attributeSize += format_to_size(format);
+
+        if (attributeSize > bindingSize)
+        {
+            logger::err("Total attribute size is larger than binding size");
+            return;
+        }
+
+        attributes.push_back(format);
+    }
+
+    VkVertexInputRate inputRate;
+    std::size_t bindingSize;
+    std::vector<VkFormat> attributes;
+};
+
+template<typename T>
+struct PushConstant
+{
+    PushConstant(VkShaderStageFlags shaderStages)
+        : size(sizeof(T)), stages(shaderStages)
+    {}
+
+    std::size_t size;
+    VkShaderStageFlags stages;
+};
+
+struct RenderState
+{
+
+};
 
 struct PipelineInfo {
     std::vector<VkDescriptorSetLayout> descriptor_layouts;

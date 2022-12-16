@@ -109,11 +109,6 @@ image_buffer_t load_texture(const std::string& path, bool flip_y, VkFormat forma
     // Store texture data into GPU memory.
     buffer = create_texture_buffer(texture, width, height, format);
 
-    //buffer.sampler = create_sampler(VK_FILTER_LINEAR, 16);
-    //buffer.descriptor.sampler = buffer.sampler;
-    //buffer.descriptor.imageView = buffer.image.view;
-    //buffer.descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
     // Now that the texture data has been copied into GPU memory we can safely
     // delete that texture from the CPU.
     stbi_image_free(texture);

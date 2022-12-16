@@ -2,10 +2,6 @@
 
 #include "common.hpp"
 
-
-#include "../logging.hpp"
-
-
 static renderer_t* g_r = nullptr;
 static renderer_context_t* g_rc  = nullptr;
 

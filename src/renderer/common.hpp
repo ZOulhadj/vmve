@@ -89,8 +89,13 @@ static uint32_t format_to_size(VkFormat format)
     case VK_FORMAT_R32G32B32_SFLOAT:
         size = 3 * sizeof(float);
         break;
+    case VK_FORMAT_R64G64B64_SFLOAT:
+        size = 3 * sizeof(double);
     case VK_FORMAT_R32G32B32A32_SFLOAT:
         size = 4 * sizeof(float);
+        break;
+    case VK_FORMAT_R64G64B64A64_SFLOAT:
+        size = 4 * sizeof(double);
         break;
     default:
         size = 0;
