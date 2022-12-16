@@ -12,7 +12,7 @@ void create_material(material_t& material, descriptor_set_builder& dsets_builder
     for (std::size_t i = 0; i < material.textures.size(); ++i)
         dsets_builder.FillBinding(i, material.textures[i]);
 
-    dsets_builder.Build(&material.descriptor_set);
+    dsets_builder.build(&material.descriptor_set);
 }
 
 void destroy_material(material_t& material)

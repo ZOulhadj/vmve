@@ -52,16 +52,16 @@ public:
     descriptor_set_builder() = default;
     ~descriptor_set_builder();
 
-    void AddBinding(uint32_t index, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages);
+    void add_binding(uint32_t index, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages);
 
 
-    void AddBinding(uint32_t index, std::vector<buffer_t>& buffer, VkDescriptorType type, VkShaderStageFlags stages);
-    void AddBinding(uint32_t index, std::vector<image_buffer_t>& buffer, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages);
+    void add_binding(uint32_t index, std::vector<buffer_t>& buffer, VkDescriptorType type, VkShaderStageFlags stages);
+    void add_binding(uint32_t index, std::vector<image_buffer_t>& buffer, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages);
 
-    void Build();
+    void build();
 
-    void Build(VkDescriptorSet* descriptorSet);
-    void Build(std::vector<VkDescriptorSet>& descriptorSets);
+    void build(VkDescriptorSet* descriptorSet);
+    void build(std::vector<VkDescriptorSet>& descriptorSets);
 
 
     void FillBinding(uint32_t index, image_buffer_t& buffer);
@@ -70,8 +70,8 @@ public:
 
     void DestroyLayout() const;
 private:
-    void CreateLayout();
-    void AllocateDescriptorSets(VkDescriptorSet* descriptorSets, std::size_t count);
+    void create_layout();
+    void allocate_descriptor_sets(VkDescriptorSet* descriptorSets, std::size_t count);
 
     //void map_buffer(descriptor_set& dsets, const buffer_t& buffer);
     //void map_buffer(descriptor_set& dsets, const std::vector<buffer_t>& buffer);

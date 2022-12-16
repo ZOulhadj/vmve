@@ -9,7 +9,7 @@ descriptor_set_builder::~descriptor_set_builder()
         delete binding;
 }
 
-void descriptor_set_builder::AddBinding(uint32_t index, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages)
+void descriptor_set_builder::add_binding(uint32_t index, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages)
 {
     VkDescriptorSetLayoutBinding layout_binding{};
     layout_binding.binding = index;
@@ -21,7 +21,7 @@ void descriptor_set_builder::AddBinding(uint32_t index, VkSampler sampler, VkDes
     _layout_bindings.push_back(new image_binding(binding_type::image, layout_binding, type, b, sampler, layout));
 }
 
-void descriptor_set_builder::AddBinding(uint32_t index, std::vector<buffer_t>& buffer, VkDescriptorType type, VkShaderStageFlags stages)
+void descriptor_set_builder::add_binding(uint32_t index, std::vector<buffer_t>& buffer, VkDescriptorType type, VkShaderStageFlags stages)
 {
     VkDescriptorSetLayoutBinding layout_binding{};
     layout_binding.binding = index;
@@ -32,7 +32,7 @@ void descriptor_set_builder::AddBinding(uint32_t index, std::vector<buffer_t>& b
     _layout_bindings.push_back(new buffer_binding(binding_type::buffer, layout_binding, type, buffer));
 }
 
-void descriptor_set_builder::AddBinding(uint32_t index, std::vector<image_buffer_t>& buffer, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages)
+void descriptor_set_builder::add_binding(uint32_t index, std::vector<image_buffer_t>& buffer, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages)
 {
     VkDescriptorSetLayoutBinding layout_binding{};
     layout_binding.binding = index;
@@ -43,17 +43,17 @@ void descriptor_set_builder::AddBinding(uint32_t index, std::vector<image_buffer
     _layout_bindings.push_back(new image_binding(binding_type::image, layout_binding, type, buffer, sampler, layout));
 }
 
-void descriptor_set_builder::Build()
+void descriptor_set_builder::build()
 {
-    CreateLayout();
+    create_layout();
 }
 
-void descriptor_set_builder::Build(std::vector<VkDescriptorSet>& descriptorSets)
+void descriptor_set_builder::build(std::vector<VkDescriptorSet>& descriptorSets)
 {
     descriptorSets.resize(frames_in_flight);
 
-    CreateLayout();
-    AllocateDescriptorSets(descriptorSets.data(), descriptorSets.size());
+    create_layout();
+    allocate_descriptor_sets(descriptorSets.data(), descriptorSets.size());
 
     const auto& rc = get_renderer_context();
 
@@ -94,9 +94,9 @@ void descriptor_set_builder::Build(std::vector<VkDescriptorSet>& descriptorSets)
 }
 
 
-void descriptor_set_builder::Build(VkDescriptorSet* descriptorSet)
+void descriptor_set_builder::build(VkDescriptorSet* descriptorSet)
 {
-    AllocateDescriptorSets(descriptorSet, 1);
+    allocate_descriptor_sets(descriptorSet, 1);
 
     const auto& rc = get_renderer_context();
 
@@ -152,7 +152,7 @@ void descriptor_set_builder::FillBinding(uint32_t index, image_buffer_t& buffer)
     binding.buffer = { buffer };
 }
 
-void descriptor_set_builder::CreateLayout()
+void descriptor_set_builder::create_layout()
 {
     const renderer_context_t& rc = get_renderer_context();
 
@@ -168,7 +168,7 @@ void descriptor_set_builder::CreateLayout()
     vk_check(vkCreateDescriptorSetLayout(rc.device.device, &info, nullptr, &_layout));
 }
 
-void descriptor_set_builder::AllocateDescriptorSets(VkDescriptorSet* descriptorSets, std::size_t count)
+void descriptor_set_builder::allocate_descriptor_sets(VkDescriptorSet* descriptorSets, std::size_t count)
 {
     const renderer_t* r = get_renderer();
     const renderer_context_t& rc = get_renderer_context();
