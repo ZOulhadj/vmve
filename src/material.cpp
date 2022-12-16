@@ -5,7 +5,7 @@
 
 
 
-void create_material(material_t& material, DescriptorSetBuilder& dsets_builder)
+void create_material(material_t& material, descriptor_set_builder& dsets_builder)
 {
     const renderer_context_t& rc = get_renderer_context();
 

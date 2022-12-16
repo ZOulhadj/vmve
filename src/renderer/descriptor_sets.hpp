@@ -3,54 +3,54 @@
 
 #include "buffer.hpp"
 
-enum class BindingType
+enum class binding_type
 {
-    Buffer,
-    Image
+    buffer,
+    image
 };
 
-struct Binding
+struct binding
 {
-    BindingType bindingType;
+    binding_type bindingType;
 
     VkDescriptorSetLayoutBinding layout_binding;
     VkDescriptorType type;
 
 
-    Binding(BindingType bindingType, VkDescriptorSetLayoutBinding binding, VkDescriptorType descriptorType)
+    binding(binding_type bindingType, VkDescriptorSetLayoutBinding binding, VkDescriptorType descriptorType)
         : bindingType(bindingType), layout_binding(binding), type(descriptorType)
     {}
 
-    virtual ~Binding() = default;
+    virtual ~binding() = default;
 };
 
 
-struct BufferBinding : public Binding
+struct buffer_binding : public binding
 {
     std::vector<buffer_t> buffer;
 
-    BufferBinding(BindingType bindingType, VkDescriptorSetLayoutBinding layout, VkDescriptorType descriptorType, std::vector<buffer_t>& b)
-        : Binding(bindingType, layout, descriptorType), buffer(b)
+    buffer_binding(binding_type bindingType, VkDescriptorSetLayoutBinding layout, VkDescriptorType descriptorType, std::vector<buffer_t>& b)
+        : binding(bindingType, layout, descriptorType), buffer(b)
     {}
 };
 
-struct ImageBinding : public Binding
+struct image_binding : public binding
 {
     std::vector<image_buffer_t> buffer;
     VkSampler sampler;
     VkImageLayout image_layout;
 
-    ImageBinding(BindingType bindingType, VkDescriptorSetLayoutBinding layout, VkDescriptorType type, std::vector<image_buffer_t>& b, VkSampler s, VkImageLayout img_layout)
-        : Binding(bindingType, layout, type), buffer(b), sampler(s), image_layout(img_layout)
+    image_binding(binding_type bindingType, VkDescriptorSetLayoutBinding layout, VkDescriptorType type, std::vector<image_buffer_t>& b, VkSampler s, VkImageLayout img_layout)
+        : binding(bindingType, layout, type), buffer(b), sampler(s), image_layout(img_layout)
     {}
 };
 
 
-class DescriptorSetBuilder
+class descriptor_set_builder
 {
 public:
-    DescriptorSetBuilder() = default;
-    ~DescriptorSetBuilder();
+    descriptor_set_builder() = default;
+    ~descriptor_set_builder();
 
     void AddBinding(uint32_t index, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages);
 
@@ -80,7 +80,7 @@ private:
 
 
 private:
-    std::vector<Binding*> _layout_bindings;
+    std::vector<binding*> _layout_bindings;
 
     VkDescriptorSetLayout _layout{};
 };

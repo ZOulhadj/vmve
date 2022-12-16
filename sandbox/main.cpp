@@ -37,7 +37,7 @@ static window_t* window = nullptr;
 
 std::vector<VkDescriptorSet> framebuffer_id;
 
-DescriptorSetBuilder model_dsets;
+descriptor_set_builder model_dsets;
 VkSampler g_sampler;
 
 // temp
@@ -733,12 +733,12 @@ int main(int argc, char** argv)
     // create shader binding descriptions
 
     std::vector<VkDescriptorSet> geom_sets;
-    DescriptorSetBuilder geom_builder;
+    descriptor_set_builder geom_builder;
     geom_builder.AddBinding(0, camera_ubo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
     geom_builder.Build(geom_sets);
 
     std::vector<VkDescriptorSet> light_sets;
-    DescriptorSetBuilder light_builder;
+    descriptor_set_builder light_builder;
     light_builder.AddBinding(0, positions, g_sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_SHADER_STAGE_FRAGMENT_BIT);
     light_builder.AddBinding(1, normals, g_sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_SHADER_STAGE_FRAGMENT_BIT);
     light_builder.AddBinding(2, colors, g_sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -763,19 +763,19 @@ int main(int argc, char** argv)
     shader skysphereFS = create_fragment_shader(load_text_file(get_vfs_path("/shaders/skysphere.frag")));
 
 
-    VertexBinding<vertex_t> vert(VK_VERTEX_INPUT_RATE_VERTEX);
-    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
-    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
-    vert.AddAttribute(VK_FORMAT_R32G32_SFLOAT,    "UV");
-    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
-    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "BiTangent");
+    vertex_binding<vertex_t> vert(VK_VERTEX_INPUT_RATE_VERTEX);
+    vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
+    vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
+    vert.add_attribute(VK_FORMAT_R32G32_SFLOAT,    "UV");
+    vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
+    vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "BiTangent");
 
-    PushConstant<glm::mat4> pc(VK_SHADER_STAGE_VERTEX_BIT);
+    push_constant<glm::mat4> pc(VK_SHADER_STAGE_VERTEX_BIT);
 
-    RenderState geometryState;
+    render_state geometryState;
 
 
-    PipelineInfo info{};
+    pipeline_info info{};
     info.push_constant_size = pc.size;
     info.push_stages = pc.stages;
 

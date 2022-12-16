@@ -27,7 +27,7 @@ struct material_t
 };
 
 
-void create_material(material_t& material, DescriptorSetBuilder& dsets_builder);
+void create_material(material_t& material, descriptor_set_builder& dsets_builder);
 void destroy_material(material_t& material);
 
 void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, material_t& material);

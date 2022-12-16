@@ -842,7 +842,7 @@ void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_tar
 //    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
 //}
 
-pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass)
+pipeline_t create_pipeline(pipeline_info& pipelineInfo, VkRenderPass render_pass)
 {
     pipeline_t pipeline{};
 

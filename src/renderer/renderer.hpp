@@ -73,14 +73,14 @@ struct descriptor_set_layout
 
 // TODO: Add support for adding specific offsets
 template<typename T>
-struct VertexBinding
+struct vertex_binding
 {
-    VertexBinding(VkVertexInputRate rate)
+    vertex_binding(VkVertexInputRate rate)
         : inputRate(rate), bindingSize(sizeof(T))
     {}
 
     // TODO: Make use of actual type instead of a VkFormat
-    void AddAttribute(VkFormat format, std::string_view = nullptr)
+    void add_attribute(VkFormat format, std::string_view = nullptr)
     {
         static std::size_t attributeSize = 0;
 
@@ -101,9 +101,9 @@ struct VertexBinding
 };
 
 template<typename T>
-struct PushConstant
+struct push_constant
 {
-    PushConstant(VkShaderStageFlags shaderStages)
+    push_constant(VkShaderStageFlags shaderStages)
         : size(sizeof(T)), stages(shaderStages)
     {}
 
@@ -111,12 +111,12 @@ struct PushConstant
     VkShaderStageFlags stages;
 };
 
-struct RenderState
+struct render_state
 {
 
 };
 
-struct PipelineInfo {
+struct pipeline_info {
     std::vector<VkDescriptorSetLayout> descriptor_layouts;
     uint32_t push_constant_size;
     VkShaderStageFlags push_stages;
@@ -182,7 +182,7 @@ void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_tar
 void destroy_render_targets(std::vector<render_target>& render_targets);
 
 
-pipeline_t create_pipeline(PipelineInfo& pipelineInfo, VkRenderPass render_pass);
+pipeline_t create_pipeline(pipeline_info& pipelineInfo, VkRenderPass render_pass);
 void destroy_pipeline(pipeline_t& pipeline);
 
 bool begin_rendering();

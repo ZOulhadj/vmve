@@ -3,13 +3,13 @@
 #include "renderer.hpp"
 #include "../logging.hpp"
 
-DescriptorSetBuilder::~DescriptorSetBuilder()
+descriptor_set_builder::~descriptor_set_builder()
 {
     for (auto& binding : _layout_bindings)
         delete binding;
 }
 
-void DescriptorSetBuilder::AddBinding(uint32_t index, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages)
+void descriptor_set_builder::AddBinding(uint32_t index, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages)
 {
     VkDescriptorSetLayoutBinding layout_binding{};
     layout_binding.binding = index;
@@ -18,10 +18,10 @@ void DescriptorSetBuilder::AddBinding(uint32_t index, VkSampler sampler, VkDescr
     layout_binding.stageFlags = stages;
 
     std::vector<image_buffer_t> b;
-    _layout_bindings.push_back(new ImageBinding(BindingType::Image, layout_binding, type, b, sampler, layout));
+    _layout_bindings.push_back(new image_binding(binding_type::image, layout_binding, type, b, sampler, layout));
 }
 
-void DescriptorSetBuilder::AddBinding(uint32_t index, std::vector<buffer_t>& buffer, VkDescriptorType type, VkShaderStageFlags stages)
+void descriptor_set_builder::AddBinding(uint32_t index, std::vector<buffer_t>& buffer, VkDescriptorType type, VkShaderStageFlags stages)
 {
     VkDescriptorSetLayoutBinding layout_binding{};
     layout_binding.binding = index;
@@ -29,10 +29,10 @@ void DescriptorSetBuilder::AddBinding(uint32_t index, std::vector<buffer_t>& buf
     layout_binding.descriptorCount = 1;
     layout_binding.stageFlags = stages;
 
-    _layout_bindings.push_back(new BufferBinding(BindingType::Buffer, layout_binding, type, buffer));
+    _layout_bindings.push_back(new buffer_binding(binding_type::buffer, layout_binding, type, buffer));
 }
 
-void DescriptorSetBuilder::AddBinding(uint32_t index, std::vector<image_buffer_t>& buffer, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages)
+void descriptor_set_builder::AddBinding(uint32_t index, std::vector<image_buffer_t>& buffer, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages)
 {
     VkDescriptorSetLayoutBinding layout_binding{};
     layout_binding.binding = index;
@@ -40,15 +40,15 @@ void DescriptorSetBuilder::AddBinding(uint32_t index, std::vector<image_buffer_t
     layout_binding.descriptorCount = 1;
     layout_binding.stageFlags = stages;
 
-    _layout_bindings.push_back(new ImageBinding(BindingType::Image, layout_binding, type, buffer, sampler, layout));
+    _layout_bindings.push_back(new image_binding(binding_type::image, layout_binding, type, buffer, sampler, layout));
 }
 
-void DescriptorSetBuilder::Build()
+void descriptor_set_builder::Build()
 {
     CreateLayout();
 }
 
-void DescriptorSetBuilder::Build(std::vector<VkDescriptorSet>& descriptorSets)
+void descriptor_set_builder::Build(std::vector<VkDescriptorSet>& descriptorSets)
 {
     descriptorSets.resize(frames_in_flight);
 
@@ -68,8 +68,8 @@ void DescriptorSetBuilder::Build(std::vector<VkDescriptorSet>& descriptorSets)
             write.descriptorCount = 1;
 
 
-            if (_layout_bindings[i]->bindingType == BindingType::Buffer) {
-                auto binding = dynamic_cast<BufferBinding*>(_layout_bindings[i]);
+            if (_layout_bindings[i]->bindingType == binding_type::buffer) {
+                auto binding = dynamic_cast<buffer_binding*>(_layout_bindings[i]);
 
                 VkDescriptorBufferInfo buffer_info{};
                 buffer_info.buffer = binding->buffer[j].buffer;
@@ -78,8 +78,8 @@ void DescriptorSetBuilder::Build(std::vector<VkDescriptorSet>& descriptorSets)
                 write.pBufferInfo = &buffer_info;
                 vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
 
-            } else if (_layout_bindings[i]->bindingType == BindingType::Image) {
-                auto binding = dynamic_cast<ImageBinding*>(_layout_bindings[i]);
+            } else if (_layout_bindings[i]->bindingType == binding_type::image) {
+                auto binding = dynamic_cast<image_binding*>(_layout_bindings[i]);
 
                 VkDescriptorImageInfo buffer_info{};
                 buffer_info.imageLayout = binding->image_layout;
@@ -94,7 +94,7 @@ void DescriptorSetBuilder::Build(std::vector<VkDescriptorSet>& descriptorSets)
 }
 
 
-void DescriptorSetBuilder::Build(VkDescriptorSet* descriptorSet)
+void descriptor_set_builder::Build(VkDescriptorSet* descriptorSet)
 {
     AllocateDescriptorSets(descriptorSet, 1);
 
@@ -111,8 +111,8 @@ void DescriptorSetBuilder::Build(VkDescriptorSet* descriptorSet)
         write.descriptorType = _layout_bindings[i]->type;
         write.descriptorCount = 1;
 
-        if (_layout_bindings[i]->bindingType == BindingType::Buffer) {
-            auto binding = dynamic_cast<BufferBinding*>(_layout_bindings[i]);
+        if (_layout_bindings[i]->bindingType == binding_type::buffer) {
+            auto binding = dynamic_cast<buffer_binding*>(_layout_bindings[i]);
 
 
             if (binding->buffer.empty())
@@ -126,8 +126,8 @@ void DescriptorSetBuilder::Build(VkDescriptorSet* descriptorSet)
             vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
 
         }
-        else if (_layout_bindings[i]->bindingType == BindingType::Image) {
-            auto binding = dynamic_cast<ImageBinding*>(_layout_bindings[i]);
+        else if (_layout_bindings[i]->bindingType == binding_type::image) {
+            auto binding = dynamic_cast<image_binding*>(_layout_bindings[i]);
 
 
             if (binding->buffer.empty())
@@ -145,14 +145,14 @@ void DescriptorSetBuilder::Build(VkDescriptorSet* descriptorSet)
 
 }
 
-void DescriptorSetBuilder::FillBinding(uint32_t index, image_buffer_t& buffer)
+void descriptor_set_builder::FillBinding(uint32_t index, image_buffer_t& buffer)
 {
-    auto& binding = dynamic_cast<ImageBinding&>(*_layout_bindings[index]);
+    auto& binding = dynamic_cast<image_binding&>(*_layout_bindings[index]);
     // todo:
     binding.buffer = { buffer };
 }
 
-void DescriptorSetBuilder::CreateLayout()
+void descriptor_set_builder::CreateLayout()
 {
     const renderer_context_t& rc = get_renderer_context();
 
@@ -168,7 +168,7 @@ void DescriptorSetBuilder::CreateLayout()
     vk_check(vkCreateDescriptorSetLayout(rc.device.device, &info, nullptr, &_layout));
 }
 
-void DescriptorSetBuilder::AllocateDescriptorSets(VkDescriptorSet* descriptorSets, std::size_t count)
+void descriptor_set_builder::AllocateDescriptorSets(VkDescriptorSet* descriptorSets, std::size_t count)
 {
     const renderer_t* r = get_renderer();
     const renderer_context_t& rc = get_renderer_context();
@@ -323,12 +323,12 @@ void DescriptorSetBuilder::map_image(descriptor_set& dsets, const std::vector<im
 //
 //}
 #endif
-VkDescriptorSetLayout DescriptorSetBuilder::GetLayout() const
+VkDescriptorSetLayout descriptor_set_builder::GetLayout() const
 {
     return _layout;
 }
 
-void DescriptorSetBuilder::DestroyLayout() const
+void descriptor_set_builder::DestroyLayout() const
 {
     const renderer_context_t& rc = get_renderer_context();
 
