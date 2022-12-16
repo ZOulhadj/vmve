@@ -681,9 +681,6 @@ int main(int argc, char** argv)
     // Start timers
     startTime = std::chrono::high_resolution_clock::now();
 
-
-
-
     // Initialize core systems
     window = create_window("VMVE", 1280, 720);
     window->event_callback = event_callback;
