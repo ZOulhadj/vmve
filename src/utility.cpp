@@ -11,6 +11,13 @@ std::string load_text_file(std::string_view path)
 }
 
 
+void write_text_file(std::string_view path)
+{
+    std::ofstream file(path.data());
+    file << "Hello, World\n";
+    file << "This is another sentence\n";
+}
+
 double get_delta_time()
 {
 

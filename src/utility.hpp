@@ -6,9 +6,11 @@
 #include "camera.hpp"
 
 
-// Loads a plain text file from the filesytem.
-
+// Loads a plain text file from the filesystem.
 std::string load_text_file(std::string_view path);
+
+
+void write_text_file(std::string_view path);
 
 // Calculates the delta time between previous and current frame. This
 // allows for frame dependent systems such as movement and translation

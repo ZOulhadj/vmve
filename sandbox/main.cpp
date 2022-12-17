@@ -694,6 +694,8 @@ int main(int argc, char** argv)
     mount_vfs("shaders", root_dir + "assets/shaders");
     mount_vfs("fonts", root_dir + "assets/fonts");
 
+    std::string output_file = root_dir + "test.vmve";
+    write_text_file(output_file);
 
     // Create rendering passes and render targets
     g_sampler = create_sampler(VK_FILTER_LINEAR);
