@@ -12,12 +12,12 @@ layout (binding = 3) uniform sampler2D samplerDepth;
 
 layout(binding = 4) uniform scene_ubo
 {
-    float ambientStrength;
-    float specularStrength;
-    float specularShininess;
-    vec3 cameraPosition;
-    vec3 lightPosition;
-    vec3 lightColor;
+    // ambient Strength, specular strength, specular shininess, empty
+    vec4 ambientSpecular;
+    vec4 cameraPosition;
+
+    // light position (x, y, z), light strength
+    vec4 lightPosStrength;
 } scene;
 
 
@@ -51,15 +51,19 @@ void main()
 	vec3 color = texture(samplerAlbedo, inUV).rgb;
 	float depth = texture(samplerDepth, inUV).r;
 
+	float ambient_strength = scene.ambientSpecular.r;
+
+	vec3 light_position = scene.lightPosStrength.xyz;
+	float light_strength = scene.lightPosStrength.w;
 
 
-	vec3 ambient = scene.ambientStrength * color * scene.lightColor;
+	vec3 ambient = ambient_strength * color * light_strength;
 
 
 
-    vec3 viewDir    = normalize(scene.lightPosition - position);
-    vec3 lightDir   = normalize(scene.lightPosition - position);
-    vec3 diffuse = max(dot(lightDir, normal), 0.0) * color * scene.lightColor;
+    vec3 viewDir    = normalize(light_position - position);
+    vec3 lightDir   = normalize(light_position - position);
+    vec3 diffuse = max(dot(lightDir, normal), 0.0) * color * light_strength;
 
 
 

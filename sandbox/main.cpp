@@ -68,20 +68,15 @@ camera_t camera{};
 // Padding is equally important and hence the usage of the "alignas" keyword.
 //
 struct sandbox_scene {
-    float ambientStrength   = 0.1f;
-    float specularStrength  = 1.0f;
-    float specularShininess = 32.0f;
-    alignas(16) glm::vec3 cameraPosition = glm::vec3(0.0f, 2.0f, -5.0f);
-    alignas(16) glm::vec3 lightPosition = glm::vec3(2.0f, 5.0f, 2.0f);
-    alignas(16) glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    // ambient Strength, specular strength, specular shininess, empty
+    glm::vec4 ambientSpecular = glm::vec4(0.1f, 1.0f, 32.0f, 0.0f);
+    glm::vec4 cameraPosition = glm::vec4(0.0f, 2.0f, -5.0f, 0.0f);
+
+    // light position (x, y, z), light strength
+    glm::vec4 lightPosStrength = glm::vec4(2.0f, 5.0f, 2.0f, 1.0f);
 } scene;
 
 std::vector<model_t> gModels;
-
-//glm::vec3 objectTranslation = glm::vec3(0.0f);
-//glm::vec3 objectRotation = glm::vec3(0.0f);
-//glm::vec3 objectScale = glm::vec3(1.0f);
-
 
 static float temperature = 23.5;
 static float windSpeed = 2.0f;
@@ -497,11 +492,11 @@ static void render_left_window()
             ImGui::SliderFloat("Temperature", &temperature, -20.0f, 50.0f, "%.1f C");
             ImGui::SliderFloat("Wind speed", &windSpeed, 0.0f, 15.0f, "%.1f m/s");
             ImGui::Separator();
-            ImGui::SliderFloat("Ambient", &scene.ambientStrength, 0.0f, 1.0f);
-            ImGui::SliderFloat("Specular strength", &scene.specularStrength, 0.0f, 1.0f);
-            ImGui::SliderFloat("Specular shininess", &scene.specularShininess, 0.0f, 512.0f);
-            ImGui::SliderFloat3("Light position", glm::value_ptr(scene.lightPosition), -100.0f, 100.0f);
-            ImGui::SliderFloat3("Light color", glm::value_ptr(scene.lightColor), 0.0f, 1.0f);
+            ImGui::SliderFloat("Ambient", &scene.ambientSpecular.x, 0.0f, 1.0f);
+            ImGui::SliderFloat("Specular strength", &scene.ambientSpecular.y, 0.0f, 1.0f);
+            ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
+            ImGui::SliderFloat3("Light position", glm::value_ptr(scene.lightPosStrength), -100.0f, 100.0f);
+            ImGui::SliderFloat("Light strength", &scene.lightPosStrength.w, 0.0f, 1.0f);
 
             ImGui::Text("Skybox");
             static bool open = false;
@@ -761,8 +756,8 @@ int main(int argc, char** argv)
    
 
     // The create shader resources
-    std::vector<buffer_t> camera_ubo = create_uniform_buffer<view_projection>();
-    std::vector<buffer_t> scene_ubo = create_uniform_buffer<sandbox_scene>();
+    std::vector<buffer_t> camera_ubo = create_uniform_buffer(sizeof(view_projection));
+    std::vector<buffer_t> scene_ubo = create_uniform_buffer(sizeof(sandbox_scene));
 
     std::vector<image_buffer_t> positions, normals, colors, depths;
     for (auto& fb : geometry_render_targets) {
@@ -968,10 +963,10 @@ int main(int argc, char** argv)
         update_camera(camera);
         update_projection(camera);
 
-        scene.cameraPosition = camera.position;
+        scene.cameraPosition = glm::vec4(camera.position, 0.0f);
 
         // set sun position
-        translate(sun_instance, scene.lightPosition);
+        translate(sun_instance, glm::vec3(scene.lightPosStrength));
         //rotate(sun_instance, -120.0f, { 1.0f, 0.0f, 0.0f });
         //scale(sun_instance, 1.0f);
 

@@ -20,22 +20,9 @@ struct image_buffer_t
     VkFormat      format     = VK_FORMAT_UNDEFINED;
 };
 
-
-
-
 buffer_t create_buffer(uint32_t size, VkBufferUsageFlags type);
 
-template <typename T>
-std::vector<buffer_t> create_uniform_buffer()
-{
-    std::vector<buffer_t> buffers(frames_in_flight);
-
-    for (buffer_t& buffer : buffers) {
-        buffer = create_buffer(sizeof(T), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    }
-
-    return buffers;
-}
+std::vector<buffer_t> create_uniform_buffer(std::size_t buffer_size);
 
 buffer_t create_staging_buffer(void* data, uint32_t size);
 buffer_t create_gpu_buffer(uint32_t size, VkBufferUsageFlags type);

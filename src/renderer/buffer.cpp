@@ -5,8 +5,26 @@
 
 
 
- buffer_t create_buffer(uint32_t size, VkBufferUsageFlags type)
- {
+static std::size_t pad_uniform_buffer_size(size_t originalSize)
+{
+    const renderer_context_t& context = get_renderer_context();
+
+    // Get GPU minimum uniform buffer alignment
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(context.device.gpu, &properties);
+
+    std::size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
+    std::size_t alignedSize = originalSize;
+
+    if (minUboAlignment < 0)
+        return alignedSize;
+
+    // TODO: Figure out how this works
+    return (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);
+}
+
+buffer_t create_buffer(uint32_t size, VkBufferUsageFlags type)
+{
     buffer_t buffer{};
 
     const renderer_context_t& rc = get_renderer_context();
@@ -30,6 +48,21 @@
     buffer.size  = buffer_info.size;
 
     return buffer;
+}
+
+
+std::vector<buffer_t> create_uniform_buffer(std::size_t buffer_size)
+{
+    std::vector<buffer_t> buffers(frames_in_flight);
+
+    // Automatically align buffer to correct alignment
+    std::size_t size = pad_uniform_buffer_size(buffer_size);
+
+    for (buffer_t& buffer : buffers) {
+        buffer = create_buffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    }
+
+    return buffers;
 }
 
 // Maps/Fills an existing buffer with data.
