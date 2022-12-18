@@ -168,7 +168,9 @@ void destroy_render_pass(VkRenderPass render_pass);
 
 VkRenderPass create_deferred_render_pass();
 std::vector<framebuffer_t> create_deferred_render_targets(VkRenderPass render_pass, VkExtent2D extent);
-std::vector<VkCommandBuffer> begin_deferred_render_targets(VkRenderPass render_pass, const std::vector<framebuffer_t>& render_targets);
+std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, 
+                                                           const std::vector<framebuffer_t>& render_targets,
+                                                           const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 void destroy_deferred_render_targets(std::vector<framebuffer_t>& render_targets);
 void recreate_deferred_renderer_targets(VkRenderPass render_pass, std::vector<framebuffer_t>& render_targets, VkExtent2D extent);
 

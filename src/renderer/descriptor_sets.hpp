@@ -64,7 +64,7 @@ public:
     void build(std::vector<VkDescriptorSet>& descriptorSets);
 
 
-    void FillBinding(uint32_t index, image_buffer_t& buffer);
+    void fill_binding(uint32_t index, image_buffer_t& buffer);
 
     VkDescriptorSetLayout GetLayout() const;
 
@@ -72,13 +72,6 @@ public:
 private:
     void create_layout();
     void allocate_descriptor_sets(VkDescriptorSet* descriptorSets, std::size_t count);
-
-    //void map_buffer(descriptor_set& dsets, const buffer_t& buffer);
-    //void map_buffer(descriptor_set& dsets, const std::vector<buffer_t>& buffer);
-    //void map_image(descriptor_set& dsets, const image_buffer_t& buffer, VkSampler sampler, VkImageLayout layout);
-    //void map_image(descriptor_set& dsets, const std::vector<image_buffer_t>& buffer, VkSampler sampler, VkImageLayout layout);
-
-
 private:
     std::vector<binding*> _layout_bindings;
 

@@ -989,7 +989,7 @@ int main(int argc, char** argv)
         // This is where the main rendering starts
         if (swapchain_ready = begin_rendering()) {
             {
-                std::vector<VkCommandBuffer> cmd_buffer = begin_deferred_render_targets(geometry_pass, geometry_render_targets);
+                auto cmd_buffer = begin_render_target(geometry_pass, geometry_render_targets);
 
                 // Render the sky sphere
                 bind_pipeline(cmd_buffer, skyspherePipeline, geom_sets);
@@ -1036,7 +1036,7 @@ int main(int argc, char** argv)
 
             // lighting pass
             {
-                std::vector<VkCommandBuffer> cmd_buffer = begin_render_target(lighting_pass, lighting_render_targets);
+                auto cmd_buffer = begin_render_target(lighting_pass, lighting_render_targets);
                 bind_pipeline(cmd_buffer, lighting_pipeline, light_sets);
                 render_draw(cmd_buffer, lighting_pipeline.layout, renderMode);
                 end_render_target(cmd_buffer);
@@ -1045,7 +1045,7 @@ int main(int argc, char** argv)
 
             // gui pass
             {
-                std::vector<VkCommandBuffer> cmd_buffer = begin_ui_render_target(ui_pass, ui_render_targets);
+                auto cmd_buffer = begin_ui_render_target(ui_pass, ui_render_targets);
                 begin_ui();
 
                 render_begin_docking();

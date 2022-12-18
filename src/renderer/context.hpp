@@ -32,7 +32,7 @@ renderer_context_t create_renderer_context(uint32_t version,
                                            const std::vector<const char*>& requested_device_extensions,
                                            const VkPhysicalDeviceFeatures& requested_gpu_features,
                                            const window_t* window);
-void destroy_renderer_context(renderer_context_t* rc);
+void destroy_renderer_context(renderer_context_t& rc);
 
 
 #endif

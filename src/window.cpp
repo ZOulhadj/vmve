@@ -165,8 +165,12 @@ window_t* create_window(const char* name, uint32_t width, uint32_t height)
 
     glfwSetErrorCallback(glfw_error_callback);
 
-    if (!glfwInit())
+    if (!glfwInit()) {
+        logger::err("Failed to initialize GLFW");
+
         return nullptr;
+    }
+
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, true);
@@ -176,8 +180,11 @@ window_t* create_window(const char* name, uint32_t width, uint32_t height)
     window->width  = width;
     window->height = height;
 
-    if (!window->handle)
+    if (!window->handle) {
+        logger::err("Failed to create GLFW window");
+
         return nullptr;
+    }
 
     //glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 

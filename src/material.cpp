@@ -10,7 +10,7 @@ void create_material(material_t& material, descriptor_set_builder& dsets_builder
     const renderer_context_t& rc = get_renderer_context();
 
     for (std::size_t i = 0; i < material.textures.size(); ++i)
-        dsets_builder.FillBinding(i, material.textures[i]);
+        dsets_builder.fill_binding(i, material.textures[i]);
 
     dsets_builder.build(&material.descriptor_set);
 }

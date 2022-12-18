@@ -15,7 +15,7 @@ static VkInstance create_instance(uint32_t version,
     VkApplicationInfo app_info{ VK_STRUCTURE_TYPE_APPLICATION_INFO };
     app_info.pApplicationName = app_name;
     app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
-    app_info.pEngineName = "";
+    app_info.pEngineName = "Custom Engine";
     app_info.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
     app_info.apiVersion = version;
 
@@ -27,8 +27,10 @@ static VkInstance create_instance(uint32_t version,
                                                 instance_layers.data()));
 
     // check if the vulkan instance supports our requested instance layers
-    if (!compare_layers(req_layers, instance_layers))
+    if (!compare_layers(req_layers, instance_layers)) {
+        logger::err("One or more requested Vulkan instance layers are not supported");
         return nullptr;
+    }
 
 
     // get instance layers
@@ -40,8 +42,10 @@ static VkInstance create_instance(uint32_t version,
     // check if instance supports all requested extensions
     // note that there is no need to check the extensions returned by glfw as
     // this is already queried.
-    if (!compare_extensions(req_extensions, instance_extensions))
+    if (!compare_extensions(req_extensions, instance_extensions)) {
+        logger::err("One or more requested Vulkan instance extensions are not supported");
         return nullptr;
+    }
 
     // get instance extensions
     uint32_t glfw_count = 0;
@@ -96,12 +100,13 @@ static device_t create_device(VkInstance instance,
 
     // Check if there are any GPU's on the system that even support Vulkan
     if (gpus.empty()) {
-        printf("Failed to find any GPU that supports Vulkan.\n");
+        logger::err("Failed to find any GPU that supports Vulkan");
         return {};
     }
 
 
     std::vector<gpu_info> suitable_gpus;
+    std::vector<const char*> suitable_gpu_names;
 
     for (std::size_t i = 0; i < gpus.size(); ++i) {
         // Base gpu requirements
@@ -153,32 +158,28 @@ static device_t create_device(VkInstance instance,
             info.present_index = present_queue_index.value();
 
             suitable_gpus.push_back(info);
+            suitable_gpu_names.push_back(gpu_properties.deviceName);
         }
     }
 
     if (suitable_gpus.empty()) {
-        printf("Failed to find GPU that supports requested features.\n");
+        logger::err("Failed to find GPU that supports requested features");
         return {};
     }
 
-    // todo: Here we should query for a GPU.
-    // If we only have a single suitable GPU then there is no need to do further filtering
-    // and thus, we can simply return that one GPU we do have.
-//    if (suitable_gpus.size() == 1) {
-//        const gpu_info& info = suitable_gpus[0];
-//
-//        device.gpu = info.gpu;
-//        device.graphics_index = info.graphics_index;
-//        device.present_index = info.present_index;
-//    } else {
-//        // If however, we have multiple GPU's then we have and choose which one we
-//        // actually want to use. We always prefer to use a dedicated GPU over an
-//        // integrated one.
-//        assert("todo: multiple GPU checks has not been implemented.");
-//    }
 
-    const gpu_info& info = suitable_gpus[0];
+    // Print the number of GPUs found with their names
+    logger::info("Found {} suitable GPUs: ", suitable_gpus.size());
+    for (std::size_t i = 0; i < suitable_gpus.size(); ++i) {
+        logger::info("\t #{}: {}", i + 1, suitable_gpu_names[i]);
+    }
 
+    // todo: Here we should query for a GPU from the list of suitable GPUs.
+    const int gpu_index = 0;
+
+    logger::info("Selected GPU: {}", suitable_gpu_names[gpu_index]);
+
+    const gpu_info& info = suitable_gpus[gpu_index];
     device.gpu = info.gpu;
     device.graphics_index = info.graphics_index;
     device.present_index = info.present_index;
@@ -279,18 +280,13 @@ renderer_context_t create_renderer_context(uint32_t version,
 }
 
 // Deallocates/frees memory allocated by the renderer context.
-void destroy_renderer_context(renderer_context_t* rc)
+void destroy_renderer_context(renderer_context_t& rc)
 {
-    if (!rc)
-        return;
+    vmaDestroyAllocator(rc.allocator);
+    vkDestroyDevice(rc.device.device, nullptr);
+    vkDestroySurfaceKHR(rc.instance, rc.surface, nullptr);
 
-    vmaDestroyAllocator(rc->allocator);
-    vkDestroyDevice(rc->device.device, nullptr);
-    vkDestroySurfaceKHR(rc->instance, rc->surface, nullptr);
-
-    vkDestroyInstance(rc->instance, nullptr);
-
-    free(rc);
+    vkDestroyInstance(rc.instance, nullptr);
 }
 
 

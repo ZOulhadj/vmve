@@ -557,7 +557,9 @@ std::vector<framebuffer_t> create_deferred_render_targets(VkRenderPass render_pa
 }
 
 
-std::vector<VkCommandBuffer> begin_deferred_render_targets(VkRenderPass render_pass, const std::vector<framebuffer_t>& render_targets)
+std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, 
+                                               const std::vector<framebuffer_t>& render_targets,
+                                               const glm::vec4& clear_color)
 {
     vk_check(vkResetCommandBuffer(geometry_cmd_buffers[current_frame], 0));
 
@@ -582,9 +584,9 @@ std::vector<VkCommandBuffer> begin_deferred_render_targets(VkRenderPass render_p
     vkCmdSetScissor(geometry_cmd_buffers[current_frame], 0, 1, &scissor);
 
     std::array<VkClearValue, 4> clear_values{};
-    clear_values[0].color = { { 0.0f, 0.0f, 0.0f, 0.0f, } };
-    clear_values[1].color = { { 0.0f, 0.0f, 0.0f, 0.0f, } };
-    clear_values[2].color = { { 0.0f, 0.0f, 0.0f, 0.0f, } };
+    clear_values[0].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
+    clear_values[1].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
+    clear_values[2].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
     clear_values[3].depthStencil = { 0.0f, 0 };
  
 
@@ -1095,7 +1097,7 @@ renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, 
 {
     logger::info("Initializing Vulkan renderer");
 
-    renderer_t* renderer = (renderer_t*)malloc(sizeof(renderer_t));
+    renderer_t* renderer = new renderer_t();
 
     const std::vector<const char*> layers {
         "VK_LAYER_KHRONOS_validation",
@@ -1153,8 +1155,6 @@ void destroy_renderer(renderer_t* renderer)
     logger::info("Terminating Vulkan renderer");
 
     destroy_command_pool();
-
-
     vkDestroyDescriptorPool(renderer->ctx.device.device, renderer->descriptor_pool, nullptr);
     destroy_shader_compiler(renderer->compiler);
     destroy_submit_context(renderer->submit);
@@ -1164,7 +1164,9 @@ void destroy_renderer(renderer_t* renderer)
 
     destroy_swapchain(g_swapchain);
 
-    destroy_renderer_context(&renderer->ctx);
+    destroy_renderer_context(renderer->ctx);
+
+    delete renderer;
 }
 
 renderer_t* get_renderer()
