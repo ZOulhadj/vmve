@@ -10,7 +10,7 @@
 
 static void glfw_error_callback(int code, const char* description)
 {
-     printf("(%d) %s\n", code, description);
+    logger::err("GLFW error ({} : {})", code, description);
 }
 
 static void window_close_callback(GLFWwindow* window)
@@ -65,7 +65,6 @@ static void window_resize_callback(GLFWwindow* window, int width, int height)
     // todo: window resizing is done within the framebuffer callback since that
     // todo: returns the actual pixel count of the display. This ensures that
     // todo: for monitors with a high DPI we return the real pixels.
-    logger::info("Window resizing ({}, {})", width, height);
 }
 
 static void window_framebuffer_resize_callback(GLFWwindow* window, int width, int height)

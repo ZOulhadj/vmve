@@ -68,7 +68,7 @@ public:
 
     VkDescriptorSetLayout GetLayout() const;
 
-    void DestroyLayout() const;
+    void destroy_layout() const;
 private:
     void create_layout();
     void allocate_descriptor_sets(VkDescriptorSet* descriptorSets, std::size_t count);

@@ -2,7 +2,7 @@
 #define MY_ENGINE_TIME_HPP
 
 
-struct Duration
+struct duration
 {
     int hours;
     int minutes;
@@ -10,10 +10,10 @@ struct Duration
 };
 
 
-using Clock     = std::chrono::high_resolution_clock;
-using TimePoint = Clock::time_point;
+using typedef_clock      = std::chrono::high_resolution_clock;
+using typedef_time_point = typedef_clock::time_point;
 
-Duration GetDuration(TimePoint start, TimePoint end = Clock::now());
+duration get_duration(typedef_time_point start, typedef_time_point end = typedef_clock::now());
 
 
 #endif

@@ -17,10 +17,10 @@ void begin_ui();
 void end_ui(std::vector<VkCommandBuffer>& buffers);
 
 
-std::string RenderFileExplorer(const std::string& root_dir, bool* open);
+std::string render_file_explorer(std::string_view root);
 
 
 // TEMP
-void RenderDemoWindow();
+void render_demo_window();
 
 #endif

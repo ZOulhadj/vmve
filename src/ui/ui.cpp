@@ -12,6 +12,7 @@ static void custom_style() {
     ImGuiStyle& style = ImGui::GetStyle();
 
     style.TabRounding = 0.0f;
+    style.FrameRounding = 2.0f;
 }
 
 static void custom_colors() {
@@ -92,8 +93,7 @@ ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass ren
     io.ConfigDockingWithShift = true;
     //io.IniFilename = nullptr;
     io.Fonts->AddFontDefault();
-    
-    //ImGui::StyleColorsDark();
+
     custom_style();
     custom_colors();
 
@@ -165,70 +165,66 @@ void end_ui(std::vector<VkCommandBuffer>& buffers)
 
 
 
-std::string RenderFileExplorer(const std::string& root_dir, bool* open)
+std::string render_file_explorer(std::string_view root)
 {
-    static std::string current_dir = root_dir;
+    static std::string current_dir = root.data();
     static std::string file;
     static std::string complete_path;
 
-    static std::vector<filesystem_node> files = get_files_in_directory(current_dir.c_str());
+    static std::vector<directory_item> items = get_directory_items(current_dir.c_str());
     static int index = 0;
 
-
-    ImGui::SetNextWindowSize({ 600, 480 });
-    ImGui::Begin("Filesystem", open);
-
-    if (ImGui::Button("Open")) {
-        complete_path = current_dir + '/' + file.c_str();
-    }
-
     ImGui::SameLine();
+    ImGui::Text("[%d]", items.size());
 
-    if (ImGui::Button("Refresh")) {
-        files = get_files_in_directory(current_dir);
-    }
-
-    if (ImGui::BeginListBox("##empty", { -FLT_MIN, ImGui::GetContentRegionAvail().y })) {
-        for (std::size_t i = 0; i < files.size(); ++i) {
-            const bool is_selected = (index == i);
-
-            const filesystem_node_type file_type = files[i].type;
-            const std::string file_name = files[i].name;
+    if (ImGui::BeginListBox("##empty", ImVec2(-FLT_MIN, 0))) {
+        for (std::size_t i = 0; i < items.size(); ++i) {
+            const directory_item_type file_type = items[i].type;
+            const std::string file_name = items[i].name;
 
             const ImVec2 combo_pos = ImGui::GetCursorScreenPos();
             ImGui::SetCursorScreenPos(ImVec2(combo_pos.x + ImGui::GetStyle().FramePadding.x, combo_pos.y));
 
-            const bool selected = ImGui::Selectable(std::string("##" + file_name).c_str(), is_selected);
+            const bool selected = ImGui::Selectable(std::string("##" + file_name).c_str(), index == i);
             ImGui::SameLine();
+
+
+#if 0
             ImGui::Text(file_name.c_str());
 
             if (selected) {
-                if (file_type == filesystem_node_type::file) {
+                if (file_type == directory_item_type::file) {
                     file = file_name;
                     index = i;
                 }
-                else if (file_type == filesystem_node_type::directory) {
-                    current_dir = files[i].path;
-                    files = get_files_in_directory(current_dir);
+                else if (file_type == directory_item_type::directory) {
+                    current_dir = items[i].path;
+                    items = get_directory_items(current_dir);
                     index = 0;
                 }
             }
-
-            //if (file_type == filesystem_node_type::file) {
-            //    if (selected) {
-            //        file = file_name;
-            //        index = i;
-            //    }
-            //} else if (file_type == filesystem_node_type::directory) {
-            //    if (selected) {
-            //        current_dir = files[i].path;
-            //        files = get_files_in_directory(current_dir);
-            //        index = 0;
-            //    }
-            //}
-
+#else
+           
+            if (file_type == directory_item_type::file) {
+                if (selected) {
+                    file = file_name;
+                    index = i;
+                    complete_path = current_dir + '/' + file;
+                }
+                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), file_name.c_str());
+            }
+            else if (file_type == directory_item_type::directory) {
+                if (selected) {
+                    current_dir = items[i].path;
+                    complete_path = current_dir;
+                    items = get_directory_items(current_dir);
+                    index = 0;
+                }
+                ImGui::TextColored(ImVec4(0.5, 0.5, 0.5, 1.0), file_name.c_str());
+            }
+#endif
             // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-            if (is_selected)
+            if (selected)
                 ImGui::SetItemDefaultFocus();
 
 
@@ -236,14 +232,10 @@ std::string RenderFileExplorer(const std::string& root_dir, bool* open)
         ImGui::EndListBox();
     }
 
-
-    ImGui::End();
-
-
     return complete_path;
 }
 
-void RenderDemoWindow()
+void render_demo_window()
 {
     static bool show = false;
     if (ImGui::Button("Show demo window"))

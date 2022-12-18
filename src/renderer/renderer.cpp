@@ -708,6 +708,8 @@ std::vector<render_target> create_ui_render_targets(VkRenderPass render_pass, Vk
 
 void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_target>& render_targets, VkExtent2D extent)
 {
+    renderer_wait();
+
     destroy_render_targets(render_targets);
 
     render_targets = create_ui_render_targets(render_pass, extent);

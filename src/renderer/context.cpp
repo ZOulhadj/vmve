@@ -2,6 +2,8 @@
 
 #include "common.hpp"
 
+#include "../logging.hpp"
+
 static VkInstance create_instance(uint32_t version,
                                   const char* app_name,
                                   const std::vector<const char*>& req_layers,
@@ -211,8 +213,11 @@ static device_t create_device(VkInstance instance,
     // then the device extension "VK_KHR_portability_subset" must be returned
     // when querying for device extensions. If found, we must ensure that this
     // extension is enabled.
-    if (has_extensions("VK_KHR_portability_subset", device_properties))
+    if (has_extensions("VK_KHR_portability_subset", device_properties)) {
+        logger::warn("Using {} extension", "VK_KHR_portability_subset");
+
         device_extensions.push_back("VK_KHR_portability_subset");
+    }
 
 
     VkDeviceCreateInfo device_info{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };

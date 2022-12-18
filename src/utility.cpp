@@ -1,21 +1,12 @@
 #include "utility.hpp"
 
-
-std::string load_text_file(std::string_view path)
+std::string load_file(std::string_view path)
 {
     std::ifstream file(path.data());
     std::stringstream buffer;
     buffer << file.rdbuf();
 
     return buffer.str();
-}
-
-
-void write_text_file(std::string_view path)
-{
-    std::ofstream file(path.data());
-    file << "Hello, World\n";
-    file << "This is another sentence\n";
 }
 
 double get_delta_time()

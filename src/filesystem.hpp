@@ -2,22 +2,22 @@
 #define MYENGINE_FILESYSTEM_HPP
 
 
-enum class filesystem_node_type
+enum class directory_item_type
 {
     unknown,
     file,
     directory,
 };
 
-struct filesystem_node
+struct directory_item
 {
-    filesystem_node_type type;
+    directory_item_type type;
 
     std::string name;
     std::string path;
     std::size_t size;
 };
 
-std::vector<filesystem_node> get_files_in_directory(const std::string& directory);
+std::vector<directory_item> get_directory_items(const std::string& directory);
 
 #endif

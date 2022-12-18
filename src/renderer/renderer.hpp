@@ -30,7 +30,6 @@ struct swapchain_t {
     VkSwapchainKHR handle;
 
     std::vector<image_buffer_t> images;
-    //image_buffer_t depth_image;
 };
 
 struct Frame {
@@ -191,13 +190,12 @@ void end_rendering();
 
 std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, const std::vector<render_target>& render_targets);
 std::vector<VkCommandBuffer> begin_ui_render_target(VkRenderPass render_pass, const std::vector<render_target>& render_targets);
-//std::vector<VkCommandBuffer> begin_viewport_render_pass(VkRenderPass render_pass, const std::vector<framebuffer>& framebuffers);
-//std::vector<VkCommandBuffer> begin_ui_render_pass(VkRenderPass render_pass, const std::vector<framebuffer>& framebuffers);
 void end_render_target(std::vector<VkCommandBuffer>& buffers);
 
 void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
 void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, instance_t& instance);
 void render_draw(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode);
+
 // Indicates to the GPU to wait for all commands to finish before continuing.
 // Often used when create or destroying resources in device local memory.
 void renderer_wait();

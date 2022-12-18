@@ -1,6 +1,6 @@
 #include "time.hpp"
 
-Duration GetDuration(TimePoint start, TimePoint end /*= Clock::now()*/)
+duration get_duration(typedef_time_point start, typedef_time_point end /*= clock::now()*/)
 {
     const auto duration = end - start;
 

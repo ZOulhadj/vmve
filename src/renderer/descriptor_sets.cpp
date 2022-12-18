@@ -328,7 +328,7 @@ VkDescriptorSetLayout descriptor_set_builder::GetLayout() const
     return _layout;
 }
 
-void descriptor_set_builder::DestroyLayout() const
+void descriptor_set_builder::destroy_layout() const
 {
     const renderer_context_t& rc = get_renderer_context();
 

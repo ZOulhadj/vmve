@@ -35,12 +35,14 @@ public:
     }
 
     static std::vector<log_message>& get_logs();
+    static std::size_t get_log_limit();
+
     static void clear_logs();
 private:
     static void check_log_limit();
     static void log(log_type type, const std::string& message);
 private:
-    static const std::size_t log_limit = 200;
+    static const std::size_t _log_limit = 200;
 
     static std::vector<log_message> _logs;
 };

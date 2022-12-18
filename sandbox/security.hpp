@@ -40,22 +40,22 @@ aes_data aes_encrypt(const std::string& text)
     encryption.SetKeyWithIV(data.key, data.key.size(), data.iv);
 
     // Encrypt text
-    CryptoPP::StringSource s(text, true, new CryptoPP::StreamTransformationFilter(encryption,new CryptoPP::StringSink(data.data)));
+    CryptoPP::StringSource s(text, true, new CryptoPP::StreamTransformationFilter(encryption, new CryptoPP::StringSink(data.data)));
 
 
     return data;
 }
 
-std::string aes_decrypt(const aes_data& data)
+std::string aes_decrypt(std::string_view data, const CryptoPP::SecByteBlock& key, const CryptoPP::SecByteBlock& iv)
 {
     std::string text;
 
     // Set decryption key and IV
     CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryption;
-    decryption.SetKeyWithIV(data.key, data.key.size(), data.iv);
+    decryption.SetKeyWithIV(key, key.size(), iv);
 
     // Decrypt
-    CryptoPP::StringSource s(data.data, true, new CryptoPP::StreamTransformationFilter(decryption, new CryptoPP::StringSink(text)));
+    CryptoPP::StringSource s(data.data(), true, new CryptoPP::StreamTransformationFilter(decryption, new CryptoPP::StringSink(text)));
 
     return text;
 }

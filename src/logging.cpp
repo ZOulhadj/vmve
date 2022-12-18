@@ -5,7 +5,7 @@ std::vector<log_message> logger::_logs;
 
 void logger::check_log_limit()
 {
-    if (_logs.size() < log_limit)
+    if (_logs.size() < _log_limit)
         return;
 
     // At this point, the number of logs have reached their maximum limit.
@@ -18,8 +18,8 @@ void logger::log(log_type type, const std::string& message)
 {
     check_log_limit();
 
-    log_message msg;
-    msg.type = type;
+    log_message msg{};
+    msg.type    = type;
     msg.message = message;
 
     _logs.push_back(msg);
@@ -32,6 +32,11 @@ void logger::log(log_type type, const std::string& message)
 std::vector<log_message>& logger::get_logs()
 {
     return _logs;
+}
+
+std::size_t logger::get_log_limit()
+{
+    return _log_limit;
 }
 
 void logger::clear_logs()

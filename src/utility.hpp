@@ -5,12 +5,27 @@
 #include "window.hpp"
 #include "camera.hpp"
 
+class benchmark
+{
+public:
+    benchmark()
+        : _start(std::chrono::high_resolution_clock::now())
+    {}
+
+    double get_time() const
+    {
+        const auto now = std::chrono::high_resolution_clock::now();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(now - _start).count();
+    }
+
+private:
+    std::chrono::high_resolution_clock::time_point _start;
+};
+
+
 
 // Loads a plain text file from the filesystem.
-std::string load_text_file(std::string_view path);
-
-
-void write_text_file(std::string_view path);
+std::string load_file(std::string_view path);
 
 // Calculates the delta time between previous and current frame. This
 // allows for frame dependent systems such as movement and translation

@@ -31,7 +31,7 @@
 // Application specific header files
 #include "variables.hpp"
 #include "security.hpp"
-
+#include "vmve.hpp"
 
 static window_t* window = nullptr;
 
@@ -49,10 +49,8 @@ glm::vec2 resize_extent;
 pipeline_t geometry_pipeline{};
 pipeline_t lighting_pipeline{};
 
-//pipeline_t gridPipeline{};
 pipeline_t skyspherePipeline{};
 pipeline_t wireframePipeline{};
-//pipeline_t billboardPipeline{};
 
 
 pipeline_t current_pipeline{};
@@ -69,7 +67,7 @@ camera_t camera{};
 //
 // Padding is equally important and hence the usage of the "alignas" keyword.
 //
-struct SandboxScene {
+struct sandbox_scene {
     float ambientStrength   = 0.1f;
     float specularStrength  = 1.0f;
     float specularShininess = 32.0f;
@@ -102,31 +100,6 @@ static camera_mode cam_mode = camera_mode::first_person;
 
 VkDescriptorSet skysphere_dset;
 
-// Global GUI flags and settings
-
-
-// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-// because it would be confusing to have two docking targets within each others.
-static ImGuiWindowFlags docking_flags = ImGuiWindowFlags_MenuBar |
-                                        ImGuiWindowFlags_NoDocking |
-                                        ImGuiWindowFlags_NoTitleBar |
-                                        ImGuiWindowFlags_NoCollapse |
-                                        ImGuiWindowFlags_NoResize |
-                                        ImGuiWindowFlags_NoMove |
-                                        ImGuiWindowFlags_NoNavFocus |
-                                        ImGuiWindowFlags_NoBringToFrontOnFocus ;
-
-static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode; // ImGuiDockNodeFlags_NoTabBar
-
-static ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
-
-const char* object_window   = "Object";
-const char* console_window  = "Console";
-const char* viewport_window = "Viewport";
-const char* scene_window    = "Global";
-
-static bool editor_open = false;
-static bool window_open = true;
 
 //VkDescriptorSet a;
 //VkDescriptorSet n;
@@ -153,6 +126,35 @@ static void handle_input(camera_t& camera, double deltaTime)
     //    if (is_key_down(GLFW_KEY_E))
     //        camera.roll += camera.roll_speed * deltaTime;
 }
+
+#pragma region UI
+
+// Global GUI flags and settings
+
+
+// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+// because it would be confusing to have two docking targets within each others.
+static ImGuiWindowFlags docking_flags = ImGuiWindowFlags_MenuBar |
+ImGuiWindowFlags_NoDocking |
+ImGuiWindowFlags_NoTitleBar |
+ImGuiWindowFlags_NoCollapse |
+ImGuiWindowFlags_NoResize |
+ImGuiWindowFlags_NoMove |
+ImGuiWindowFlags_NoNavFocus |
+ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode; // ImGuiDockNodeFlags_NoTabBar
+
+static ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
+
+const char* object_window = "Object";
+const char* console_window = "Console";
+const char* viewport_window = "Viewport";
+const char* scene_window = "Global";
+
+static bool editor_open = false;
+static bool window_open = true;
+
 
 static void render_begin_docking()
 {
@@ -192,15 +194,12 @@ static void render_main_menu()
     static bool about_open = false;
     static bool load_model_open = false;
     static bool export_model_open = false;
-    static bool enter_key_open = false;
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
 
             load_model_open = ImGui::MenuItem("Load model");
             export_model_open = ImGui::MenuItem("Export model");
-            enter_key_open = ImGui::MenuItem("Enter key");
-
             ImGui::MenuItem("Exit");
 
             ImGui::EndMenu();
@@ -216,7 +215,7 @@ static void render_main_menu()
                     ImGui::StyleColorsDark();
                     isLight = false;
                 }
-                
+
                 if (ImGui::MenuItem("Light", "", &isLight)) {
                     ImGui::StyleColorsLight();
                     isDark = false;
@@ -258,7 +257,8 @@ static void render_main_menu()
 
 
     if (load_model_open) {
-        std::string model_path = RenderFileExplorer(get_vfs_path("/models"), &load_model_open);
+        ImGui::Begin("Load Model");
+        std::string model_path = render_file_explorer(get_vfs_path("/models"));
 
         if (!model_path.empty()) {
             // todo: is renderer_wait required here?
@@ -267,44 +267,77 @@ static void render_main_menu()
 
             load_model_open = false;
         }
-    }
-
-    if (export_model_open)
-        RenderFileExplorer(get_vfs_path("/models"), &export_model_open);
-
-    if (enter_key_open)
-    {
-        static char key[20];
-        static bool show_key = false;
-        static bool encryptionMode = false;
-
-        ImGui::Begin("Enter key", &enter_key_open);
-
-        ImGui::Button("Generate key");
-        ImGui::InputText("Key", key, 20, show_key ? ImGuiInputTextFlags_None : ImGuiInputTextFlags_Password);
-        ImGui::Checkbox("Show key", &show_key);
-
-
-        ImGui::Text("Encryption mode");
-        ImGui::Checkbox("AES", &encryptionMode);
-        ImGui::SameLine();
-        ImGui::Checkbox("DH", &encryptionMode);
-        ImGui::SameLine();
-        ImGui::Checkbox("GCM", &encryptionMode);
-        ImGui::SameLine();
-        ImGui::Checkbox("RC6", &encryptionMode);
-
-
-        ImGui::Button("Apply");
-
-
-
-
-
 
         ImGui::End();
     }
-        
+
+    if (export_model_open) {
+        static bool use_encryption = false;
+        static bool show_key = false;
+        static bool encryptionMode = false;
+        static char filename[50];
+
+        ImGui::Begin("Export Model", &export_model_open);
+
+        std::string current_path = render_file_explorer(get_vfs_path("/models"));
+
+        if (ImGui::Button("Open"))
+            logger::info("Opening {}", current_path);
+
+        ImGui::InputText("File name", filename, 50);
+
+        ImGui::Checkbox("Encryption", &use_encryption);
+        if (use_encryption) {
+
+            static CryptoPP::SecByteBlock key{};
+            static CryptoPP::SecByteBlock iv{};
+            static std::string k;
+            static std::string i;
+
+            if (ImGui::Button("Generate key")) {
+                CryptoPP::AutoSeededRandomPool random_pool;
+
+                // Set key and IV byte lengths
+                key = CryptoPP::SecByteBlock(CryptoPP::AES::DEFAULT_KEYLENGTH);
+                iv = CryptoPP::SecByteBlock(CryptoPP::AES::BLOCKSIZE);
+
+                // Generate key and IV
+                random_pool.GenerateBlock(key, key.size());
+                random_pool.GenerateBlock(iv, iv.size());
+
+                // Set key and IV to encryption mode
+                CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
+                encryption.SetKeyWithIV(key, key.size(), iv);
+
+
+                k = std::string(reinterpret_cast<const char*>(&key[0]), key.size());
+                i = std::string(reinterpret_cast<const char*>(&iv[0]), iv.size());
+            }
+
+            ImGui::SameLine();
+            ImGui::Button("Copy to clipboard");
+
+            ImGui::Text("Key: %s", k.c_str());
+            ImGui::Text("IV: %s", i.c_str());
+
+            ImGui::Text("Encryption mode");
+            ImGui::Checkbox("AES", &encryptionMode);
+            ImGui::SameLine();
+            ImGui::Checkbox("DH", &encryptionMode);
+            ImGui::SameLine();
+            ImGui::Checkbox("GCM", &encryptionMode);
+            ImGui::SameLine();
+            ImGui::Checkbox("RC6", &encryptionMode);
+
+            //ImGui::InputText("Key", key, 20, show_key ? ImGuiInputTextFlags_None : ImGuiInputTextFlags_Password);
+            //ImGui::Checkbox("Show key", &show_key);
+        }
+
+
+        ImGui::Button("Export");
+
+        ImGui::End();
+    }
 }
 
 static void render_dockspace()
@@ -417,7 +450,7 @@ static void render_left_window()
     {
         if (ImGui::CollapsingHeader("Application"))
         {
-            const auto [hours, minutes, seconds] = GetDuration(startTime);
+            const auto [hours, minutes, seconds] = get_duration(startTime);
 
             ImGui::Text("Uptime: %d:%d:%d", hours, minutes, seconds);
 
@@ -477,7 +510,7 @@ static void render_left_window()
                 open = true;
 
             if (open) {
-                std::string path = RenderFileExplorer(get_vfs_path("/textures"), &open);
+                std::string path = render_file_explorer(get_vfs_path("/textures"));
 
 
                 // If a valid path is found, delete current texture, load and create the new texture
@@ -579,7 +612,7 @@ static void render_left_window()
 
         ImGui::Separator();
 
-        RenderDemoWindow();
+        render_demo_window();
     }
     ImGui::End();
 }
@@ -590,6 +623,9 @@ static void render_bottom_window()
 
     ImGui::Begin(console_window, &window_open, window_flags);
     {
+        const std::vector<log_message>& logs = logger::get_logs();
+
+
         if (ImGui::Button("Clear"))
             logger::clear_logs();
 
@@ -597,20 +633,24 @@ static void render_bottom_window()
         ImGui::Button("Export");
         ImGui::SameLine();
         ImGui::Checkbox("Auto-scroll", &auto_scroll);
+        ImGui::SameLine();
+        ImGui::Text("Logs: %d/%d", logs.size(), logger::get_log_limit());
         ImGui::Separator();
 
         static const ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
         static const ImVec4 yellow = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
         static const ImVec4 red = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-        
+
         ImGui::BeginChild("Logs", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-        for (auto& log : logger::get_logs()) {
+        for (auto& log : logs) {
             ImVec4 log_color;
             if (log.type == log_type::info) {
                 log_color = white;
-            } else if (log.type == log_type::warning) {
+            }
+            else if (log.type == log_type::warning) {
                 log_color = yellow;
-            } else if (log.type == log_type::error) {
+            }
+            else if (log.type == log_type::error) {
                 log_color = red;
             }
 
@@ -629,7 +669,7 @@ static void render_bottom_window()
 
         auto_scroll = ImGui::GetScrollY() == ImGui::GetScrollMaxY();
 
-    
+
         ImGui::EndChild();
     }
     ImGui::End();
@@ -669,10 +709,9 @@ static void render_viewport_window()
     }
     ImGui::End();
 }
+#pragma endregion
 
 static void event_callback(event& e);
-
-
 
 int main(int argc, char** argv)
 {
@@ -687,22 +726,12 @@ int main(int argc, char** argv)
 
     renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
-    // Mount specific VFS folders
-    const std::string root_dir = "C:/Users/zakar/Projects/vmve/";
-    mount_vfs("models", root_dir + "assets/models");
-    mount_vfs("textures", root_dir + "assets/textures");
-    mount_vfs("shaders", root_dir + "assets/shaders");
-    mount_vfs("fonts", root_dir + "assets/fonts");
-
-    std::string output_file = root_dir + "test.vmve";
-    write_text_file(output_file);
-
     // Create rendering passes and render targets
     g_sampler = create_sampler(VK_FILTER_LINEAR);
 
     VkRenderPass geometry_pass = create_deferred_render_pass();
     VkRenderPass lighting_pass = create_render_pass();
-    VkRenderPass ui_pass       = create_ui_render_pass();
+    VkRenderPass ui_pass = create_ui_render_pass();
 
     // Deferred rendering (2 passes)
     std::vector<framebuffer_t> geometry_render_targets = create_deferred_render_targets(geometry_pass, { 1280, 720 });
@@ -720,9 +749,20 @@ int main(int argc, char** argv)
         framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(g_sampler, lighting_render_targets[i].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
-     // The cretae shader resources
+
+
+    // Mount specific VFS folders
+    const std::string root_dir = "C:/Users/zakar/Projects/vmve/";
+    mount_vfs("models", root_dir + "assets/models");
+    mount_vfs("textures", root_dir + "assets/textures");
+    mount_vfs("shaders", root_dir + "assets/shaders");
+    mount_vfs("fonts", root_dir + "assets/fonts");
+
+   
+
+    // The create shader resources
     std::vector<buffer_t> camera_ubo = create_uniform_buffer<view_projection>();
-    std::vector<buffer_t> scene_ubo = create_uniform_buffer<SandboxScene>();
+    std::vector<buffer_t> scene_ubo = create_uniform_buffer<sandbox_scene>();
 
     std::vector<image_buffer_t> positions, normals, colors, depths;
     for (auto& fb : geometry_render_targets) {
@@ -756,13 +796,13 @@ int main(int argc, char** argv)
 
 
 
-    shader geometry_vs = create_vertex_shader(load_text_file(get_vfs_path("/shaders/deferred/geometry.vert")));
-    shader geometry_fs = create_fragment_shader(load_text_file(get_vfs_path("/shaders/deferred/geometry.frag")));
-    shader lighting_vs = create_vertex_shader(load_text_file(get_vfs_path("/shaders/deferred/lighting.vert")));
-    shader lighting_fs = create_fragment_shader(load_text_file(get_vfs_path("/shaders/deferred/lighting.frag")));
+    shader geometry_vs = create_vertex_shader(load_file(get_vfs_path("/shaders/deferred/geometry.vert")));
+    shader geometry_fs = create_fragment_shader(load_file(get_vfs_path("/shaders/deferred/geometry.frag")));
+    shader lighting_vs = create_vertex_shader(load_file(get_vfs_path("/shaders/deferred/lighting.vert")));
+    shader lighting_fs = create_fragment_shader(load_file(get_vfs_path("/shaders/deferred/lighting.frag")));
 
-    shader skysphereVS = create_vertex_shader(load_text_file(get_vfs_path("/shaders/skysphere.vert")));
-    shader skysphereFS = create_fragment_shader(load_text_file(get_vfs_path("/shaders/skysphere.frag")));
+    shader skysphereVS = create_vertex_shader(load_file(get_vfs_path("/shaders/skysphere.vert")));
+    shader skysphereFS = create_fragment_shader(load_file(get_vfs_path("/shaders/skysphere.frag")));
 
 
     vertex_binding<vertex_t> vert(VK_VERTEX_INPUT_RATE_VERTEX);
@@ -834,15 +874,8 @@ int main(int argc, char** argv)
 
 
     // Delete all individual shaders since they are now part of the various pipelines
-    //destroy_shader(billboardFS);
-    //destroy_shader(billboardVS);
     destroy_shader(skysphereFS);
     destroy_shader(skysphereVS);
-    //destroy_shader(objectFS);
-    //destroy_shader(objectVS);
-    //destroy_shader(gridFS);
-    //destroy_shader(gridVS);
-
     destroy_shader(lighting_fs);
     destroy_shader(lighting_vs);
     destroy_shader(geometry_fs);
@@ -951,10 +984,10 @@ int main(int argc, char** argv)
 
 
 
-        static bool resize_swapchain = true;
+        static bool swapchain_ready = true;
 
         // This is where the main rendering starts
-        if (resize_swapchain = begin_rendering()) {
+        if (swapchain_ready = begin_rendering()) {
             {
                 std::vector<VkCommandBuffer> cmd_buffer = begin_deferred_render_targets(geometry_pass, geometry_render_targets);
 
@@ -1042,11 +1075,11 @@ int main(int argc, char** argv)
 
 
         // todo: should this be here?
-        if (!resize_swapchain) {
-            renderer_wait();
+        if (!swapchain_ready) {
+            logger::info("Swapchain being resized ({}, {})", window->width, window->height);
 
             recreate_ui_render_targets(ui_pass, ui_render_targets, { window->width, window->height });
-            resize_swapchain = true;
+            swapchain_ready = true;
         }
 
         // The viewport must resize before rendering to texture. If it were
@@ -1109,9 +1142,9 @@ int main(int argc, char** argv)
     destroy_buffers(camera_ubo);
 
 
-    model_dsets.DestroyLayout();
-    light_builder.DestroyLayout();
-    geom_builder.DestroyLayout();
+    model_dsets.destroy_layout();
+    light_builder.destroy_layout();
+    geom_builder.destroy_layout();
 
 
     destroy_pipeline(wireframePipeline);

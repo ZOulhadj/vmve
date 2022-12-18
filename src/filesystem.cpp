@@ -1,46 +1,46 @@
 #include "filesystem.hpp"
 
 
-std::vector<filesystem_node> get_files_in_directory(const std::string& directory)
+std::vector<directory_item> get_directory_items(const std::string& directory)
 {
-    std::vector<filesystem_node> nodes;
+    std::vector<directory_item> items;
 
     std::filesystem::path current_path(directory);
 
     if (current_path.has_parent_path()) {
-        filesystem_node node{};
+        directory_item item{};
 
-        node.path = current_path.parent_path().string();
-        node.name = "..";
-        node.type = filesystem_node_type::directory;
-        node.size = 0;
+        item.path = current_path.parent_path().string();
+        item.name = "..";
+        item.type = directory_item_type::directory;
+        item.size = 0;
 
-        nodes.push_back(node);
+        items.push_back(item);
     }
 
 
     for (const auto& entry : std::filesystem::directory_iterator(directory)) {
-        filesystem_node node{};
+        directory_item item{};
 
         current_path = entry.path();
 
-        node.path = current_path.string();
-        node.name = current_path.filename().string();
+        item.path = current_path.string();
+        item.name = current_path.filename().string();
 
         // Note that the function std::filesystem::directory_entry::file_size
         // cannot be called on a directory as this results in an exception.
         // Therefore, we need to check if the current entry is a directory or
         // file and set the file size accordingly.
         if (entry.is_directory()) {
-            node.type = filesystem_node_type::directory;
-            node.size = 0;
+            item.type = directory_item_type::directory;
+            item.size = 0;
         } else {
-            node.type = filesystem_node_type::file;
-            node.size = entry.file_size();
+            item.type = directory_item_type::file;
+            item.size = entry.file_size();
         }
 
-        nodes.push_back(node);
+        items.push_back(item);
     }
 
-    return nodes;
+    return items;
 }
