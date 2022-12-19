@@ -875,9 +875,9 @@ void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_tar
 //    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
 //}
 
-pipeline_t create_pipeline(pipeline_info& pipelineInfo, VkPipelineLayout layout, VkRenderPass render_pass)
+VkPipeline create_pipeline(pipeline_info& pipelineInfo, VkPipelineLayout layout, VkRenderPass render_pass)
 {
-    pipeline_t pipeline{};
+    VkPipeline pipeline{};
 
     // create pipeline
     std::vector<VkVertexInputBindingDescription> bindings;
@@ -1017,15 +1017,15 @@ pipeline_t create_pipeline(pipeline_info& pipelineInfo, VkPipelineLayout layout,
                                        1,
                                        &graphics_pipeline_info,
                                        nullptr,
-                                       &pipeline.handle));
+                                       &pipeline));
 
     return pipeline;
 }
 
 
-void destroy_pipeline(pipeline_t& pipeline)
+void destroy_pipeline(VkPipeline pipeline)
 {
-    vkDestroyPipeline(g_rc->device.device, pipeline.handle, nullptr);
+    vkDestroyPipeline(g_rc->device.device, pipeline, nullptr);
     
 }
 
@@ -1423,9 +1423,9 @@ void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout
     vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[current_frame], 1, &uniform_offset);
 }
 
-void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, const std::vector<VkDescriptorSet>& descriptorSets)
+void bind_pipeline(std::vector<VkCommandBuffer>& buffers, VkPipeline pipeline, const std::vector<VkDescriptorSet>& descriptorSets)
 {
-    vkCmdBindPipeline(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
+    vkCmdBindPipeline(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 }
 
 void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, instance_t& instance)

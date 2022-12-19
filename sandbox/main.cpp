@@ -46,14 +46,14 @@ glm::vec2 current_viewport_size{};
 bool resize_viewport = false;
 glm::vec2 resize_extent;
 
-pipeline_t geometry_pipeline{};
-pipeline_t lighting_pipeline{};
+VkPipeline geometry_pipeline{};
+VkPipeline lighting_pipeline{};
 
-pipeline_t skyspherePipeline{};
-pipeline_t wireframePipeline{};
+VkPipeline skyspherePipeline{};
+VkPipeline wireframePipeline{};
 
 
-pipeline_t current_pipeline{};
+VkPipeline current_pipeline{};
 
 
 camera_t camera{};
