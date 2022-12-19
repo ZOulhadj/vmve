@@ -763,7 +763,7 @@ int main(int argc, char** argv)
 
     //////////////////////////////////////////////////////////////////////////
 
-    // The create shader resources
+    // Convert render target attachments into flat arrays for descriptor binding
     std::vector<image_buffer_t> positions, normals, colors, depths;
     for (auto& fb : geometry_render_targets) {
         positions.push_back(fb.position);
@@ -772,24 +772,16 @@ int main(int argc, char** argv)
         depths.push_back(fb.depth);
     }
 
-    // create shader binding descriptions
-
-    // create buffers
     buffer_t camera_buffer = create_uniform_buffer(sizeof(view_projection));
-
-    // create bindings
     descriptor_binding camera_binding = create_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
-
     VkDescriptorSetLayout geometry_layout = create_descriptor_layout({ camera_binding });
     std::vector<VkDescriptorSet> geometry_sets = allocate_descriptor_sets(geometry_layout);
     update_binding(geometry_sets, camera_binding, camera_buffer, sizeof(view_projection));
 
     //////////////////////////////////////////////////////////////////////////
 
-    // create buffers
     buffer_t scene_buffer = create_uniform_buffer(sizeof(sandbox_scene));
 
-    // create bindings
     descriptor_binding positions_binding = create_binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     descriptor_binding normals_binding = create_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     descriptor_binding colors_binding = create_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -821,7 +813,7 @@ int main(int argc, char** argv)
         specular_binding
     });
 
-
+    //////////////////////////////////////////////////////////////////////////
 
     VkPipelineLayout rendering_pipeline_layout = create_pipeline_layout(
         { geometry_layout, material_layout },
