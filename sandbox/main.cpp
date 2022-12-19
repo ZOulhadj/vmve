@@ -40,9 +40,9 @@ std::vector<VkDescriptorSet> framebuffer_id;
 VkSampler g_fb_sampler;
 VkSampler g_texture_sampler;
 
-descriptor_binding albdo_binding;
-descriptor_binding normal_binding;
-descriptor_binding specular_binding;
+VkDescriptorSetLayoutBinding albdo_binding;
+VkDescriptorSetLayoutBinding normal_binding;
+VkDescriptorSetLayoutBinding specular_binding;
 VkDescriptorSetLayout material_layout;
 
 
@@ -773,7 +773,7 @@ int main(int argc, char** argv)
     }
 
     buffer_t camera_buffer = create_uniform_buffer(sizeof(view_projection));
-    descriptor_binding camera_binding = create_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
+    VkDescriptorSetLayoutBinding camera_binding = create_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
     VkDescriptorSetLayout geometry_layout = create_descriptor_layout({ camera_binding });
     std::vector<VkDescriptorSet> geometry_sets = allocate_descriptor_sets(geometry_layout);
     update_binding(geometry_sets, camera_binding, camera_buffer, sizeof(view_projection));
@@ -782,11 +782,11 @@ int main(int argc, char** argv)
 
     buffer_t scene_buffer = create_uniform_buffer(sizeof(sandbox_scene));
 
-    descriptor_binding positions_binding = create_binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    descriptor_binding normals_binding = create_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    descriptor_binding colors_binding = create_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    descriptor_binding depths_binding = create_binding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    descriptor_binding scene_binding = create_binding(4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding positions_binding = create_binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding normals_binding = create_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding colors_binding = create_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding depths_binding = create_binding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding scene_binding = create_binding(4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayout lighting_layout = create_descriptor_layout({
         positions_binding,
         normals_binding,

@@ -27,7 +27,7 @@ struct material_t
 };
 
 
-void create_material(material_t& material, const std::vector<descriptor_binding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler);
+void create_material(material_t& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler);
 void destroy_material(material_t& material);
 
 void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, material_t& material);

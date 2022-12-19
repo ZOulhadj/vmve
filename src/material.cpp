@@ -5,7 +5,7 @@
 
 
 
-void create_material(material_t& material, const std::vector<descriptor_binding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler)
+void create_material(material_t& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler)
 {
     const renderer_context_t& rc = get_renderer_context();
 
