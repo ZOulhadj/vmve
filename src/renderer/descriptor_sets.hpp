@@ -78,4 +78,12 @@ private:
     VkDescriptorSetLayout _layout{};
 };
 
+
+
+VkDescriptorSetLayoutBinding create_binding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stages);
+
+
+
+
+
 #endif

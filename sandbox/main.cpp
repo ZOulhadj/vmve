@@ -756,8 +756,8 @@ int main(int argc, char** argv)
    
 
     // The create shader resources
-    std::vector<buffer_t> camera_ubo = create_uniform_buffer(sizeof(view_projection));
-    std::vector<buffer_t> scene_ubo = create_uniform_buffer(sizeof(sandbox_scene));
+    std::vector<buffer_t> camera_ubo = create_uniform_buffers(sizeof(view_projection));
+    std::vector<buffer_t> scene_ubo = create_uniform_buffers(sizeof(sandbox_scene));
 
     std::vector<image_buffer_t> positions, normals, colors, depths;
     for (auto& fb : geometry_render_targets) {
@@ -771,7 +771,7 @@ int main(int argc, char** argv)
 
     std::vector<VkDescriptorSet> geom_sets;
     descriptor_set_builder geom_builder;
-    geom_builder.add_binding(0, camera_ubo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+    geom_builder.add_binding(0, camera_ubo, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
     geom_builder.build(geom_sets);
 
     std::vector<VkDescriptorSet> light_sets;
@@ -788,6 +788,74 @@ int main(int argc, char** argv)
     model_dsets.add_binding(1, g_sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_SHADER_STAGE_FRAGMENT_BIT);
     model_dsets.add_binding(2, g_sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_SHADER_STAGE_FRAGMENT_BIT);
     model_dsets.build();
+
+
+    // WIP SECTION 
+#if 1
+    // create buffers
+    buffer_t camera_buffer = create_uniform_buffer(sizeof(view_projection));
+
+    // create bindings
+    VkDescriptorSetLayoutBinding camera_binding = create_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
+
+    // create layout
+    //VkDescriptorSetLayoutCreateInfo setinfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+    //setinfo.bindingCount = 1;
+    //setinfo.pBindings = &camera_binding;
+
+    for (std::size_t i = 0; i < frames_in_flight; ++i) {
+        VkDescriptorBufferInfo buffer_info{};
+        buffer_info.buffer = camera_buffer.buffer;
+        buffer_info.offset = 0;
+        buffer_info.range = sizeof(view_projection);
+
+
+        VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        write.dstBinding = 0;
+        write.dstSet = geom_sets[i];
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        write.pBufferInfo = &buffer_info;
+
+        vkUpdateDescriptorSets(renderer->ctx.device.device, 1, &write, 0, nullptr);
+    }
+
+
+
+
+    // create buffers
+    buffer_t scene_buffer = create_uniform_buffer(sizeof(sandbox_scene));
+
+    // create bindings
+    VkDescriptorSetLayoutBinding scene_binding = create_binding(4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT);
+
+    // create layout
+    //VkDescriptorSetLayoutCreateInfo setinfo1{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+    //setinfo1.bindingCount = 1;
+    //setinfo1.pBindings = &scene_binding;
+
+    for (std::size_t i = 0; i < frames_in_flight; ++i) {
+        VkDescriptorBufferInfo sceneInfo{};
+        sceneInfo.buffer = scene_buffer.buffer;
+        sceneInfo.offset = 0;
+        sceneInfo.range = sizeof(sandbox_scene);
+
+
+        VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        write.dstBinding = 4;
+        write.dstSet = light_sets[i];
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        write.pBufferInfo = &sceneInfo;
+
+        vkUpdateDescriptorSets(renderer->ctx.device.device, 1, &write, 0, nullptr);
+    }
+#endif
+    // END OF WIP SECTION
+
+
+
+
 
 
 
@@ -807,14 +875,21 @@ int main(int argc, char** argv)
     vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
     vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "BiTangent");
 
-    push_constant<glm::mat4> pc(VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineLayout rendering_layout = create_pipeline_layout(
+        { geom_builder.GetLayout(), model_dsets.GetLayout() },
+        sizeof(glm::mat4),
+        VK_SHADER_STAGE_VERTEX_BIT
+    );
 
-    render_state geometryState;
+    VkPipelineLayout lighting_layout = create_pipeline_layout(
+        { light_builder.GetLayout() },
+        sizeof(int),
+        VK_SHADER_STAGE_FRAGMENT_BIT
+    );
+
 
 
     pipeline_info info{};
-    info.push_constant_size = pc.size;
-    info.push_stages = pc.stages;
 
     info.binding_layout_size = vert.bindingSize;
     info.binding_format = vert.attributes;
@@ -828,43 +903,35 @@ int main(int argc, char** argv)
     {
         info.wireframe = false;
         info.depth_testing = true;
-        info.descriptor_layouts = { geom_builder.GetLayout(), model_dsets.GetLayout() };
         info.shaders = { geometry_vs, geometry_fs };
-        geometry_pipeline = create_pipeline(info, geometry_pass);
+        geometry_pipeline = create_pipeline(info, rendering_layout, geometry_pass);
     }
     {
         info.depth_testing = false;
-        info.descriptor_layouts = { light_builder.GetLayout() };
         info.shaders = { lighting_vs, lighting_fs };
         //info.cull_mode = VK_CULL_MODE_FRONT_BIT;
-        info.push_constant_size = sizeof(int);
-        info.push_stages = VK_SHADER_STAGE_FRAGMENT_BIT;
         info.binding_layout_size = 0;
         info.blend_count = 1;
         info.wireframe = false;
-        lighting_pipeline = create_pipeline(info, lighting_pass);
+        lighting_pipeline = create_pipeline(info, lighting_layout, lighting_pass);
     }
 
 
     {
         info.binding_layout_size = vert.bindingSize;
         info.binding_format = vert.attributes;
-        info.push_constant_size = pc.size;
-        info.push_stages = pc.stages;
         info.blend_count = 3;
-        info.descriptor_layouts = { geom_builder.GetLayout(), model_dsets.GetLayout() };
         info.shaders = { geometry_vs, geometry_fs };
         info.wireframe = true;
         info.depth_testing = true;
-        wireframePipeline = create_pipeline(info, geometry_pass);
+        wireframePipeline = create_pipeline(info, rendering_layout, geometry_pass);
     }
     {
         info.wireframe = false;
-        info.descriptor_layouts = { geom_builder.GetLayout(), model_dsets.GetLayout() };
         info.shaders = { skysphereVS, geometry_fs };
         info.depth_testing = false;
         info.cull_mode = VK_CULL_MODE_NONE;
-        skyspherePipeline = create_pipeline(info, geometry_pass);
+        skyspherePipeline = create_pipeline(info, rendering_layout, geometry_pass);
     }
 
 
@@ -974,8 +1041,8 @@ int main(int argc, char** argv)
         //rotate(model_instance, 10.0f * uptime, { 0.0f, 1.0f, 0.0f });
 
         // copy data into uniform buffer
-        set_buffer_data(camera_ubo, &camera.viewProj);
-        set_buffer_data(scene_ubo, &scene);
+        set_buffer_data_new(camera_buffer, &camera.viewProj, sizeof(view_projection));
+        set_buffer_data(scene_buffer, &scene);
 
 
 
@@ -986,40 +1053,23 @@ int main(int argc, char** argv)
             {
                 auto cmd_buffer = begin_render_target(geometry_pass, geometry_render_targets);
 
+                bind_descriptor_set(cmd_buffer, rendering_layout, geom_sets, sizeof(view_projection));
+                
                 // Render the sky sphere
                 bind_pipeline(cmd_buffer, skyspherePipeline, geom_sets);
-                bind_material(cmd_buffer, skyspherePipeline.layout, skysphere_material);
+                
+                bind_material(cmd_buffer, rendering_layout, skysphere_material);
                 bind_vertex_array(cmd_buffer, icosphere);
-                render(cmd_buffer, skyspherePipeline.layout, icosphere.index_count, skyboxsphere_instance);
-
-
-                // Render the grid floor
-                //bind_pipeline(deferred_cmd_buffers, gridPipeline, geometry_desc_sets);
-                //bind_vertex_array(deferred_cmd_buffers, quad);
-                //render(deferred_cmd_buffers, gridPipeline.layout, quad.index_count, grid_instance);
-
-
-                // Render the sun
-                //bind_pipeline(cmd_buffer, billboardPipeline, g_descriptor_sets);
-                //bind_material(cmd_buffer, billboardPipeline.layout, sun_material);
-                //bind_vertex_array(cmd_buffer, quad);
-                //render(cmd_buffer, billboardPipeline.layout, quad.index_count, sun_instance);
-
-
-                //bind_material(cmd_buffer, skyspherePipeline.layout, sun_material);
-                //bind_vertex_array(cmd_buffer, icosphere);
-                //render(cmd_buffer, skyspherePipeline.layout, icosphere.index_count, sun_instance);
-
-
-
+                render(cmd_buffer, rendering_layout, icosphere.index_count, skyboxsphere_instance);
 
                 // Render the models
                 bind_pipeline(cmd_buffer, current_pipeline, geom_sets);
+                
                 // todo: loop over multiple models and render each one
                 for (std::size_t i = 0; i < gModels.size(); ++i) {
-                    bind_material(cmd_buffer, current_pipeline.layout, gModels[i].textures);
+                    bind_material(cmd_buffer, rendering_layout, gModels[i].textures);
                     bind_vertex_array(cmd_buffer, gModels[i].data);
-                    render(cmd_buffer, current_pipeline.layout, gModels[i].data.index_count, model_instance);
+                    render(cmd_buffer, rendering_layout, gModels[i].data.index_count, model_instance);
                 }
 
 
@@ -1032,8 +1082,13 @@ int main(int argc, char** argv)
             // lighting pass
             {
                 auto cmd_buffer = begin_render_target(lighting_pass, lighting_render_targets);
+
+
+                bind_descriptor_set(cmd_buffer, lighting_layout, light_sets);
+
+
                 bind_pipeline(cmd_buffer, lighting_pipeline, light_sets);
-                render_draw(cmd_buffer, lighting_pipeline.layout, renderMode);
+                render_draw(cmd_buffer, lighting_layout, renderMode);
                 end_render_target(cmd_buffer);
             }
 
@@ -1135,7 +1190,8 @@ int main(int argc, char** argv)
     // Destroy rendering resources
     destroy_buffers(scene_ubo);
     destroy_buffers(camera_ubo);
-
+    destroy_buffer(camera_buffer);
+    destroy_buffer(scene_buffer);
 
     model_dsets.destroy_layout();
     light_builder.destroy_layout();
@@ -1144,12 +1200,11 @@ int main(int argc, char** argv)
 
     destroy_pipeline(wireframePipeline);
     destroy_pipeline(skyspherePipeline);
-    //destroy_pipeline(billboardPipeline);
-    //destroy_pipeline(gridPipeline);
-    //destroy_pipeline(basicPipeline);
-
     destroy_pipeline(lighting_pipeline);
     destroy_pipeline(geometry_pipeline);
+
+    destroy_pipeline_layout(lighting_layout);
+    destroy_pipeline_layout(rendering_layout);
 
     destroy_render_targets(ui_render_targets);
     destroy_render_targets(lighting_render_targets);
@@ -1244,3 +1299,22 @@ static void event_callback(event& e)
     dispatcher.dispatch<window_minimized_event>(minimized_window);
     dispatcher.dispatch<window_not_minimized_event>(not_minimized_window);
 }
+
+
+
+// Render the grid floor
+//bind_pipeline(deferred_cmd_buffers, gridPipeline, geometry_desc_sets);
+//bind_vertex_array(deferred_cmd_buffers, quad);
+//render(deferred_cmd_buffers, gridPipeline.layout, quad.index_count, grid_instance);
+
+
+// Render the sun
+//bind_pipeline(cmd_buffer, billboardPipeline, g_descriptor_sets);
+//bind_material(cmd_buffer, billboardPipeline.layout, sun_material);
+//bind_vertex_array(cmd_buffer, quad);
+//render(cmd_buffer, billboardPipeline.layout, quad.index_count, sun_instance);
+
+
+//bind_material(cmd_buffer, skyspherePipeline.layout, sun_material);
+//bind_vertex_array(cmd_buffer, icosphere);
+//render(cmd_buffer, skyspherePipeline.layout, icosphere.index_count, sun_instance);

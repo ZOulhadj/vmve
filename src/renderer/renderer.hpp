@@ -99,26 +99,7 @@ struct vertex_binding
     std::vector<VkFormat> attributes;
 };
 
-template<typename T>
-struct push_constant
-{
-    push_constant(VkShaderStageFlags shaderStages)
-        : size(sizeof(T)), stages(shaderStages)
-    {}
-
-    std::size_t size;
-    VkShaderStageFlags stages;
-};
-
-struct render_state
-{
-
-};
-
 struct pipeline_info {
-    std::vector<VkDescriptorSetLayout> descriptor_layouts;
-    uint32_t push_constant_size;
-    VkShaderStageFlags push_stages;
     uint32_t binding_layout_size;
     std::vector<VkFormat> binding_format;
     uint32_t blend_count;
@@ -128,8 +109,10 @@ struct pipeline_info {
     VkCullModeFlags cull_mode;
 };
 
+
+
+
 struct pipeline_t {
-    VkPipelineLayout layout;
     VkPipeline handle;
 };
 
@@ -183,8 +166,12 @@ void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_tar
 void destroy_render_targets(std::vector<render_target>& render_targets);
 
 
-pipeline_t create_pipeline(pipeline_info& pipelineInfo, VkRenderPass render_pass);
+VkPipelineLayout create_pipeline_layout(const std::vector<VkDescriptorSetLayout>& descriptor_sets,
+                                        std::size_t push_constant_size = 0,
+                                        VkShaderStageFlags push_constant_shader_stages = 0);
+pipeline_t create_pipeline(pipeline_info& pipelineInfo, VkPipelineLayout layout, VkRenderPass render_pass);
 void destroy_pipeline(pipeline_t& pipeline);
+void destroy_pipeline_layout(VkPipelineLayout layout);
 
 bool begin_rendering();
 void end_rendering();
@@ -194,6 +181,8 @@ std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, const
 std::vector<VkCommandBuffer> begin_ui_render_target(VkRenderPass render_pass, const std::vector<render_target>& render_targets);
 void end_render_target(std::vector<VkCommandBuffer>& buffers);
 
+void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets);
+void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets, std::size_t size);
 void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
 void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, instance_t& instance);
 void render_draw(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode);

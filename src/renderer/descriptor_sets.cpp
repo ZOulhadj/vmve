@@ -194,3 +194,14 @@ void descriptor_set_builder::destroy_layout() const
 
     vkDestroyDescriptorSetLayout(rc.device.device, _layout, nullptr);
 }
+
+VkDescriptorSetLayoutBinding create_binding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stages)
+{
+    VkDescriptorSetLayoutBinding layout_binding{};
+    layout_binding.binding = binding;
+    layout_binding.descriptorType = type;
+    layout_binding.descriptorCount = 1;
+    layout_binding.stageFlags = stages;
+
+    return layout_binding;
+}

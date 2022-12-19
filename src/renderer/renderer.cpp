@@ -674,6 +674,35 @@ void destroy_render_targets(std::vector<render_target>& render_targets)
     render_targets.clear();
 }
 
+
+VkPipelineLayout create_pipeline_layout(const std::vector<VkDescriptorSetLayout>& descriptor_sets, 
+                                        std::size_t push_constant_size /*= 0*/, 
+                                        VkShaderStageFlags push_constant_shader_stages /*= 0*/)
+{
+    VkPipelineLayout pipeline_layout{};
+    
+    // create pipeline layout
+    VkPipelineLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+    layout_info.setLayoutCount = u32(descriptor_sets.size());
+    layout_info.pSetLayouts = descriptor_sets.data();
+
+    // push constant
+    VkPushConstantRange push_constant{};
+    if (push_constant_size > 0) {
+        push_constant.offset = 0;
+        push_constant.size = push_constant_size;
+        push_constant.stageFlags = push_constant_shader_stages;
+
+        layout_info.pushConstantRangeCount = 1;
+        layout_info.pPushConstantRanges = &push_constant;
+    }
+
+
+    vk_check(vkCreatePipelineLayout(g_rc->device.device, &layout_info, nullptr, &pipeline_layout));
+
+    return pipeline_layout;
+}
+
 void recreate_render_targets(VkRenderPass render_pass, std::vector<render_target>& render_targets, VkExtent2D extent)
 {
     destroy_render_targets(render_targets);
@@ -846,30 +875,9 @@ void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_tar
 //    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
 //}
 
-pipeline_t create_pipeline(pipeline_info& pipelineInfo, VkRenderPass render_pass)
+pipeline_t create_pipeline(pipeline_info& pipelineInfo, VkPipelineLayout layout, VkRenderPass render_pass)
 {
     pipeline_t pipeline{};
-
-    // create pipeline layout
-    VkPipelineLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-    layout_info.setLayoutCount = u32(pipelineInfo.descriptor_layouts.size());
-    layout_info.pSetLayouts    = pipelineInfo.descriptor_layouts.data();
-
-    // push constant
-    VkPushConstantRange push_constant{};
-    if (pipelineInfo.push_constant_size > 0) {
-        push_constant.offset = 0;
-        push_constant.size = pipelineInfo.push_constant_size;
-        push_constant.stageFlags = pipelineInfo.push_stages;
-
-        layout_info.pushConstantRangeCount = 1;
-        layout_info.pPushConstantRanges = &push_constant;
-    }
-
-
-    vk_check(vkCreatePipelineLayout(g_rc->device.device, &layout_info, nullptr,
-                                    &pipeline.layout));
-
 
     // create pipeline
     std::vector<VkVertexInputBindingDescription> bindings;
@@ -1000,7 +1008,7 @@ pipeline_t create_pipeline(pipeline_info& pipelineInfo, VkRenderPass render_pass
     graphics_pipeline_info.pDepthStencilState  = &depth_stencil_state_info;
     graphics_pipeline_info.pColorBlendState    = &color_blend_state_info;
     graphics_pipeline_info.pDynamicState       = &dynamic_state_info;
-    graphics_pipeline_info.layout              = pipeline.layout;
+    graphics_pipeline_info.layout              = layout;
     graphics_pipeline_info.renderPass          = render_pass;
     graphics_pipeline_info.subpass             = 0;
 
@@ -1018,10 +1026,13 @@ pipeline_t create_pipeline(pipeline_info& pipelineInfo, VkRenderPass render_pass
 void destroy_pipeline(pipeline_t& pipeline)
 {
     vkDestroyPipeline(g_rc->device.device, pipeline.handle, nullptr);
-    vkDestroyPipelineLayout(g_rc->device.device, pipeline.layout, nullptr);
+    
 }
 
-
+void destroy_pipeline_layout(VkPipelineLayout layout)
+{
+    vkDestroyPipelineLayout(g_rc->device.device, layout, nullptr);
+}
 
 static upload_context create_submit_context()
 {
@@ -1399,10 +1410,22 @@ void end_render_target(std::vector<VkCommandBuffer>& buffers)
     vk_check(vkEndCommandBuffer(buffers[current_frame]));
 }
 
+
+void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets)
+{
+    vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[current_frame], 0, nullptr);
+}
+
+
+void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets, std::size_t size)
+{
+    const uint32_t uniform_offset = pad_uniform_buffer_size(size) * current_frame;
+    vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[current_frame], 1, &uniform_offset);
+}
+
 void bind_pipeline(std::vector<VkCommandBuffer>& buffers, pipeline_t& pipeline, const std::vector<VkDescriptorSet>& descriptorSets)
 {
     vkCmdBindPipeline(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle);
-    vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout, 0, 1, &descriptorSets[current_frame], 0, nullptr);
 }
 
 void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, instance_t& instance)

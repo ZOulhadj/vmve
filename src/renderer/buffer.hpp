@@ -20,9 +20,11 @@ struct image_buffer_t
     VkFormat      format     = VK_FORMAT_UNDEFINED;
 };
 
+std::size_t pad_uniform_buffer_size(std::size_t originalSize);
 buffer_t create_buffer(uint32_t size, VkBufferUsageFlags type);
 
-std::vector<buffer_t> create_uniform_buffer(std::size_t buffer_size);
+buffer_t create_uniform_buffer(std::size_t buffer_size);
+std::vector<buffer_t> create_uniform_buffers(std::size_t buffer_size);
 
 buffer_t create_staging_buffer(void* data, uint32_t size);
 buffer_t create_gpu_buffer(uint32_t size, VkBufferUsageFlags type);
@@ -32,6 +34,9 @@ void submit_to_gpu(const std::function<void()>& submit_func);
 
 void set_buffer_data(std::vector<buffer_t>& buffers, void* data);
 void set_buffer_data(buffer_t& buffer, void* data);
+
+void set_buffer_data_new(buffer_t& buffer, void* data, std::size_t size);
+
 void destroy_buffer(buffer_t& buffer);
 void destroy_buffers(std::vector<buffer_t>& buffers);
 

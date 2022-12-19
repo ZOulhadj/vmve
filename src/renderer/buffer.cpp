@@ -5,7 +5,7 @@
 
 
 
-static std::size_t pad_uniform_buffer_size(size_t originalSize)
+std::size_t pad_uniform_buffer_size(std::size_t originalSize)
 {
     const renderer_context_t& context = get_renderer_context();
 
@@ -50,8 +50,15 @@ buffer_t create_buffer(uint32_t size, VkBufferUsageFlags type)
     return buffer;
 }
 
+buffer_t create_uniform_buffer(std::size_t buffer_size)
+{
+    // Automatically align buffer to correct alignment
+    const std::size_t size = frames_in_flight * pad_uniform_buffer_size(buffer_size);
 
-std::vector<buffer_t> create_uniform_buffer(std::size_t buffer_size)
+    return create_buffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);;
+}
+
+std::vector<buffer_t> create_uniform_buffers(std::size_t buffer_size)
 {
     std::vector<buffer_t> buffers(frames_in_flight);
 
@@ -85,6 +92,19 @@ void set_buffer_data(buffer_t& buffer, void* data)
     void* allocation{};
     vk_check(vmaMapMemory(rc.allocator, buffer.allocation, &allocation));
     std::memcpy(allocation, data, buffer.size);
+    vmaUnmapMemory(rc.allocator, buffer.allocation);
+}
+
+
+void set_buffer_data_new(buffer_t& buffer, void* data, std::size_t size)
+{
+    const renderer_context_t& rc = get_renderer_context();
+    const uint32_t current_frame = get_current_frame();
+
+    char* allocation{};
+    vk_check(vmaMapMemory(rc.allocator, buffer.allocation, (void**)&allocation));
+    allocation += pad_uniform_buffer_size(size) * current_frame;
+    memcpy(allocation, data, size);
     vmaUnmapMemory(rc.allocator, buffer.allocation);
 }
 
