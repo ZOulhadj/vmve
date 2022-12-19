@@ -761,12 +761,9 @@ int main(int argc, char** argv)
     mount_vfs("shaders", root_dir + "assets/shaders");
     mount_vfs("fonts", root_dir + "assets/fonts");
 
-
+    //////////////////////////////////////////////////////////////////////////
 
     // The create shader resources
-    std::vector<buffer_t> camera_ubo = create_uniform_buffers(sizeof(view_projection));
-    std::vector<buffer_t> scene_ubo = create_uniform_buffers(sizeof(sandbox_scene));
-
     std::vector<image_buffer_t> positions, normals, colors, depths;
     for (auto& fb : geometry_render_targets) {
         positions.push_back(fb.position);
@@ -787,7 +784,7 @@ int main(int argc, char** argv)
     std::vector<VkDescriptorSet> geometry_sets = allocate_descriptor_sets(geometry_layout);
     update_binding(geometry_sets, camera_binding, camera_buffer, sizeof(view_projection));
 
-
+    //////////////////////////////////////////////////////////////////////////
 
     // create buffers
     buffer_t scene_buffer = create_uniform_buffer(sizeof(sandbox_scene));
@@ -798,7 +795,6 @@ int main(int argc, char** argv)
     descriptor_binding colors_binding = create_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     descriptor_binding depths_binding = create_binding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     descriptor_binding scene_binding = create_binding(4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
-
     VkDescriptorSetLayout lighting_layout = create_descriptor_layout({
         positions_binding,
         normals_binding,
@@ -806,9 +802,7 @@ int main(int argc, char** argv)
         depths_binding,
         scene_binding
     });
-
     std::vector<VkDescriptorSet> lighting_sets = allocate_descriptor_sets(lighting_layout);
-
     update_binding(lighting_sets, positions_binding, positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
     update_binding(lighting_sets, normals_binding, normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
     update_binding(lighting_sets, colors_binding, colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
@@ -816,15 +810,18 @@ int main(int argc, char** argv)
     update_binding(lighting_sets, scene_binding, scene_buffer, sizeof(sandbox_scene));
 
 
+    //////////////////////////////////////////////////////////////////////////
+
     albdo_binding = create_binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     normal_binding = create_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     specular_binding = create_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-
     material_layout = create_descriptor_layout({
         albdo_binding,
         normal_binding,
         specular_binding
     });
+
+
 
     VkPipelineLayout rendering_pipeline_layout = create_pipeline_layout(
         { geometry_layout, material_layout },
@@ -1156,8 +1153,6 @@ int main(int argc, char** argv)
 
 
     // Destroy rendering resources
-    destroy_buffers(scene_ubo);
-    destroy_buffers(camera_ubo);
     destroy_buffer(camera_buffer);
     destroy_buffer(scene_buffer);
 
