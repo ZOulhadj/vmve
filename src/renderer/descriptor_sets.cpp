@@ -3,205 +3,161 @@
 #include "renderer.hpp"
 #include "../logging.hpp"
 
-descriptor_set_builder::~descriptor_set_builder()
+descriptor_binding create_binding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stages)
 {
-    for (auto& binding : _layout_bindings)
-        delete binding;
+    descriptor_binding desc_binding{};
+
+    desc_binding.layout_binding.binding = binding;
+    desc_binding.layout_binding.descriptorType = type;
+    desc_binding.layout_binding.descriptorCount = 1;
+    desc_binding.layout_binding.stageFlags = stages;
+    desc_binding.type = type;
+
+    return desc_binding;
 }
 
-void descriptor_set_builder::add_binding(uint32_t index, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages)
-{
-    VkDescriptorSetLayoutBinding layout_binding{};
-    layout_binding.binding = index;
-    layout_binding.descriptorType = type;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = stages;
-
-    std::vector<image_buffer_t> b;
-    _layout_bindings.push_back(new image_binding(binding_type::image, layout_binding, type, b, sampler, layout));
-}
-
-void descriptor_set_builder::add_binding(uint32_t index, std::vector<buffer_t>& buffer, VkDescriptorType type, VkShaderStageFlags stages)
-{
-    VkDescriptorSetLayoutBinding layout_binding{};
-    layout_binding.binding = index;
-    layout_binding.descriptorType = type;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = stages;
-
-    _layout_bindings.push_back(new buffer_binding(binding_type::buffer, layout_binding, type, buffer));
-}
-
-void descriptor_set_builder::add_binding(uint32_t index, std::vector<image_buffer_t>& buffer, VkSampler sampler, VkDescriptorType type, VkImageLayout layout, VkShaderStageFlags stages)
-{
-    VkDescriptorSetLayoutBinding layout_binding{};
-    layout_binding.binding = index;
-    layout_binding.descriptorType = type;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = stages;
-
-    _layout_bindings.push_back(new image_binding(binding_type::image, layout_binding, type, buffer, sampler, layout));
-}
-
-void descriptor_set_builder::build()
-{
-    create_layout();
-}
-
-void descriptor_set_builder::build(std::vector<VkDescriptorSet>& descriptorSets)
-{
-    descriptorSets.resize(frames_in_flight);
-
-    create_layout();
-    allocate_descriptor_sets(descriptorSets.data(), descriptorSets.size());
-
-    const auto& rc = get_renderer_context();
-
-    // Loop over each binding at map its buffer to the descriptor
-    for (std::size_t i = 0; i < _layout_bindings.size(); ++i) {
-        for (std::size_t j = 0; j < descriptorSets.size(); ++j) {
-            VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-            write.dstSet = descriptorSets[j];
-            write.dstBinding = _layout_bindings[i]->layout_binding.binding;
-            write.dstArrayElement = 0;
-            write.descriptorType = _layout_bindings[i]->type;
-            write.descriptorCount = 1;
-
-
-            if (_layout_bindings[i]->bindingType == binding_type::buffer) {
-                auto binding = dynamic_cast<buffer_binding*>(_layout_bindings[i]);
-
-                VkDescriptorBufferInfo buffer_info{};
-                buffer_info.buffer = binding->buffer[j].buffer;
-                buffer_info.offset = 0;
-                buffer_info.range = VK_WHOLE_SIZE;
-                write.pBufferInfo = &buffer_info;
-                vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
-
-            } else if (_layout_bindings[i]->bindingType == binding_type::image) {
-                auto binding = dynamic_cast<image_binding*>(_layout_bindings[i]);
-
-                VkDescriptorImageInfo buffer_info{};
-                buffer_info.imageLayout = binding->image_layout;
-                buffer_info.imageView = binding->buffer[j].view;
-                buffer_info.sampler = binding->sampler;
-                write.pImageInfo = &buffer_info;
-                vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
-            }
-
-        }
-    }
-}
-
-
-void descriptor_set_builder::build(VkDescriptorSet* descriptorSet)
-{
-    allocate_descriptor_sets(descriptorSet, 1);
-
-    const auto& rc = get_renderer_context();
-
-
-
-    // Loop over each binding at map its buffer to the descriptor
-    for (std::size_t i = 0; i < _layout_bindings.size(); ++i) {
-        VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-        write.dstSet = *descriptorSet;
-        write.dstBinding = _layout_bindings[i]->layout_binding.binding;
-        write.dstArrayElement = 0;
-        write.descriptorType = _layout_bindings[i]->type;
-        write.descriptorCount = 1;
-
-        if (_layout_bindings[i]->bindingType == binding_type::buffer) {
-            auto binding = dynamic_cast<buffer_binding*>(_layout_bindings[i]);
-
-
-            if (binding->buffer.empty())
-                continue;
-
-            VkDescriptorBufferInfo buffer_info{};
-            buffer_info.buffer = binding->buffer[0].buffer;
-            buffer_info.offset = 0;
-            buffer_info.range = VK_WHOLE_SIZE;
-            write.pBufferInfo = &buffer_info;
-            vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
-
-        }
-        else if (_layout_bindings[i]->bindingType == binding_type::image) {
-            auto binding = dynamic_cast<image_binding*>(_layout_bindings[i]);
-
-
-            if (binding->buffer.empty())
-                continue;
-
-            VkDescriptorImageInfo buffer_info{};
-            buffer_info.imageLayout = binding->image_layout;
-            buffer_info.imageView = binding->buffer[0].view;
-            buffer_info.sampler = binding->sampler;
-            write.pImageInfo = &buffer_info;
-            vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
-        }
-    }
-
-
-}
-
-void descriptor_set_builder::fill_binding(uint32_t index, image_buffer_t& buffer)
-{
-    auto& binding = dynamic_cast<image_binding&>(*_layout_bindings[index]);
-    // todo:
-    binding.buffer = { buffer };
-}
-
-void descriptor_set_builder::create_layout()
+VkDescriptorSetLayout create_descriptor_layout(std::vector<descriptor_binding> bindings)
 {
     const renderer_context_t& rc = get_renderer_context();
 
+    VkDescriptorSetLayout layout{};
+
     // TEMP: Convert bindings array into just an array of binding layouts
-    std::vector<VkDescriptorSetLayoutBinding> layouts(_layout_bindings.size());
+    std::vector<VkDescriptorSetLayoutBinding> layouts(bindings.size());
     for (std::size_t i = 0; i < layouts.size(); ++i)
-        layouts[i] = _layout_bindings[i]->layout_binding;
+        layouts[i] = bindings[i].layout_binding;
 
 
-    VkDescriptorSetLayoutCreateInfo info{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+    VkDescriptorSetLayoutCreateInfo info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
     info.bindingCount = u32(layouts.size());
-    info.pBindings    = layouts.data();
-    vk_check(vkCreateDescriptorSetLayout(rc.device.device, &info, nullptr, &_layout));
+    info.pBindings = layouts.data();
+    vk_check(vkCreateDescriptorSetLayout(rc.device.device, &info, nullptr, &layout));
+
+    return layout;
 }
 
-void descriptor_set_builder::allocate_descriptor_sets(VkDescriptorSet* descriptorSets, std::size_t count)
+void destroy_descriptor_layout(VkDescriptorSetLayout layout)
+{
+    const renderer_context_t& rc = get_renderer_context();
+
+    vkDestroyDescriptorSetLayout(rc.device.device, layout, nullptr);
+}
+
+VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout)
 {
     const renderer_t* r = get_renderer();
     const renderer_context_t& rc = get_renderer_context();
 
-    // allocate descriptor sets
-    std::vector<VkDescriptorSetLayout> layouts(count, _layout);
+    VkDescriptorSet descriptor_sets{};
 
     VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
     allocate_info.descriptorPool = r->descriptor_pool;
-    allocate_info.descriptorSetCount = u32(count);
-    allocate_info.pSetLayouts = layouts.data();
-    vk_check(vkAllocateDescriptorSets(rc.device.device, &allocate_info, descriptorSets));
+    allocate_info.descriptorSetCount = 1;
+    allocate_info.pSetLayouts = &layout;
+    vk_check(vkAllocateDescriptorSets(rc.device.device, &allocate_info, &descriptor_sets));
+
+    return descriptor_sets;
 }
 
-VkDescriptorSetLayout descriptor_set_builder::GetLayout() const
+std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout)
 {
-    return _layout;
+    const renderer_t* r = get_renderer();
+    const renderer_context_t& rc = get_renderer_context();
+
+    std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
+
+    // allocate descriptor sets
+    std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, layout);
+
+    VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+    allocate_info.descriptorPool = r->descriptor_pool;
+    allocate_info.descriptorSetCount = u32(layouts.size());
+    allocate_info.pSetLayouts = layouts.data();
+    vk_check(vkAllocateDescriptorSets(rc.device.device, &allocate_info, descriptor_sets.data()));
+
+    return descriptor_sets;
 }
 
-void descriptor_set_builder::destroy_layout() const
+void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const descriptor_binding& binding, buffer_t& buffer, std::size_t size)
 {
     const renderer_context_t& rc = get_renderer_context();
 
-    vkDestroyDescriptorSetLayout(rc.device.device, _layout, nullptr);
+    for (std::size_t i = 0; i < frames_in_flight; ++i) {
+        VkDescriptorBufferInfo sceneInfo{};
+        sceneInfo.buffer = buffer.buffer;
+        sceneInfo.offset = 0;
+        sceneInfo.range = size;
+
+
+        VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        write.dstBinding = binding.layout_binding.binding;
+        write.dstSet = descriptor_sets[i];
+        write.descriptorCount = 1;
+        write.descriptorType = binding.type;
+        write.pBufferInfo = &sceneInfo;
+
+        vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
+    }
 }
 
-VkDescriptorSetLayoutBinding create_binding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stages)
-{
-    VkDescriptorSetLayoutBinding layout_binding{};
-    layout_binding.binding = binding;
-    layout_binding.descriptorType = type;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = stages;
 
-    return layout_binding;
+void update_binding(VkDescriptorSet descriptor_set, const descriptor_binding& binding, image_buffer_t& buffer, VkImageLayout layout, VkSampler sampler)
+{
+    const renderer_context_t& rc = get_renderer_context();
+
+    VkDescriptorImageInfo buffer_info{};
+    buffer_info.imageLayout = layout;
+    buffer_info.imageView = buffer.view;
+    buffer_info.sampler = sampler;
+
+    VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+    write.dstBinding = binding.layout_binding.binding;
+    write.dstSet = descriptor_set;
+    write.descriptorCount = 1;
+    write.descriptorType = binding.type;
+    write.pImageInfo = &buffer_info;
+
+    vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
+}
+
+void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const descriptor_binding& binding, image_buffer_t& buffer, VkImageLayout layout, VkSampler sampler)
+{
+    const renderer_context_t& rc = get_renderer_context();
+
+    for (std::size_t i = 0; i < frames_in_flight; ++i) {
+        VkDescriptorImageInfo buffer_info{};
+        buffer_info.imageLayout = layout;
+        buffer_info.imageView = buffer.view;
+        buffer_info.sampler = sampler;
+
+        VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        write.dstBinding = binding.layout_binding.binding;
+        write.dstSet = descriptor_sets[i];
+        write.descriptorCount = 1;
+        write.descriptorType = binding.type;
+        write.pImageInfo = &buffer_info;
+
+        vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
+    }
+}
+
+void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const descriptor_binding& binding, std::vector<image_buffer_t>& buffer, VkImageLayout layout, VkSampler sampler)
+{
+    const renderer_context_t& rc = get_renderer_context();
+
+    for (std::size_t i = 0; i < frames_in_flight; ++i) {
+        VkDescriptorImageInfo buffer_info{};
+        buffer_info.imageLayout = layout;
+        buffer_info.imageView = buffer[i].view;
+        buffer_info.sampler = sampler;
+
+        VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+        write.dstBinding = binding.layout_binding.binding;
+        write.dstSet = descriptor_sets[i];
+        write.descriptorCount = 1;
+        write.descriptorType = binding.type;
+        write.pImageInfo = &buffer_info;
+
+        vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
+    }
 }
