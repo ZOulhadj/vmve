@@ -726,7 +726,7 @@ int main(int argc, char** argv)
     window = create_window("VMVE", 1280, 720);
     window->event_callback = event_callback;
 
-    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
+    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::disabled);
 
     // Create rendering passes and render targets
     g_fb_sampler = create_sampler(VK_FILTER_LINEAR);

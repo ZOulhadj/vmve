@@ -31,7 +31,6 @@ layout(push_constant) uniform constant
     int mode;
 } view_mode;
 
-
 void main()
 {
 	// textures
@@ -76,23 +75,49 @@ void main()
 	float light_strength = scene.lightPosStrength.w;
 
 
+
+
+	vec3 final_color = vec3(0.0);
+
+
 	//////////////// AMBIENT ////////////////
 	float ambient_strength = scene.ambientSpecular.r;
-	vec3 ambient = albedo * ambient_strength;
+	vec3 ambient = albedo * light_strength * ambient_strength;
+
+	final_color += ambient;
 
 	//////////////// DIFFUSE ////////////////
 	vec3 light_dir = normalize(light_pos - world_pos);
-	float light_diff = max(0.0, dot(normal, light_dir));
-    vec3 diffuse = albedo * light_diff;
+	float diffuse_factor = dot(normal, light_dir);
+
+	// If we are facing away from the light simply return and don't do any
+	// additional lighting calculations
+	if (diffuse_factor <= 0) {
+		outFragcolor = vec4(final_color, 1.0);
+		return;
+	}
+
+
+	// At this stage, we know that additional lighting calculations are needed
+	// since we are facing the light.
+    vec3 diffuse = albedo * light_strength * diffuse_factor;
+	final_color += diffuse;
+
 
 	//////////////// SPECULAR ////////////////
 	vec3 light_reflect_dir = reflect(-light_dir, normal);
 	vec3 camera_dir = normalize(camera_pos - world_pos);
+	//vec3 halfway_dir = normalize(camera_dir + light_dir);
 
-	vec3 halfway_dir = normalize(camera_dir + light_dir);
-	float specular_strength = max(0.0, dot(light_reflect_dir, camera_dir));
-	vec3 specular = vec3(spec) * pow(specular_strength, scene.ambientSpecular.b);
+	float specular_factor = dot(light_reflect_dir, camera_dir);
+	if (specular_factor <= 0) {
+		outFragcolor = vec4(final_color, 1.0);
+		return;
+	}
 
-	vec3 final_color = ambient + diffuse + specular;
+	vec3 specular = vec3(spec) * light_strength * pow(specular_factor, scene.ambientSpecular.b);
+	final_color += specular;
+
+
 	outFragcolor = vec4(final_color, 1.0);
 }
