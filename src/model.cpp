@@ -3,6 +3,7 @@
 #include "vertex.hpp"
 #include "renderer/texture.hpp"
 #include "vfs.hpp"
+#include "logging.hpp"
 
 static image_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureType type, std::string_view path)
 {
@@ -14,8 +15,7 @@ static image_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureTyp
 
         if (material->GetTexture(type, i, &ai_path) == aiReturn_FAILURE) {
             ai_path_string = ai_path.C_Str();
-            printf("Failed to load texture %s\n", ai_path_string.c_str());
-
+            logger::err("Failed to load texture: {}", ai_path_string);
             return {};
         }
 
@@ -24,7 +24,6 @@ static image_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureTyp
         // a proper implementation.
         std::filesystem::path parent_path(path);
         texture = load_texture(parent_path.parent_path().string() + "/" + ai_path_string);
-        printf("");
     }
 
     return texture;
@@ -53,7 +52,7 @@ static void parse_mesh(model_t& model, std::vector<vertex_t>& vertices,
             // so we always take the first set (0).
             vertex.uv        = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
             vertex.tangent   = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
-            vertex.biTangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
+            //vertex.biTangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
         } else {
             vertex.uv = glm::vec2(0.0f);
         }

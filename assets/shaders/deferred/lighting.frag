@@ -8,9 +8,10 @@
 layout (binding = 0) uniform sampler2D samplerPosition;
 layout (binding = 1) uniform sampler2D samplerNormal;
 layout (binding = 2) uniform sampler2D samplerAlbedo;
-layout (binding = 3) uniform sampler2D samplerDepth;
+layout (binding = 3) uniform sampler2D samplerSpecular;
+layout (binding = 4) uniform sampler2D samplerDepth;
 
-layout(binding = 4) uniform scene_ubo
+layout(binding = 5) uniform scene_ubo
 {
     // ambient Strength, specular strength, specular shininess, empty
     vec4 ambientSpecular;
@@ -19,17 +20,6 @@ layout(binding = 4) uniform scene_ubo
     // light position (x, y, z), light strength
     vec4 lightPosStrength;
 } scene;
-
-
-//
-// Material Uniform Buffers
-//
-//layout(set = 1, binding = 0) uniform sampler2D albedoTexture;
-//layout(set = 1, binding = 1) uniform sampler2D normalTexture;
-//layout(set = 1, binding = 2) uniform sampler2D specularTexture;
-//
-//
-
 
 layout (location = 0) in vec2 inUV;
 
@@ -44,85 +34,65 @@ layout(push_constant) uniform constant
 
 void main()
 {
-
-	// framebuffers
-	vec3 position = texture(samplerPosition, inUV).rgb;
-	vec3 normal = texture(samplerNormal, inUV).rgb;
-	vec3 color = texture(samplerAlbedo, inUV).rgb;
+	// textures
+	vec3 world_pos = texture(samplerPosition, inUV).rgb;
+	vec3 normal = normalize(texture(samplerNormal, inUV).rgb);
+	vec3 albedo = texture(samplerAlbedo, inUV).rgb;
+	float spec = texture(samplerSpecular, inUV).r;
 	float depth = texture(samplerDepth, inUV).r;
 
-	float ambient_strength = scene.ambientSpecular.r;
+	// For debugging purposes
+	if (view_mode.mode > 0) {
+		vec3 debug_color = vec3(0.0);
+		switch (view_mode.mode) {
+			case 1:
+				debug_color = albedo;
+				break;
+			case 2:
+				debug_color = vec3(spec);
+				break;
+			case 3:
+				debug_color = world_pos;
+				break;
+			case 4:
+				debug_color = normal;
+				break;
+			case 5:
+				debug_color = vec3(depth);
+				break;
+		}
 
-	vec3 light_position = scene.lightPosStrength.xyz;
+		outFragcolor = vec4(debug_color, 1.0);
+		return; 
+	}
+
+
+
+
+
+	// constants
+	vec3 camera_pos = scene.cameraPosition.xyz;
+	vec3 light_pos = scene.lightPosStrength.xyz;
 	float light_strength = scene.lightPosStrength.w;
 
 
-	vec3 ambient = ambient_strength * color * light_strength;
+	//////////////// AMBIENT ////////////////
+	float ambient_strength = scene.ambientSpecular.r;
+	vec3 ambient = albedo * ambient_strength;
 
+	//////////////// DIFFUSE ////////////////
+	vec3 light_dir = normalize(light_pos - world_pos);
+	float light_diff = max(0.0, dot(normal, light_dir));
+    vec3 diffuse = albedo * light_diff;
 
+	//////////////// SPECULAR ////////////////
+	vec3 light_reflect_dir = reflect(-light_dir, normal);
+	vec3 camera_dir = normalize(camera_pos - world_pos);
 
-    vec3 viewDir    = normalize(light_position - position);
-    vec3 lightDir   = normalize(light_position - position);
-    vec3 diffuse = max(dot(lightDir, normal), 0.0) * color * light_strength;
+	vec3 halfway_dir = normalize(camera_dir + light_dir);
+	float specular_strength = max(0.0, dot(light_reflect_dir, camera_dir));
+	vec3 specular = vec3(spec) * pow(specular_strength, scene.ambientSpecular.b);
 
-
-
-
-	vec3 final_color = vec3(0.0);
-	if (view_mode.mode == 0) {
-		final_color = vec3(ambient + diffuse);
-	} else if (view_mode.mode == 1) {
-		final_color = color;
-	} else if (view_mode.mode == 2) {
-		final_color = position;
-	} else if (view_mode.mode == 3) {
-		final_color = normal;
-	} else if (view_mode.mode == 4) {
-		final_color = vec3(depth);
-	} 
-
+	vec3 final_color = ambient + diffuse + specular;
 	outFragcolor = vec4(final_color, 1.0);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-//	vec3 albedo = texture(samplerAlbedo, texture_coord).rgb;
-//    vec3 normal = texture(samplerNormal, texture_coord).rgb;
-//    normal = normalize(normal);
-//    vec3 specular = texture(specularTexture, texture_coord).rgb;
-//
-//
-//    // ambient
-//    vec3 ambientResult = scene.ambientStrength * albedo * scene.lightColor;
-//
-//    // diffuse
-//    vec3 viewDir    = normalize(tangentViewPos - tangentFragPos);
-//    vec3 lightDir   = normalize(tangentLightPos - tangentFragPos);
-//
-//    vec3 diffuseResult = max(dot(lightDir, normal), 0.0) * albedo * scene.lightColor;
-//
-//    // specular
-//    //vec3 reflectDir = reflect(-lightDir, normal);
-//    vec3 halfwayDir = normalize(lightDir + viewDir);
-//
-//    float spec = pow(max(dot(normal, halfwayDir), 0.0), scene.specularShininess);
-//    vec3 specularResult  = spec * specular;
-//
-//    vec3 result = ambientResult + diffuseResult + specularResult;
-//
-//    final_color = vec4(result, 1.0);
 }

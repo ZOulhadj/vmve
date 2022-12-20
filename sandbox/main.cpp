@@ -40,9 +40,9 @@ std::vector<VkDescriptorSet> framebuffer_id;
 VkSampler g_fb_sampler;
 VkSampler g_texture_sampler;
 
-VkDescriptorSetLayoutBinding albdo_binding;
-VkDescriptorSetLayoutBinding normal_binding;
-VkDescriptorSetLayoutBinding specular_binding;
+VkDescriptorSetLayoutBinding mat_albdo_binding;
+VkDescriptorSetLayoutBinding mat_normal_binding;
+VkDescriptorSetLayoutBinding mat_specular_binding;
 VkDescriptorSetLayout material_layout;
 
 
@@ -76,7 +76,7 @@ camera_t camera{};
 //
 struct sandbox_scene {
     // ambient Strength, specular strength, specular shininess, empty
-    glm::vec4 ambientSpecular = glm::vec4(0.1f, 1.0f, 32.0f, 0.0f);
+    glm::vec4 ambientSpecular = glm::vec4(0.05f, 1.0f, 16.0f, 0.0f);
     glm::vec4 cameraPosition = glm::vec4(0.0f, 2.0f, -5.0f, 0.0f);
 
     // light position (x, y, z), light strength
@@ -183,7 +183,7 @@ static void load_mesh(std::vector<model_t>& models, std::string path)
     logger::info("Loading mesh {}", path);
 
     model_t model = load_model_new(path);
-    create_material(model.textures, { albdo_binding, normal_binding, specular_binding }, material_layout, g_texture_sampler);
+    create_material(model.textures, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, material_layout, g_texture_sampler);
 
     std::lock_guard<std::mutex> lock(model_mutex);
     models.push_back(model);
@@ -486,8 +486,8 @@ static void render_left_window()
             static int current_buffer_mode = (int)buf_mode::triple_buffering;
             static std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
             ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
-            enum class render_mode { full, color, position, normal, depth };
-            static std::array<const char*, 5> elems_names = { "Full", "Color", "Position", "Normal", "Depth" };
+            enum class render_mode { full, color, specular, position, normal, depth };
+            static std::array<const char*, 6> elems_names = { "Full", "Color", "Specular", "Position", "Normal", "Depth" };
 
             ImGui::Combo("Render mode", &renderMode, elems_names.data(), elems_names.size());
         }
@@ -729,7 +729,7 @@ int main(int argc, char** argv)
     renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
 
     // Create rendering passes and render targets
-    g_fb_sampler = create_sampler(VK_FILTER_NEAREST);
+    g_fb_sampler = create_sampler(VK_FILTER_LINEAR);
     g_texture_sampler = create_sampler(VK_FILTER_LINEAR);
 
     VkRenderPass geometry_pass = create_deferred_render_pass();
@@ -764,15 +764,19 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////
 
     // Convert render target attachments into flat arrays for descriptor binding
-    std::vector<image_buffer_t> positions, normals, colors, depths;
+    std::vector<image_buffer_t> positions, normals, colors, speculars, depths;
     for (auto& fb : geometry_render_targets) {
         positions.push_back(fb.position);
         normals.push_back(fb.normal);
         colors.push_back(fb.color);
+        speculars.push_back(fb.specular);
         depths.push_back(fb.depth);
     }
 
+
     buffer_t camera_buffer = create_uniform_buffer(sizeof(view_projection));
+    buffer_t scene_buffer = create_uniform_buffer(sizeof(sandbox_scene));
+
     VkDescriptorSetLayoutBinding camera_binding = create_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
     VkDescriptorSetLayout geometry_layout = create_descriptor_layout({ camera_binding });
     std::vector<VkDescriptorSet> geometry_sets = allocate_descriptor_sets(geometry_layout);
@@ -780,17 +784,17 @@ int main(int argc, char** argv)
 
     //////////////////////////////////////////////////////////////////////////
 
-    buffer_t scene_buffer = create_uniform_buffer(sizeof(sandbox_scene));
-
     VkDescriptorSetLayoutBinding positions_binding = create_binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayoutBinding normals_binding = create_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayoutBinding colors_binding = create_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkDescriptorSetLayoutBinding depths_binding = create_binding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkDescriptorSetLayoutBinding scene_binding = create_binding(4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding specular_binding = create_binding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding depths_binding = create_binding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding scene_binding = create_binding(5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayout lighting_layout = create_descriptor_layout({
         positions_binding,
         normals_binding,
         colors_binding,
+        specular_binding,
         depths_binding,
         scene_binding
     });
@@ -798,19 +802,20 @@ int main(int argc, char** argv)
     update_binding(lighting_sets, positions_binding, positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
     update_binding(lighting_sets, normals_binding, normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
     update_binding(lighting_sets, colors_binding, colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
+    update_binding(lighting_sets, specular_binding, speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
     update_binding(lighting_sets, depths_binding, depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_fb_sampler);
     update_binding(lighting_sets, scene_binding, scene_buffer, sizeof(sandbox_scene));
 
 
     //////////////////////////////////////////////////////////////////////////
 
-    albdo_binding = create_binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    normal_binding = create_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    specular_binding = create_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    mat_albdo_binding = create_binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    mat_normal_binding = create_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    mat_specular_binding = create_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     material_layout = create_descriptor_layout({
-        albdo_binding,
-        normal_binding,
-        specular_binding
+        mat_albdo_binding,
+        mat_normal_binding,
+        mat_specular_binding
     });
 
     //////////////////////////////////////////////////////////////////////////
@@ -835,7 +840,6 @@ int main(int argc, char** argv)
     vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
     vert.add_attribute(VK_FORMAT_R32G32_SFLOAT, "UV");
     vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
-    vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "BiTangent");
 
 
     shader geometry_vs = create_vertex_shader(load_file(get_vfs_path("/shaders/deferred/geometry.vert")));
@@ -843,7 +847,7 @@ int main(int argc, char** argv)
     shader lighting_vs = create_vertex_shader(load_file(get_vfs_path("/shaders/deferred/lighting.vert")));
     shader lighting_fs = create_fragment_shader(load_file(get_vfs_path("/shaders/deferred/lighting.frag")));
 
-    shader skysphereVS = create_vertex_shader(load_file(get_vfs_path("/shaders/skysphere.vert")));
+    shader skysphere_vs = create_vertex_shader(load_file(get_vfs_path("/shaders/skysphere.vert")));
     shader skysphereFS = create_fragment_shader(load_file(get_vfs_path("/shaders/skysphere.frag")));
 
 
@@ -852,7 +856,7 @@ int main(int argc, char** argv)
     info.binding_format = vert.attributes;
     info.wireframe = false;
     info.depth_testing = true;
-    info.blend_count = 3;
+    info.blend_count = 4;
     info.cull_mode = VK_CULL_MODE_BACK_BIT;
 
 
@@ -877,7 +881,7 @@ int main(int argc, char** argv)
     {
         info.binding_layout_size = vert.bindingSize;
         info.binding_format = vert.attributes;
-        info.blend_count = 3;
+        info.blend_count = 4;
         info.shaders = { geometry_vs, geometry_fs };
         info.wireframe = true;
         info.depth_testing = true;
@@ -885,7 +889,7 @@ int main(int argc, char** argv)
     }
     {
         info.wireframe = false;
-        info.shaders = { skysphereVS, geometry_fs };
+        info.shaders = { skysphere_vs, geometry_fs };
         info.depth_testing = false;
         info.cull_mode = VK_CULL_MODE_NONE;
         skyspherePipeline = create_pipeline(info, rendering_pipeline_layout, geometry_pass);
@@ -894,7 +898,7 @@ int main(int argc, char** argv)
 
     // Delete all individual shaders since they are now part of the various pipelines
     destroy_shader(skysphereFS);
-    destroy_shader(skysphereVS);
+    destroy_shader(skysphere_vs);
     destroy_shader(lighting_fs);
     destroy_shader(lighting_vs);
     destroy_shader(geometry_fs);
@@ -930,16 +934,18 @@ int main(int argc, char** argv)
     //
     
     // create materials
-    //material_t sun_material;
-    //sun_material.textures.push_back(load_texture(get_vfs_path("/textures/sun.png")));
-    //create_material(sun_material, model_dsets);
+    material_t sun_material;
+    sun_material.textures.push_back(load_texture(get_vfs_path("/textures/sun.png")));
+    sun_material.textures.push_back(load_texture(get_vfs_path("/textures/null_normal.png")));
+    sun_material.textures.push_back(load_texture(get_vfs_path("/textures/null_specular.png")));
+    create_material(sun_material, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, material_layout, g_texture_sampler);
 
     material_t skysphere_material;
     skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/skysphere1.png")));
     skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/null_normal.png")));
-    skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/null_normal.png")));
+    skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/null_specular.png")));
 
-    create_material(skysphere_material, { albdo_binding, normal_binding, specular_binding }, material_layout, g_texture_sampler);
+    create_material(skysphere_material, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, material_layout, g_texture_sampler);
 
     skysphere_dset = ImGui_ImplVulkan_AddTexture(g_fb_sampler, skysphere_material.textures[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -1017,10 +1023,14 @@ int main(int argc, char** argv)
                 
                 bind_material(cmd_buffer, rendering_pipeline_layout, skysphere_material);
                 bind_vertex_array(cmd_buffer, icosphere);
-                render(cmd_buffer, rendering_pipeline_layout, icosphere.index_count, skyboxsphere_instance);
+                //render(cmd_buffer, rendering_pipeline_layout, icosphere.index_count, skyboxsphere_instance);
 
                 // Render the models
                 bind_pipeline(cmd_buffer, current_pipeline, geometry_sets);
+
+                // render light
+                bind_material(cmd_buffer, rendering_pipeline_layout, sun_material);
+                render(cmd_buffer, rendering_pipeline_layout, icosphere.index_count, sun_instance);
                 
                 // todo: loop over multiple models and render each one
                 for (std::size_t i = 0; i < gModels.size(); ++i) {
@@ -1042,7 +1052,6 @@ int main(int argc, char** argv)
 
 
                 bind_descriptor_set(cmd_buffer, lighting_pipeline_layout, lighting_sets);
-
 
                 bind_pipeline(cmd_buffer, lighting_pipeline, lighting_sets);
                 render_draw(cmd_buffer, lighting_pipeline_layout, renderMode);
@@ -1136,7 +1145,7 @@ int main(int argc, char** argv)
         destroy_vertex_array(model.data);
     }
 
-    //destroy_material(sun_material);
+    destroy_material(sun_material);
     destroy_material(skysphere_material);
 
 

@@ -58,6 +58,7 @@ struct framebuffer_t {
     image_buffer_t position;
     image_buffer_t normal;
     image_buffer_t color;
+    image_buffer_t specular;
 
     image_buffer_t depth;
 };

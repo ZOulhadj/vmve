@@ -125,7 +125,7 @@ static swapchain_t create_swapchain()
     VkSwapchainCreateInfoKHR swapchain_info { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
     swapchain_info.surface               = g_rc->surface;
     swapchain_info.minImageCount         = image_count;
-    swapchain_info.imageFormat           = VK_FORMAT_B8G8R8A8_SRGB;
+    swapchain_info.imageFormat           = VK_FORMAT_R8G8B8A8_SRGB;
     swapchain_info.imageColorSpace       = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     swapchain_info.imageExtent           = get_surface_size(surface_properties);
     swapchain_info.imageArrayLayers      = 1;
@@ -300,7 +300,7 @@ VkRenderPass create_ui_render_pass()
     std::array<VkAttachmentDescription, 1> attachments{};
 
     // color attachment
-    attachments[0].format = VK_FORMAT_B8G8R8A8_SRGB;
+    attachments[0].format = VK_FORMAT_R8G8B8A8_SRGB;
     attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -349,7 +349,7 @@ VkRenderPass create_render_pass()
     std::array<VkAttachmentDescription, 1> attachments{};
 
     // color attachment
-    attachments[0].format = VK_FORMAT_B8G8R8A8_SRGB;
+    attachments[0].format = VK_FORMAT_R8G8B8A8_SRGB;
     attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
     attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -438,17 +438,18 @@ VkRenderPass create_deferred_render_pass()
     // For the first three attachments (position, normal, color)
     // Separate final attachment for depth
 
-    std::array<VkAttachmentDescription, 4> attachments{};
+    std::array<VkAttachmentDescription, 5> attachments{};
 
     // todo:
     // Manually set image formats
     attachments[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     attachments[1].format = VK_FORMAT_R16G16B16A16_SFLOAT;
-    attachments[2].format = VK_FORMAT_B8G8R8A8_SRGB;
-    attachments[3].format = VK_FORMAT_D32_SFLOAT;
+    attachments[2].format = VK_FORMAT_R8G8B8A8_SRGB;
+    attachments[3].format = VK_FORMAT_R8_SRGB;
+    attachments[4].format = VK_FORMAT_D32_SFLOAT;
 
     // position, normal and color
-    for (std::size_t i = 0; i < 4; ++i) {
+    for (std::size_t i = 0; i < 5; ++i) {
         attachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -461,21 +462,22 @@ VkRenderPass create_deferred_render_pass()
     }
 
     // depth
-    attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachments[3].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[4].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
 
     
     // color attachment references
-    std::array<VkAttachmentReference, 3> color_references {
+    std::array<VkAttachmentReference, 4> color_references {
         VkAttachmentReference{ 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
         VkAttachmentReference{ 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
         VkAttachmentReference{ 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
+        VkAttachmentReference{ 3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
     };
 
     // depth attachment reference
     VkAttachmentReference depth_reference{};
-    depth_reference.attachment = 3;
+    depth_reference.attachment = 4;
     depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 
@@ -528,17 +530,19 @@ std::vector<framebuffer_t> create_deferred_render_targets(VkRenderPass render_pa
         // Create render target image resources
         render_targets[i].position = create_image(extent, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         render_targets[i].normal = create_image(extent, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-        render_targets[i].color = create_image(extent, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        render_targets[i].color = create_image(extent, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        render_targets[i].specular = create_image(extent, VK_FORMAT_R8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
         render_targets[i].depth = create_image(extent, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
 
         // Create render target framebuffer
-        std::array<VkImageView, 4> attachments;
+        std::array<VkImageView, 5> attachments;
         attachments[0] = render_targets[i].position.view;
         attachments[1] = render_targets[i].normal.view;
         attachments[2] = render_targets[i].color.view;
-        attachments[3] = render_targets[i].depth.view;
+        attachments[3] = render_targets[i].specular.view;
+        attachments[4] = render_targets[i].depth.view;
 
         VkFramebufferCreateInfo framebuffer_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         framebuffer_info.renderPass = render_pass;
@@ -583,11 +587,12 @@ std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass,
     vkCmdSetViewport(geometry_cmd_buffers[current_frame], 0, 1, &viewport);
     vkCmdSetScissor(geometry_cmd_buffers[current_frame], 0, 1, &scissor);
 
-    std::array<VkClearValue, 4> clear_values{};
+    std::array<VkClearValue, 5> clear_values{};
     clear_values[0].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
     clear_values[1].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
     clear_values[2].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
-    clear_values[3].depthStencil = { 0.0f, 0 };
+    clear_values[3].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
+    clear_values[4].depthStencil = { 0.0f, 0 };
  
 
     VkRect2D render_area{};
@@ -615,6 +620,7 @@ void destroy_deferred_render_targets(std::vector<framebuffer_t>& render_targets)
         vkDestroyFramebuffer(g_rc->device.device, rt.framebuffer, nullptr);
 
         destroy_image(rt.depth);
+        destroy_image(rt.specular);
         destroy_image(rt.color);
         destroy_image(rt.normal);
         destroy_image(rt.position);
@@ -640,7 +646,7 @@ std::vector<render_target> create_render_targets(VkRenderPass render_pass, VkExt
 
     for (std::size_t i = 0; i < render_targets.size(); ++i) {
         // Create render target image resources
-        render_targets[i].image = create_image(extent, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        render_targets[i].image = create_image(extent, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
         //render_targets[i].depth = create_image(extent, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
 
@@ -717,7 +723,7 @@ std::vector<render_target> create_ui_render_targets(VkRenderPass render_pass, Vk
 
     for (std::size_t i = 0; i < render_targets.size(); ++i) {
         // Create render target image resources
-        render_targets[i].image = create_image(extent, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        render_targets[i].image = create_image(extent, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
         // Create render target framebuffer
         const std::array<VkImageView, 1> attachments{ g_swapchain.images[i].view };
@@ -1420,7 +1426,8 @@ void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout
 void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets, std::size_t size)
 {
     const uint32_t uniform_offset = pad_uniform_buffer_size(size) * current_frame;
-    vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[current_frame], 1, &uniform_offset);
+    const std::array<uint32_t, 1> offsets = { uniform_offset };
+    vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[current_frame], offsets.size(), offsets.data());
 }
 
 void bind_pipeline(std::vector<VkCommandBuffer>& buffers, VkPipeline pipeline, const std::vector<VkDescriptorSet>& descriptorSets)

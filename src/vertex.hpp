@@ -9,7 +9,6 @@ struct vertex_t
     glm::vec2 uv;
 
     glm::vec3 tangent;
-    glm::vec3 biTangent;
 
     float padding;
 };
