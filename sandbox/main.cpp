@@ -903,13 +903,13 @@ int main(int argc, char** argv)
 
 
     // Built-in resources
-    std::vector<vertex_t> quad_vertices {
+    const std::vector<vertex_t> quad_vertices {
         {{  0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f} },
         {{ -0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {1.0f, 0.0f} },
         {{  0.5, 0.0,  0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 1.0f} },
         {{ -0.5, 0.0,  0.5 }, { 0.0f, 1.0f, 0.0f }, {1.0f, 1.0f} }
     };
-    std::vector<uint32_t> quad_indices {
+    const std::vector<uint32_t> quad_indices {
         0, 1, 2,
         3, 2, 1
     };
