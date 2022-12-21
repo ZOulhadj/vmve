@@ -136,5 +136,4 @@ static bool has_required_features(VkPhysicalDevice physical_device,
     return true;
 }
 
-
 #endif

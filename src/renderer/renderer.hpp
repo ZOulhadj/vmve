@@ -51,18 +51,24 @@ struct render_target {
     VkFramebuffer fb;
 };
 
-struct framebuffer_t {
-    VkFramebuffer framebuffer;
-    VkExtent2D extent;
 
-    image_buffer_t position;
-    image_buffer_t normal;
-    image_buffer_t color;
-    image_buffer_t specular;
-
-    image_buffer_t depth;
+struct framebuffer_attachment
+{
+    // TEMP: Can this be a single image instead of multiple frames?
+    std::vector<image_buffer_t> image;
 };
 
+
+struct framebuffer
+{
+    std::vector<VkFramebuffer> handle;
+    std::vector<framebuffer_attachment> attachments;
+
+    uint32_t width;
+    uint32_t height;
+
+    VkRenderPass render_pass;
+};
 
 struct descriptor_set_layout
 {
@@ -142,14 +148,8 @@ VkRenderPass create_ui_render_pass();
 VkRenderPass create_render_pass();
 void destroy_render_pass(VkRenderPass render_pass);
 
-VkRenderPass create_deferred_render_pass();
-std::vector<framebuffer_t> create_deferred_render_targets(VkRenderPass render_pass, VkExtent2D extent);
-std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, 
-                                                           const std::vector<framebuffer_t>& render_targets,
-                                                           const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
-void destroy_deferred_render_targets(std::vector<framebuffer_t>& render_targets);
-void recreate_deferred_renderer_targets(VkRenderPass render_pass, std::vector<framebuffer_t>& render_targets, VkExtent2D extent);
-
+std::vector<VkCommandBuffer> begin_render_target(const framebuffer& fb,
+                                                 const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 std::vector<render_target> create_render_targets(VkRenderPass render_pass, VkExtent2D extent);
 void recreate_render_targets(VkRenderPass render_pass, std::vector<render_target>& render_targets, VkExtent2D extent);
 
@@ -169,6 +169,13 @@ void destroy_pipeline_layout(VkPipelineLayout layout);
 bool begin_rendering();
 void end_rendering();
 
+//////////////////////////////////////////////////////////////////////////
+
+void add_framebuffer_attachment(framebuffer& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
+
+void create_render_pass(framebuffer& fb);
+void destroy_render_pass(framebuffer& fb);
+//////////////////////////////////////////////////////////////////////////
 
 std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, const std::vector<render_target>& render_targets);
 std::vector<VkCommandBuffer> begin_ui_render_target(VkRenderPass render_pass, const std::vector<render_target>& render_targets);

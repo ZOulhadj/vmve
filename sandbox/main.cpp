@@ -732,12 +732,26 @@ int main(int argc, char** argv)
     g_fb_sampler = create_sampler(VK_FILTER_LINEAR);
     g_texture_sampler = create_sampler(VK_FILTER_LINEAR);
 
-    VkRenderPass geometry_pass = create_deferred_render_pass();
+    VkRenderPass shadow_pass = create_render_pass();
     VkRenderPass lighting_pass = create_render_pass();
     VkRenderPass ui_pass = create_ui_render_pass();
 
     // Deferred rendering (2 passes)
-    std::vector<framebuffer_t> geometry_render_targets = create_deferred_render_targets(geometry_pass, { 1280, 720 });
+    framebuffer geometry_framebuffer{};
+    add_framebuffer_attachment(geometry_framebuffer, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, { 1280, 720 });
+    add_framebuffer_attachment(geometry_framebuffer, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, { 1280, 720 });
+    add_framebuffer_attachment(geometry_framebuffer, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { 1280, 720 });
+    add_framebuffer_attachment(geometry_framebuffer, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8_SRGB, { 1280, 720 });
+    add_framebuffer_attachment(geometry_framebuffer, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 1280, 720 });
+    create_render_pass(geometry_framebuffer);
+
+    //framebuffer shadow_framebuffer{};
+    //add_framebuffer_attachment(shadow_framebuffer, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 2048, 2048 });
+
+    //create_render_pass(shadow_framebuffer);
+    //
+    //destroy_render_pass(shadow_framebuffer);
+    
     std::vector<render_target> lighting_render_targets = create_render_targets(lighting_pass, { 1280, 720 });
 
     // UI rendering (1 pass)
@@ -765,12 +779,17 @@ int main(int argc, char** argv)
 
     // Convert render target attachments into flat arrays for descriptor binding
     std::vector<image_buffer_t> positions, normals, colors, speculars, depths;
-    for (auto& fb : geometry_render_targets) {
-        positions.push_back(fb.position);
-        normals.push_back(fb.normal);
-        colors.push_back(fb.color);
-        speculars.push_back(fb.specular);
-        depths.push_back(fb.depth);
+    for (auto& attachment : geometry_framebuffer.attachments) {
+        positions.push_back(geometry_framebuffer.attachments[0].image[0]);
+        positions.push_back(geometry_framebuffer.attachments[0].image[1]);
+        normals.push_back(geometry_framebuffer.attachments[1].image[0]);
+        normals.push_back(geometry_framebuffer.attachments[1].image[1]);
+        colors.push_back(geometry_framebuffer.attachments[2].image[0]);
+        colors.push_back(geometry_framebuffer.attachments[2].image[1]);
+        speculars.push_back(geometry_framebuffer.attachments[3].image[0]);
+        speculars.push_back(geometry_framebuffer.attachments[3].image[1]);
+        depths.push_back(geometry_framebuffer.attachments[4].image[0]);
+        depths.push_back(geometry_framebuffer.attachments[4].image[1]);
     }
 
 
@@ -865,7 +884,7 @@ int main(int argc, char** argv)
         info.wireframe = false;
         info.depth_testing = true;
         info.shaders = { geometry_vs, geometry_fs };
-        geometry_pipeline = create_pipeline(info, rendering_pipeline_layout, geometry_pass);
+        geometry_pipeline = create_pipeline(info, rendering_pipeline_layout, geometry_framebuffer.render_pass);
     }
     {
         info.depth_testing = false;
@@ -885,14 +904,14 @@ int main(int argc, char** argv)
         info.shaders = { geometry_vs, geometry_fs };
         info.wireframe = true;
         info.depth_testing = true;
-        wireframePipeline = create_pipeline(info, rendering_pipeline_layout, geometry_pass);
+        wireframePipeline = create_pipeline(info, rendering_pipeline_layout, geometry_framebuffer.render_pass);
     }
     {
         info.wireframe = false;
         info.shaders = { skysphere_vs, geometry_fs };
         info.depth_testing = false;
         info.cull_mode = VK_CULL_MODE_NONE;
-        skyspherePipeline = create_pipeline(info, rendering_pipeline_layout, geometry_pass);
+        skyspherePipeline = create_pipeline(info, rendering_pipeline_layout, geometry_framebuffer.render_pass);
     }
 
 
@@ -1014,7 +1033,7 @@ int main(int argc, char** argv)
         // This is where the main rendering starts
         if (swapchain_ready = begin_rendering()) {
             {
-                auto cmd_buffer = begin_render_target(geometry_pass, geometry_render_targets);
+                auto cmd_buffer = begin_render_target(geometry_framebuffer);
 
                 bind_descriptor_set(cmd_buffer, rendering_pipeline_layout, geometry_sets, sizeof(view_projection));
                 
@@ -1175,8 +1194,8 @@ int main(int argc, char** argv)
     destroy_render_pass(ui_pass);
     destroy_render_pass(lighting_pass);
 
-    destroy_deferred_render_targets(geometry_render_targets);
-    destroy_render_pass(geometry_pass);
+
+    destroy_render_pass(geometry_framebuffer);
 
     destroy_sampler(g_texture_sampler);
     destroy_sampler(g_fb_sampler);

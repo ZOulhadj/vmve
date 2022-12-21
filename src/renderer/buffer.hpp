@@ -40,8 +40,8 @@ void set_buffer_data_new(buffer_t& buffer, void* data, std::size_t size);
 void destroy_buffer(buffer_t& buffer);
 void destroy_buffers(std::vector<buffer_t>& buffers);
 
-VkImageView create_image_view(VkImage image, VkFormat format, VkImageUsageFlagBits usage);
-image_buffer_t create_image(VkExtent2D extent, VkFormat format, VkImageUsageFlagBits usage);
+VkImageView create_image_view(VkImage image, VkFormat format, VkImageUsageFlags usage);
+image_buffer_t create_image(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage);
 
 std::vector<image_buffer_t> create_color_images(VkExtent2D size);
 image_buffer_t create_depth_image(VkExtent2D size);
