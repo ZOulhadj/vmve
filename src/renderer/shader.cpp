@@ -42,7 +42,7 @@ shader_compiler create_shader_compiler()
 {
     shader_compiler compiler{};
 
-    // todo(zak): Check for potential initialization errors.
+    // TODO: Check for potential initialization errors.
     compiler.compiler = shaderc_compiler_initialize();
     compiler.options  = shaderc_compile_options_initialize();
 

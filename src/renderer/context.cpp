@@ -171,7 +171,7 @@ static device_t create_device(VkInstance instance,
     // Print the number of GPUs found with their names
     logger::info("Found {} suitable GPUs: ", suitable_gpus.size());
     for (std::size_t i = 0; i < suitable_gpus.size(); ++i) {
-        logger::info("\t #{}: {}", i + 1, suitable_gpu_names[i]);
+        logger::info("\t#{}: {}", i + 1, suitable_gpu_names[i]);
     }
 
     // todo: Here we should query for a GPU from the list of suitable GPUs.

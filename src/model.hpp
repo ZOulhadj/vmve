@@ -7,6 +7,8 @@
 
 
 struct model_t {
+    std::string name;
+
     vertex_array_t data;
     material_t textures;
 };

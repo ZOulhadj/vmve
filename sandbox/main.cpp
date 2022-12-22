@@ -1,4 +1,5 @@
 // Engine header files section
+#include "../src/core/command_line.hpp"
 #include "../src/window.hpp"
 #include "../src/renderer/common.hpp"
 #include "../src/renderer/renderer.hpp"
@@ -83,7 +84,12 @@ struct sandbox_scene {
     glm::vec4 lightPosStrength = glm::vec4(2.0f, 5.0f, 2.0f, 1.0f);
 } scene;
 
+
+// Stores a collection of unique models 
 std::vector<model_t> gModels;
+
+// Stores the actual unique properties for every object in the world
+std::vector<instance_t> g_instances;
 
 static float temperature = 23.5;
 static float windSpeed = 2.0f;
@@ -101,11 +107,6 @@ static double delta_time = 0.0f;
 static camera_mode cam_mode = camera_mode::first_person;
 
 VkDescriptorSet skysphere_dset;
-
-
-//VkDescriptorSet a;
-//VkDescriptorSet n;
-//VkDescriptorSet s;
 
 
 static void handle_input(camera_t& camera, double deltaTime)
@@ -259,7 +260,7 @@ static void render_main_menu()
 
 
     if (load_model_open) {
-        ImGui::Begin("Load Model");
+        ImGui::Begin("Load Model", &load_model_open);
         std::string model_path = render_file_explorer(get_vfs_path("/models"));
 
         if (!model_path.empty()) {
@@ -374,56 +375,90 @@ static void render_right_window()
     // Object window
     ImGui::Begin(object_window, &window_open, window_flags);
     {
-        // List all currently loaded models
-        static int currently_selected_model = 0;
-        std::array<const char*, 2> items = { "House", "Backpack" };
-        ImGui::ListBox("Models", &currently_selected_model, items.data(), items.size());
+        static int current_instance_item = 0;
+        static int current_model_item = 0;
 
-        if (currently_selected_model == 0) {
-            //ImGui::SliderFloat3("Translation", glm::value_ptr(objectTranslation), translateMin, translateMax);
-            //ImGui::SliderFloat3("Rotation", glm::value_ptr(objectRotation), rotationMin, rotationMax);
-            //ImGui::SliderFloat3("Scale", glm::value_ptr(objectScale), scaleMin, scaleMax);
+        if (ImGui::Button("Add instance")) {
+            instance_t instance{};
+            instance.id = g_instances.size();
+            instance.name = gModels[current_model_item].name;
+            instance.model = &gModels[0];
+            instance.position = glm::vec3(0.0f);
+            instance.matrix = glm::mat4(1.0f);
 
-
-
-            //static bool open = false;
-            //static VkDescriptorSet img_id = nullptr;
-
-            //ImGui::Text("Material");
-            //
-            //ImGui::Text("Albedo");
-            //ImGui::SameLine();
-            //if (ImGui::ImageButton(a, { 64, 64 })) {
-            //    open = true;
-            //    img_id = a;
-            //}
-
-
-            //ImGui::Text("Normal");
-            //ImGui::SameLine();
-            //if (ImGui::ImageButton(n, { 64, 64 })) {
-            //    open = true;
-            //    img_id = n;
-            //}
-
-
-            //ImGui::Text("Specular");
-            //ImGui::SameLine();
-            //if (ImGui::ImageButton(s, { 64, 64 })) {
-            //    open = true;
-            //    img_id = s;
-            //}
-
-
-
-            //if (open) {
-            //    ImGui::Begin("Image", &open);
-
-            //    ImGui::Image(img_id, ImGui::GetContentRegionAvail());
-
-            //    ImGui::End();
-            //}
+            g_instances.push_back(instance);
         }
+ 
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(g_instances.empty());
+        if (ImGui::Button("Remove instance")) {
+            g_instances.erase(g_instances.begin() + current_instance_item);
+        }
+        ImGui::EndDisabled();
+
+        //ImGui::Combo("Model", &current_model_item, gModels., gModels.size());
+
+        // Options
+        static ImGuiTableFlags flags =
+            ImGuiTableFlags_Resizable | ImGuiTableFlags_Hideable | ImGuiTableFlags_BordersOuter | 
+            ImGuiTableFlags_BordersV | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_ScrollY;
+
+        const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
+        const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
+
+        if (ImGui::BeginTable("Objects", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f)) {
+            ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, 0.0f, 0);
+            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 0.0f, 1);
+            ImGui::TableSetupScrollFreeze(0, 1);
+            ImGui::TableHeadersRow();
+
+            ImGuiListClipper clipper;
+            clipper.Begin(g_instances.size());
+            while (clipper.Step()) {
+                for (int row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++) {
+                    instance_t& item = g_instances[row_n];
+                    char label[32];
+                    sprintf(label, "%04d", item.id);
+
+
+                    bool is_current_item = (row_n == current_instance_item);
+
+                    ImGui::PushID(label);
+                    ImGui::TableNextRow();
+
+                    ImGui::TableNextColumn();
+                    if (ImGui::Selectable(label, is_current_item, ImGuiSelectableFlags_SpanAllColumns)) {
+                        current_instance_item = row_n;
+                    }
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(item.name.c_str());
+
+                    ImGui::PopID();
+                }
+            }
+            ImGui::EndTable();
+        }
+
+
+        if (g_instances.size() > 0) {
+            ImGui::BeginChild("Object Properties");
+
+            instance_t& item = g_instances[current_instance_item];
+            //glm::vec3 position = get_position_from_matrix(item);
+            //glm::vec3 rotation = get_rotation_from_matrix(item);
+            //glm::vec3 scaling = get_scale_from_matrix(item);
+
+            ImGui::Text("%04d", item.id);
+            ImGui::Text("%s", item.name.c_str());
+            ImGui::SliderFloat3("Translation", glm::value_ptr(item.position), -50.0f, 50.0f);
+            //ImGui::SliderFloat3("Rotation", glm::value_ptr(rotation), -360.0f, 360.0f);
+            //ImGui::SliderFloat3("Scaling", glm::value_ptr(scaling), 0.1f, 10.0f);
+            //ImGui::Combo("Model", &current_item, models, 5);
+
+            ImGui::EndChild();
+        }
+        
     }
     ImGui::End();
 }
@@ -457,7 +492,7 @@ static void render_left_window()
             ImGui::Text("Uptime: %d:%d:%d", hours, minutes, seconds);
 
 #if defined(_WIN32)
-            const MEMORYSTATUSEX memoryStatus = GetMemoryStatus();
+            const MEMORYSTATUSEX memoryStatus = get_memory_status();
 
             const float memoryUsage = memoryStatus.dwMemoryLoad / 100.0f;
             const int64_t totalMemory = memoryStatus.ullTotalPhys / 1'000'000'000;
@@ -644,21 +679,31 @@ static void render_bottom_window()
         static const ImVec4 red = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
 
         ImGui::BeginChild("Logs", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-        for (auto& log : logs) {
-            ImVec4 log_color;
-            if (log.type == log_type::info) {
-                log_color = white;
-            }
-            else if (log.type == log_type::warning) {
-                log_color = yellow;
-            }
-            else if (log.type == log_type::error) {
-                log_color = red;
-            }
 
-            //ImGui::PushTextWrapPos();
-            ImGui::TextColored(log_color, log.message.c_str());
-            //ImGui::PopTextWrapPos();
+        ImGuiListClipper clipper;
+        clipper.Begin(logs.size());
+        while (clipper.Step()) {
+            for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
+                ImVec4 log_color;
+                switch (logs[index].type) {
+                case log_type::info:
+                    log_color = white;
+                    break;
+                case log_type::warning:
+                    log_color = yellow;
+                    break;
+                case log_type::error:
+                    log_color = red;
+                    break;
+                }
+
+                //ImGui::PushTextWrapPos();
+                ImGui::TextColored(log_color, logs[index].message.c_str());
+                //ImGui::PopTextWrapPos();
+            }
+        }
+        for (auto& log : logs) {
+            
         }
 
 
@@ -717,24 +762,35 @@ static void event_callback(event& e);
 
 int main(int argc, char** argv)
 {
+    // Start application timer
+    startTime = std::chrono::high_resolution_clock::now();
+
     logger::info("Initializing application");
 
-    // Start timers
-    startTime = std::chrono::high_resolution_clock::now();
+    // Parse command line arguments
+    command_line_options options = parse_command_line_args(argc, argv);
 
     // Initialize core systems
     window = create_window("VMVE", 1280, 720);
+    if (!window) {
+        logger::err("Failed to create window");
+        return 0;
+    }
+
     window->event_callback = event_callback;
 
-    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::disabled);
+    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
+    if (!renderer) {
+        logger::err("Failed to create renderer");
+        return 0;
+    }
+
+
 
     // Create rendering passes and render targets
     g_fb_sampler = create_sampler(VK_FILTER_LINEAR);
     g_texture_sampler = create_sampler(VK_FILTER_LINEAR);
 
-    VkRenderPass shadow_pass = create_render_pass();
-    VkRenderPass lighting_pass = create_render_pass();
-    VkRenderPass ui_pass = create_ui_render_pass();
 
     // Deferred rendering (2 passes)
     framebuffer geometry_framebuffer{};
@@ -751,6 +807,9 @@ int main(int argc, char** argv)
     //create_render_pass(shadow_framebuffer);
     //
     //destroy_render_pass(shadow_framebuffer);
+
+    VkRenderPass lighting_pass = create_render_pass();
+    VkRenderPass ui_pass = create_ui_render_pass();
     
     std::vector<render_target> lighting_render_targets = create_render_targets(lighting_pass, { 1280, 720 });
 
@@ -978,7 +1037,7 @@ int main(int argc, char** argv)
     instance_t skyboxsphere_instance;
     instance_t grid_instance;
     instance_t sun_instance;
-    instance_t model_instance;
+    //instance_t model_instance;
 
 
     current_pipeline = geometry_pipeline;
@@ -1019,7 +1078,7 @@ int main(int argc, char** argv)
         //rotate(sun_instance, -120.0f, { 1.0f, 0.0f, 0.0f });
         //scale(sun_instance, 1.0f);
 
-        translate(model_instance, { 0.0f, 2.0f, 0.0f });
+        //translate(model_instance, { 0.0f, 2.0f, 0.0f });
         //rotate(model_instance, 10.0f * uptime, { 0.0f, 1.0f, 0.0f });
 
         // copy data into uniform buffer
@@ -1051,11 +1110,25 @@ int main(int argc, char** argv)
                 bind_material(cmd_buffer, rendering_pipeline_layout, sun_material);
                 render(cmd_buffer, rendering_pipeline_layout, icosphere.index_count, sun_instance);
                 
-                // todo: loop over multiple models and render each one
-                for (std::size_t i = 0; i < gModels.size(); ++i) {
-                    bind_material(cmd_buffer, rendering_pipeline_layout, gModels[i].textures);
-                    bind_vertex_array(cmd_buffer, gModels[i].data);
-                    render(cmd_buffer, rendering_pipeline_layout, gModels[i].data.index_count, model_instance);
+
+                // TODO: Currently we are rendering each instance individually 
+                // which is a very naive. Firstly, instances should be rendered
+                // in batches using instanced rendering. We are also constantly
+                // rebinding the descriptor sets (material) and vertex buffers
+                // for each instance even though the data is exactly the same.
+                // 
+                // A proper solution should be designed and implemented in the 
+                // near future.
+                for (std::size_t i = 0; i < g_instances.size(); ++i) {
+                    instance_t& instance = g_instances[i];
+
+                    translate(instance, instance.position);
+                    //rotate(instance, instance.rotation);
+                    //scale(instance, instance.scale);
+
+                    bind_material(cmd_buffer, rendering_pipeline_layout, instance.model->textures);
+                    bind_vertex_array(cmd_buffer, instance.model->data);
+                    render(cmd_buffer, rendering_pipeline_layout, instance.model->data.index_count, instance);
                 }
 
 
@@ -1095,7 +1168,7 @@ int main(int argc, char** argv)
                 render_end_docking();
 
                 end_ui(cmd_buffer);
-     
+
                 end_render_target(cmd_buffer);
             }
 

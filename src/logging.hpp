@@ -42,7 +42,7 @@ private:
     static void check_log_limit();
     static void log(log_type type, const std::string& message);
 private:
-    static const std::size_t _log_limit = 200;
+    static const std::size_t _log_limit = 10'000;
 
     static std::vector<log_message> _logs;
 };

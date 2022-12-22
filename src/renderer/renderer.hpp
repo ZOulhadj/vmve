@@ -14,6 +14,10 @@
 
 #include "../logging.hpp"
 
+enum class renderer_api {
+    vulkan,
+    direct3d
+};
 
 enum class buffer_mode {
     standard = 2,

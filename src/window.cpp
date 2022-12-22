@@ -161,12 +161,16 @@ static void window_cursor_enter_callback(GLFWwindow* window, int entered)
 // events to the application callback.
 window_t* create_window(const char* name, uint32_t width, uint32_t height)
 {
+    assert(width > 0 && height > 0);
+
     window_t* window = new window_t();
 
     glfwSetErrorCallback(glfw_error_callback);
 
     if (!glfwInit()) {
         logger::err("Failed to initialize GLFW");
+
+        delete window;
 
         return nullptr;
     }
@@ -181,7 +185,11 @@ window_t* create_window(const char* name, uint32_t width, uint32_t height)
     window->height = height;
 
     if (!window->handle) {
-        logger::err("Failed to create GLFW window");
+        logger::err("Failed to create GLFW window");   
+        
+        glfwTerminate();
+
+        delete window;
 
         return nullptr;
     }

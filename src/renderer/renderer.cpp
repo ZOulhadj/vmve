@@ -2,6 +2,9 @@
 
 #include "common.hpp"
 
+
+#include "descriptor_sets.hpp"
+
 static renderer_t* g_r = nullptr;
 static renderer_context_t* g_rc  = nullptr;
 
@@ -198,37 +201,6 @@ static void resize_swapchain(swapchain_t& swapchain)
 {
     destroy_swapchain(swapchain);
     swapchain = create_swapchain();
-}
-
-static VkDescriptorPool create_descriptor_pool()
-{
-    VkDescriptorPool pool{};
-
-    // todo: temp
-    const uint32_t max_sizes = 100;
-    const std::vector<VkDescriptorPoolSize> pool_sizes {
-            { VK_DESCRIPTOR_TYPE_SAMPLER, max_sizes },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, max_sizes },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, max_sizes },
-            //{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, max_sizes },
-            //{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, max_sizes },
-            //{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, max_sizes },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, max_sizes },
-            //{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, max_sizes },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, max_sizes },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, max_sizes },
-            //{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, max_sizes }
-    };
-
-    VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.poolSizeCount = u32(pool_sizes.size());
-    pool_info.pPoolSizes    = pool_sizes.data();
-    pool_info.maxSets       = pool_info.poolSizeCount * max_sizes;
-
-    vk_check(vkCreateDescriptorPool(g_rc->device.device, &pool_info, nullptr, &pool));
-
-    return pool;
 }
 
 static std::vector<Frame> create_frames(uint32_t frames_in_flight)
@@ -928,8 +900,9 @@ static VkDebugUtilsMessengerEXT create_debug_messenger(PFN_vkDebugUtilsMessenger
                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
                          VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-    ci.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
-    //VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+    ci.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | 
+                         VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     ci.pfnUserCallback = callback;
     ci.pUserData       = nullptr;
 
@@ -940,10 +913,15 @@ static VkDebugUtilsMessengerEXT create_debug_messenger(PFN_vkDebugUtilsMessenger
 
 static void destroy_debug_messenger(VkDebugUtilsMessengerEXT messenger)
 {
-    auto DestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(g_rc->instance,
-                                                                                                    "vkDestroyDebugUtilsMessengerEXT");
+    if (!messenger)
+        return;
 
-    DestroyDebugUtilsMessengerEXT(g_rc->instance, messenger, nullptr);
+    using func_ptr = PFN_vkDestroyDebugUtilsMessengerEXT;
+    const std::string func_name = "vkDestroyDebugUtilsMessengerEXT";
+
+    const auto func = reinterpret_cast<func_ptr>(vkGetInstanceProcAddr(g_rc->instance, func_name.c_str()));
+
+    func(g_rc->instance, messenger, nullptr);
 }
 
 static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       messageSeverity,
@@ -960,15 +938,25 @@ renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, 
     renderer_t* renderer = new renderer_t();
 
     const std::vector<const char*> layers {
+#if defined(_DEBUG)
         "VK_LAYER_KHRONOS_validation",
+#endif
 #if defined(_WIN32)
         "VK_LAYER_LUNARG_monitor"
 #endif
     };
 
-    // todo: VK_EXT_DEBUG_UTILS_EXTENSION_NAME should only be present if using validation layers
-    const std::vector<const char*> extensions { VK_EXT_DEBUG_UTILS_EXTENSION_NAME };
-    const std::vector<const char*> device_extensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    bool using_validation_layers = false;
+    const auto iter = std::find(layers.begin(), layers.end(), "VK_LAYER_KHRONOS_validation");
+    if (iter != layers.end())
+        using_validation_layers = true;
+    
+
+    std::vector<const char*> extensions;
+    std::vector<const char*> device_extensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
+    if (using_validation_layers)
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
 
     const VkPhysicalDeviceFeatures features{
@@ -977,25 +965,26 @@ renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, 
         .shaderFloat64 = true
     };
 
-    renderer->ctx    = create_renderer_context(VK_API_VERSION_1_3,
-                                               layers,
-                                               extensions,
-                                               device_extensions,
-                                               features, window);
+    renderer->ctx = create_renderer_context(VK_API_VERSION_1_3,
+                                            layers,
+                                            extensions,
+                                            device_extensions,
+                                            features, 
+                                            window);
     g_rc = &renderer->ctx;
 
 
     // Beyond this point, all subsystems of the renderer now makes use of the
     // renderer context internally to avoid needing to pass the context to
     // every function.
+    if (using_validation_layers)
+        renderer->messenger = create_debug_messenger(debug_callback);
 
-    // todo: only create debug callback when validation layers are enabled
-    renderer->messenger = create_debug_messenger(debug_callback);
-    renderer->submit    = create_submit_context();
-    renderer->compiler  = create_shader_compiler();
+    renderer->submit = create_submit_context();
+    renderer->compiler = create_shader_compiler();
 
     g_buffering = buffering_mode;
-    g_vsync     = sync_mode;
+    g_vsync = sync_mode;
     g_swapchain = create_swapchain();
 
     renderer->descriptor_pool = create_descriptor_pool();
@@ -1018,6 +1007,7 @@ void destroy_renderer(renderer_t* renderer)
     vkDestroyDescriptorPool(renderer->ctx.device.device, renderer->descriptor_pool, nullptr);
     destroy_shader_compiler(renderer->compiler);
     destroy_submit_context(renderer->submit);
+
     destroy_debug_messenger(renderer->messenger);
 
     destroy_frames(g_frames);

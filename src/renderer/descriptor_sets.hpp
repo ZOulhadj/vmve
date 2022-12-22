@@ -3,6 +3,9 @@
 
 #include "buffer.hpp"
 
+
+VkDescriptorPool create_descriptor_pool();
+
 VkDescriptorSetLayoutBinding create_binding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stages);
 
 VkDescriptorSetLayout create_descriptor_layout(std::vector<VkDescriptorSetLayoutBinding> bindings);

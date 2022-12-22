@@ -100,7 +100,7 @@ static model_t parse_model(aiNode* node, const aiScene* scene, const std::string
 
     assert(!vertices.empty() || !indices.empty());
 
-
+    model.name = scene->mName.C_Str();
     model.data = create_vertex_array(vertices, indices);
 
     return model;

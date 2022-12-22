@@ -1,5 +1,5 @@
-#ifndef MYENGINE_QUATERNION_CAMERA_HPP
-#define MYENGINE_QUATERNION_CAMERA_HPP
+#ifndef MY_ENGINE_QUATERNION_CAMERA_HPP
+#define MY_ENGINE_QUATERNION_CAMERA_HPP
 
 
 
@@ -8,14 +8,12 @@ enum class camera_mode {
     look_at
 };
 
-struct view_projection
-{
+struct view_projection {
     glm::mat4 view;
     glm::mat4 proj;
 };
 
-struct camera_t
-{
+struct camera_t {
     glm::vec3 position;
     glm::vec3 front_vector;
     glm::vec3 right_vector;

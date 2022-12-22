@@ -3,6 +3,39 @@
 #include "renderer.hpp"
 #include "../logging.hpp"
 
+VkDescriptorPool create_descriptor_pool()
+{
+    const renderer_context_t& rc = get_renderer_context();
+
+    VkDescriptorPool pool{};
+
+    // todo: temp
+    const uint32_t max_sizes = 100;
+    const std::vector<VkDescriptorPoolSize> pool_sizes{
+            { VK_DESCRIPTOR_TYPE_SAMPLER, max_sizes },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, max_sizes },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, max_sizes },
+            //{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, max_sizes },
+            //{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, max_sizes },
+            //{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, max_sizes },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, max_sizes },
+            //{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, max_sizes },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, max_sizes },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, max_sizes },
+            //{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, max_sizes }
+    };
+
+    VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.poolSizeCount = u32(pool_sizes.size());
+    pool_info.pPoolSizes = pool_sizes.data();
+    pool_info.maxSets = pool_info.poolSizeCount * max_sizes;
+
+    vk_check(vkCreateDescriptorPool(rc.device.device, &pool_info, nullptr, &pool));
+
+    return pool;
+}
+
 VkDescriptorSetLayoutBinding create_binding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stages)
 {
     VkDescriptorSetLayoutBinding desc_binding{};
