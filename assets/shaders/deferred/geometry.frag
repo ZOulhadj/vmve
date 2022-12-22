@@ -28,5 +28,5 @@ void main()
     mat3 TBN = mat3(T, B, N);
 
     vec3 normal_tangent = TBN * normalize(texture(normalTexture, texture_coord).xyz * 2.0 - vec3(1.0));
-	out_normal = vec4(normal_tangent, 1.0);
+	out_normal = vec4(N, 1.0);
 }

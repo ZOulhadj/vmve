@@ -1035,7 +1035,6 @@ int main(int argc, char** argv)
     
     // create instances
     instance_t skyboxsphere_instance;
-    instance_t grid_instance;
     instance_t sun_instance;
     //instance_t model_instance;
 
