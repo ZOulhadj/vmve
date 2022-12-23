@@ -375,29 +375,41 @@ static void render_right_window()
     // Object window
     ImGui::Begin(object_window, &window_open, window_flags);
     {
-        static int current_instance_item = 0;
+        static int instance_index = -1;
+        static int unique_instance_ids = 1;
         static int current_model_item = 0;
 
         if (ImGui::Button("Add instance")) {
+
             instance_t instance{};
-            instance.id = g_instances.size();
+            instance.id = unique_instance_ids;
             instance.name = gModels[current_model_item].name;
             instance.model = &gModels[0];
             instance.position = glm::vec3(0.0f);
             instance.matrix = glm::mat4(1.0f);
 
             g_instances.push_back(instance);
+
+            ++unique_instance_ids;
+            instance_index = g_instances.size() - 1;
         }
  
         ImGui::SameLine();
 
         ImGui::BeginDisabled(g_instances.empty());
         if (ImGui::Button("Remove instance")) {
-            g_instances.erase(g_instances.begin() + current_instance_item);
+            
+            g_instances.erase(g_instances.begin() + instance_index);
+
+
+            // Ensure that index does not go below 0
+            if (instance_index > 0)
+                instance_index--;
         }
         ImGui::EndDisabled();
 
-        //ImGui::Combo("Model", &current_model_item, gModels., gModels.size());
+        std::vector<const char*> names;
+        ImGui::Combo("Model", &current_model_item, names.data(), gModels.size());
 
         // Options
         static ImGuiTableFlags flags =
@@ -416,20 +428,20 @@ static void render_right_window()
             ImGuiListClipper clipper;
             clipper.Begin(g_instances.size());
             while (clipper.Step()) {
-                for (int row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++) {
-                    instance_t& item = g_instances[row_n];
+                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+                    instance_t& item = g_instances[i];
                     char label[32];
                     sprintf(label, "%04d", item.id);
 
 
-                    bool is_current_item = (row_n == current_instance_item);
+                    bool is_current_item = (i == instance_index);
 
                     ImGui::PushID(label);
                     ImGui::TableNextRow();
 
                     ImGui::TableNextColumn();
                     if (ImGui::Selectable(label, is_current_item, ImGuiSelectableFlags_SpanAllColumns)) {
-                        current_instance_item = row_n;
+                        instance_index = i;
                     }
                     ImGui::TableNextColumn();
                     ImGui::TextUnformatted(item.name.c_str());
@@ -444,17 +456,12 @@ static void render_right_window()
         if (g_instances.size() > 0) {
             ImGui::BeginChild("Object Properties");
 
-            instance_t& item = g_instances[current_instance_item];
-            //glm::vec3 position = get_position_from_matrix(item);
-            //glm::vec3 rotation = get_rotation_from_matrix(item);
-            //glm::vec3 scaling = get_scale_from_matrix(item);
+            instance_t& item = g_instances[instance_index];
 
-            ImGui::Text("%04d", item.id);
-            ImGui::Text("%s", item.name.c_str());
+
+            ImGui::Text("ID: %04d", item.id);
+            ImGui::Text("Name: %s", item.name.c_str());
             ImGui::SliderFloat3("Translation", glm::value_ptr(item.position), -50.0f, 50.0f);
-            //ImGui::SliderFloat3("Rotation", glm::value_ptr(rotation), -360.0f, 360.0f);
-            //ImGui::SliderFloat3("Scaling", glm::value_ptr(scaling), 0.1f, 10.0f);
-            //ImGui::Combo("Model", &current_item, models, 5);
 
             ImGui::EndChild();
         }
@@ -1100,7 +1107,7 @@ int main(int argc, char** argv)
                 
                 bind_material(cmd_buffer, rendering_pipeline_layout, skysphere_material);
                 bind_vertex_array(cmd_buffer, icosphere);
-                //render(cmd_buffer, rendering_pipeline_layout, icosphere.index_count, skyboxsphere_instance);
+                render(cmd_buffer, rendering_pipeline_layout, icosphere.index_count, skyboxsphere_instance);
 
                 // Render the models
                 bind_pipeline(cmd_buffer, current_pipeline, geometry_sets);
