@@ -14,11 +14,6 @@ void create_material(material_t& material, const std::vector<VkDescriptorSetLayo
     for (std::size_t i = 0; i < material.textures.size(); ++i) {
         update_binding(material.descriptor_set, bindings[i], material.textures[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, sampler);
     }
-
-    //for (std::size_t i = 0; i < material.textures.size(); ++i)
-    //    dsets_builder.fill_binding(i, material.textures[i]);
-
-    //dsets_builder.build(&material.descriptor_set);
 }
 
 void destroy_material(material_t& material)

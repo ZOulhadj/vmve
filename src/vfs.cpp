@@ -8,7 +8,7 @@ vfs& vfs::get()
 }
 
 
-void vfs::mount(const std::string& virtual_path, const std::string& real_path)
+void vfs::mount(const std::string& virtual_path, const std::filesystem::path& real_path)
 {
     _mount_points[virtual_path].push_back(real_path);
 }
@@ -25,16 +25,14 @@ std::string vfs::get_path(const std::string& virtual_path)
     std::string mount_point;
     std::string remaining_path;
 
-    if (full_path.empty())
-    {
+    if (full_path.empty()) {
         throw std::runtime_error("Virtual path is empty!");
     }
 
 
     // If a leading slash is found then simply remove it in order to evaluate
     // the mount point.
-    if (full_path[0] == '/')
-    {
+    if (full_path[0] == '/') {
         full_path = full_path.erase(0, 1);
     }
 
@@ -57,8 +55,7 @@ std::string vfs::get_path(const std::string& virtual_path)
 
     // Check if virtual mount point exists or if any real paths are mounted to
     // the virtual mount point.
-    if (_mount_points.find(mount_point) == _mount_points.end() || _mount_points[mount_point].empty())
-    {
+    if (_mount_points.find(mount_point) == _mount_points.end() || _mount_points[mount_point].empty()) {
         throw std::runtime_error("Virtual mount point not found!");
     }
 
@@ -66,15 +63,13 @@ std::string vfs::get_path(const std::string& virtual_path)
     // If multiple real paths exist for the mount point then for each one check
     // if the file exists.
     std::string file_path;
-    for (const std::string& real_path : _mount_points[mount_point])
-    {
-        std::filesystem::path path(real_path + remaining_path);
+    for (const std::filesystem::path& real_path : _mount_points[mount_point]) {
+        std::filesystem::path path(real_path.string() + remaining_path);
 
         // todo: This only checks for the first file which is found and
         // todo: therefore, does not take into account that the same
         // todo: path may exist at different real paths.
-        if (std::filesystem::exists(path))
-        {
+        if (std::filesystem::exists(path)) {
             file_path = path.string();
             break;
         }
@@ -82,8 +77,7 @@ std::string vfs::get_path(const std::string& virtual_path)
 
 
 
-    if (file_path.empty())
-    {
+    if (file_path.empty()) {
         throw std::runtime_error("File could not be found at any mount point!");
     }
 
@@ -91,7 +85,7 @@ std::string vfs::get_path(const std::string& virtual_path)
 }
 
 
-void mount_vfs(const std::string& virtual_path, const std::string& real_path)
+void mount_vfs(const std::string& virtual_path, const std::filesystem::path& real_path)
 {
     vfs::get().mount(virtual_path, real_path);
 }

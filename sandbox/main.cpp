@@ -86,7 +86,10 @@ struct sandbox_scene {
 
 
 // Stores a collection of unique models 
-std::vector<model_t> gModels;
+std::vector<model_t> g_models;
+
+// Stores the names of each model in the same order as models
+std::vector<const char*> g_model_names;
 
 // Stores the actual unique properties for every object in the world
 std::vector<instance_t> g_instances;
@@ -188,6 +191,8 @@ static void load_mesh(std::vector<model_t>& models, std::string path)
 
     std::lock_guard<std::mutex> lock(model_mutex);
     models.push_back(model);
+    
+    g_model_names.push_back(model.name.c_str());
 
     logger::info("Loading mesh complete {}", path);
 };
@@ -266,7 +271,7 @@ static void render_main_menu()
         if (!model_path.empty()) {
             // todo: is renderer_wait required here?
             // create and push new model into list
-            futures.push_back(std::async(std::launch::async, load_mesh, std::ref(gModels), model_path));
+            futures.push_back(std::async(std::launch::async, load_mesh, std::ref(g_models), model_path));
 
             load_model_open = false;
         }
@@ -311,7 +316,6 @@ static void render_main_menu()
                 // Set key and IV to encryption mode
                 CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
                 encryption.SetKeyWithIV(key, key.size(), iv);
-
 
                 k = std::string(reinterpret_cast<const char*>(&key[0]), key.size());
                 i = std::string(reinterpret_cast<const char*>(&iv[0]), iv.size());
@@ -383,8 +387,8 @@ static void render_right_window()
 
             instance_t instance{};
             instance.id = unique_instance_ids;
-            instance.name = gModels[current_model_item].name;
-            instance.model = &gModels[0];
+            instance.name = "Unnamed";
+            instance.model = &g_models[0];
             instance.position = glm::vec3(0.0f);
             instance.matrix = glm::mat4(1.0f);
 
@@ -408,8 +412,7 @@ static void render_right_window()
         }
         ImGui::EndDisabled();
 
-        std::vector<const char*> names;
-        ImGui::Combo("Model", &current_model_item, names.data(), gModels.size());
+        ImGui::Combo("Model", &current_model_item, g_model_names.data(), g_model_names.size());
 
         // Options
         static ImGuiTableFlags flags =
@@ -1013,11 +1016,15 @@ int main(int argc, char** argv)
     futures.push_back(std::async(
         std::launch::async, 
         load_mesh, 
-        std::ref(gModels), 
+        std::ref(g_models), 
         get_vfs_path("/models/backpack/backpack.obj"))
     );
     //
-    
+
+
+    model_t sponza = load_model_latest(get_vfs_path("/models/sponza/sponza.obj"));
+    destroy_model(sponza);
+
     // create materials
     material_t sun_material;
     sun_material.textures.push_back(load_texture(get_vfs_path("/textures/sun.png")));
@@ -1238,7 +1245,7 @@ int main(int argc, char** argv)
     // Wait until all GPU commands have finished
     renderer_wait();
 
-    for (auto& model : gModels) {
+    for (auto& model : g_models) {
         destroy_material(model.textures);
         destroy_vertex_array(model.data);
     }

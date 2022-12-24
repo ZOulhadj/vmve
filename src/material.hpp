@@ -21,9 +21,6 @@ struct material_t
 
     std::vector<image_buffer_t> textures;
 
-    //image_buffer_t albedo;
-    //image_buffer_t normal;
-    //image_buffer_t specular;
 };
 
 
