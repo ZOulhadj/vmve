@@ -240,6 +240,8 @@ static mesh_t process_mesh(const model_t& model, const aiMesh* assimp_mesh, cons
     if (assimp_mesh->mMaterialIndex >= 0) {
         const aiMaterial* material = scene->mMaterials[assimp_mesh->mMaterialIndex];
 
+        // TODO: Only load unique textures. Meaning that if a texture has 
+        // already been loaded simply reuse it.
         std::vector<image_buffer_t> diffuse = load_mesh_textures(material, aiTextureType_DIFFUSE, model.path);
         std::vector<image_buffer_t> normals = load_mesh_textures(material, aiTextureType_HEIGHT, model.path);
         std::vector<image_buffer_t> speculars = load_mesh_textures(material, aiTextureType_SPECULAR, model.path);
