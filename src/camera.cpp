@@ -1,5 +1,42 @@
 #include "camera.hpp"
 
+static frustum_plane create_frustum(const glm::vec3& normal, const glm::vec3& point)
+{
+    frustum_plane plane;
+    plane.normal = glm::normalize(normal);
+    plane.distance_from_origin = glm::dot(plane.normal, point);
+
+    return plane;
+}
+
+camera_frustum create_camera_frustum(const camera_t& camera)
+{
+    // NOTE: The camera frustum can also be extracted from the MVP
+    // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf    
+    
+    camera_frustum frustum{};
+
+
+    const float far = 1000000.0f;
+    const float aspect_ratio = camera.width / camera.height;
+
+    const float half_height = far * glm::tan(camera.fov * 0.5f);
+    const float half_width = half_height * aspect_ratio;
+    const glm::vec3 front_mult_far = far * camera.front_vector;
+
+    frustum.near = create_frustum(camera.front_vector, camera.position + camera.near * camera.front_vector);
+    frustum.far  = create_frustum(-camera.front_vector, camera.position + front_mult_far);
+    frustum.right = create_frustum(glm::cross(camera.up_vector, front_mult_far + camera.right_vector * half_width), camera.position);
+    frustum.left = create_frustum(glm::cross(front_mult_far - camera.right_vector * half_width, camera.up_vector), camera.position);
+    frustum.top = create_frustum(glm::cross(camera.right_vector, front_mult_far - camera.up_vector * half_height), camera.position);
+    frustum.bottom = create_frustum(glm::cross(front_mult_far + camera.up_vector * half_height, camera.right_vector), camera.position);
+
+
+    return frustum;
+}
+
+
+
 
 // Reversed Z infinite perspective
 // GLM provides various types of perspective functions including infinitePerspective()

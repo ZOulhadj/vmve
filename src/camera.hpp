@@ -2,6 +2,20 @@
 #define MY_ENGINE_QUATERNION_CAMERA_HPP
 
 
+struct frustum_plane {
+    glm::vec3 normal;
+    float distance_from_origin;
+};
+
+struct camera_frustum {
+    frustum_plane top;
+    frustum_plane bottom;
+    frustum_plane left;
+    frustum_plane right;
+    frustum_plane near;
+    frustum_plane far;
+};
+
 
 enum class camera_mode {
     first_person,
@@ -43,6 +57,9 @@ struct camera_t {
 
 
 camera_t create_camera(const glm::vec3& position, float fov, float speed);
+
+
+camera_frustum create_camera_frustum(const camera_t& camera);
 
 void update_camera_view(camera_t& camera, float cursor_x, float cursor_y);
 void update_camera(camera_t& camera);

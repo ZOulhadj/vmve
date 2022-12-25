@@ -1167,7 +1167,7 @@ int main(int argc, char** argv)
 
 
                 translate(model_instance, { 0.0f, -5.0f, 20.0f });
-                scale(model_instance, 0.2f);
+                scale(model_instance, 0.05f);
 
                 for (std::size_t i = 0; i < sponza.meshes.size(); ++i) {
                     uint32_t current_frame = get_current_frame();
