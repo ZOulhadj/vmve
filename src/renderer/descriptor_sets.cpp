@@ -10,7 +10,7 @@ VkDescriptorPool create_descriptor_pool()
     VkDescriptorPool pool{};
 
     // todo: temp
-    const uint32_t max_sizes = 100;
+    const uint32_t max_sizes = 1000;
     const std::vector<VkDescriptorPoolSize> pool_sizes{
             { VK_DESCRIPTOR_TYPE_SAMPLER, max_sizes },
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, max_sizes },

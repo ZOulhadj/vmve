@@ -946,11 +946,11 @@ renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, 
 #endif
     };
 
+    // TODO: Find out why simply using the validation extension const char* 
+    // does not work but wrapping it in a std::string does.
     bool using_validation_layers = false;
-    const auto iter = std::find(layers.begin(), layers.end(), "VK_LAYER_KHRONOS_validation");
-    if (iter != layers.end())
+    if (std::find(layers.begin(), layers.end(), std::string("VK_LAYER_KHRONOS_validation")) != layers.end())
         using_validation_layers = true;
-    
 
     std::vector<const char*> extensions;
     std::vector<const char*> device_extensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };

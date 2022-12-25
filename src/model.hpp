@@ -28,15 +28,23 @@ struct mesh_t {
 
     std::vector<vertex_t> vertices;
     std::vector<uint32_t> indices;
-    std::vector<image_buffer_t> textures;
 
+    
+    // A list of indices so we know we textures this mesh uses
+    std::vector<uint32_t> textures;
 
+    vertex_array_t vertex_array;
     VkDescriptorSet descriptor_set;
 };
 
 
 struct model_t {
     std::string path;
+
+    // A list of all the unique textures
+    std::vector<std::filesystem::path> unique_texture_paths;
+    std::vector<image_buffer_t> unique_textures;
+
     std::vector<mesh_t> meshes;
 
 

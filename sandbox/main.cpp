@@ -1013,17 +1013,37 @@ int main(int argc, char** argv)
 
     // TEMP: Don't want to have to manually load the model each time so I will do it
     // here instead for the time-being.
-    futures.push_back(std::async(
-        std::launch::async, 
-        load_mesh, 
-        std::ref(g_models), 
-        get_vfs_path("/models/backpack/backpack.obj"))
-    );
+    //futures.push_back(std::async(
+    //    std::launch::async, 
+    //    load_mesh, 
+    //    std::ref(g_models), 
+    //    get_vfs_path("/models/backpack/backpack.obj"))
+    //);
     //
 
 
     model_t sponza = load_model_latest(get_vfs_path("/models/sponza/sponza.obj"));
-    destroy_model(sponza);
+
+    // At this point, the model has been fully loaded onto the CPU and now we 
+    // need to transfer this data onto the GPU.
+    // 
+    // Also setup the texture descriptor sets
+    std::vector<VkDescriptorSetLayoutBinding> bindings = { mat_albdo_binding, mat_normal_binding, mat_specular_binding };
+    for (auto& mesh : sponza.meshes) {
+        mesh.vertex_array = create_vertex_array(mesh.vertices, mesh.indices);
+        mesh.descriptor_set = allocate_descriptor_set(material_layout);
+
+        for (std::size_t j = 0; j < mesh.textures.size(); ++j) {
+            //assert(mesh.textures.size() == 3);
+
+            update_binding(mesh.descriptor_set, 
+                bindings[j],
+                sponza.unique_textures[mesh.textures[j]], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_texture_sampler);
+        }
+    }
+    
+
+
 
     // create materials
     material_t sun_material;
@@ -1050,7 +1070,7 @@ int main(int argc, char** argv)
     // create instances
     instance_t skyboxsphere_instance;
     instance_t sun_instance;
-    //instance_t model_instance;
+    instance_t model_instance;
 
 
     current_pipeline = geometry_pipeline;
@@ -1132,16 +1152,35 @@ int main(int argc, char** argv)
                 // 
                 // A proper solution should be designed and implemented in the 
                 // near future.
-                for (std::size_t i = 0; i < g_instances.size(); ++i) {
-                    instance_t& instance = g_instances[i];
+                //for (std::size_t i = 0; i < g_instances.size(); ++i) {
+                //    instance_t& instance = g_instances[i];
 
-                    translate(instance, instance.position);
-                    //rotate(instance, instance.rotation);
-                    //scale(instance, instance.scale);
+                //    translate(instance, instance.position);
+                //    //rotate(instance, instance.rotation);
+                //    //scale(instance, instance.scale);
 
-                    bind_material(cmd_buffer, rendering_pipeline_layout, instance.model->textures);
-                    bind_vertex_array(cmd_buffer, instance.model->data);
-                    render(cmd_buffer, rendering_pipeline_layout, instance.model->data.index_count, instance);
+                //    bind_material(cmd_buffer, rendering_pipeline_layout, instance.model->textures);
+                //    bind_vertex_array(cmd_buffer, instance.model->data);
+                //    render(cmd_buffer, rendering_pipeline_layout, instance.model->data.index_count, instance);
+                //}
+
+
+
+                translate(model_instance, { 0.0f, -5.0f, 20.0f });
+                scale(model_instance, 0.2f);
+
+                for (std::size_t i = 0; i < sponza.meshes.size(); ++i) {
+                    uint32_t current_frame = get_current_frame();
+                    vkCmdBindDescriptorSets(cmd_buffer[current_frame], 
+                        VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        rendering_pipeline_layout, 
+                        1, 
+                        1, 
+                        &sponza.meshes[i].descriptor_set,
+                        0,
+                        nullptr);
+                    bind_vertex_array(cmd_buffer, sponza.meshes[i].vertex_array);
+                    render(cmd_buffer, rendering_pipeline_layout, sponza.meshes[i].vertex_array.index_count, model_instance);
                 }
 
 
@@ -1244,6 +1283,8 @@ int main(int argc, char** argv)
 
     // Wait until all GPU commands have finished
     renderer_wait();
+
+    destroy_model(sponza);
 
     for (auto& model : g_models) {
         destroy_material(model.textures);

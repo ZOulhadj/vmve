@@ -149,37 +149,55 @@ model_t load_model_new(const std::string& path)
 }
 
 
-
-
-static std::vector<image_buffer_t> load_mesh_textures(const aiMaterial* material, aiTextureType type, std::string_view path)
+static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial* material, 
+                                                   aiTextureType type, 
+                                                   const std::filesystem::path& model_path)
 {
-    std::vector<image_buffer_t> textures;
+    std::vector<std::filesystem::path> paths;
 
     for (std::size_t i = 0; i < material->GetTextureCount(type); ++i) {
         aiString ai_path;
-        std::string ai_path_string;
 
         if (material->GetTexture(type, i, &ai_path) == aiReturn_FAILURE) {
-            ai_path_string = ai_path.C_Str();
-            logger::err("Failed to load texture: {}", ai_path_string);
+            logger::err("Failed to load texture: {}", ai_path.C_Str());
             return {};
         }
 
-        ai_path_string = ai_path.C_Str();
         // HACK: A work around to getting the full path. Should look into
         // a proper implementation.
-        std::filesystem::path parent_path(path);
+        paths.push_back(model_path.parent_path().string() + "/" + ai_path.C_Str());
 
-        textures.push_back(load_texture(parent_path.parent_path().string() + "/" + ai_path_string));
     }
 
-    return textures;
+    return paths;
+}
+
+static void load_mesh_texture(model_t& model, mesh_t& mesh, const std::vector<std::filesystem::path>& paths)
+{
+    std::vector<std::filesystem::path>& uniques = model.unique_texture_paths;
+
+    for (std::size_t i = 0; i < paths.size(); ++i) {
+        uint32_t index = 0;
+        const auto it = std::find(uniques.begin(), uniques.end(), paths[i]);
+        
+        if (it == uniques.end()) {
+            image_buffer_t texture = load_texture(paths[i].string());
+            model.unique_textures.push_back(texture);
+            uniques.push_back(paths[i]);
+            index = model.unique_textures.size() - 1;
+        } else {
+            index = std::distance(model.unique_texture_paths.begin(), it);
+
+        }
+         // Find the index position of the current texture and
+        // add it to the list of textures for the mesh 
+        mesh.textures.push_back(index);
+    }
 }
 
 
 
-
-static mesh_t process_mesh(const model_t& model, const aiMesh* assimp_mesh, const aiScene* scene)
+static mesh_t process_mesh(model_t& model, const aiMesh* assimp_mesh, const aiScene* scene)
 {
     mesh_t mesh{};
 
@@ -187,7 +205,7 @@ static mesh_t process_mesh(const model_t& model, const aiMesh* assimp_mesh, cons
     mesh.name = assimp_mesh->mName.C_Str();
 
     // walk through each of the mesh's vertices
-    for(unsigned int i = 0; i < assimp_mesh->mNumVertices; i++) {
+    for(std::size_t i = 0; i < assimp_mesh->mNumVertices; ++i) {
         vertex_t vertex{};
         vertex.position = glm::vec3(assimp_mesh->mVertices[i].x, 
                                     assimp_mesh->mVertices[i].y, 
@@ -197,6 +215,20 @@ static mesh_t process_mesh(const model_t& model, const aiMesh* assimp_mesh, cons
             vertex.normal = glm::vec3(assimp_mesh->mNormals[i].x,
                                       assimp_mesh->mNormals[i].y,
                                       assimp_mesh->mNormals[i].z);
+        }
+
+
+        if (assimp_mesh->HasTangentsAndBitangents()) {
+            vertex.tangent = glm::vec3(assimp_mesh->mTangents[i].x, 
+                                       assimp_mesh->mTangents[i].y,
+                                       assimp_mesh->mTangents[i].z);
+
+            // NOTE: Not getting bi tangents since we can calculate them by
+            // simply doing the cross product of the tangent and normal
+            // TODO: Should be load it? This will make it so that we don't
+            // need to perform any sort of cross product in the first place.
+            //vertex.biTangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
+
         }
 
 
@@ -210,16 +242,6 @@ static mesh_t process_mesh(const model_t& model, const aiMesh* assimp_mesh, cons
             // so we always take the first set (0).
             vertex.uv = glm::vec2(assimp_mesh->mTextureCoords[0][i].x, 
                                   assimp_mesh->mTextureCoords[0][i].y);
-
-            vertex.tangent = glm::vec3(assimp_mesh->mTangents[i].x, 
-                                       assimp_mesh->mTangents[i].y,
-                                       assimp_mesh->mTangents[i].z);
-
-            // NOTE: Not getting bi tangents since we can calculate them by
-            // simply doing the cross product of the tangent and normal
-            // TODO: Should be load it? This will make it so that we don't
-            // need to perform any sort of cross product in the first place.
-            //vertex.biTangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
         }
 
         mesh.vertices.push_back(vertex);
@@ -239,17 +261,35 @@ static mesh_t process_mesh(const model_t& model, const aiMesh* assimp_mesh, cons
     // process material for current mesh if it has any
     if (assimp_mesh->mMaterialIndex >= 0) {
         const aiMaterial* material = scene->mMaterials[assimp_mesh->mMaterialIndex];
+        
 
-        // TODO: Only load unique textures. Meaning that if a texture has 
-        // already been loaded simply reuse it.
-        std::vector<image_buffer_t> diffuse = load_mesh_textures(material, aiTextureType_DIFFUSE, model.path);
-        std::vector<image_buffer_t> normals = load_mesh_textures(material, aiTextureType_HEIGHT, model.path);
-        std::vector<image_buffer_t> speculars = load_mesh_textures(material, aiTextureType_SPECULAR, model.path);
+        // Check if the any textures have already been loaded
+        const auto& diffuse_path = get_texture_full_path(material, aiTextureType_DIFFUSE, model.path);
+        const auto& normal_path = get_texture_full_path(material, aiTextureType_DISPLACEMENT, model.path);
+        const auto& specular_path = get_texture_full_path(material, aiTextureType_SPECULAR, model.path);
 
 
-        mesh.textures.insert(mesh.textures.end(), diffuse.begin(), diffuse.end());
-        mesh.textures.insert(mesh.textures.end(), normals.begin(), normals.end());
-        mesh.textures.insert(mesh.textures.end(), speculars.begin(), speculars.end());
+        load_mesh_texture(model, mesh, diffuse_path);
+        load_mesh_texture(model, mesh, normal_path);
+        load_mesh_texture(model, mesh, specular_path);
+
+
+        // TEMP: If any texture was not found then use the fallback textures
+
+        if (diffuse_path.empty()) {
+            std::vector<std::filesystem::path> fallback_speculars = { get_vfs_path("/textures/null_specular.png") };
+            load_mesh_texture(model, mesh, fallback_speculars);
+        }
+
+        if (normal_path.empty()) {
+            std::vector<std::filesystem::path> fallback_normals = { get_vfs_path("/textures/null_normal.png") };
+            load_mesh_texture(model, mesh, fallback_normals);
+        }
+
+        if (specular_path.empty()) {
+            std::vector<std::filesystem::path> fallback_speculars = { get_vfs_path("/textures/null_specular.png") };
+            load_mesh_texture(model, mesh, fallback_speculars);
+        }
     }
  
     return mesh;
@@ -279,10 +319,10 @@ model_t load_model_latest(const std::filesystem::path& path)
     Assimp::Importer importer;
 
 
-    const unsigned int flags = aiProcess_PreTransformVertices |
-                               aiProcessPreset_TargetRealtime_Fast |
+    const unsigned int flags = aiProcessPreset_TargetRealtime_Fast |
                                aiProcess_FlipWindingOrder |
-                               aiProcess_MakeLeftHanded;
+                               aiProcess_MakeLeftHanded |
+                               aiProcess_FlipUVs;
 
     const aiScene* scene = importer.ReadFile(path.string(), flags);
 
@@ -300,22 +340,15 @@ model_t load_model_latest(const std::filesystem::path& path)
     // Start processing from the root scene node
     process_node(model, scene->mRootNode, scene);
 
-
-    // At this point, the model has been fully loaded onto the CPU and now we 
-    // need to transfer this data onto the GPU.
-
-
     return model;
 }
 
 void destroy_model(model_t& model)
 {
-    // TODO: deallocate descriptor set
-
-    for (auto& mesh : model.meshes)
-        destroy_images(mesh.textures);
-
-
+    destroy_images(model.unique_textures);
+    for (auto& mesh : model.meshes) {
+        destroy_vertex_array(mesh.vertex_array);
+    }
 }
 
 
