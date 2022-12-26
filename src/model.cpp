@@ -5,7 +5,7 @@
 #include "vfs.hpp"
 #include "logging.hpp"
 
-static image_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureType type, std::string_view path)
+static image_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureType type, const std::filesystem::path& path)
 {
     image_buffer_t texture;
 
@@ -22,8 +22,7 @@ static image_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureTyp
         ai_path_string = ai_path.C_Str();
         // HACK: A work around to getting the full path. Should look into
         // a proper implementation.
-        std::filesystem::path parent_path(path);
-        texture = load_texture(parent_path.parent_path().string() + "/" + ai_path_string);
+        texture = load_texture(path.parent_path().string() + "/" + ai_path_string);
     }
 
     return texture;
@@ -31,7 +30,7 @@ static image_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureTyp
 
 static void parse_mesh(model_t& model, std::vector<vertex_t>& vertices, 
                                        std::vector<uint32_t>& indices,
-                                       aiMesh* mesh, const aiScene* scene, const std::string& p)
+                                       aiMesh* mesh, const aiScene* scene, const std::filesystem::path& p)
 {
     // walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
@@ -83,7 +82,7 @@ static void parse_mesh(model_t& model, std::vector<vertex_t>& vertices,
 
 }
 
-static model_t parse_model(aiNode* node, const aiScene* scene, const std::string& p)
+static model_t parse_model(aiNode* node, const aiScene* scene, const std::filesystem::path& p)
 {
     model_t model{};
 
@@ -110,25 +109,25 @@ static model_t parse_model(aiNode* node, const aiScene* scene, const std::string
     return model;
 }
 
-vertex_array_t load_model(const std::string& path)
+vertex_array_t load_model(const std::filesystem::path& path)
 {
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(path, aiProcess_PreTransformVertices |
+    const aiScene* scene = importer.ReadFile(path.string(), aiProcess_PreTransformVertices |
         aiProcessPreset_TargetRealtime_Fast |
         aiProcess_ConvertToLeftHanded
     );
 
     if (!scene) {
-        printf("Failed to load model at path: %s\n", path.c_str());
+        logger::err("Failed to load at path: {}", path.string());
         return {};
     }
 
-    model_t data = parse_model(scene->mRootNode, scene, path);
+    model_t data = parse_model(scene->mRootNode, scene, path.string());
     return data.data;
 }
 
-model_t load_model_new(const std::string& path)
+model_t load_model_new(const std::filesystem::path& path)
 {
     Assimp::Importer importer;
 
@@ -138,10 +137,10 @@ model_t load_model_new(const std::string& path)
                                aiProcess_FlipWindingOrder |
                                aiProcess_MakeLeftHanded;
 
-    const aiScene* scene = importer.ReadFile(path, flags);
+    const aiScene* scene = importer.ReadFile(path.string(), flags);
 
     if (!scene) {
-        logger::err("Failed to load model at path: {}", path);
+        logger::err("Failed to load model at path: {}", path.string());
         return {};
     }
 

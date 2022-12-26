@@ -90,16 +90,16 @@ static image_buffer_t create_texture_buffer(unsigned char* texture, uint32_t wid
 
 
 
-image_buffer_t load_texture(const std::string& path, bool flip_y, VkFormat format)
+image_buffer_t load_texture(const std::filesystem::path& path, bool flip_y, VkFormat format)
 {
     image_buffer_t buffer{};
 
     // Load the texture from the file system.
     int width, height, channels;
     stbi_set_flip_vertically_on_load(flip_y);
-    unsigned char* texture = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+    unsigned char* texture = stbi_load(path.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
-        logger::err("Failed to load texture at path: {}", path.c_str());
+        logger::err("Failed to load texture at path: {}", path.string().c_str());
 
         stbi_image_free(texture);
 

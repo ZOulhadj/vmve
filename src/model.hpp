@@ -55,8 +55,8 @@ struct model_t {
     material_t textures;
 };
 
-vertex_array_t load_model(const std::string& path);
-model_t load_model_new(const std::string& path);
+vertex_array_t load_model(const std::filesystem::path& path);
+model_t load_model_new(const std::filesystem::path& path);
 
 
 

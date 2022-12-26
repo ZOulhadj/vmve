@@ -64,7 +64,7 @@ camera_frustum create_camera_frustum(const camera_t& camera);
 void update_camera_view(camera_t& camera, float cursor_x, float cursor_y);
 void update_camera(camera_t& camera);
 
-void update_projection(camera_t& camera);
+void update_projection(camera_t& cam);
 void set_camera_projection(camera_t& camera, uint32_t width, uint32_t height);
 
 

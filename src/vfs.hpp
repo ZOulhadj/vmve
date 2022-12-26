@@ -13,7 +13,7 @@ public:
     void mount(const std::string& virtual_path, const std::filesystem::path& real_path);
     void unmount(const std::string& virtual_path);
 
-    std::string get_path(const std::string& virtual_path);
+    std::filesystem::path get_path(const std::string& virtual_path);
 
 private:
     vfs() = default;
@@ -23,6 +23,6 @@ private:
 };
 
 void mount_vfs(const std::string& virtual_path, const std::filesystem::path& real_path);
-std::string get_vfs_path(const std::string& virtual_path);
+std::filesystem::path get_vfs_path(const std::string& virtual_path);
 
 #endif

@@ -25,7 +25,7 @@ private:
 
 
 // Loads a plain text file from the filesystem.
-std::string load_file(std::string_view path);
+std::string load_file(const std::filesystem::path& path);
 
 // Calculates the delta time between previous and current frame. This
 // allows for frame dependent systems such as movement and translation

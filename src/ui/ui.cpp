@@ -165,9 +165,9 @@ void end_ui(std::vector<VkCommandBuffer>& buffers)
 
 
 
-std::string render_file_explorer(std::string_view root)
+std::string render_file_explorer(const std::filesystem::path& root)
 {
-    static std::string current_dir = root.data();
+    static std::string current_dir = root.string();
     static std::string file;
     static std::string complete_path;
 

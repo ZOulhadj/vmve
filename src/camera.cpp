@@ -9,7 +9,7 @@ static frustum_plane create_frustum(const glm::vec3& normal, const glm::vec3& po
     return plane;
 }
 
-camera_frustum create_camera_frustum(const camera_t& camera)
+camera_frustum create_camera_frustum(const camera_t& cam)
 {
     // NOTE: The camera frustum can also be extracted from the MVP
     // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf    
@@ -17,19 +17,19 @@ camera_frustum create_camera_frustum(const camera_t& camera)
     camera_frustum frustum{};
 
 
-    const float far = 1000000.0f;
-    const float aspect_ratio = camera.width / camera.height;
+    constexpr float far = std::numeric_limits<float>::max();
+    const float aspect_ratio = cam.width / cam.height;
 
-    const float half_height = far * glm::tan(camera.fov * 0.5f);
+    const float half_height = far * glm::tan(cam.fov * 0.5f);
     const float half_width = half_height * aspect_ratio;
-    const glm::vec3 front_mult_far = far * camera.front_vector;
+    const glm::vec3 front_mult_far = far * cam.front_vector;
 
-    frustum.near = create_frustum(camera.front_vector, camera.position + camera.near * camera.front_vector);
-    frustum.far  = create_frustum(-camera.front_vector, camera.position + front_mult_far);
-    frustum.right = create_frustum(glm::cross(camera.up_vector, front_mult_far + camera.right_vector * half_width), camera.position);
-    frustum.left = create_frustum(glm::cross(front_mult_far - camera.right_vector * half_width, camera.up_vector), camera.position);
-    frustum.top = create_frustum(glm::cross(camera.right_vector, front_mult_far - camera.up_vector * half_height), camera.position);
-    frustum.bottom = create_frustum(glm::cross(front_mult_far + camera.up_vector * half_height, camera.right_vector), camera.position);
+    frustum.near = create_frustum(cam.front_vector, cam.position + cam.near * cam.front_vector);
+    frustum.far  = create_frustum(-cam.front_vector, cam.position + front_mult_far);
+    frustum.right = create_frustum(glm::cross(cam.up_vector, front_mult_far + cam.right_vector * half_width), cam.position);
+    frustum.left = create_frustum(glm::cross(front_mult_far - cam.right_vector * half_width, cam.up_vector), cam.position);
+    frustum.top = create_frustum(glm::cross(cam.right_vector, front_mult_far - cam.up_vector * half_height), cam.position);
+    frustum.bottom = create_frustum(glm::cross(front_mult_far + cam.up_vector * half_height, cam.right_vector), cam.position);
 
 
     return frustum;
@@ -41,44 +41,42 @@ camera_frustum create_camera_frustum(const camera_t& camera)
 // Reversed Z infinite perspective
 // GLM provides various types of perspective functions including infinitePerspective()
 // but a reversed depth version (far-near) is not. Thus, below is my own version
-// that creates an infinite perspective from far to near.
-glm::mat4 infinite_perspective(float fovy, float width, float height, float zNear)
+// that creates an infinite perspective from towards near without a far plane.
+glm::mat4 infinite_perspective(float fovy, const glm::vec2& size, float near)
 {
 	const float h = glm::cot(0.5f * fovy);
-	const float w = h * height / width;
+	const float w = h * size.y / size.x;
 
     glm::mat4 result = glm::mat4(0.0f);
 	result[0][0] = w;
 	result[1][1] = h;
 	result[2][2] = 0.0f;
 	result[2][3] = 1.0f;
-	result[3][2] = zNear;
+	result[3][2] = near;
 
     return result;
 }
 
 camera_t create_camera(const glm::vec3& position, float fov, float speed)
 {
-    camera_t camera{};
-    camera.position    = position;
-    camera.orientation = glm::quat(1, 0, 0, 0);
-    camera.width       = 1280.0f;
-    camera.height      = 720.0f;
-    camera.speed       = speed;
-    camera.view_speed  = 0.1f;
-    camera.roll_speed  = 45.0f;
-    camera.roll        = 0.0f;
-    camera.fov         = fov;
-    camera.near        = 0.1f;
-    camera.viewProj.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
-    camera.viewProj.proj = infinite_perspective(glm::radians(camera.fov),
-                                                camera.width, camera.height,
-                                                camera.near);
+    camera_t cam{};
+    cam.position    = position;
+    cam.orientation = glm::quat(1, 0, 0, 0);
+    cam.width       = 1280.0f;
+    cam.height      = 720.0f;
+    cam.speed       = speed;
+    cam.view_speed  = 0.1f;
+    cam.roll_speed  = 45.0f;
+    cam.roll        = 0.0f;
+    cam.fov         = fov;
+    cam.near        = 0.1f;
+    cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
+    cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
 
     // Required if using Vulkan (left-handed coordinate-system)
-    camera.viewProj.proj[1][1] *= -1.0;
+    cam.viewProj.proj[1][1] *= -1.0;
 
-    return camera;
+    return cam;
 }
 
 void update_camera_view(camera_t& camera, float cursor_x, float cursor_y)
@@ -122,13 +120,11 @@ void update_camera(camera_t& camera)
     camera.roll      = 0.0f;
 }
 
-void update_projection(camera_t& camera)
+void update_projection(camera_t& cam)
 {
-    camera.viewProj.proj = infinite_perspective(glm::radians(camera.fov),
-                                                camera.width, camera.height,
-                                                camera.near);
+    cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
     // Required if using Vulkan (left-handed coordinate-system)
-    camera.viewProj.proj[1][1] *= -1.0;
+    cam.viewProj.proj[1][1] *= -1.0;
 }
 
 void set_camera_projection(camera_t& camera, uint32_t width, uint32_t height)

@@ -17,7 +17,8 @@ void begin_ui();
 void end_ui(std::vector<VkCommandBuffer>& buffers);
 
 
-std::string render_file_explorer(std::string_view root);
+std::string render_file_explorer(const std::filesystem::path& root);
+
 
 
 // TEMP

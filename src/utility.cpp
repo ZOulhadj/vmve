@@ -1,8 +1,8 @@
 #include "utility.hpp"
 
-std::string load_file(std::string_view path)
+std::string load_file(const std::filesystem::path& path)
 {
-    std::ifstream file(path.data());
+    std::ifstream file(path.string());
     std::stringstream buffer;
     buffer << file.rdbuf();
 
