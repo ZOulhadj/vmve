@@ -43,9 +43,9 @@ static void load_mesh_texture(model_t& model, mesh_t& mesh, const std::vector<st
             index = model.unique_textures.size() - 1;
         } else {
             index = std::distance(model.unique_texture_paths.begin(), it);
-
         }
-         // Find the index position of the current texture and
+
+        // Find the index position of the current texture and
         // add it to the list of textures for the mesh 
         mesh.textures.push_back(index);
     }
@@ -53,31 +53,31 @@ static void load_mesh_texture(model_t& model, mesh_t& mesh, const std::vector<st
 
 
 
-static mesh_t process_mesh(model_t& model, const aiMesh* assimp_mesh, const aiScene* scene)
+static mesh_t process_mesh(model_t& model, const aiMesh* ai_mesh, const aiScene* scene)
 {
     mesh_t mesh{};
 
 
-    mesh.name = assimp_mesh->mName.C_Str();
+    mesh.name = ai_mesh->mName.C_Str();
 
     // walk through each of the mesh's vertices
-    for(std::size_t i = 0; i < assimp_mesh->mNumVertices; ++i) {
+    for(std::size_t i = 0; i < ai_mesh->mNumVertices; ++i) {
         vertex_t vertex{};
-        vertex.position = glm::vec3(assimp_mesh->mVertices[i].x, 
-                                    assimp_mesh->mVertices[i].y, 
-                                    assimp_mesh->mVertices[i].z);
+        vertex.position = glm::vec3(ai_mesh->mVertices[i].x, 
+                                    ai_mesh->mVertices[i].y, 
+                                    ai_mesh->mVertices[i].z);
 
-        if (assimp_mesh->HasNormals()) {
-            vertex.normal = glm::vec3(assimp_mesh->mNormals[i].x,
-                                      assimp_mesh->mNormals[i].y,
-                                      assimp_mesh->mNormals[i].z);
+        if (ai_mesh->HasNormals()) {
+            vertex.normal = glm::vec3(ai_mesh->mNormals[i].x,
+                                      ai_mesh->mNormals[i].y,
+                                      ai_mesh->mNormals[i].z);
         }
 
 
-        if (assimp_mesh->HasTangentsAndBitangents()) {
-            vertex.tangent = glm::vec3(assimp_mesh->mTangents[i].x, 
-                                       assimp_mesh->mTangents[i].y,
-                                       assimp_mesh->mTangents[i].z);
+        if (ai_mesh->HasTangentsAndBitangents()) {
+            vertex.tangent = glm::vec3(ai_mesh->mTangents[i].x, 
+                                       ai_mesh->mTangents[i].y,
+                                       ai_mesh->mTangents[i].z);
 
             // NOTE: Not getting bi tangents since we can calculate them by
             // simply doing the cross product of the tangent and normal
@@ -89,15 +89,15 @@ static mesh_t process_mesh(model_t& model, const aiMesh* assimp_mesh, const aiSc
 
 
         // check if texture coordinates exist
-        if(assimp_mesh->HasTextureCoords(0)) {
+        if(ai_mesh->HasTextureCoords(0)) {
             // todo: "1.0f -" is used here. Double check that this is correct.
 
             // a vertex can contain up to 8 different texture coordinates.
             // We make the assumption that we won't
             // use models where a vertex can have multiple texture coordinates,
             // so we always take the first set (0).
-            vertex.uv = glm::vec2(assimp_mesh->mTextureCoords[0][i].x, 
-                                  assimp_mesh->mTextureCoords[0][i].y);
+            vertex.uv = glm::vec2(ai_mesh->mTextureCoords[0][i].x, 
+                                  ai_mesh->mTextureCoords[0][i].y);
         }
 
         mesh.vertices.push_back(vertex);
@@ -105,8 +105,8 @@ static mesh_t process_mesh(model_t& model, const aiMesh* assimp_mesh, const aiSc
 
     // now walk through each of the mesh's faces (a face is a mesh its triangle)
     // and retrieve the corresponding vertex indices.
-    for(std::size_t i = 0; i < assimp_mesh->mNumFaces; ++i) {
-        const aiFace& face = assimp_mesh->mFaces[i];
+    for(std::size_t i = 0; i < ai_mesh->mNumFaces; ++i) {
+        const aiFace& face = ai_mesh->mFaces[i];
 
         // retrieve all indices of the face and store them in the indices vector
         // TODO: Would it be possible to do a memcpy of all indices into the vector
@@ -117,8 +117,8 @@ static mesh_t process_mesh(model_t& model, const aiMesh* assimp_mesh, const aiSc
 
 
     // process material for current mesh if it has any
-    if (assimp_mesh->mMaterialIndex >= 0) {
-        const aiMaterial* material = scene->mMaterials[assimp_mesh->mMaterialIndex];
+    if (ai_mesh->mMaterialIndex >= 0) {
+        const aiMaterial* material = scene->mMaterials[ai_mesh->mMaterialIndex];
 
         // Check if the any textures have already been loaded
         // Note that a material may have multiple textures of the same type, hence the vector
@@ -134,7 +134,8 @@ static mesh_t process_mesh(model_t& model, const aiMesh* assimp_mesh, const aiSc
 
 
         // TEMP: If any texture was not found then use the fallback textures
-
+        // TODO: Instead of loading them textures again, we should use the default
+        // existing textures
         if (diffuse_path.empty()) {
             std::vector<std::filesystem::path> fallback_speculars = { get_vfs_path("/textures/null_specular.png") };
             load_mesh_texture(model, mesh, fallback_speculars);
@@ -173,8 +174,6 @@ static void process_node(model_t& model, aiNode* node, const aiScene* scene)
 
 model_t load_model(const std::filesystem::path& path)
 {
-    logger::info("Loading model at path {}", path.string());
-
     model_t model{};
 
     Assimp::Importer importer;
@@ -202,11 +201,6 @@ model_t load_model(const std::filesystem::path& path)
     // Start processing from the root scene node
     process_node(model, scene->mRootNode, scene);
 
-    logger::info("Successfully loaded model containing {} meshes at path {}", model.meshes.size(), path.string());
-    
-
-
-
     return model;
 }
 
@@ -218,7 +212,7 @@ void destroy_model(model_t& model)
     }
 }
 
-void upload_model_to_gpu(model_t& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding>& bindings, VkSampler sampler)
+void upload_model_to_gpu(model_t& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler)
 {
 
     // At this point, the model has been fully loaded onto the CPU and now we 

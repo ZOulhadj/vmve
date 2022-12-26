@@ -17,6 +17,11 @@ struct camera_frustum {
 };
 
 
+enum class camera_projection_mode {
+    perspective,
+    ortho
+};
+
 enum class camera_mode {
     first_person,
     look_at
@@ -50,20 +55,14 @@ struct camera_t {
 
     view_projection viewProj;
 
-
-    //float cursor_x;
-    //float cursor_y;
     bool first_mouse;
 };
 
 
-camera_t create_camera(const glm::vec3& position, float fov, float speed);
-
-
 camera_frustum create_camera_frustum(const camera_t& camera);
 
+camera_t create_camera(const glm::vec3& position, float fov, float speed);
 void update_camera(camera_t& camera, const glm::vec2& cursor_pos);
-
 void update_projection(camera_t& cam);
 void set_camera_projection(camera_t& camera, uint32_t width, uint32_t height);
 

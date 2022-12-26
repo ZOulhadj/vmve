@@ -61,7 +61,7 @@ void destroy_model(model_t& model);
 
 
 void upload_model_to_gpu(model_t& model, VkDescriptorSetLayout layout,
-    std::vector<VkDescriptorSetLayoutBinding>& bindings, VkSampler sampler);
+    std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler);
 
 
 #endif

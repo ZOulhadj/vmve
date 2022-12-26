@@ -185,19 +185,21 @@ static void render_end_docking()
 
 static std::vector<std::future<void>> futures;
 static std::mutex model_mutex;
-static void load_mesh(std::vector<model_t>& models, std::string path)
+static void load_mesh(std::vector<model_t>& models, const std::filesystem::path& path)
 {
-    logger::info("Loading mesh {}", path);
+    logger::info("Loading mesh {}", path.string());
 
     model_t model = load_model(path);
-    //create_material(model.textures, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, material_layout, g_texture_sampler);
+    upload_model_to_gpu(model, material_layout, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, g_texture_sampler);
 
     std::lock_guard<std::mutex> lock(model_mutex);
+    renderer_wait();
     models.push_back(model);
-    
-    g_model_names.push_back(model.name.c_str());
+   
+    std::string temp = model.name;
+    g_model_names.push_back(temp.c_str());
 
-    logger::info("Loading mesh complete {}", path);
+    logger::info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path.string());
 };
 
 static void render_main_menu()
@@ -271,13 +273,14 @@ static void render_main_menu()
         ImGui::Begin("Load Model", &load_model_open);
         std::string model_path = render_file_explorer(get_vfs_path("/models"));
 
-        if (!model_path.empty()) {
+        if (ImGui::Button("Load")) {
             // todo: is renderer_wait required here?
-            // create and push new model into list
+            // create and push new model into 
             futures.push_back(std::async(std::launch::async, load_mesh, std::ref(g_models), model_path));
-
-            load_model_open = false;
         }
+        //if (!model_path.empty()) {
+        //    load_model_open = false;
+        //}
 
         ImGui::End();
     }
@@ -386,12 +389,13 @@ static void render_right_window()
         static int unique_instance_ids = 1;
         static int current_model_item = 0;
 
+        ImGui::BeginDisabled(g_models.empty());
         if (ImGui::Button("Add instance")) {
 
             instance_t instance{};
             instance.id = unique_instance_ids;
             instance.name = "Unnamed";
-            instance.model = &g_models[0];
+            instance.model = &g_models[current_model_item];
             instance.position = glm::vec3(0.0f);
             instance.matrix = glm::mat4(1.0f);
 
@@ -400,7 +404,8 @@ static void render_right_window()
             ++unique_instance_ids;
             instance_index = g_instances.size() - 1;
         }
- 
+        ImGui::EndDisabled();
+
         ImGui::SameLine();
 
         ImGui::BeginDisabled(g_instances.empty());
@@ -1029,30 +1034,29 @@ int main(int argc, char** argv)
 
 
     // TODO: Load default textures here such as diffuse, normal, specular etc.
-
+    image_buffer_t empty_normal_map = load_texture(get_vfs_path("/textures/null_normal.png"));
+    image_buffer_t empty_specular_map = load_texture(get_vfs_path("/textures/null_specular.png"));
 
 
     model_t sphere = load_model(get_vfs_path("/models/sphere.obj"));
-    model_t sponza = load_model(get_vfs_path("/models/sponza/sponza.obj"));
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = { mat_albdo_binding, mat_normal_binding, mat_specular_binding };
 
     upload_model_to_gpu(sphere, material_layout, bindings, g_texture_sampler);
-    upload_model_to_gpu(sponza, material_layout, bindings, g_texture_sampler);
         
 
     // create materials
     material_t sun_material;
     sun_material.textures.push_back(load_texture(get_vfs_path("/textures/sun.png")));
-    sun_material.textures.push_back(load_texture(get_vfs_path("/textures/null_normal.png")));
-    sun_material.textures.push_back(load_texture(get_vfs_path("/textures/null_specular.png")));
-    create_material(sun_material, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, material_layout, g_texture_sampler);
+    sun_material.textures.push_back(empty_normal_map);
+    sun_material.textures.push_back(empty_specular_map);
+    create_material(sun_material, bindings, material_layout, g_texture_sampler);
 
     material_t skysphere_material;
     skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/skysphere1.png")));
-    skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/null_normal.png")));
-    skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/null_specular.png")));
-    create_material(skysphere_material, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, material_layout, g_texture_sampler);
+    skysphere_material.textures.push_back(empty_normal_map);
+    skysphere_material.textures.push_back(empty_specular_map);
+    create_material(skysphere_material, bindings, material_layout, g_texture_sampler);
 
     skysphere_dset = ImGui_ImplVulkan_AddTexture(g_fb_sampler, skysphere_material.textures[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -1134,29 +1138,30 @@ int main(int argc, char** argv)
                 // 
                 // A proper solution should be designed and implemented in the 
                 // near future.
-                //for (std::size_t i = 0; i < g_instances.size(); ++i) {
-                //    instance_t& instance = g_instances[i];
+                for (std::size_t i = 0; i < g_instances.size(); ++i) {
+                    instance_t& instance = g_instances[i];
 
-                //    translate(instance, instance.position);
-                //    //rotate(instance, instance.rotation);
-                //    //scale(instance, instance.scale);
-
-                //    bind_material(cmd_buffer, rendering_pipeline_layout, instance.model->textures);
-                //    bind_vertex_array(cmd_buffer, instance.model->data);
-                //    render(cmd_buffer, rendering_pipeline_layout, instance.model->data.index_count, instance);
-                //}
-
-
-
-                translate(model_instance, { 0.0f, 0.0f, 0.0f });
-                scale(model_instance, 0.025f);
-                //rotate(model_instance, 90.0f, { 1.0f, 0.0f, 0.0f });
-
-                for (std::size_t i = 0; i < sponza.meshes.size(); ++i) {
-                    bind_descriptor_set(cmd_buffer, rendering_pipeline_layout, sponza.meshes[i].descriptor_set);
-                    bind_vertex_array(cmd_buffer, sponza.meshes[i].vertex_array);
-                    render(cmd_buffer, rendering_pipeline_layout, sponza.meshes[i].vertex_array.index_count, model_instance);
+                    translate(instance, instance.position);
+                    //rotate(instance, instance.rotation);
+                    //scale(instance, instance.scale);
+                    for (std::size_t i = 0; i < instance.model->meshes.size(); ++i) {
+                        bind_descriptor_set(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].descriptor_set);
+                        bind_vertex_array(cmd_buffer, instance.model->meshes[i].vertex_array);
+                        render(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].vertex_array.index_count, instance);
+                    }
                 }
+
+
+
+                //translate(model_instance, { 0.0f, 0.0f, 0.0f });
+                //scale(model_instance, 0.025f);
+                ////rotate(model_instance, 90.0f, { 1.0f, 0.0f, 0.0f });
+
+                //for (std::size_t i = 0; i < sponza.meshes.size(); ++i) {
+                //    bind_descriptor_set(cmd_buffer, rendering_pipeline_layout, sponza.meshes[i].descriptor_set);
+                //    bind_vertex_array(cmd_buffer, sponza.meshes[i].vertex_array);
+                //    render(cmd_buffer, rendering_pipeline_layout, sponza.meshes[i].vertex_array.index_count, model_instance);
+                //}
 
 
 
@@ -1259,7 +1264,6 @@ int main(int argc, char** argv)
     // Wait until all GPU commands have finished
     renderer_wait();
 
-    destroy_model(sponza);
     destroy_model(sphere);
 
     for (auto& model : g_models)
