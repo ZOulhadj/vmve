@@ -28,9 +28,15 @@
 #include <tuple>
 
 
+#if defined(_WIN32)
+
 #include <windows.h>
 #undef far
 #undef near
+
+#include <d3d12.h>
+
+#endif
 
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>

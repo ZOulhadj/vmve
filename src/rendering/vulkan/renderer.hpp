@@ -1,7 +1,7 @@
 #ifndef MYENGINE_VULKAN_RENDERER_HPP
 #define MYENGINE_VULKAN_RENDERER_HPP
 
-#include "../window.hpp"
+#include "core/window.hpp"
 
 
 #include "context.hpp"
@@ -12,7 +12,7 @@
 #include "../entity.hpp"
 
 
-#include "../logging.hpp"
+#include "logging.hpp"
 
 enum class renderer_api {
     vulkan,

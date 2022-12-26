@@ -3,7 +3,7 @@
 #include "common.hpp"
 #include "renderer.hpp"
 
-#include "../logging.hpp"
+#include "logging.hpp"
 
 static shaderc_shader_kind convert_shader_type(VkShaderStageFlagBits type)
 {

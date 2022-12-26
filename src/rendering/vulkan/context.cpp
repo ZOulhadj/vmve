@@ -2,7 +2,7 @@
 
 #include "common.hpp"
 
-#include "../logging.hpp"
+#include "logging.hpp"
 
 static VkInstance create_instance(uint32_t version,
                                   const char* app_name,

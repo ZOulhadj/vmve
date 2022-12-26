@@ -1,6 +1,6 @@
 #include "input.hpp"
 
-#include "renderer/renderer.hpp"
+#include "rendering/vulkan/renderer.hpp"
 
 bool is_key_down(int keycode)
 {

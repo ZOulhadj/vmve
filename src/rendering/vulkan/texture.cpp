@@ -5,7 +5,7 @@
 
 #include "renderer.hpp"
 
-#include "../logging.hpp"
+#include "logging.hpp"
 
 static image_buffer_t create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
 {

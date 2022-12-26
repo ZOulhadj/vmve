@@ -2,9 +2,9 @@
 #define MYENGINE_MATERIAL_HPP
 
 
-#include "renderer/buffer.hpp"
+#include "rendering/vulkan/buffer.hpp"
 
-#include "renderer/descriptor_sets.hpp"
+#include "rendering/vulkan/descriptor_sets.hpp"
 
 
 // order of images are as follows

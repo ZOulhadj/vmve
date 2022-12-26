@@ -3,8 +3,8 @@
 
 
 
-#include "renderer/vertex_array.hpp"
-#include "renderer/texture.hpp"
+#include "rendering/vulkan/vertex_array.hpp"
+#include "rendering/vulkan/texture.hpp"
 #include "model.hpp"
 
 struct instance_t

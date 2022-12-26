@@ -2,7 +2,7 @@
 #define MY_ENGINE_RENDERER_CONTEXT_HPP
 
 
-#include "../window.hpp"
+#include "core/window.hpp"
 
 struct device_t
 {

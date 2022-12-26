@@ -2,7 +2,7 @@
 #define MY_ENGINE_MODEL_HPP
 
 
-#include "renderer/vertex_array.hpp"
+#include "rendering/vulkan/vertex_array.hpp"
 #include "material.hpp"
 
 

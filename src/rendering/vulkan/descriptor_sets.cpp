@@ -1,7 +1,7 @@
 #include "descriptor_sets.hpp"
 
 #include "renderer.hpp"
-#include "../logging.hpp"
+#include "logging.hpp"
 
 VkDescriptorPool create_descriptor_pool()
 {

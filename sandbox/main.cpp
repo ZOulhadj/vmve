@@ -1,32 +1,35 @@
 // Engine header files section
 #include "../src/core/command_line.hpp"
-#include "../src/window.hpp"
-#include "../src/renderer/common.hpp"
-#include "../src/renderer/renderer.hpp"
-#include "../src/renderer/buffer.hpp"
-#include "../src/renderer/texture.hpp"
-#include "../src/ui/ui.hpp"
-#include "../src/input.hpp"
-#include "../src/camera.hpp"
-#include "../src/entity.hpp"
-#include "../src/model.hpp"
+#include "../src/core/window.hpp"
+#include "../src/core/input.hpp"
+#if defined(_WIN32)
+#include "../src/core/platform/windows.hpp"
+#endif
+
+#include "../src/rendering/vulkan/common.hpp"
+#include "../src/rendering/vulkan/renderer.hpp"
+#include "../src/rendering/vulkan/buffer.hpp"
+#include "../src/rendering/vulkan/texture.hpp"
+#include "../src/rendering/vulkan/descriptor_sets.hpp"
+#include "../src/rendering/vertex.hpp"
+#include "../src/rendering/material.hpp"
+#include "../src/rendering/camera.hpp"
+#include "../src/rendering/entity.hpp"
+#include "../src/rendering/model.hpp"
+
 #include "../src/events/event.hpp"
 #include "../src/events/event_dispatcher.hpp"
 #include "../src/events/window_event.hpp"
 #include "../src/events/key_event.hpp"
 #include "../src/events/mouse_event.hpp"
+
+#include "../src/filesystem/vfs.hpp"
+#include "../src/filesystem/filesystem.hpp"
+
+#include "../src/ui/ui.hpp"
+
 #include "../src/utility.hpp"
-#include "../src/vertex.hpp"
-#include "../src/vfs.hpp"
-#include "../src/filesystem.hpp"
-#include "../src/material.hpp"
 #include "../src/logging.hpp"
-#include "../src/renderer/descriptor_sets.hpp"
-
-#if defined(_WIN32)
-#include "../src/platform/windows.hpp"
-#endif
-
 #include "../src/time.hpp"
 
 // Application specific header files

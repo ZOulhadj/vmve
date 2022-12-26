@@ -2,8 +2,8 @@
 #define MY_ENGINE_UTILITY_HPP
 
 
-#include "window.hpp"
-#include "camera.hpp"
+#include "core/window.hpp"
+#include "rendering/camera.hpp"
 
 class benchmark
 {

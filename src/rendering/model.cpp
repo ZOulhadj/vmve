@@ -1,8 +1,8 @@
 #include "model.hpp"
 
-#include "vertex.hpp"
-#include "renderer/texture.hpp"
-#include "vfs.hpp"
+#include "rendering/vertex.hpp"
+#include "rendering/vulkan/texture.hpp"
+#include "filesystem/vfs.hpp"
 #include "logging.hpp"
 
 static image_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureType type, const std::filesystem::path& path)

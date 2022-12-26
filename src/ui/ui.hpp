@@ -2,8 +2,8 @@
 #define MYENGINE_UI_HPP
 
 
-#include "../renderer/renderer.hpp"
-#include "../events/event.hpp"
+#include "rendering/vulkan/renderer.hpp"
+#include "events/event.hpp"
 
 struct GUI {
     event_func EventCallback;

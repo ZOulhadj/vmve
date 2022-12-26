@@ -1,12 +1,12 @@
 #include "ui.hpp"
 
-#include "../renderer/common.hpp"
+#include "rendering/vulkan/common.hpp"
 
 
-#include "../vfs.hpp"
-#include "../filesystem.hpp"
+#include "filesystem/vfs.hpp"
+#include "filesystem/filesystem.hpp"
 
-#include "../logging.hpp"
+#include "logging.hpp"
 
 static void custom_style() {
     ImGuiStyle& style = ImGui::GetStyle();

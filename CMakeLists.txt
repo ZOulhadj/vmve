@@ -12,6 +12,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 #set(CMAKE_EXE_LINKER_FLAGS "-static")
 
+
+include_directories(${PROJECT_NAME} PRIVATE src/)
+
+
 ###############################
 #     3rd Party Libraries     #
 ###############################
@@ -51,29 +55,35 @@ add_executable(${PROJECT_NAME}
 
         # engine test file
         "sandbox/main.cpp"
-        "src/window.cpp"
-        "src/camera.cpp"
-        "src/entity.cpp"
-        "src/input.cpp"
-        "src/model.cpp"
-        "src/vertex.cpp"
-        "src/vfs.cpp"
-        "src/filesystem.cpp"
+        "src/core/window.cpp"
+        "src/rendering/camera.cpp"
+        "src/rendering/entity.cpp"
+        "src/core/input.cpp"
+        "src/rendering/model.cpp"
+        "src/rendering/vertex.cpp"
+        "src/filesystem/vfs.cpp"
+        "src/filesystem/filesystem.cpp"
         "src/utility.cpp"
-        "src/material.cpp"
-        "src/renderer/renderer.cpp"
+        "src/rendering/material.cpp"
+        "src/rendering/vulkan/renderer.cpp"
         "src/ui/ui.cpp"
         "src/logging.cpp"
-        "src/renderer/vertex_array.cpp"
-        "src/renderer/buffer.cpp"
-        "src/renderer/shader.cpp"
-        "src/renderer/context.cpp"
-        "src/renderer/texture.cpp"
+        "src/rendering/vulkan/vertex_array.cpp"
+        "src/rendering/vulkan/buffer.cpp"
+        "src/rendering/vulkan/shader.cpp"
+        "src/rendering/vulkan/context.cpp"
+        "src/rendering/vulkan/texture.cpp"
+        "src/rendering/vulkan/descriptor_sets.cpp"
+        "src/core/platform/windows.cpp"
+        "src/time.cpp"
+        "src/core/command_line.cpp"
 
         # precompiled header
         # note: this is required to compile header only files such as STB, VMA
         # note: this will be removed in the future.
-        "src/pch.cpp" "src/renderer/descriptor_sets.cpp" "src/platform/windows.cpp" "src/time.cpp" "src/core/command_line.cpp")
+        "src/pch.cpp" "src/rendering/directx/context.cpp")
+        
+     
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hpp)
