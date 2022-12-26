@@ -34,7 +34,7 @@
 #undef far
 #undef near
 
-#include <d3d12.h>
+//#include <d3d12.h>
 
 #endif
 

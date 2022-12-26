@@ -187,3 +187,17 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const V
         vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
     }
 }
+
+void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, VkDescriptorSet descriptor_set)
+{
+    uint32_t current_frame = get_current_frame();
+    vkCmdBindDescriptorSets(buffers[current_frame],
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        layout,
+        1,
+        1,
+        &descriptor_set,
+        0,
+        nullptr);
+
+}

@@ -130,10 +130,10 @@ static void handle_input(camera_t& camera, double deltaTime)
         camera.position += camera.up_vector * dt;
     if (is_key_down(GLFW_KEY_LEFT_CONTROL) || is_key_down(GLFW_KEY_CAPS_LOCK))
         camera.position -= camera.up_vector * dt;
-    //    if (is_key_down(GLFW_KEY_Q))
-    //        camera.roll -= camera.roll_speed * deltaTime;
-    //    if (is_key_down(GLFW_KEY_E))
-    //        camera.roll += camera.roll_speed * deltaTime;
+    /*if (is_key_down(GLFW_KEY_Q))
+        camera.roll -= camera.roll_speed * deltaTime;
+    if (is_key_down(GLFW_KEY_E))
+        camera.roll += camera.roll_speed * deltaTime;*/
 }
 
 #pragma region UI
@@ -189,8 +189,8 @@ static void load_mesh(std::vector<model_t>& models, std::string path)
 {
     logger::info("Loading mesh {}", path);
 
-    model_t model = load_model_new(path);
-    create_material(model.textures, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, material_layout, g_texture_sampler);
+    model_t model = load_model(path);
+    //create_material(model.textures, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, material_layout, g_texture_sampler);
 
     std::lock_guard<std::mutex> lock(model_mutex);
     models.push_back(model);
@@ -573,6 +573,10 @@ static void render_left_window()
 
         if (ImGui::CollapsingHeader("Camera"))
         {
+            std::array<const char*, 2> projections = { "Perspective", "Orthographic" };
+            int current_projection = 0;
+            ImGui::Combo("Projection", &current_projection, projections.data(), projections.size());
+
             if (ImGui::RadioButton("First person", cam_mode == camera_mode::first_person)) {
                 cam_mode = camera_mode::first_person;
             }
@@ -635,7 +639,7 @@ static void render_left_window()
 
 
         if (edit_shaders) {
-            ImGui::Begin("Edit Shaders");
+            ImGui::Begin("Edit Shaders", &edit_shaders);
 
             static char text[1024 * 16] =
                 "/*\n"
@@ -1012,7 +1016,6 @@ int main(int argc, char** argv)
 
     // create models
     vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
-    vertex_array_t icosphere = load_model(get_vfs_path("/models/sphere.obj"));
 
     // TEMP: Don't want to have to manually load the model each time so I will do it
     // here instead for the time-being.
@@ -1025,28 +1028,18 @@ int main(int argc, char** argv)
     //
 
 
-    model_t sponza = load_model_latest(get_vfs_path("/models/sponza/sponza.obj"));
+    // TODO: Load default textures here such as diffuse, normal, specular etc.
 
-    // At this point, the model has been fully loaded onto the CPU and now we 
-    // need to transfer this data onto the GPU.
-    // 
-    // Also setup the texture descriptor sets
+
+
+    model_t sphere = load_model(get_vfs_path("/models/sphere.obj"));
+    model_t sponza = load_model(get_vfs_path("/models/sponza/sponza.obj"));
+
     std::vector<VkDescriptorSetLayoutBinding> bindings = { mat_albdo_binding, mat_normal_binding, mat_specular_binding };
-    for (auto& mesh : sponza.meshes) {
-        mesh.vertex_array = create_vertex_array(mesh.vertices, mesh.indices);
-        mesh.descriptor_set = allocate_descriptor_set(material_layout);
 
-        for (std::size_t j = 0; j < mesh.textures.size(); ++j) {
-            //assert(mesh.textures.size() == 3);
-
-            update_binding(mesh.descriptor_set, 
-                bindings[j],
-                sponza.unique_textures[mesh.textures[j]], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_texture_sampler);
-        }
-    }
-    
-
-
+    upload_model_to_gpu(sphere, material_layout, bindings, g_texture_sampler);
+    upload_model_to_gpu(sponza, material_layout, bindings, g_texture_sampler);
+        
 
     // create materials
     material_t sun_material;
@@ -1059,17 +1052,10 @@ int main(int argc, char** argv)
     skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/skysphere1.png")));
     skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/null_normal.png")));
     skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/null_specular.png")));
-
     create_material(skysphere_material, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, material_layout, g_texture_sampler);
 
     skysphere_dset = ImGui_ImplVulkan_AddTexture(g_fb_sampler, skysphere_material.textures[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-
-    // todo: temp
-    //a = ImGui_ImplVulkan_AddTexture(model.textures.albedo.sampler, model.textures.albedo.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    //n = ImGui_ImplVulkan_AddTexture(model.textures.normal.sampler, model.textures.normal.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    //s = ImGui_ImplVulkan_AddTexture(model.textures.specular.sampler, model.textures.specular.image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    
     // create instances
     instance_t skyboxsphere_instance;
     instance_t sun_instance;
@@ -1100,22 +1086,13 @@ int main(int argc, char** argv)
         // Only update movement and camera view when in viewport mode
         if (in_viewport) {
             handle_input(camera, delta_time);
-            glm::vec2 cursorPos = get_mouse_position();
-            update_camera_view(camera, cursorPos.x, cursorPos.y);
+            update_camera(camera, get_mouse_position());
         }
-
-        update_camera(camera);
-        update_projection(camera);
 
         scene.cameraPosition = glm::vec4(camera.position, 0.0f);
 
         // set sun position
         translate(sun_instance, glm::vec3(scene.lightPosStrength));
-        //rotate(sun_instance, -120.0f, { 1.0f, 0.0f, 0.0f });
-        //scale(sun_instance, 1.0f);
-
-        //translate(model_instance, { 0.0f, 2.0f, 0.0f });
-        //rotate(model_instance, 10.0f * uptime, { 0.0f, 1.0f, 0.0f });
 
         // copy data into uniform buffer
         set_buffer_data_new(camera_buffer, &camera.viewProj, sizeof(view_projection));
@@ -1135,17 +1112,19 @@ int main(int argc, char** argv)
                 // Render the sky sphere
                 bind_pipeline(cmd_buffer, skyspherePipeline, geometry_sets);
                 
-                bind_material(cmd_buffer, rendering_pipeline_layout, skysphere_material);
-                bind_vertex_array(cmd_buffer, icosphere);
-                render(cmd_buffer, rendering_pipeline_layout, icosphere.index_count, skyboxsphere_instance);
-
+                for (std::size_t i = 0; i < sphere.meshes.size(); ++i) {
+                    bind_material(cmd_buffer, rendering_pipeline_layout, skysphere_material);
+                    bind_vertex_array(cmd_buffer, sphere.meshes[i].vertex_array);
+                    render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
+                }
                 // Render the models
                 bind_pipeline(cmd_buffer, current_pipeline, geometry_sets);
 
                 // render light
-                bind_material(cmd_buffer, rendering_pipeline_layout, sun_material);
-                render(cmd_buffer, rendering_pipeline_layout, icosphere.index_count, sun_instance);
-                
+                for (std::size_t i = 0; i < sphere.meshes.size(); ++i) {
+                    bind_material(cmd_buffer, rendering_pipeline_layout, sun_material);
+                    render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, sun_instance);
+                }
 
                 // TODO: Currently we are rendering each instance individually 
                 // which is a very naive. Firstly, instances should be rendered
@@ -1169,19 +1148,12 @@ int main(int argc, char** argv)
 
 
 
-                translate(model_instance, { 0.0f, -5.0f, 20.0f });
-                scale(model_instance, 0.05f);
+                translate(model_instance, { 0.0f, 0.0f, 0.0f });
+                scale(model_instance, 0.025f);
+                //rotate(model_instance, 90.0f, { 1.0f, 0.0f, 0.0f });
 
                 for (std::size_t i = 0; i < sponza.meshes.size(); ++i) {
-                    uint32_t current_frame = get_current_frame();
-                    vkCmdBindDescriptorSets(cmd_buffer[current_frame], 
-                        VK_PIPELINE_BIND_POINT_GRAPHICS,
-                        rendering_pipeline_layout, 
-                        1, 
-                        1, 
-                        &sponza.meshes[i].descriptor_set,
-                        0,
-                        nullptr);
+                    bind_descriptor_set(cmd_buffer, rendering_pipeline_layout, sponza.meshes[i].descriptor_set);
                     bind_vertex_array(cmd_buffer, sponza.meshes[i].vertex_array);
                     render(cmd_buffer, rendering_pipeline_layout, sponza.meshes[i].vertex_array.index_count, model_instance);
                 }
@@ -1288,17 +1260,14 @@ int main(int argc, char** argv)
     renderer_wait();
 
     destroy_model(sponza);
+    destroy_model(sphere);
 
-    for (auto& model : g_models) {
-        destroy_material(model.textures);
-        destroy_vertex_array(model.data);
-    }
+    for (auto& model : g_models)
+        destroy_model(model);
 
     destroy_material(sun_material);
     destroy_material(skysphere_material);
 
-
-    destroy_vertex_array(icosphere);
     destroy_vertex_array(quad);
 
 
@@ -1336,6 +1305,9 @@ int main(int argc, char** argv)
     destroy_window(window);
 
 
+    // TODO: Export all logs into a log file
+    
+
     return 0;
 }
 
@@ -1344,7 +1316,7 @@ static bool press(key_pressed_event& e)
 {
     if (e.get_key_code() == GLFW_KEY_F1) {
         in_viewport = !in_viewport;
-
+        camera.first_mouse = true;
         glfwSetInputMode(window->handle, GLFW_CURSOR, in_viewport ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
 

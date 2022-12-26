@@ -5,149 +5,6 @@
 #include "filesystem/vfs.hpp"
 #include "logging.hpp"
 
-static image_buffer_t load_mesh_texture(const aiMaterial* material, aiTextureType type, const std::filesystem::path& path)
-{
-    image_buffer_t texture;
-
-    for (std::size_t i = 0; i < material->GetTextureCount(type); ++i) {
-        aiString ai_path;
-        std::string ai_path_string;
-
-        if (material->GetTexture(type, i, &ai_path) == aiReturn_FAILURE) {
-            ai_path_string = ai_path.C_Str();
-            logger::err("Failed to load texture: {}", ai_path_string);
-            return {};
-        }
-
-        ai_path_string = ai_path.C_Str();
-        // HACK: A work around to getting the full path. Should look into
-        // a proper implementation.
-        texture = load_texture(path.parent_path().string() + "/" + ai_path_string);
-    }
-
-    return texture;
-}
-
-static void parse_mesh(model_t& model, std::vector<vertex_t>& vertices, 
-                                       std::vector<uint32_t>& indices,
-                                       aiMesh* mesh, const aiScene* scene, const std::filesystem::path& p)
-{
-    // walk through each of the mesh's vertices
-    for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
-        vertex_t vertex{};
-
-        vertex.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-
-        if (mesh->HasNormals())
-            vertex.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
-
-        // check if texture coordinates exist
-        if(mesh->HasTextureCoords(0)) {
-            // todo: "1.0f -" is used here. Double check that this is correct.
-
-            // a vertex can contain up to 8 different texture coordinates.
-            // We thus make the assumption that we won't
-            // use models where a vertex can have multiple texture coordinates,
-            // so we always take the first set (0).
-            vertex.uv        = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-            vertex.tangent   = glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
-            //vertex.biTangent = glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
-        } else {
-            vertex.uv = glm::vec2(0.0f);
-        }
-
-
-        vertices.push_back(vertex);
-    }
-
-    // now walk through each of the mesh's faces (a face is a mesh its triangle)
-    // and retrieve the corresponding vertex indices.
-    for(unsigned int i = 0; i < mesh->mNumFaces; i++) {
-        const aiFace& face = mesh->mFaces[i];
-
-        // retrieve all indices of the face and store them in the indices vector
-        for(unsigned int j = 0; j < face.mNumIndices; j++)
-            indices.push_back(face.mIndices[j]);
-    }
-
-
-    // process materials
-    for (std::size_t i = 1; i < scene->mNumMaterials; ++i) {
-        const aiMaterial* material = scene->mMaterials[i];
-
-        model.textures.textures.push_back(load_mesh_texture(material, aiTextureType_DIFFUSE, p));
-        model.textures.textures.push_back(load_mesh_texture(material, aiTextureType_HEIGHT, p));
-        model.textures.textures.push_back(load_mesh_texture(material, aiTextureType_SPECULAR, p));
-    }
-
-}
-
-static model_t parse_model(aiNode* node, const aiScene* scene, const std::filesystem::path& p)
-{
-    model_t model{};
-
-    std::vector<vertex_t> vertices;
-    std::vector<uint32_t> indices;
-
-
-    for (std::size_t i = 0; i < node->mNumMeshes; ++i)
-        parse_mesh(model, vertices, indices, scene->mMeshes[node->mMeshes[i]], scene, p);
-
-    //for (std::size_t i = 0; i < node->mNumChildren; ++i)
-    //    parse_model(data, node->mChildren[i], scene);
-
-
-    assert(!vertices.empty() || !indices.empty());
-
-
-    // TODO: String is not constructing from const char*, why?
-    std::string n = node->mName.C_Str();
-
-    model.name = n;
-    model.data = create_vertex_array(vertices, indices);
-
-    return model;
-}
-
-vertex_array_t load_model(const std::filesystem::path& path)
-{
-    Assimp::Importer importer;
-
-    const aiScene* scene = importer.ReadFile(path.string(), aiProcess_PreTransformVertices |
-        aiProcessPreset_TargetRealtime_Fast |
-        aiProcess_ConvertToLeftHanded
-    );
-
-    if (!scene) {
-        logger::err("Failed to load at path: {}", path.string());
-        return {};
-    }
-
-    model_t data = parse_model(scene->mRootNode, scene, path.string());
-    return data.data;
-}
-
-model_t load_model_new(const std::filesystem::path& path)
-{
-    Assimp::Importer importer;
-
-
-    const unsigned int flags = aiProcess_PreTransformVertices |
-                               aiProcessPreset_TargetRealtime_Fast |
-                               aiProcess_FlipWindingOrder |
-                               aiProcess_MakeLeftHanded;
-
-    const aiScene* scene = importer.ReadFile(path.string(), flags);
-
-    if (!scene) {
-        logger::err("Failed to load model at path: {}", path.string());
-        return {};
-    }
-
-    return parse_model(scene->mRootNode, scene, path);
-}
-
-
 static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial* material, 
                                                    aiTextureType type, 
                                                    const std::filesystem::path& model_path)
@@ -252,6 +109,8 @@ static mesh_t process_mesh(model_t& model, const aiMesh* assimp_mesh, const aiSc
         const aiFace& face = assimp_mesh->mFaces[i];
 
         // retrieve all indices of the face and store them in the indices vector
+        // TODO: Would it be possible to do a memcpy of all indices into the vector
+        // instead of doing a loop?
         for(std::size_t j = 0; j < face.mNumIndices; ++j)
             mesh.indices.push_back(face.mIndices[j]);
     }
@@ -260,9 +119,10 @@ static mesh_t process_mesh(model_t& model, const aiMesh* assimp_mesh, const aiSc
     // process material for current mesh if it has any
     if (assimp_mesh->mMaterialIndex >= 0) {
         const aiMaterial* material = scene->mMaterials[assimp_mesh->mMaterialIndex];
-        
 
         // Check if the any textures have already been loaded
+        // Note that a material may have multiple textures of the same type, hence the vector
+        // TODO: Find out when there might be multiple textures of the same type.
         const auto& diffuse_path = get_texture_full_path(material, aiTextureType_DIFFUSE, model.path);
         const auto& normal_path = get_texture_full_path(material, aiTextureType_DISPLACEMENT, model.path);
         const auto& specular_path = get_texture_full_path(material, aiTextureType_SPECULAR, model.path);
@@ -311,8 +171,10 @@ static void process_node(model_t& model, aiNode* node, const aiScene* scene)
 }
 
 
-model_t load_model_latest(const std::filesystem::path& path)
+model_t load_model(const std::filesystem::path& path)
 {
+    logger::info("Loading model at path {}", path.string());
+
     model_t model{};
 
     Assimp::Importer importer;
@@ -321,7 +183,8 @@ model_t load_model_latest(const std::filesystem::path& path)
     const unsigned int flags = aiProcessPreset_TargetRealtime_Fast |
                                aiProcess_FlipWindingOrder |
                                aiProcess_MakeLeftHanded |
-                               aiProcess_FlipUVs;
+                               aiProcess_FlipUVs
+                               ;
 
     const aiScene* scene = importer.ReadFile(path.string(), flags);
 
@@ -339,6 +202,11 @@ model_t load_model_latest(const std::filesystem::path& path)
     // Start processing from the root scene node
     process_node(model, scene->mRootNode, scene);
 
+    logger::info("Successfully loaded model containing {} meshes at path {}", model.meshes.size(), path.string());
+    
+
+
+
     return model;
 }
 
@@ -347,6 +215,30 @@ void destroy_model(model_t& model)
     destroy_images(model.unique_textures);
     for (auto& mesh : model.meshes) {
         destroy_vertex_array(mesh.vertex_array);
+    }
+}
+
+void upload_model_to_gpu(model_t& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding>& bindings, VkSampler sampler)
+{
+
+    // At this point, the model has been fully loaded onto the CPU and now we 
+    // need to transfer this data onto the GPU.
+    // 
+    // Also setup the texture descriptor sets
+
+    for (auto& mesh : model.meshes) {
+        mesh.vertex_array = create_vertex_array(mesh.vertices, mesh.indices);
+        mesh.descriptor_set = allocate_descriptor_set(layout);
+
+        for (std::size_t j = 0; j < mesh.textures.size(); ++j) {
+            //assert(mesh.textures.size() == 3);
+
+            update_binding(mesh.descriptor_set, 
+                bindings[j],
+                model.unique_textures[mesh.textures[j]], 
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
+                sampler);
+        }
     }
 }
 

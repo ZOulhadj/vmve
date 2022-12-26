@@ -37,6 +37,10 @@ struct mesh_t {
     VkDescriptorSet descriptor_set;
 };
 
+struct mesh_texture_t {
+    std::filesystem::path path;
+    image_buffer_t texture;
+};
 
 struct model_t {
     std::string path;
@@ -45,24 +49,19 @@ struct model_t {
     std::vector<std::filesystem::path> unique_texture_paths;
     std::vector<image_buffer_t> unique_textures;
 
+    //std::vector<mesh_texture_t> unique_textures;
+    
     std::vector<mesh_t> meshes;
 
-
-
     std::string name;
-
-    vertex_array_t data;
-    material_t textures;
 };
 
-vertex_array_t load_model(const std::filesystem::path& path);
-model_t load_model_new(const std::filesystem::path& path);
-
-
-
-model_t load_model_latest(const std::filesystem::path& path);
-
-
+model_t load_model(const std::filesystem::path& path);
 void destroy_model(model_t& model);
+
+
+void upload_model_to_gpu(model_t& model, VkDescriptorSetLayout layout,
+    std::vector<VkDescriptorSetLayoutBinding>& bindings, VkSampler sampler);
+
 
 #endif

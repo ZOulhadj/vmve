@@ -76,25 +76,28 @@ camera_t create_camera(const glm::vec3& position, float fov, float speed)
     // Required if using Vulkan (left-handed coordinate-system)
     cam.viewProj.proj[1][1] *= -1.0;
 
+
+    cam.first_mouse = true;
+
     return cam;
 }
-
-void update_camera_view(camera_t& camera, float cursor_x, float cursor_y)
-{
-    camera.cursor_x = cursor_x;
-    camera.cursor_y = cursor_y;
-}
-
-void update_camera(camera_t& camera)
+void update_camera(camera_t& camera, const glm::vec2& cursor_pos)
 {
     // todo(zak): Need to fix unwanted roll when rotating
-    // Get the mouse offsets
-    static float last_x = 0.0f;
-    static float last_y = 0.0f;
-    const float xoffset = (last_x - camera.cursor_x) * camera.view_speed;
-    const float yoffset = (last_y - camera.cursor_y) * camera.view_speed;
-    last_x = camera.cursor_x;
-    last_y = camera.cursor_y;
+    static float last_x = 1280.0f / 2.0f;
+    static float last_y = 720.0f / 2.0f;
+
+    if (camera.first_mouse) {
+        last_x = cursor_pos.x;
+        last_y = cursor_pos.y;
+        camera.first_mouse = false;
+    }
+
+    const float xoffset = (last_x - cursor_pos.x) * camera.view_speed;
+    const float yoffset = (last_y - cursor_pos.y) * camera.view_speed;
+
+    last_x = cursor_pos.x;
+    last_y = cursor_pos.y;
 
     // Get the camera current direction vectors based on orientation
     camera.front_vector = glm::conjugate(camera.orientation) * glm::vec3(0.0f, 0.0f, 1.0f);
@@ -105,8 +108,12 @@ void update_camera(camera_t& camera)
     //
     // This code snippet below locks the yaw to world coordinates.
     const glm::quat pitch = glm::angleAxis(glm::radians(yoffset),  glm::vec3(1.0f, 0.0f, 0.0f));
-    //const glm::quat yaw   = glm::angleAxis(glm::radians(xoffset),  glm::vec3(0.0f, 1.0f, 0.0f));
+#define LOCK_YAW
+#if defined(LOCK_YAW)
+    const glm::quat yaw   = glm::angleAxis(glm::radians(xoffset),  glm::vec3(0.0f, 1.0f, 0.0f));
+#else
     const glm::quat yaw = glm::angleAxis(glm::radians(xoffset), camera.orientation * glm::vec3(0.0f, 1.0f, 0.0f));
+#endif
     const glm::quat roll  = glm::angleAxis(glm::radians(camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
 
     // Update the camera orientation based on pitch, yaw and roll
