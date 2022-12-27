@@ -32,7 +32,6 @@ static std::vector<VkCommandBuffer> geometry_cmd_buffers;
 static std::vector<VkCommandBuffer> viewport_cmd_buffers;
 static std::vector<VkCommandBuffer> ui_cmd_buffers;
 
-
 static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface)
 {
     if (surface.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -216,6 +215,11 @@ static std::vector<Frame> create_frames(uint32_t frames_in_flight)
         vk_check(vkCreateFence(g_rc->device.device, &fence_info, nullptr, &frame.submit_fence));
         vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.acquired_semaphore));
         vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.released_semaphore));
+
+
+        // temp
+        vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.geometry_semaphore));
+        vk_check(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.lighting_semaphore));
     }
 
     return frames;
@@ -225,6 +229,8 @@ static std::vector<Frame> create_frames(uint32_t frames_in_flight)
 static void destroy_frames(std::vector<Frame>& frames)
 {
     for (Frame& frame : frames) {
+        vkDestroySemaphore(g_rc->device.device, frame.lighting_semaphore, nullptr);
+        vkDestroySemaphore(g_rc->device.device, frame.geometry_semaphore, nullptr);
         vkDestroySemaphore(g_rc->device.device, frame.released_semaphore, nullptr);
         vkDestroySemaphore(g_rc->device.device, frame.acquired_semaphore, nullptr);
         vkDestroyFence(g_rc->device.device, frame.submit_fence, nullptr);
@@ -566,135 +572,6 @@ void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_tar
 
     render_targets = create_ui_render_targets(render_pass, extent);
 }
-
-//VkDescriptorSetLayout create_descriptor_set_layout(const std::vector<descriptor_set_layout>& bindings)
-//{
-//    VkDescriptorSetLayout layout{};
-//
-//    std::vector<VkDescriptorSetLayoutBinding> layout_bindings(bindings.size());
-//
-//    for (std::size_t i = 0; i < layout_bindings.size(); ++i) {
-//        layout_bindings[i].binding = i;
-//        layout_bindings[i].descriptorType = bindings[i].type;
-//        layout_bindings[i].descriptorCount = 1;
-//        layout_bindings[i].stageFlags = bindings[i].stages;
-//    }
-//
-//    VkDescriptorSetLayoutCreateInfo info{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-//    info.bindingCount = u32(layout_bindings.size());
-//    info.pBindings    = layout_bindings.data();
-//
-//    vk_check(vkCreateDescriptorSetLayout(g_rc->device.device, &info, nullptr, &layout));
-//
-//    return layout;
-//}
-//void destroy_descriptor_set_layout(VkDescriptorSetLayout layout) {
-//    vkDestroyDescriptorSetLayout(g_rc->device.device, layout, nullptr);
-//}
-//std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout)
-//{
-//    std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
-//
-//    for (auto& descriptor_set : descriptor_sets) {
-//        VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-//        allocate_info.descriptorPool = g_r->descriptor_pool;
-//        allocate_info.descriptorSetCount = 1;
-//        allocate_info.pSetLayouts = &layout;
-//
-//        vk_check(vkAllocateDescriptorSets(g_rc->device.device, &allocate_info,
-//                                          &descriptor_set));
-//
-//    }
-//
-//    return descriptor_sets;
-//}
-//VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout)
-//{
-//    VkDescriptorSet descriptor_set{};
-//
-//    VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-//    allocate_info.descriptorPool = g_r->descriptor_pool;
-//    allocate_info.descriptorSetCount = 1;
-//    allocate_info.pSetLayouts = &layout;
-//
-//    vk_check(vkAllocateDescriptorSets(g_rc->device.device, &allocate_info,
-//        &descriptor_set));
-//
-//    return descriptor_set;
-//}
-//void set_buffer(uint32_t binding, const std::vector<VkDescriptorSet>& descriptor_sets, const std::vector<buffer_t>& buffers)
-//{
-//    // same as frames_in_flight
-//    std::vector<VkDescriptorBufferInfo> buffer_infos(descriptor_sets.size());
-//
-//    for (std::size_t i = 0; i < buffer_infos.size(); ++i) {
-//        buffer_infos[i].buffer = buffers[i].buffer;
-//        buffer_infos[i].offset = 0;
-//        buffer_infos[i].range = VK_WHOLE_SIZE; // or sizeof(struct)
-//
-//        // todo: Figure out a better way of converting for buffer usage to descriptor type
-//        VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-//        if (buffers[i].usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-//            descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-//
-//        assert(descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
-//
-//        VkWriteDescriptorSet write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-//        write.dstSet = descriptor_sets[i];
-//        write.dstBinding = binding;
-//        write.dstArrayElement = 0;
-//        write.descriptorType = descriptor_type;
-//        write.descriptorCount = 1;
-//        write.pBufferInfo = &buffer_infos[i];
-//
-//        vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
-//    }
-//
-//};
-//void set_buffer(uint32_t binding, VkDescriptorSet descriptor_set, const buffer_t& buffer)
-//{
-//    // same as frames_in_flight
-//    VkDescriptorBufferInfo buffer_info{};
-//    buffer_info.buffer = buffer.buffer;
-//    buffer_info.offset = 0;
-//    buffer_info.range = VK_WHOLE_SIZE; // or sizeof(struct)
-//
-//    // todo: Figure out a better way of converting for buffer usage to descriptor type
-//    VkDescriptorType descriptor_type = VK_DESCRIPTOR_TYPE_MAX_ENUM;
-//    if (buffer.usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-//        descriptor_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-//
-//    assert(descriptor_type != VK_DESCRIPTOR_TYPE_MAX_ENUM);
-//
-//    VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-//    write.dstSet = descriptor_set;
-//    write.dstBinding = binding;
-//    write.dstArrayElement = 0;
-//    write.descriptorType = descriptor_type;
-//    write.descriptorCount = 1;
-//    write.pBufferInfo = &buffer_info;
-//
-//    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
-//
-//}
-//void set_texture(uint32_t binding, VkDescriptorSet descriptor_set, VkSampler sampler, const image_buffer_t& buffer, VkImageLayout layout)
-//{
-//    // same as frames_in_flight
-//    VkDescriptorImageInfo buffer_info{};
-//    buffer_info.imageLayout = layout;
-//    buffer_info.imageView = buffer.view;
-//    buffer_info.sampler = sampler;
-//
-//    VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
-//    write.dstSet = descriptor_set;
-//    write.dstBinding = binding;
-//    write.dstArrayElement = 0;
-//    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-//    write.descriptorCount = 1;
-//    write.pImageInfo = &buffer_info;
-//
-//    vkUpdateDescriptorSets(g_rc->device.device, 1, &write, 0, nullptr);
-//}
 
 VkPipeline create_pipeline(pipeline_info& pipelineInfo, VkPipelineLayout layout, VkRenderPass render_pass)
 {
@@ -1087,14 +964,14 @@ void end_rendering()
     // 3. Viewport
     //
 
-#if 1
+    const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+#if 0 
     const std::array<VkCommandBuffer, 3> cmd_buffers{
         geometry_cmd_buffers[current_frame],
         viewport_cmd_buffers[current_frame],
         ui_cmd_buffers[current_frame]
     };
 
-    const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submit_info.waitSemaphoreCount   = 1;
     submit_info.pWaitSemaphores      = &g_frames[current_frame].acquired_semaphore;
@@ -1105,34 +982,38 @@ void end_rendering()
     submit_info.pSignalSemaphores    = &g_frames[current_frame].released_semaphore;
     vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frames[current_frame].submit_fence));
 #else
-    const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-    submit_info.pWaitDstStageMask = &wait_stage;
-    submit_info.commandBufferCount = 1;
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.signalSemaphoreCount = 1;
+    VkSubmitInfo geometry_submit{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    geometry_submit.waitSemaphoreCount = 1;
+    geometry_submit.pWaitSemaphores = &g_frames[current_frame].acquired_semaphore;
+    geometry_submit.pWaitDstStageMask = &wait_stage;
+    geometry_submit.commandBufferCount = 1;
+    geometry_submit.pCommandBuffers = &geometry_cmd_buffers[current_frame];
+    geometry_submit.signalSemaphoreCount = 1;
+    geometry_submit.pSignalSemaphores = &g_frames[current_frame].geometry_semaphore;
+    vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &geometry_submit, VK_NULL_HANDLE));
 
-    {
-        submit_info.pWaitSemaphores = &g_frames[current_frame].acquired_semaphore;
-        submit_info.pSignalSemaphores = &g_frames[current_frame].released_semaphore;
-        submit_info.pCommandBuffers = &geometry_cmd_buffers[current_frame];
-        vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frames[current_frame].submit_fence));
-    }
-    {
-        submit_info.pWaitSemaphores = &g_frames[current_frame].acquired_semaphore;
-        submit_info.pCommandBuffers = &viewport_cmd_buffers[current_frame];
-        submit_info.pSignalSemaphores = &g_frames[current_frame].released_semaphore;
-        vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frames[current_frame].submit_fence));
+    VkSubmitInfo lighting_submit{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    lighting_submit.waitSemaphoreCount = 1;
+    lighting_submit.pWaitSemaphores = &g_frames[current_frame].geometry_semaphore;
+    lighting_submit.pWaitDstStageMask = &wait_stage;
+    lighting_submit.commandBufferCount = 1;
+    lighting_submit.pCommandBuffers = &viewport_cmd_buffers[current_frame];
+    lighting_submit.signalSemaphoreCount = 1;
+    lighting_submit.pSignalSemaphores = &g_frames[current_frame].lighting_semaphore;
+    vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &lighting_submit, VK_NULL_HANDLE));
 
-    }
-    {
-        submit_info.pWaitSemaphores = &g_frames[current_frame].acquired_semaphore;
-        submit_info.pCommandBuffers = &ui_cmd_buffers[current_frame];
-        submit_info.pSignalSemaphores = &g_frames[current_frame].released_semaphore;
-        vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frames[current_frame].submit_fence));
-    }
+    VkSubmitInfo ui_submit{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    ui_submit.waitSemaphoreCount = 1;
+    ui_submit.pWaitSemaphores = &g_frames[current_frame].lighting_semaphore;
+    ui_submit.pWaitDstStageMask = &wait_stage;
+    ui_submit.commandBufferCount = 1;
+    ui_submit.pCommandBuffers = &ui_cmd_buffers[current_frame];
+    ui_submit.signalSemaphoreCount = 1;
+    ui_submit.pSignalSemaphores = &g_frames[current_frame].released_semaphore;
+    vk_check(vkQueueSubmit(g_rc->device.graphics_queue, 1, &ui_submit, g_frames[current_frame].submit_fence));
+
+
 #endif
-
 
     // request the GPU to present the rendered image onto the screen
     VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
@@ -1163,9 +1044,10 @@ void add_framebuffer_attachment(framebuffer& fb, VkImageUsageFlags usage, VkForm
     framebuffer_attachment attachment{};
 
     // create framebuffer image
-    attachment.image.resize(frames_in_flight);
+    attachment.image.resize(get_swapchain_image_count());
     for (auto& image : attachment.image)
         image = create_image(extent, format, usage);
+    attachment.usage = usage;
 
     fb.attachments.push_back(attachment);
 
@@ -1274,7 +1156,7 @@ void create_render_pass(framebuffer& fb)
         &fb.render_pass));
 
     //////////////////////////////////////////////////////////////////////////
-    fb.handle.resize(frames_in_flight);
+    fb.handle.resize(get_swapchain_image_count());
     for (std::size_t i = 0; i < fb.handle.size(); ++i) {
         std::vector<VkImageView> attachment_views;
         for (std::size_t j = 0; j < fb.attachments.size(); ++j) {
@@ -1297,14 +1179,29 @@ void create_render_pass(framebuffer& fb)
 void destroy_render_pass(framebuffer& fb)
 {
     for (std::size_t i = 0; i < fb.handle.size(); ++i) {
-        for (std::size_t j = 0; j < fb.attachments.size(); ++j)
+        for (std::size_t j = 0; j < fb.attachments.size(); ++j) {
             destroy_images(fb.attachments[j].image);
+        }
+        fb.attachments.clear();
 
         vkDestroyFramebuffer(g_rc->device.device, fb.handle[i], nullptr);
     }
 
     destroy_render_pass(fb.render_pass);
 }
+
+
+void recreate_render_pass(framebuffer& fb, const glm::vec2& size)
+{
+    std::vector<framebuffer_attachment> old_attachments = fb.attachments;
+    destroy_render_pass(fb);
+
+    for (const auto& attachment : old_attachments) {
+        add_framebuffer_attachment(fb, attachment.usage, attachment.image[0].format, {u32(size.x), u32(size.y)});
+    }
+    create_render_pass(fb);
+}
+
 
 std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, const std::vector<render_target>& render_targets)
 {

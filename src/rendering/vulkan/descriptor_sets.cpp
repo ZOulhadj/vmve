@@ -90,10 +90,10 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layo
     const renderer_t* r = get_renderer();
     const renderer_context_t& rc = get_renderer_context();
 
-    std::vector<VkDescriptorSet> descriptor_sets(frames_in_flight);
+    std::vector<VkDescriptorSet> descriptor_sets(get_swapchain_image_count());
 
     // allocate descriptor sets
-    std::vector<VkDescriptorSetLayout> layouts(frames_in_flight, layout);
+    std::vector<VkDescriptorSetLayout> layouts(descriptor_sets.size(), layout);
 
     VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
     allocate_info.descriptorPool = r->descriptor_pool;
@@ -108,7 +108,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const V
 {
     const renderer_context_t& rc = get_renderer_context();
 
-    for (std::size_t i = 0; i < frames_in_flight; ++i) {
+    for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
         VkDescriptorBufferInfo sceneInfo{};
         sceneInfo.buffer = buffer.buffer;
         sceneInfo.offset = 0;
@@ -150,7 +150,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const V
 {
     const renderer_context_t& rc = get_renderer_context();
 
-    for (std::size_t i = 0; i < frames_in_flight; ++i) {
+    for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
         VkDescriptorImageInfo buffer_info{};
         buffer_info.imageLayout = layout;
         buffer_info.imageView = buffer.view;
@@ -171,7 +171,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const V
 {
     const renderer_context_t& rc = get_renderer_context();
 
-    for (std::size_t i = 0; i < frames_in_flight; ++i) {
+    for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
         VkDescriptorImageInfo buffer_info{};
         buffer_info.imageLayout = layout;
         buffer_info.imageView = buffer[i].view;

@@ -91,9 +91,6 @@ struct sandbox_scene {
 // Stores a collection of unique models 
 std::vector<model_t> g_models;
 
-// Stores the names of each model in the same order as models
-std::vector<const char*> g_model_names;
-
 // Stores the actual unique properties for every object in the world
 std::vector<instance_t> g_instances;
 
@@ -193,11 +190,7 @@ static void load_mesh(std::vector<model_t>& models, const std::filesystem::path&
     upload_model_to_gpu(model, material_layout, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, g_texture_sampler);
 
     std::lock_guard<std::mutex> lock(model_mutex);
-    renderer_wait();
     models.push_back(model);
-   
-    std::string temp = model.name;
-    g_model_names.push_back(temp.c_str());
 
     logger::info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path.string());
 };
@@ -274,13 +267,16 @@ static void render_main_menu()
         std::string model_path = render_file_explorer(get_vfs_path("/models"));
 
         if (ImGui::Button("Load")) {
-            // todo: is renderer_wait required here?
-            // create and push new model into 
+//#define ASYNC_LOADING
+#if defined(ASYNC_LOADING)
             futures.push_back(std::async(std::launch::async, load_mesh, std::ref(g_models), model_path));
+#else
+            load_mesh(g_models, model_path);
+#endif
         }
-        //if (!model_path.empty()) {
-        //    load_model_open = false;
-        //}
+
+        static bool flip_uv = false;
+        ImGui::Checkbox("Flip UVs", &flip_uv);
 
         ImGui::End();
     }
@@ -288,31 +284,36 @@ static void render_main_menu()
     if (export_model_open) {
         static bool use_encryption = false;
         static bool show_key = false;
-        static bool encryptionMode = false;
+        static int current_encryption_mode = 0;
         static char filename[50];
 
         ImGui::Begin("Export Model", &export_model_open);
 
         std::string current_path = render_file_explorer(get_vfs_path("/models"));
 
-        if (ImGui::Button("Open"))
-            logger::info("Opening {}", current_path);
-
         ImGui::InputText("File name", filename, 50);
 
         ImGui::Checkbox("Encryption", &use_encryption);
         if (use_encryption) {
-
+            static std::array<const char*, 4> encryption_alogrithms = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
+            static std::array<const char*, 2> key_lengths = { "256 bits (Recommended)", "128 bit" };
+            static std::array<unsigned char, 2> key_length_bytes = { 32, 16 };
+            static int current_key_length = 0; 
             static CryptoPP::SecByteBlock key{};
             static CryptoPP::SecByteBlock iv{};
+            static bool key_generated = false;
             static std::string k;
             static std::string i;
+
+
+            ImGui::Combo("Key length", &current_key_length, key_lengths.data(), key_lengths.size());
+            ImGui::Combo("Encryption method", &current_encryption_mode, encryption_alogrithms.data(), encryption_alogrithms.size());
 
             if (ImGui::Button("Generate key")) {
                 CryptoPP::AutoSeededRandomPool random_pool;
 
                 // Set key and IV byte lengths
-                key = CryptoPP::SecByteBlock(CryptoPP::AES::DEFAULT_KEYLENGTH);
+                key = CryptoPP::SecByteBlock(key_length_bytes[current_key_length]);
                 iv = CryptoPP::SecByteBlock(CryptoPP::AES::BLOCKSIZE);
 
                 // Generate key and IV
@@ -323,24 +324,30 @@ static void render_main_menu()
                 CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
                 encryption.SetKeyWithIV(key, key.size(), iv);
 
-                k = std::string(reinterpret_cast<const char*>(&key[0]), key.size());
-                i = std::string(reinterpret_cast<const char*>(&iv[0]), iv.size());
+                // Convert from bytes into hex
+                {
+                    CryptoPP::HexEncoder hex_encoder;
+                    hex_encoder.Put(key, sizeof(byte) * key.size());
+                    hex_encoder.MessageEnd();
+                    k.resize(hex_encoder.MaxRetrievable());
+                    hex_encoder.Get((byte*)&k[0], k.size());
+                }
+                {
+                    // TODO: IV hex does not get created for some reason.
+                    CryptoPP::HexDecoder hex_encoder;
+                    hex_encoder.Put(iv, sizeof(byte) * iv.size());
+                    hex_encoder.MessageEnd();
+                    i.resize(hex_encoder.MaxRetrievable());
+                    hex_encoder.Get((byte*)&i[0], i.size());
+                }
+
+                key_generated = true;
             }
 
-            ImGui::SameLine();
-            ImGui::Button("Copy to clipboard");
-
-            ImGui::Text("Key: %s", k.c_str());
-            ImGui::Text("IV: %s", i.c_str());
-
-            ImGui::Text("Encryption mode");
-            ImGui::Checkbox("AES", &encryptionMode);
-            ImGui::SameLine();
-            ImGui::Checkbox("DH", &encryptionMode);
-            ImGui::SameLine();
-            ImGui::Checkbox("GCM", &encryptionMode);
-            ImGui::SameLine();
-            ImGui::Checkbox("RC6", &encryptionMode);
+            if (key_generated) {
+                ImGui::Text("Key: %s", k.c_str());
+                ImGui::Text("IV: %s", i.c_str());
+            }
 
             //ImGui::InputText("Key", key, 20, show_key ? ImGuiInputTextFlags_None : ImGuiInputTextFlags_Password);
             //ImGui::Checkbox("Show key", &show_key);
@@ -397,6 +404,8 @@ static void render_right_window()
             instance.name = "Unnamed";
             instance.model = &g_models[current_model_item];
             instance.position = glm::vec3(0.0f);
+            instance.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+            instance.scale = glm::vec3(1.0f, 1.0f, 1.0f);
             instance.matrix = glm::mat4(1.0f);
 
             g_instances.push_back(instance);
@@ -420,7 +429,12 @@ static void render_right_window()
         }
         ImGui::EndDisabled();
 
-        ImGui::Combo("Model", &current_model_item, g_model_names.data(), g_model_names.size());
+        // TEMP: Create a list of just model names from all the models
+        std::vector<const char*> model_names(g_models.size());
+        for (std::size_t i = 0; i < model_names.size(); ++i)
+            model_names[i] = g_models[i].name.c_str();
+
+        ImGui::Combo("Model", &current_model_item, model_names.data(), model_names.size());
 
         // Options
         static ImGuiTableFlags flags =
@@ -473,6 +487,8 @@ static void render_right_window()
             ImGui::Text("ID: %04d", item.id);
             ImGui::Text("Name: %s", item.name.c_str());
             ImGui::SliderFloat3("Translation", glm::value_ptr(item.position), -50.0f, 50.0f);
+            ImGui::SliderFloat3("Rotation", glm::value_ptr(item.rotation), -360.0f, 360.0f);
+            ImGui::SliderFloat3("Scale", glm::value_ptr(item.scale), 0.1f, 100.0f);
 
             ImGui::EndChild();
         }
@@ -773,8 +789,8 @@ static void render_viewport_window()
 
         // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
         // when the viewport window resizes.
-        uint32_t current_frame = get_current_swapchain_image();
-        ImGui::Image(framebuffer_id[current_frame], { current_viewport_size.x, current_viewport_size.y });
+        uint32_t current_image = get_current_swapchain_image();
+        ImGui::Image(framebuffer_id[current_image], { current_viewport_size.x, current_viewport_size.y });
     }
     ImGui::End();
 }
@@ -859,20 +875,21 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////
 
     // Convert render target attachments into flat arrays for descriptor binding
-    std::vector<image_buffer_t> positions, normals, colors, speculars, depths;
-    for (auto& attachment : geometry_framebuffer.attachments) {
-        positions.push_back(geometry_framebuffer.attachments[0].image[0]);
-        positions.push_back(geometry_framebuffer.attachments[0].image[1]);
-        normals.push_back(geometry_framebuffer.attachments[1].image[0]);
-        normals.push_back(geometry_framebuffer.attachments[1].image[1]);
-        colors.push_back(geometry_framebuffer.attachments[2].image[0]);
-        colors.push_back(geometry_framebuffer.attachments[2].image[1]);
-        speculars.push_back(geometry_framebuffer.attachments[3].image[0]);
-        speculars.push_back(geometry_framebuffer.attachments[3].image[1]);
-        depths.push_back(geometry_framebuffer.attachments[4].image[0]);
-        depths.push_back(geometry_framebuffer.attachments[4].image[1]);
-    }
+    const auto attachments_to_images = [](const std::vector<framebuffer_attachment>& attachments, uint32_t index)
+    {
+        std::vector<image_buffer_t> images(attachments[index].image.size());
 
+        for (std::size_t i = 0; i < images.size(); ++i) {
+            images[i] = attachments[index].image[i];
+        }
+
+        return images;
+    };
+    std::vector<image_buffer_t> positions = attachments_to_images(geometry_framebuffer.attachments, 0);
+    std::vector<image_buffer_t> normals = attachments_to_images(geometry_framebuffer.attachments, 1);
+    std::vector<image_buffer_t> colors = attachments_to_images(geometry_framebuffer.attachments, 2);
+    std::vector<image_buffer_t> speculars = attachments_to_images(geometry_framebuffer.attachments, 3);
+    std::vector<image_buffer_t> depths = attachments_to_images(geometry_framebuffer.attachments, 4);
 
     buffer_t camera_buffer = create_uniform_buffer(sizeof(view_projection));
     buffer_t scene_buffer = create_uniform_buffer(sizeof(sandbox_scene));
@@ -1092,6 +1109,7 @@ int main(int argc, char** argv)
             handle_input(camera, delta_time);
             update_camera(camera, get_mouse_position());
         }
+        update_projection(camera);
 
         scene.cameraPosition = glm::vec4(camera.position, 0.0f);
 
@@ -1142,28 +1160,14 @@ int main(int argc, char** argv)
                     instance_t& instance = g_instances[i];
 
                     translate(instance, instance.position);
-                    //rotate(instance, instance.rotation);
-                    //scale(instance, instance.scale);
+                    rotate(instance, instance.rotation);
+                    scale(instance, instance.scale);
                     for (std::size_t i = 0; i < instance.model->meshes.size(); ++i) {
                         bind_descriptor_set(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].descriptor_set);
                         bind_vertex_array(cmd_buffer, instance.model->meshes[i].vertex_array);
                         render(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].vertex_array.index_count, instance);
                     }
                 }
-
-
-
-                //translate(model_instance, { 0.0f, 0.0f, 0.0f });
-                //scale(model_instance, 0.025f);
-                ////rotate(model_instance, 90.0f, { 1.0f, 0.0f, 0.0f });
-
-                //for (std::size_t i = 0; i < sponza.meshes.size(); ++i) {
-                //    bind_descriptor_set(cmd_buffer, rendering_pipeline_layout, sponza.meshes[i].descriptor_set);
-                //    bind_vertex_array(cmd_buffer, sponza.meshes[i].vertex_array);
-                //    render(cmd_buffer, rendering_pipeline_layout, sponza.meshes[i].vertex_array.index_count, model_instance);
-                //}
-
-
 
                 end_render_target(cmd_buffer);
             }
@@ -1213,15 +1217,6 @@ int main(int argc, char** argv)
         }
 
 
-
-        // todo: should this be here?
-        if (!swapchain_ready) {
-            logger::info("Swapchain being resized ({}, {})", window->width, window->height);
-
-            recreate_ui_render_targets(ui_pass, ui_render_targets, { window->width, window->height });
-            swapchain_ready = true;
-        }
-
         // The viewport must resize before rendering to texture. If it were
         // to resize within the UI functions then we would be attempting to
         // recreate resources using a new size before submitting to the GPU
@@ -1232,17 +1227,19 @@ int main(int argc, char** argv)
             
             renderer_wait();
 
-#if 0
-            recreate_deferred_renderer_targets(geometry_pass, geometry_render_targets, extent);
+            //recreate_render_pass(geometry_framebuffer, current_viewport_size);
+            //positions = attachments_to_images(geometry_framebuffer.attachments, 0);
+            //normals = attachments_to_images(geometry_framebuffer.attachments, 1);
+            //colors = attachments_to_images(geometry_framebuffer.attachments, 2);
+            //speculars = attachments_to_images(geometry_framebuffer.attachments, 3);
+            //depths = attachments_to_images(geometry_framebuffer.attachments, 4);
+            //update_binding(lighting_sets, positions_binding, positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
+            //update_binding(lighting_sets, normals_binding, normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
+            //update_binding(lighting_sets, colors_binding, colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
+            //update_binding(lighting_sets, specular_binding, speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
+            //update_binding(lighting_sets, depths_binding, depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_fb_sampler);
 
-            for (std::size_t i = 0; i < light_sets.size(); ++i) {
-                set_texture(0, lighting_desc_sets[i], sampler, geometry_render_targets[i].position, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-                set_texture(1, lighting_desc_sets[i], sampler, geometry_render_targets[i].normal, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-                set_texture(2, lighting_desc_sets[i], sampler, geometry_render_targets[i].color, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-                set_texture(3, lighting_desc_sets[i], sampler, geometry_render_targets[i].depth, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
-                set_buffer(4, lighting_desc_sets[i], scene_ubo[i]);
-            }
-#endif
+
             recreate_render_targets(lighting_pass, lighting_render_targets, extent);
 
             for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
@@ -1253,6 +1250,16 @@ int main(int argc, char** argv)
             resize_viewport = false;
         }
 
+        // todo: should this be here?
+        if (!swapchain_ready) {
+            logger::info("Swapchain being resized ({}, {})", window->width, window->height);
+
+            recreate_ui_render_targets(ui_pass, ui_render_targets, { window->width, window->height });
+            swapchain_ready = true;
+        }
+
+
+
         update_window(window);
     }
 
@@ -1261,14 +1268,22 @@ int main(int argc, char** argv)
     logger::info("Terminating application");
 
 
-    // Wait until all GPU commands have finished
+    // Wait until all GPU commands have finishedVK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     renderer_wait();
+
+    ImGui_ImplVulkan_RemoveTexture(skysphere_dset);
+    for (auto& framebuffer : framebuffer_id)
+        ImGui_ImplVulkan_RemoveTexture(framebuffer);
 
     destroy_model(sphere);
 
     for (auto& model : g_models)
         destroy_model(model);
 
+    destroy_image(empty_normal_map);
+    destroy_image(empty_specular_map);
+
+    // TODO: Remove textures but not the fallback ones that these materials refer to 
     destroy_material(sun_material);
     destroy_material(skysphere_material);
 
@@ -1349,11 +1364,6 @@ static bool mouse_moved(mouse_moved_event& e)
 
 static bool resize(window_resized_event& e)
 {
-
-
-
-
-
     return true;
 }
 

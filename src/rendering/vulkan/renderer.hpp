@@ -43,6 +43,11 @@ struct Frame {
     // Frame -> Frame sync (GPU)
     VkSemaphore acquired_semaphore;
     VkSemaphore released_semaphore;
+
+
+
+    VkSemaphore geometry_semaphore;
+    VkSemaphore lighting_semaphore;
 };
 
 struct render_target {
@@ -60,6 +65,7 @@ struct framebuffer_attachment
 {
     // TEMP: Can this be a single image instead of multiple frames?
     std::vector<image_buffer_t> image;
+    VkImageUsageFlags usage;
 };
 
 
@@ -179,6 +185,8 @@ void add_framebuffer_attachment(framebuffer& fb, VkImageUsageFlags usage, VkForm
 
 void create_render_pass(framebuffer& fb);
 void destroy_render_pass(framebuffer& fb);
+
+void recreate_render_pass(framebuffer& fb, const glm::vec2& size);
 //////////////////////////////////////////////////////////////////////////
 
 std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, const std::vector<render_target>& render_targets);

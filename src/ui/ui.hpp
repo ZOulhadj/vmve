@@ -16,6 +16,7 @@ void destroy_user_interface(ImGuiContext* context);
 void begin_ui();
 void end_ui(std::vector<VkCommandBuffer>& buffers);
 
+void recreate_ui_texture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler);
 
 std::string render_file_explorer(const std::filesystem::path& root);
 

@@ -12,7 +12,7 @@ static void custom_style() {
     ImGuiStyle& style = ImGui::GetStyle();
 
     style.TabRounding = 0.0f;
-    style.FrameRounding = 2.0f;
+    //style.FrameRounding = 2.0f;
 }
 
 static void custom_colors() {
@@ -164,6 +164,14 @@ void end_ui(std::vector<VkCommandBuffer>& buffers)
 }
 
 
+
+void recreate_ui_texture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler)
+{
+    for (std::size_t i = 0; i < texture_id.size(); ++i) {
+        ImGui_ImplVulkan_RemoveTexture(texture_id[i]);
+        texture_id[i] = ImGui_ImplVulkan_AddTexture(sampler, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
+}
 
 std::string render_file_explorer(const std::filesystem::path& root)
 {

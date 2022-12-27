@@ -306,10 +306,7 @@ void destroy_image(image_buffer_t& image)
 {
     const renderer_context_t& rc = get_renderer_context();
 
-    if (image.view) {
-        vkDestroyImageView(rc.device.device, image.view, nullptr);
-    }
-
+    vkDestroyImageView(rc.device.device, image.view, nullptr);
     vmaDestroyImage(rc.allocator, image.handle, image.allocation);
 }
 

@@ -3,16 +3,32 @@
 
 // TODO: Create a custom file format
 
-// VMVE File Format
+// VMVE file format draft design
 // 
-// +------------------
-// | 
+// +----------- HEADER ------------+
+// | Application version (v0.0.1)  |
+// | Encryption mode (AES, DH)     |
+// +------------ DATA -------------+
+// | Scene Graph / Model Data      |
+// +-------------------------------+
+//
 
-// Header
+
+struct vmve_file_header
+{
+    std::string version;
+    int encryption_mode;
+};
+
+struct vmve_file_data
+{
+    const char* data;
+};
+
 struct vmve_file_format
 {
-    const char* app_version;
-    const char* data;
+    vmve_file_header header;
+    vmve_file_data   data;
 };
 
 void write_vmve_file(vmve_file_format& file_format, std::string_view path)
