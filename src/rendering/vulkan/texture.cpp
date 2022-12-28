@@ -117,7 +117,7 @@ ImageBuffer LoadTexture(const std::filesystem::path& path, bool flip_y, VkFormat
 }
 
 
-VkSampler create_sampler(VkFilter filtering, const uint32_t anisotropic_level)
+VkSampler CreateSampler(VkFilter filtering, const uint32_t anisotropic_level)
 {
     VkSampler sampler{};
 

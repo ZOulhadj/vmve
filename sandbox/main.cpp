@@ -162,7 +162,7 @@ static bool editor_open = false;
 static bool window_open = true;
 
 
-static void render_begin_docking()
+static void BeginDocking()
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -175,14 +175,14 @@ static void render_begin_docking()
     ImGui::PopStyleVar(3);
 }
 
-static void render_end_docking()
+static void EndDocking()
 {
     ImGui::End();
 }
 
 static std::vector<std::future<void>> futures;
 static std::mutex model_mutex;
-static void load_mesh(std::vector<Model>& models, const std::filesystem::path& path)
+static void LoadMesh(std::vector<Model>& models, const std::filesystem::path& path)
 {
     Logger::Info("Loading mesh {}", path.string());
 
@@ -195,7 +195,7 @@ static void load_mesh(std::vector<Model>& models, const std::filesystem::path& p
     Logger::Info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path.string());
 };
 
-static void render_main_menu()
+static void RenderMainMenu()
 {
     static bool about_open = false;
     static bool load_model_open = false;
@@ -280,9 +280,9 @@ static void render_main_menu()
         if (ImGui::Button("Load")) {
 //#define ASYNC_LOADING
 #if defined(ASYNC_LOADING)
-            futures.push_back(std::async(std::launch::async, load_mesh, std::ref(g_models), model_path));
+            futures.push_back(std::async(std::launch::async, LoadMesh, std::ref(g_models), model_path));
 #else
-            load_mesh(g_models, model_path);
+            LoadMesh(g_models, model_path);
 #endif
         }
 
@@ -389,7 +389,7 @@ static void render_main_menu()
     }
 }
 
-static void render_dockspace()
+static void RenderDockspace()
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
 
@@ -416,7 +416,7 @@ static void render_dockspace()
 
 }
 
-static void render_right_window()
+static void RenderObjectWindow()
 {
     // Object window
     ImGui::Begin(object_window, &window_open, window_flags);
@@ -526,7 +526,7 @@ static void render_right_window()
     ImGui::End();
 }
 
-static void render_left_window()
+static void RenderGlobalWindow()
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -721,7 +721,7 @@ static void render_left_window()
     ImGui::End();
 }
 
-static void render_bottom_window()
+static void RenderConsoleWindow()
 {
     static bool auto_scroll = true;
 
@@ -789,7 +789,7 @@ static void render_bottom_window()
     ImGui::End();
 }
 
-static void render_viewport_window()
+static void RenderViewportWindow()
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -855,8 +855,8 @@ int main(int argc, char** argv)
 
 
     // Create rendering passes and render targets
-    g_fb_sampler = create_sampler(VK_FILTER_LINEAR);
-    g_texture_sampler = create_sampler(VK_FILTER_LINEAR);
+    g_fb_sampler = CreateSampler(VK_FILTER_LINEAR);
+    g_texture_sampler = CreateSampler(VK_FILTER_LINEAR);
 
 
     RenderPass offscreenPass{};
@@ -1204,20 +1204,19 @@ int main(int argc, char** argv)
 
             // gui pass
             {
-                //auto cmd_buffer = BeginUIRenderPass(ui_pass, ui_render_targets);
                 auto cmd_buffer = BeginRenderPass3(uiPass);
                 BeginUI();
 
-                render_begin_docking();
+                BeginDocking();
                 {
-                    render_main_menu();
-                    render_dockspace();
-                    render_right_window();
-                    render_left_window();
-                    render_bottom_window();
-                    render_viewport_window();
+                    RenderMainMenu();
+                    RenderDockspace();
+                    RenderObjectWindow();
+                    RenderGlobalWindow();
+                    RenderConsoleWindow();
+                    RenderViewportWindow();
                 }
-                render_end_docking();
+                EndDocking();
 
                 EndUI(cmd_buffer);
 
