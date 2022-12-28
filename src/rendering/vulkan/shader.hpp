@@ -1,22 +1,22 @@
 #ifndef MY_ENGINE_SHADER_HPP
 #define MY_ENGINE_SHADER_HPP
 
-struct shader_compiler {
+struct ShaderCompiler {
     shaderc_compiler_t compiler       = nullptr;
     shaderc_compile_options_t options = nullptr;
 };
 
-struct shader {
+struct Shader {
     VkShaderModule handle      = nullptr;
     VkShaderStageFlagBits type;
 };
 
 
-shader_compiler create_shader_compiler();
-void destroy_shader_compiler(shader_compiler& compiler);
-shader create_vertex_shader(const std::string& code);
-shader create_fragment_shader(const std::string& code);
-void destroy_shader(shader& shader);
+ShaderCompiler CreateShaderCompiler();
+void DestroyShaderCompiler(ShaderCompiler& compiler);
+Shader CreateVertexShader(const std::string& code);
+Shader CreateFragmentShader(const std::string& code);
+void DestroyShader(Shader& shader);
 
 
 #endif

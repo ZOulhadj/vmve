@@ -5,7 +5,7 @@
 
 #include "logging.hpp"
 
-static shaderc_shader_kind convert_shader_type(VkShaderStageFlagBits type)
+static shaderc_shader_kind ConvertShaderType(VkShaderStageFlagBits type)
 {
     switch (type) {
         case VK_SHADER_STAGE_VERTEX_BIT:
@@ -38,9 +38,9 @@ static shaderc_shader_kind convert_shader_type(VkShaderStageFlagBits type)
 }
 
 
-shader_compiler create_shader_compiler()
+ShaderCompiler CreateShaderCompiler()
 {
-    shader_compiler compiler{};
+    ShaderCompiler compiler{};
 
     // TODO: Check for potential initialization errors.
     compiler.compiler = shaderc_compiler_initialize();
@@ -51,17 +51,17 @@ shader_compiler create_shader_compiler()
     return compiler;
 }
 
-void destroy_shader_compiler(shader_compiler& compiler)
+void DestroyShaderCompiler(ShaderCompiler& compiler)
 {
     shaderc_compile_options_release(compiler.options);
     shaderc_compiler_release(compiler.compiler);
 }
 
-shader create_shader(VkShaderStageFlagBits type, const std::string& code)
+Shader CreateShader(VkShaderStageFlagBits type, const std::string& code)
 {
-    shader shader{};
+    Shader shader{};
 
-    const renderer_t* renderer = get_renderer();
+    const VulkanRenderer* renderer = GetRenderer();
 
     shaderc_compilation_result_t result;
     shaderc_compilation_status status;
@@ -69,23 +69,23 @@ shader create_shader(VkShaderStageFlagBits type, const std::string& code)
     result = shaderc_compile_into_spv(renderer->compiler.compiler,
                                       code.data(),
                                       code.size(),
-                                      convert_shader_type(type),
+                                      ConvertShaderType(type),
                                       "",
                                       "main",
                                       renderer->compiler.options);
     status = shaderc_result_get_compilation_status(result);
 
     if (status != shaderc_compilation_status_success) {
-        logger::err("Failed to compile shader {}", shaderc_result_get_error_message(result));
+        Logger::Error("Failed to compile shader {}", shaderc_result_get_error_message(result));
         return {};
     }
 
     // create shader module
     VkShaderModuleCreateInfo module_info { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
-    module_info.codeSize = u32(shaderc_result_get_length(result));
+    module_info.codeSize = U32(shaderc_result_get_length(result));
     module_info.pCode    = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(result));
 
-    vk_check(vkCreateShaderModule(renderer->ctx.device.device, &module_info, nullptr,
+    VkCheck(vkCreateShaderModule(renderer->ctx.device.device, &module_info, nullptr,
                                   &shader.handle));
     shader.type = type;
 
@@ -93,21 +93,21 @@ shader create_shader(VkShaderStageFlagBits type, const std::string& code)
 }
 
 
-void destroy_shader(shader& shader)
+void DestroyShader(Shader& shader)
 {
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
     vkDestroyShaderModule(rc.device.device, shader.handle, nullptr);
 }
 
-shader create_vertex_shader(const std::string& code)
+Shader CreateVertexShader(const std::string& code)
 {
-    return create_shader(VK_SHADER_STAGE_VERTEX_BIT, code);
+    return CreateShader(VK_SHADER_STAGE_VERTEX_BIT, code);
 }
 
-shader create_fragment_shader(const std::string& code)
+Shader CreateFragmentShader(const std::string& code)
 {
-    return create_shader(VK_SHADER_STAGE_FRAGMENT_BIT, code);
+    return CreateShader(VK_SHADER_STAGE_FRAGMENT_BIT, code);
 }
 
 

@@ -15,7 +15,7 @@ static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial
         aiString ai_path;
 
         if (material->GetTexture(type, i, &ai_path) == aiReturn_FAILURE) {
-            logger::err("Failed to load texture: {}", ai_path.C_Str());
+            Logger::Error("Failed to load texture: {}", ai_path.C_Str());
             return {};
         }
 
@@ -28,7 +28,7 @@ static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial
     return paths;
 }
 
-static void load_mesh_texture(model_t& model, mesh_t& mesh, const std::vector<std::filesystem::path>& paths)
+static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::filesystem::path>& paths)
 {
     std::vector<std::filesystem::path>& uniques = model.unique_texture_paths;
 
@@ -37,7 +37,7 @@ static void load_mesh_texture(model_t& model, mesh_t& mesh, const std::vector<st
         const auto it = std::find(uniques.begin(), uniques.end(), paths[i]);
         
         if (it == uniques.end()) {
-            image_buffer_t texture = load_texture(paths[i].string());
+            ImageBuffer texture = LoadTexture(paths[i].string());
             model.unique_textures.push_back(texture);
             uniques.push_back(paths[i]);
             index = model.unique_textures.size() - 1;
@@ -53,16 +53,16 @@ static void load_mesh_texture(model_t& model, mesh_t& mesh, const std::vector<st
 
 
 
-static mesh_t process_mesh(model_t& model, const aiMesh* ai_mesh, const aiScene* scene)
+static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* scene)
 {
-    mesh_t mesh{};
+    Mesh mesh{};
 
 
     mesh.name = ai_mesh->mName.C_Str();
 
     // walk through each of the mesh's vertices
     for(std::size_t i = 0; i < ai_mesh->mNumVertices; ++i) {
-        vertex_t vertex{};
+        Vertex vertex{};
         vertex.position = glm::vec3(ai_mesh->mVertices[i].x, 
                                     ai_mesh->mVertices[i].y, 
                                     ai_mesh->mVertices[i].z);
@@ -137,17 +137,17 @@ static mesh_t process_mesh(model_t& model, const aiMesh* ai_mesh, const aiScene*
         // TODO: Instead of loading them textures again, we should use the default
         // existing textures
         if (diffuse_path.empty()) {
-            std::vector<std::filesystem::path> fallback_speculars = { get_vfs_path("/textures/null_specular.png") };
+            std::vector<std::filesystem::path> fallback_speculars = { GetVFSPath("/textures/null_specular.png") };
             load_mesh_texture(model, mesh, fallback_speculars);
         }
 
         if (normal_path.empty()) {
-            std::vector<std::filesystem::path> fallback_normals = { get_vfs_path("/textures/null_normal.png") };
+            std::vector<std::filesystem::path> fallback_normals = { GetVFSPath("/textures/null_normal.png") };
             load_mesh_texture(model, mesh, fallback_normals);
         }
 
         if (specular_path.empty()) {
-            std::vector<std::filesystem::path> fallback_speculars = { get_vfs_path("/textures/null_specular.png") };
+            std::vector<std::filesystem::path> fallback_speculars = { GetVFSPath("/textures/null_specular.png") };
             load_mesh_texture(model, mesh, fallback_speculars);
         }
     }
@@ -155,12 +155,12 @@ static mesh_t process_mesh(model_t& model, const aiMesh* ai_mesh, const aiScene*
     return mesh;
 }
 
-static void process_node(model_t& model, aiNode* node, const aiScene* scene)
+static void process_node(Model& model, aiNode* node, const aiScene* scene)
 {
     // process the current nodes meshes if they exist
     for (std::size_t i = 0; i < node->mNumMeshes; ++i) {
         const aiMesh* assimp_mesh = scene->mMeshes[node->mMeshes[i]];
-        mesh_t mesh = process_mesh(model, assimp_mesh, scene);
+        Mesh mesh = process_mesh(model, assimp_mesh, scene);
 
         model.meshes.push_back(mesh);
     }
@@ -172,9 +172,9 @@ static void process_node(model_t& model, aiNode* node, const aiScene* scene)
 }
 
 
-model_t load_model(const std::filesystem::path& path)
+Model LoadModel(const std::filesystem::path& path)
 {
-    model_t model{};
+    Model model{};
 
     Assimp::Importer importer;
 
@@ -188,7 +188,7 @@ model_t load_model(const std::filesystem::path& path)
     const aiScene* scene = importer.ReadFile(path.string(), flags);
 
     if (!scene) {
-        logger::err("Failed to load model at path: {}", path.string());
+        Logger::Error("Failed to load model at path: {}", path.string());
         return {};
     }
 
@@ -204,15 +204,15 @@ model_t load_model(const std::filesystem::path& path)
     return model;
 }
 
-void destroy_model(model_t& model)
+void DestroyModel(Model& model)
 {
-    destroy_images(model.unique_textures);
+    DestroyImages(model.unique_textures);
     for (auto& mesh : model.meshes) {
-        destroy_vertex_array(mesh.vertex_array);
+        DestroyVertexArray(mesh.vertex_array);
     }
 }
 
-void upload_model_to_gpu(model_t& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler)
+void UploadModelToGPU(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler)
 {
 
     // At this point, the model has been fully loaded onto the CPU and now we 
@@ -221,13 +221,13 @@ void upload_model_to_gpu(model_t& model, VkDescriptorSetLayout layout, std::vect
     // Also setup the texture descriptor sets
 
     for (auto& mesh : model.meshes) {
-        mesh.vertex_array = create_vertex_array(mesh.vertices, mesh.indices);
-        mesh.descriptor_set = allocate_descriptor_set(layout);
+        mesh.vertex_array = CreateVertexArray(mesh.vertices, mesh.indices);
+        mesh.descriptor_set = AllocateDescriptorSet(layout);
 
         for (std::size_t j = 0; j < mesh.textures.size(); ++j) {
             //assert(mesh.textures.size() == 3);
 
-            update_binding(mesh.descriptor_set, 
+            UpdateBinding(mesh.descriptor_set, 
                 bindings[j],
                 model.unique_textures[mesh.textures[j]], 
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 

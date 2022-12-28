@@ -8,22 +8,22 @@
 #include "logging.hpp"
 
 
-static void glfw_error_callback(int code, const char* description)
+static void ErrorCallback(int code, const char* description)
 {
-    logger::err("GLFW error ({} : {})", code, description);
+    Logger::Error("GLFW error ({} : {})", code, description);
 }
 
-static void window_close_callback(GLFWwindow* window)
+static void CloseCallback(GLFWwindow* window)
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     window_closed_event e;
     ptr->event_callback(e);
 }
 
-static void window_focus_callback(GLFWwindow* window, int focused)
+static void FocusCallback(GLFWwindow* window, int focused)
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (focused) {
         window_focused_event e;
@@ -34,9 +34,9 @@ static void window_focus_callback(GLFWwindow* window, int focused)
     }
 }
 
-static void window_maximized_callback(GLFWwindow* window, int maximized)
+static void MaximizedCallback(GLFWwindow* window, int maximized)
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (maximized) {
         window_maximized_event e;
@@ -47,9 +47,9 @@ static void window_maximized_callback(GLFWwindow* window, int maximized)
     }
 }
 
-static void window_minimized_callback(GLFWwindow* window, int minimized)
+static void MinimizedCallback(GLFWwindow* window, int minimized)
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (minimized) {
         window_minimized_event e;
@@ -60,16 +60,16 @@ static void window_minimized_callback(GLFWwindow* window, int minimized)
     }
 }
 
-static void window_resize_callback(GLFWwindow* window, int width, int height)
+static void ResizeCallback(GLFWwindow* window, int width, int height)
 {
     // todo: window resizing is done within the framebuffer callback since that
     // todo: returns the actual pixel count of the display. This ensures that
     // todo: for monitors with a high DPI we return the real pixels.
 }
 
-static void window_framebuffer_resize_callback(GLFWwindow* window, int width, int height)
+static void FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
     ptr->width  = width;
     ptr->height = height;
 
@@ -77,9 +77,9 @@ static void window_framebuffer_resize_callback(GLFWwindow* window, int width, in
     ptr->event_callback(e);
 }
 
-static void window_drop_callback(GLFWwindow* window, int path_count, const char* in_paths[])
+static void DropCallback(GLFWwindow* window, int path_count, const char* in_paths[])
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     // todo: should this be handled in the event?
     std::vector<std::string> paths(path_count);
@@ -91,9 +91,9 @@ static void window_drop_callback(GLFWwindow* window, int path_count, const char*
     ptr->event_callback(e);
 }
 
-static void window_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (action == GLFW_PRESS) {
         key_pressed_event e(key);
@@ -107,9 +107,9 @@ static void window_key_callback(GLFWwindow* window, int key, int scancode, int a
     }
 }
 
-static void window_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (action == GLFW_PRESS) {
         mouse_button_pressed_event e(button);
@@ -123,9 +123,9 @@ static void window_mouse_button_callback(GLFWwindow* window, int button, int act
     }
 }
 
-static void window_mouse_scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+static void MouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (yoffset == 1.0) {
         mouse_scrolled_up_event e;
@@ -136,17 +136,17 @@ static void window_mouse_scroll_callback(GLFWwindow* window, double xoffset, dou
     }
 }
 
-static void window_cursor_pos_callback(GLFWwindow* window, double xpos, double ypos)
+static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     mouse_moved_event e(xpos, ypos);
     ptr->event_callback(e);
 }
 
-static void window_cursor_enter_callback(GLFWwindow* window, int entered)
+static void CursorEnterCallback(GLFWwindow* window, int entered)
 {
-    window_t* ptr = (window_t*)glfwGetWindowUserPointer(window);
+    Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
     if (entered) {
         mouse_entered_event e;
@@ -159,16 +159,16 @@ static void window_cursor_enter_callback(GLFWwindow* window, int entered)
 
 // Initialized the GLFW library and creates a window. Window callbacks send
 // events to the application callback.
-window_t* create_window(const char* name, uint32_t width, uint32_t height)
+Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
 {
     assert(width > 0 && height > 0);
 
-    window_t* window = new window_t();
+    Window* window = new Window();
 
-    glfwSetErrorCallback(glfw_error_callback);
+    glfwSetErrorCallback(ErrorCallback);
 
     if (!glfwInit()) {
-        logger::err("Failed to initialize GLFW");
+        Logger::Error("Failed to initialize GLFW");
 
         delete window;
 
@@ -185,7 +185,7 @@ window_t* create_window(const char* name, uint32_t width, uint32_t height)
     window->height = height;
 
     if (!window->handle) {
-        logger::err("Failed to create GLFW window");   
+        Logger::Error("Failed to create GLFW window");   
         
         glfwTerminate();
 
@@ -198,33 +198,33 @@ window_t* create_window(const char* name, uint32_t width, uint32_t height)
 
     // window callbacks
     glfwSetWindowUserPointer(window->handle, window);
-    glfwSetWindowCloseCallback(window->handle, window_close_callback);
-    glfwSetWindowFocusCallback(window->handle, window_focus_callback);
-    glfwSetWindowMaximizeCallback(window->handle, window_maximized_callback);
-    glfwSetWindowIconifyCallback(window->handle, window_minimized_callback);
-    glfwSetWindowSizeCallback(window->handle, window_resize_callback);
-    glfwSetFramebufferSizeCallback(window->handle, window_framebuffer_resize_callback);
-    glfwSetDropCallback(window->handle, window_drop_callback);
+    glfwSetWindowCloseCallback(window->handle, CloseCallback);
+    glfwSetWindowFocusCallback(window->handle, FocusCallback);
+    glfwSetWindowMaximizeCallback(window->handle, MaximizedCallback);
+    glfwSetWindowIconifyCallback(window->handle, MinimizedCallback);
+    glfwSetWindowSizeCallback(window->handle, ResizeCallback);
+    glfwSetFramebufferSizeCallback(window->handle, FramebufferResizeCallback);
+    glfwSetDropCallback(window->handle, DropCallback);
 
     // input callbacks
-    glfwSetKeyCallback(window->handle, window_key_callback);
-    glfwSetMouseButtonCallback(window->handle, window_mouse_button_callback);
-    glfwSetScrollCallback(window->handle, window_mouse_scroll_callback);
-    glfwSetCursorPosCallback(window->handle, window_cursor_pos_callback);
-    glfwSetCursorEnterCallback(window->handle, window_cursor_enter_callback);
+    glfwSetKeyCallback(window->handle, KeyCallback);
+    glfwSetMouseButtonCallback(window->handle, MouseButtonCallback);
+    glfwSetScrollCallback(window->handle, MouseScrollCallback);
+    glfwSetCursorPosCallback(window->handle, CursorPosCallback);
+    glfwSetCursorEnterCallback(window->handle, CursorEnterCallback);
 
-    logger::info("Created window ({}, {})", window->width, window->height);
+    Logger::Info("Created window ({}, {})", window->width, window->height);
 
     return window;
 }
 
 // Destroys the window and terminates the GLFW library.
-void destroy_window(window_t* window)
+void DestroyWindow(Window* window)
 {
     if (!window)
         return;
 
-    logger::info("Destroying window");
+    Logger::Info("Destroying window");
 
     glfwDestroyWindow(window->handle);
     glfwTerminate();
@@ -234,7 +234,7 @@ void destroy_window(window_t* window)
 
 // Updates a window by polling for any new events since the last window update
 // function call.
-void update_window(window_t* window)
+void UpdateWindow(Window* window)
 {
     glfwPollEvents();
 }

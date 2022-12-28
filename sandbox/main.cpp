@@ -37,7 +37,7 @@
 #include "security.hpp"
 #include "vmve.hpp"
 
-static window_t* window = nullptr;
+static Window* window = nullptr;
 
 std::vector<VkDescriptorSet> framebuffer_id;
 
@@ -67,7 +67,7 @@ VkPipeline wireframePipeline{};
 VkPipeline current_pipeline{};
 
 
-camera_t camera{};
+Camera camera{};
 
 //
 // Global scene information that will be accessed by the shaders to perform
@@ -78,7 +78,7 @@ camera_t camera{};
 //
 // Padding is equally important and hence the usage of the "alignas" keyword.
 //
-struct sandbox_scene {
+struct SandboxScene {
     // ambient Strength, specular strength, specular shininess, empty
     glm::vec4 ambientSpecular = glm::vec4(0.05f, 1.0f, 16.0f, 0.0f);
     glm::vec4 cameraPosition = glm::vec4(0.0f, 2.0f, -5.0f, 0.0f);
@@ -89,10 +89,10 @@ struct sandbox_scene {
 
 
 // Stores a collection of unique models 
-std::vector<model_t> g_models;
+std::vector<Model> g_models;
 
 // Stores the actual unique properties for every object in the world
-std::vector<instance_t> g_instances;
+std::vector<Instance> g_instances;
 
 static float temperature = 23.5;
 static float windSpeed = 2.0f;
@@ -103,29 +103,29 @@ static int renderMode = 0;
 static bool running   = true;
 static bool minimised = false;
 static bool in_viewport = false;
-static std::chrono::high_resolution_clock::time_point startTime;
+static std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 //static float uptime   = 0.0f;
 static double delta_time = 0.0f;
 
-static camera_mode cam_mode = camera_mode::first_person;
+static CameraType cam_mode = CameraType::FirstPerson;
 
 VkDescriptorSet skysphere_dset;
 
 
-static void handle_input(camera_t& camera, double deltaTime)
+static void UpdateInput(Camera& camera, double deltaTime)
 {
     float dt = camera.speed * deltaTime;
-    if (is_key_down(GLFW_KEY_W))
+    if (IsKeyDown(GLFW_KEY_W))
         camera.position += camera.front_vector * dt;
-    if (is_key_down(GLFW_KEY_S))
+    if (IsKeyDown(GLFW_KEY_S))
         camera.position -= camera.front_vector * dt;
-    if (is_key_down(GLFW_KEY_A))
+    if (IsKeyDown(GLFW_KEY_A))
         camera.position -= camera.right_vector * dt;
-    if (is_key_down(GLFW_KEY_D))
+    if (IsKeyDown(GLFW_KEY_D))
         camera.position += camera.right_vector * dt;
-    if (is_key_down(GLFW_KEY_SPACE))
+    if (IsKeyDown(GLFW_KEY_SPACE))
         camera.position += camera.up_vector * dt;
-    if (is_key_down(GLFW_KEY_LEFT_CONTROL) || is_key_down(GLFW_KEY_CAPS_LOCK))
+    if (IsKeyDown(GLFW_KEY_LEFT_CONTROL) || IsKeyDown(GLFW_KEY_CAPS_LOCK))
         camera.position -= camera.up_vector * dt;
     /*if (is_key_down(GLFW_KEY_Q))
         camera.roll -= camera.roll_speed * deltaTime;
@@ -182,17 +182,17 @@ static void render_end_docking()
 
 static std::vector<std::future<void>> futures;
 static std::mutex model_mutex;
-static void load_mesh(std::vector<model_t>& models, const std::filesystem::path& path)
+static void load_mesh(std::vector<Model>& models, const std::filesystem::path& path)
 {
-    logger::info("Loading mesh {}", path.string());
+    Logger::Info("Loading mesh {}", path.string());
 
-    model_t model = load_model(path);
-    upload_model_to_gpu(model, material_layout, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, g_texture_sampler);
+    Model model = LoadModel(path);
+    UploadModelToGPU(model, material_layout, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, g_texture_sampler);
 
     std::lock_guard<std::mutex> lock(model_mutex);
     models.push_back(model);
 
-    logger::info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path.string());
+    Logger::Info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path.string());
 };
 
 static void render_main_menu()
@@ -200,6 +200,7 @@ static void render_main_menu()
     static bool about_open = false;
     static bool load_model_open = false;
     static bool export_model_open = false;
+    static bool performance_profiler = false;
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
@@ -233,6 +234,16 @@ static void render_main_menu()
             ImGui::EndMenu();
         }
 
+        if (ImGui::BeginMenu("Tools")) {
+            if (ImGui::MenuItem("Performance Profiler")) {
+                performance_profiler = true;
+            }
+
+
+            ImGui::EndMenu();
+        }
+
+
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("About"))
                 about_open = true;
@@ -264,7 +275,7 @@ static void render_main_menu()
 
     if (load_model_open) {
         ImGui::Begin("Load Model", &load_model_open);
-        std::string model_path = render_file_explorer(get_vfs_path("/models"));
+        std::string model_path = RenderFileExplorer(GetVFSPath("/models"));
 
         if (ImGui::Button("Load")) {
 //#define ASYNC_LOADING
@@ -289,7 +300,7 @@ static void render_main_menu()
 
         ImGui::Begin("Export Model", &export_model_open);
 
-        std::string current_path = render_file_explorer(get_vfs_path("/models"));
+        std::string current_path = RenderFileExplorer(GetVFSPath("/models"));
 
         ImGui::InputText("File name", filename, 50);
 
@@ -358,6 +369,24 @@ static void render_main_menu()
 
         ImGui::End();
     }
+
+
+
+    if (performance_profiler) {
+        ImGui::Begin("Performance Profiler", &performance_profiler);
+        
+        if (ImGui::CollapsingHeader("CPU Timers")) {
+            ImGui::Text("%.2fms - Applicaiton::Render", 15.41f);
+            ImGui::Text("%.2fms - GeometryPass::Render", 12.23f);
+        }
+
+        if (ImGui::CollapsingHeader("GPU Timers")) {
+            ImGui::Text("%fms - VkQueueSubmit", 0.018f);
+        }
+
+          
+        ImGui::End();
+    }
 }
 
 static void render_dockspace()
@@ -399,7 +428,7 @@ static void render_right_window()
         ImGui::BeginDisabled(g_models.empty());
         if (ImGui::Button("Add instance")) {
 
-            instance_t instance{};
+            Instance instance{};
             instance.id = unique_instance_ids;
             instance.name = "Unnamed";
             instance.model = &g_models[current_model_item];
@@ -454,7 +483,7 @@ static void render_right_window()
             clipper.Begin(g_instances.size());
             while (clipper.Step()) {
                 for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
-                    instance_t& item = g_instances[i];
+                    Instance& item = g_instances[i];
                     char label[32];
                     sprintf(label, "%04d", item.id);
 
@@ -481,7 +510,7 @@ static void render_right_window()
         if (g_instances.size() > 0) {
             ImGui::BeginChild("Object Properties");
 
-            instance_t& item = g_instances[instance_index];
+            Instance& item = g_instances[instance_index];
 
 
             ImGui::Text("ID: %04d", item.id);
@@ -511,7 +540,7 @@ static void render_left_window()
     static std::string gpu_name;
     if (first_time) {
         VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(get_renderer_context().device.gpu, &properties);
+        vkGetPhysicalDeviceProperties(GetRendererContext().device.gpu, &properties);
         gpu_name = std::string(properties.deviceName);
 
         first_time = false;
@@ -521,7 +550,7 @@ static void render_left_window()
     {
         if (ImGui::CollapsingHeader("Application"))
         {
-            const auto [hours, minutes, seconds] = get_duration(startTime);
+            const auto [hours, minutes, seconds] = GetDuration(startTime);
 
             ImGui::Text("Uptime: %d:%d:%d", hours, minutes, seconds);
 
@@ -581,7 +610,7 @@ static void render_left_window()
                 open = true;
 
             if (open) {
-                std::string path = render_file_explorer(get_vfs_path("/textures"));
+                std::string path = RenderFileExplorer(GetVFSPath("/textures"));
 
 
                 // If a valid path is found, delete current texture, load and create the new texture
@@ -598,12 +627,12 @@ static void render_left_window()
             int current_projection = 0;
             ImGui::Combo("Projection", &current_projection, projections.data(), projections.size());
 
-            if (ImGui::RadioButton("First person", cam_mode == camera_mode::first_person)) {
-                cam_mode = camera_mode::first_person;
+            if (ImGui::RadioButton("First person", cam_mode == CameraType::FirstPerson)) {
+                cam_mode = CameraType::FirstPerson;
             }
             ImGui::SameLine();
-            if (ImGui::RadioButton("Look at", cam_mode == camera_mode::look_at)) {
-                cam_mode = camera_mode::look_at;
+            if (ImGui::RadioButton("Look at", cam_mode == CameraType::LookAt)) {
+                cam_mode = CameraType::LookAt;
             }
 
             ImGui::Text("Position");
@@ -687,7 +716,7 @@ static void render_left_window()
 
         ImGui::Separator();
 
-        render_demo_window();
+        RenderDemoWindow();
     }
     ImGui::End();
 }
@@ -698,18 +727,18 @@ static void render_bottom_window()
 
     ImGui::Begin(console_window, &window_open, window_flags);
     {
-        const std::vector<log_message>& logs = logger::get_logs();
+        const std::vector<LogMessage>& logs = Logger::GetLogs();
 
 
         if (ImGui::Button("Clear"))
-            logger::clear_logs();
+            Logger::ClearLogs();
 
         ImGui::SameLine();
         ImGui::Button("Export");
         ImGui::SameLine();
         ImGui::Checkbox("Auto-scroll", &auto_scroll);
         ImGui::SameLine();
-        ImGui::Text("Logs: %d/%d", logs.size(), logger::get_log_limit());
+        ImGui::Text("Logs: %d/%d", logs.size(), Logger::GetLogLimit());
         ImGui::Separator();
 
         static const ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -724,13 +753,13 @@ static void render_bottom_window()
             for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
                 ImVec4 log_color;
                 switch (logs[index].type) {
-                case log_type::info:
+                case LogType::info:
                     log_color = white;
                     break;
-                case log_type::warning:
+                case LogType::warning:
                     log_color = yellow;
                     break;
-                case log_type::error:
+                case LogType::error:
                     log_color = red;
                     break;
                 }
@@ -789,37 +818,37 @@ static void render_viewport_window()
 
         // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
         // when the viewport window resizes.
-        uint32_t current_image = get_current_swapchain_image();
+        uint32_t current_image = GetSwapchainFrameIndex();
         ImGui::Image(framebuffer_id[current_image], { current_viewport_size.x, current_viewport_size.y });
     }
     ImGui::End();
 }
 #pragma endregion
 
-static void event_callback(event& e);
+static void EventCallback(event& e);
 
 int main(int argc, char** argv)
 {
     // Start application timer
     startTime = std::chrono::high_resolution_clock::now();
 
-    logger::info("Initializing application");
+    Logger::Info("Initializing application");
 
     // Parse command line arguments
-    command_line_options options = parse_command_line_args(argc, argv);
+    CLIOptions options = ParseCLIArgs(argc, argv);
 
     // Initialize core systems
-    window = create_window("VMVE", 1280, 720);
+    window = CreateWindow("VMVE", 1280, 720);
     if (!window) {
-        logger::err("Failed to create window");
+        Logger::Error("Failed to create window");
         return 0;
     }
 
-    window->event_callback = event_callback;
+    window->event_callback = EventCallback;
 
-    renderer_t* renderer = create_renderer(window, buffer_mode::standard, vsync_mode::enabled);
+    VulkanRenderer* renderer = CreateRenderer(window, BufferMode::standard, VSyncMode::enabled);
     if (!renderer) {
-        logger::err("Failed to create renderer");
+        Logger::Error("Failed to create renderer");
         return 0;
     }
 
@@ -830,84 +859,70 @@ int main(int argc, char** argv)
     g_texture_sampler = create_sampler(VK_FILTER_LINEAR);
 
 
-    // Deferred rendering (2 passes)
-    framebuffer geometry_framebuffer{};
-    add_framebuffer_attachment(geometry_framebuffer, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, { 1280, 720 });
-    add_framebuffer_attachment(geometry_framebuffer, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, { 1280, 720 });
-    add_framebuffer_attachment(geometry_framebuffer, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { 1280, 720 });
-    add_framebuffer_attachment(geometry_framebuffer, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8_SRGB, { 1280, 720 });
-    add_framebuffer_attachment(geometry_framebuffer, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 1280, 720 });
-    create_render_pass(geometry_framebuffer);
+    RenderPass offscreenPass{};
+    AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, { 1280, 720 });
+    AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, { 1280, 720 });
+    AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { 1280, 720 });
+    AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8_SRGB, { 1280, 720 });
+    AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 1280, 720 });
+    CreateRenderPass(offscreenPass);
+
+    RenderPass compositePass{};
+    AddFramebufferAttachment(compositePass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { 1280, 720 });
+    CreateRenderPass2(compositePass);
+    std::vector<ImageBuffer> lighting_views = AttachmentsToImages(compositePass.attachments, 0);
+
+    RenderPass uiPass{};
+    AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { window->width, window->height });
+    CreateRenderPass2(uiPass, true);
 
     //framebuffer shadow_framebuffer{};
     //add_framebuffer_attachment(shadow_framebuffer, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 2048, 2048 });
-
     //create_render_pass(shadow_framebuffer);
-    //
-    //destroy_render_pass(shadow_framebuffer);
 
-    VkRenderPass lighting_pass = create_render_pass();
-    VkRenderPass ui_pass = create_ui_render_pass();
-    
-    std::vector<render_target> lighting_render_targets = create_render_targets(lighting_pass, { 1280, 720 });
-
-    // UI rendering (1 pass)
-    std::vector<render_target> ui_render_targets = create_ui_render_targets(ui_pass, { window->width, window->height });
+    ImGuiContext* uiContext = CreateUI(renderer, uiPass.render_pass);
 
 
-    ImGuiContext* uiContext = create_user_interface(renderer, ui_pass);
-
-
-    framebuffer_id.resize(get_swapchain_image_count());
+    framebuffer_id.resize(GetSwapchainImageCount());
     for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
-        framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(g_fb_sampler, lighting_render_targets[i].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(g_fb_sampler, lighting_views[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
 
 
     // Mount specific VFS folders
-    const std::string root_dir = "C:/Users/zakar/Projects/vmve/";
-    mount_vfs("models", root_dir + "assets/models");
-    mount_vfs("textures", root_dir + "assets/textures");
-    mount_vfs("shaders", root_dir + "assets/shaders");
-    mount_vfs("fonts", root_dir + "assets/fonts");
+    const std::string rootDir = "C:/Users/zakar/Projects/vmve/";
+    MountPath("models", rootDir + "assets/models");
+    MountPath("textures", rootDir + "assets/textures");
+    MountPath("shaders", rootDir + "assets/shaders");
+    MountPath("fonts", rootDir + "assets/fonts");
 
     //////////////////////////////////////////////////////////////////////////
 
     // Convert render target attachments into flat arrays for descriptor binding
-    const auto attachments_to_images = [](const std::vector<framebuffer_attachment>& attachments, uint32_t index)
-    {
-        std::vector<image_buffer_t> images(attachments[index].image.size());
+    std::vector<ImageBuffer> positions = AttachmentsToImages(offscreenPass.attachments, 0);
+    std::vector<ImageBuffer> normals = AttachmentsToImages(offscreenPass.attachments, 1);
+    std::vector<ImageBuffer> colors = AttachmentsToImages(offscreenPass.attachments, 2);
+    std::vector<ImageBuffer> speculars = AttachmentsToImages(offscreenPass.attachments, 3);
+    std::vector<ImageBuffer> depths = AttachmentsToImages(offscreenPass.attachments, 4);
 
-        for (std::size_t i = 0; i < images.size(); ++i) {
-            images[i] = attachments[index].image[i];
-        }
+    Buffer camera_buffer = CreateUniformBuffer(sizeof(ViewProjection));
+    Buffer scene_buffer = CreateUniformBuffer(sizeof(SandboxScene));
 
-        return images;
-    };
-    std::vector<image_buffer_t> positions = attachments_to_images(geometry_framebuffer.attachments, 0);
-    std::vector<image_buffer_t> normals = attachments_to_images(geometry_framebuffer.attachments, 1);
-    std::vector<image_buffer_t> colors = attachments_to_images(geometry_framebuffer.attachments, 2);
-    std::vector<image_buffer_t> speculars = attachments_to_images(geometry_framebuffer.attachments, 3);
-    std::vector<image_buffer_t> depths = attachments_to_images(geometry_framebuffer.attachments, 4);
-
-    buffer_t camera_buffer = create_uniform_buffer(sizeof(view_projection));
-    buffer_t scene_buffer = create_uniform_buffer(sizeof(sandbox_scene));
-
-    VkDescriptorSetLayoutBinding camera_binding = create_binding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
-    VkDescriptorSetLayout geometry_layout = create_descriptor_layout({ camera_binding });
-    std::vector<VkDescriptorSet> geometry_sets = allocate_descriptor_sets(geometry_layout);
-    update_binding(geometry_sets, camera_binding, camera_buffer, sizeof(view_projection));
+    VkDescriptorSetLayoutBinding camera_binding = CreateBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
+    VkDescriptorSetLayout geometry_layout = CreateDescriptorLayout({ camera_binding });
+    std::vector<VkDescriptorSet> geometry_sets = AllocateDescriptorSets(geometry_layout);
+    UpdateBinding(geometry_sets, camera_binding, camera_buffer, sizeof(ViewProjection));
 
     //////////////////////////////////////////////////////////////////////////
 
-    VkDescriptorSetLayoutBinding positions_binding = create_binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkDescriptorSetLayoutBinding normals_binding = create_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkDescriptorSetLayoutBinding colors_binding = create_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkDescriptorSetLayoutBinding specular_binding = create_binding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkDescriptorSetLayoutBinding depths_binding = create_binding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkDescriptorSetLayoutBinding scene_binding = create_binding(5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkDescriptorSetLayout lighting_layout = create_descriptor_layout({
+    VkDescriptorSetLayoutBinding positions_binding = CreateBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding normals_binding = CreateBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding colors_binding = CreateBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding specular_binding = CreateBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding depths_binding = CreateBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding scene_binding = CreateBinding(5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayout lighting_layout = CreateDescriptorLayout({
         positions_binding,
         normals_binding,
         colors_binding,
@@ -915,21 +930,21 @@ int main(int argc, char** argv)
         depths_binding,
         scene_binding
     });
-    std::vector<VkDescriptorSet> lighting_sets = allocate_descriptor_sets(lighting_layout);
-    update_binding(lighting_sets, positions_binding, positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
-    update_binding(lighting_sets, normals_binding, normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
-    update_binding(lighting_sets, colors_binding, colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
-    update_binding(lighting_sets, specular_binding, speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
-    update_binding(lighting_sets, depths_binding, depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_fb_sampler);
-    update_binding(lighting_sets, scene_binding, scene_buffer, sizeof(sandbox_scene));
+    std::vector<VkDescriptorSet> lighting_sets = AllocateDescriptorSets(lighting_layout);
+    UpdateBinding(lighting_sets, positions_binding, positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
+    UpdateBinding(lighting_sets, normals_binding, normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
+    UpdateBinding(lighting_sets, colors_binding, colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
+    UpdateBinding(lighting_sets, specular_binding, speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
+    UpdateBinding(lighting_sets, depths_binding, depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_fb_sampler);
+    UpdateBinding(lighting_sets, scene_binding, scene_buffer, sizeof(SandboxScene));
 
 
     //////////////////////////////////////////////////////////////////////////
 
-    mat_albdo_binding = create_binding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    mat_normal_binding = create_binding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    mat_specular_binding = create_binding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    material_layout = create_descriptor_layout({
+    mat_albdo_binding = CreateBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    mat_normal_binding = CreateBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    mat_specular_binding = CreateBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    material_layout = CreateDescriptorLayout({
         mat_albdo_binding,
         mat_normal_binding,
         mat_specular_binding
@@ -937,13 +952,13 @@ int main(int argc, char** argv)
 
     //////////////////////////////////////////////////////////////////////////
 
-    VkPipelineLayout rendering_pipeline_layout = create_pipeline_layout(
+    VkPipelineLayout rendering_pipeline_layout = CreatePipelineLayout(
         { geometry_layout, material_layout },
         sizeof(glm::mat4),
         VK_SHADER_STAGE_VERTEX_BIT
     );
 
-    VkPipelineLayout lighting_pipeline_layout = create_pipeline_layout(
+    VkPipelineLayout lighting_pipeline_layout = CreatePipelineLayout(
         { lighting_layout },
         sizeof(int),
         VK_SHADER_STAGE_FRAGMENT_BIT
@@ -952,23 +967,23 @@ int main(int argc, char** argv)
 
 
 
-    vertex_binding<vertex_t> vert(VK_VERTEX_INPUT_RATE_VERTEX);
-    vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
-    vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
-    vert.add_attribute(VK_FORMAT_R32G32_SFLOAT, "UV");
-    vert.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
+    VertexBinding<Vertex> vert(VK_VERTEX_INPUT_RATE_VERTEX);
+    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
+    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
+    vert.AddAttribute(VK_FORMAT_R32G32_SFLOAT, "UV");
+    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
 
 
-    shader geometry_vs = create_vertex_shader(load_file(get_vfs_path("/shaders/deferred/geometry.vert")));
-    shader geometry_fs = create_fragment_shader(load_file(get_vfs_path("/shaders/deferred/geometry.frag")));
-    shader lighting_vs = create_vertex_shader(load_file(get_vfs_path("/shaders/deferred/lighting.vert")));
-    shader lighting_fs = create_fragment_shader(load_file(get_vfs_path("/shaders/deferred/lighting.frag")));
+    Shader geometry_vs = CreateVertexShader(LoadFile(GetVFSPath("/shaders/deferred/geometry.vert")));
+    Shader geometry_fs = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/deferred/geometry.frag")));
+    Shader lighting_vs = CreateVertexShader(LoadFile(GetVFSPath("/shaders/deferred/lighting.vert")));
+    Shader lighting_fs = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/deferred/lighting.frag")));
 
-    shader skysphere_vs = create_vertex_shader(load_file(get_vfs_path("/shaders/skysphere.vert")));
-    shader skysphereFS = create_fragment_shader(load_file(get_vfs_path("/shaders/skysphere.frag")));
+    Shader skysphere_vs = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphere.vert")));
+    Shader skysphereFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphere.frag")));
 
 
-    pipeline_info info{};
+    PipelineInfo info{};
     info.binding_layout_size = vert.bindingSize;
     info.binding_format = vert.attributes;
     info.wireframe = false;
@@ -982,7 +997,7 @@ int main(int argc, char** argv)
         info.wireframe = false;
         info.depth_testing = true;
         info.shaders = { geometry_vs, geometry_fs };
-        geometry_pipeline = create_pipeline(info, rendering_pipeline_layout, geometry_framebuffer.render_pass);
+        geometry_pipeline = CreatePipeline(info, rendering_pipeline_layout, offscreenPass.render_pass);
     }
     {
         info.depth_testing = false;
@@ -991,7 +1006,7 @@ int main(int argc, char** argv)
         info.binding_layout_size = 0;
         info.blend_count = 1;
         info.wireframe = false;
-        lighting_pipeline = create_pipeline(info, lighting_pipeline_layout, lighting_pass);
+        lighting_pipeline = CreatePipeline(info, lighting_pipeline_layout, compositePass.render_pass);
     }
 
 
@@ -1002,29 +1017,29 @@ int main(int argc, char** argv)
         info.shaders = { geometry_vs, geometry_fs };
         info.wireframe = true;
         info.depth_testing = true;
-        wireframePipeline = create_pipeline(info, rendering_pipeline_layout, geometry_framebuffer.render_pass);
+        wireframePipeline = CreatePipeline(info, rendering_pipeline_layout, offscreenPass.render_pass);
     }
     {
         info.wireframe = false;
         info.shaders = { skysphere_vs, geometry_fs };
         info.depth_testing = false;
         info.cull_mode = VK_CULL_MODE_NONE;
-        skyspherePipeline = create_pipeline(info, rendering_pipeline_layout, geometry_framebuffer.render_pass);
+        skyspherePipeline = CreatePipeline(info, rendering_pipeline_layout, offscreenPass.render_pass);
     }
 
 
     // Delete all individual shaders since they are now part of the various pipelines
-    destroy_shader(skysphereFS);
-    destroy_shader(skysphere_vs);
-    destroy_shader(lighting_fs);
-    destroy_shader(lighting_vs);
-    destroy_shader(geometry_fs);
-    destroy_shader(geometry_vs);
+    DestroyShader(skysphereFS);
+    DestroyShader(skysphere_vs);
+    DestroyShader(lighting_fs);
+    DestroyShader(lighting_vs);
+    DestroyShader(geometry_fs);
+    DestroyShader(geometry_vs);
 
 
 
     // Built-in resources
-    const std::vector<vertex_t> quad_vertices {
+    const std::vector<Vertex> quad_vertices {
         {{  0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f} },
         {{ -0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {1.0f, 0.0f} },
         {{  0.5, 0.0,  0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 1.0f} },
@@ -1037,7 +1052,7 @@ int main(int argc, char** argv)
 
 
     // create models
-    vertex_array_t quad = create_vertex_array(quad_vertices, quad_indices);
+    VertexArray quad = CreateVertexArray(quad_vertices, quad_indices);
 
     // TEMP: Don't want to have to manually load the model each time so I will do it
     // here instead for the time-being.
@@ -1051,40 +1066,40 @@ int main(int argc, char** argv)
 
 
     // TODO: Load default textures here such as diffuse, normal, specular etc.
-    image_buffer_t empty_normal_map = load_texture(get_vfs_path("/textures/null_normal.png"));
-    image_buffer_t empty_specular_map = load_texture(get_vfs_path("/textures/null_specular.png"));
+    ImageBuffer empty_normal_map = LoadTexture(GetVFSPath("/textures/null_normal.png"));
+    ImageBuffer empty_specular_map = LoadTexture(GetVFSPath("/textures/null_specular.png"));
 
 
-    model_t sphere = load_model(get_vfs_path("/models/sphere.obj"));
+    Model sphere = LoadModel(GetVFSPath("/models/sphere.obj"));
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = { mat_albdo_binding, mat_normal_binding, mat_specular_binding };
 
-    upload_model_to_gpu(sphere, material_layout, bindings, g_texture_sampler);
+    UploadModelToGPU(sphere, material_layout, bindings, g_texture_sampler);
         
 
     // create materials
-    material_t sun_material;
-    sun_material.textures.push_back(load_texture(get_vfs_path("/textures/sun.png")));
+    Material sun_material;
+    sun_material.textures.push_back(LoadTexture(GetVFSPath("/textures/sun.png")));
     sun_material.textures.push_back(empty_normal_map);
     sun_material.textures.push_back(empty_specular_map);
-    create_material(sun_material, bindings, material_layout, g_texture_sampler);
+    CreateMaterial(sun_material, bindings, material_layout, g_texture_sampler);
 
-    material_t skysphere_material;
-    skysphere_material.textures.push_back(load_texture(get_vfs_path("/textures/skysphere1.png")));
+    Material skysphere_material;
+    skysphere_material.textures.push_back(LoadTexture(GetVFSPath("/textures/skysphere1.png")));
     skysphere_material.textures.push_back(empty_normal_map);
     skysphere_material.textures.push_back(empty_specular_map);
-    create_material(skysphere_material, bindings, material_layout, g_texture_sampler);
+    CreateMaterial(skysphere_material, bindings, material_layout, g_texture_sampler);
 
     skysphere_dset = ImGui_ImplVulkan_AddTexture(g_fb_sampler, skysphere_material.textures[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // create instances
-    instance_t skyboxsphere_instance;
-    instance_t sun_instance;
-    instance_t model_instance;
+    Instance skyboxsphere_instance;
+    Instance sun_instance;
+    Instance model_instance;
 
 
     current_pipeline = geometry_pipeline;
-    camera = create_camera({0.0f, 2.0f, -5.0f}, 60.0f, 5.0f);
+    camera = CreateCamera({0.0f, 2.0f, -5.0f}, 60.0f, 5.0f);
 
 
     running = true;
@@ -1102,50 +1117,50 @@ int main(int argc, char** argv)
         // Calculate the amount that has passed since the last frame. This value
         // is then used with inputs and physics to ensure that the result is the
         // same no matter how fast the CPU is running.
-        delta_time = get_delta_time();
+        delta_time = GetDeltaTime();
 
         // Only update movement and camera view when in viewport mode
         if (in_viewport) {
-            handle_input(camera, delta_time);
-            update_camera(camera, get_mouse_position());
+            UpdateInput(camera, delta_time);
+            UpdateCamera(camera, GetMousePos());
         }
-        update_projection(camera);
+        UpdateProjection(camera);
 
         scene.cameraPosition = glm::vec4(camera.position, 0.0f);
 
         // set sun position
-        translate(sun_instance, glm::vec3(scene.lightPosStrength));
+        Translate(sun_instance, glm::vec3(scene.lightPosStrength));
 
         // copy data into uniform buffer
-        set_buffer_data_new(camera_buffer, &camera.viewProj, sizeof(view_projection));
-        set_buffer_data(scene_buffer, &scene);
+        SetBufferData(camera_buffer, &camera.viewProj, sizeof(ViewProjection));
+        SetBufferData(scene_buffer, &scene);
 
 
 
         static bool swapchain_ready = true;
 
         // This is where the main rendering starts
-        if (swapchain_ready = begin_rendering()) {
+        if (swapchain_ready = BeginFrame()) {
             {
-                auto cmd_buffer = begin_render_target(geometry_framebuffer);
+                auto cmd_buffer = BeginRenderPass(offscreenPass);
 
-                bind_descriptor_set(cmd_buffer, rendering_pipeline_layout, geometry_sets, sizeof(view_projection));
+                BindDescriptorSet(cmd_buffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
                 
                 // Render the sky sphere
-                bind_pipeline(cmd_buffer, skyspherePipeline, geometry_sets);
+                BindPipeline(cmd_buffer, skyspherePipeline, geometry_sets);
                 
                 for (std::size_t i = 0; i < sphere.meshes.size(); ++i) {
-                    bind_material(cmd_buffer, rendering_pipeline_layout, skysphere_material);
+                    BindMaterial(cmd_buffer, rendering_pipeline_layout, skysphere_material);
                     bind_vertex_array(cmd_buffer, sphere.meshes[i].vertex_array);
-                    render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
+                    Render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
                 }
                 // Render the models
-                bind_pipeline(cmd_buffer, current_pipeline, geometry_sets);
+                BindPipeline(cmd_buffer, current_pipeline, geometry_sets);
 
                 // render light
                 for (std::size_t i = 0; i < sphere.meshes.size(); ++i) {
-                    bind_material(cmd_buffer, rendering_pipeline_layout, sun_material);
-                    render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, sun_instance);
+                    BindMaterial(cmd_buffer, rendering_pipeline_layout, sun_material);
+                    Render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, sun_instance);
                 }
 
                 // TODO: Currently we are rendering each instance individually 
@@ -1157,40 +1172,41 @@ int main(int argc, char** argv)
                 // A proper solution should be designed and implemented in the 
                 // near future.
                 for (std::size_t i = 0; i < g_instances.size(); ++i) {
-                    instance_t& instance = g_instances[i];
+                    Instance& instance = g_instances[i];
 
-                    translate(instance, instance.position);
-                    rotate(instance, instance.rotation);
-                    scale(instance, instance.scale);
+                    Translate(instance, instance.position);
+                    Rotate(instance, instance.rotation);
+                    Scale(instance, instance.scale);
                     for (std::size_t i = 0; i < instance.model->meshes.size(); ++i) {
-                        bind_descriptor_set(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].descriptor_set);
+                        BindDescriptorSet(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].descriptor_set);
                         bind_vertex_array(cmd_buffer, instance.model->meshes[i].vertex_array);
-                        render(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].vertex_array.index_count, instance);
+                        Render(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].vertex_array.index_count, instance);
                     }
                 }
 
-                end_render_target(cmd_buffer);
+                EndRenderPass(cmd_buffer);
             }
 
 
 
             // lighting pass
             {
-                auto cmd_buffer = begin_render_target(lighting_pass, lighting_render_targets);
+                auto cmd_buffer = BeginRenderPass2(compositePass);
 
 
-                bind_descriptor_set(cmd_buffer, lighting_pipeline_layout, lighting_sets);
+                BindDescriptorSet(cmd_buffer, lighting_pipeline_layout, lighting_sets);
 
-                bind_pipeline(cmd_buffer, lighting_pipeline, lighting_sets);
-                render_draw(cmd_buffer, lighting_pipeline_layout, renderMode);
-                end_render_target(cmd_buffer);
+                BindPipeline(cmd_buffer, lighting_pipeline, lighting_sets);
+                Render(cmd_buffer, lighting_pipeline_layout, renderMode);
+                EndRenderPass(cmd_buffer);
             }
 
 
             // gui pass
             {
-                auto cmd_buffer = begin_ui_render_target(ui_pass, ui_render_targets);
-                begin_ui();
+                //auto cmd_buffer = BeginUIRenderPass(ui_pass, ui_render_targets);
+                auto cmd_buffer = BeginRenderPass3(uiPass);
+                BeginUI();
 
                 render_begin_docking();
                 {
@@ -1203,9 +1219,9 @@ int main(int argc, char** argv)
                 }
                 render_end_docking();
 
-                end_ui(cmd_buffer);
+                EndUI(cmd_buffer);
 
-                end_render_target(cmd_buffer);
+                EndRenderPass(cmd_buffer);
             }
 
 
@@ -1213,7 +1229,7 @@ int main(int argc, char** argv)
             // todo: copy image from last pass to swapchain image
 
 
-            end_rendering();
+            EndFrame();
         }
 
 
@@ -1222,10 +1238,10 @@ int main(int argc, char** argv)
         // recreate resources using a new size before submitting to the GPU
         // which causes an error. Need to figure out how to do this properly.
         if (resize_viewport) {
-            VkExtent2D extent = { u32(current_viewport_size.x), u32(current_viewport_size.y) };
-            set_camera_projection(camera, extent.width, extent.height);
+            VkExtent2D extent = { U32(current_viewport_size.x), U32(current_viewport_size.y) };
+            UpdateProjection(camera, extent.width, extent.height);
             
-            renderer_wait();
+            WaitForGPU();
 
             //recreate_render_pass(geometry_framebuffer, current_viewport_size);
             //positions = attachments_to_images(geometry_framebuffer.attachments, 0);
@@ -1240,88 +1256,91 @@ int main(int argc, char** argv)
             //update_binding(lighting_sets, depths_binding, depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_fb_sampler);
 
 
-            recreate_render_targets(lighting_pass, lighting_render_targets, extent);
+            //recreate_render_targets(lighting_pass, lighting_render_targets, extent);
 
-            for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
-                ImGui_ImplVulkan_RemoveTexture(framebuffer_id[i]);
-                framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(g_fb_sampler, lighting_render_targets[i].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            }
+            //for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
+            //    ImGui_ImplVulkan_RemoveTexture(framebuffer_id[i]);
+            //    framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(g_fb_sampler, lighting_render_targets[i].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            //}
 
             resize_viewport = false;
         }
 
         // todo: should this be here?
         if (!swapchain_ready) {
-            logger::info("Swapchain being resized ({}, {})", window->width, window->height);
+            Logger::Info("Swapchain being resized ({}, {})", window->width, window->height);
 
-            recreate_ui_render_targets(ui_pass, ui_render_targets, { window->width, window->height });
+            WaitForGPU();
+
+            // TODO: Replace with function that will simply resize the framebuffer using the same 
+            // properties.
+            DestroyRenderPass(uiPass);
+            AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { window->width, window->height });
+            CreateRenderPass2(uiPass, true);
+
+
             swapchain_ready = true;
         }
 
 
 
-        update_window(window);
+        UpdateWindow(window);
     }
 
 
 
-    logger::info("Terminating application");
+    Logger::Info("Terminating application");
 
 
-    // Wait until all GPU commands have finishedVK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    renderer_wait();
+    // Wait until all GPU commands have finished
+    WaitForGPU();
 
     ImGui_ImplVulkan_RemoveTexture(skysphere_dset);
     for (auto& framebuffer : framebuffer_id)
         ImGui_ImplVulkan_RemoveTexture(framebuffer);
 
-    destroy_model(sphere);
+    DestroyModel(sphere);
 
     for (auto& model : g_models)
-        destroy_model(model);
+        DestroyModel(model);
 
-    destroy_image(empty_normal_map);
-    destroy_image(empty_specular_map);
+    DestroyImage(empty_normal_map);
+    DestroyImage(empty_specular_map);
 
     // TODO: Remove textures but not the fallback ones that these materials refer to 
-    destroy_material(sun_material);
-    destroy_material(skysphere_material);
+    DestroyMaterial(sun_material);
+    DestroyMaterial(skysphere_material);
 
-    destroy_vertex_array(quad);
+    DestroyVertexArray(quad);
 
 
     // Destroy rendering resources
-    destroy_buffer(camera_buffer);
-    destroy_buffer(scene_buffer);
+    DestroyBuffer(camera_buffer);
+    DestroyBuffer(scene_buffer);
 
+    DestroyDescriptorLayout(material_layout);
+    DestroyDescriptorLayout(lighting_layout);
+    DestroyDescriptorLayout(geometry_layout);
 
-    destroy_descriptor_layout(material_layout);
-    destroy_descriptor_layout(lighting_layout);
-    destroy_descriptor_layout(geometry_layout);
+    DestroyPipeline(wireframePipeline);
+    DestroyPipeline(skyspherePipeline);
+    DestroyPipeline(lighting_pipeline);
+    DestroyPipeline(geometry_pipeline);
 
-    destroy_pipeline(wireframePipeline);
-    destroy_pipeline(skyspherePipeline);
-    destroy_pipeline(lighting_pipeline);
-    destroy_pipeline(geometry_pipeline);
+    DestroyPipelineLayout(lighting_pipeline_layout);
+    DestroyPipelineLayout(rendering_pipeline_layout);
 
-    destroy_pipeline_layout(lighting_pipeline_layout);
-    destroy_pipeline_layout(rendering_pipeline_layout);
+    DestroyRenderPass(uiPass);
+    DestroyRenderPass(compositePass);
+    DestroyRenderPass(offscreenPass);
 
-    destroy_render_targets(ui_render_targets);
-    destroy_render_targets(lighting_render_targets);
-    destroy_render_pass(ui_pass);
-    destroy_render_pass(lighting_pass);
-
-
-    destroy_render_pass(geometry_framebuffer);
-
-    destroy_sampler(g_texture_sampler);
-    destroy_sampler(g_fb_sampler);
+    DestroySampler(g_texture_sampler);
+    DestroySampler(g_fb_sampler);
 
     // Destroy core systems
-    destroy_user_interface(uiContext);
-    destroy_renderer(renderer);
-    destroy_window(window);
+    DestroyUI(uiContext);
+    DestroyRenderer(renderer);
+    DestroyWindow(window);
 
 
     // TODO: Export all logs into a log file
@@ -1386,7 +1405,7 @@ static bool not_minimized_window(window_not_minimized_event& e)
     return true;
 }
 
-static void event_callback(event& e)
+static void EventCallback(event& e)
 {
     event_dispatcher dispatcher(e);
 

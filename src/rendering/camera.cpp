@@ -1,20 +1,20 @@
 #include "camera.hpp"
 
-static frustum_plane create_frustum(const glm::vec3& normal, const glm::vec3& point)
+static FrustumPlane CreateFrustum(const glm::vec3& normal, const glm::vec3& point)
 {
-    frustum_plane plane;
+    FrustumPlane plane;
     plane.normal = glm::normalize(normal);
     plane.distance_from_origin = glm::dot(plane.normal, point);
 
     return plane;
 }
 
-camera_frustum create_camera_frustum(const camera_t& cam)
+Frustum CreateCameraFrustum(const Camera& cam)
 {
     // NOTE: The camera frustum can also be extracted from the MVP
     // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf    
     
-    camera_frustum frustum{};
+    Frustum frustum{};
 
 
     constexpr float far = std::numeric_limits<float>::max();
@@ -24,12 +24,12 @@ camera_frustum create_camera_frustum(const camera_t& cam)
     const float half_width = half_height * aspect_ratio;
     const glm::vec3 front_mult_far = far * cam.front_vector;
 
-    frustum.near = create_frustum(cam.front_vector, cam.position + cam.near * cam.front_vector);
-    frustum.far  = create_frustum(-cam.front_vector, cam.position + front_mult_far);
-    frustum.right = create_frustum(glm::cross(cam.up_vector, front_mult_far + cam.right_vector * half_width), cam.position);
-    frustum.left = create_frustum(glm::cross(front_mult_far - cam.right_vector * half_width, cam.up_vector), cam.position);
-    frustum.top = create_frustum(glm::cross(cam.right_vector, front_mult_far - cam.up_vector * half_height), cam.position);
-    frustum.bottom = create_frustum(glm::cross(front_mult_far + cam.up_vector * half_height, cam.right_vector), cam.position);
+    frustum.near = CreateFrustum(cam.front_vector, cam.position + cam.near * cam.front_vector);
+    frustum.far  = CreateFrustum(-cam.front_vector, cam.position + front_mult_far);
+    frustum.right = CreateFrustum(glm::cross(cam.up_vector, front_mult_far + cam.right_vector * half_width), cam.position);
+    frustum.left = CreateFrustum(glm::cross(front_mult_far - cam.right_vector * half_width, cam.up_vector), cam.position);
+    frustum.top = CreateFrustum(glm::cross(cam.right_vector, front_mult_far - cam.up_vector * half_height), cam.position);
+    frustum.bottom = CreateFrustum(glm::cross(front_mult_far + cam.up_vector * half_height, cam.right_vector), cam.position);
 
 
     return frustum;
@@ -57,9 +57,9 @@ glm::mat4 infinite_perspective(float fovy, const glm::vec2& size, float near)
     return result;
 }
 
-camera_t create_camera(const glm::vec3& position, float fov, float speed)
+Camera CreateCamera(const glm::vec3& position, float fov, float speed)
 {
-    camera_t cam{};
+    Camera cam{};
     cam.position    = position;
     cam.orientation = glm::quat(1, 0, 0, 0);
     cam.width       = 1280.0f;
@@ -81,7 +81,7 @@ camera_t create_camera(const glm::vec3& position, float fov, float speed)
 
     return cam;
 }
-void update_camera(camera_t& camera, const glm::vec2& cursor_pos)
+void UpdateCamera(Camera& camera, const glm::vec2& cursor_pos)
 {
     // todo(zak): Need to fix unwanted roll when rotating
     static float last_x = 1280.0f / 2.0f;
@@ -127,17 +127,17 @@ void update_camera(camera_t& camera, const glm::vec2& cursor_pos)
     camera.roll      = 0.0f;
 }
 
-void update_projection(camera_t& cam)
+void UpdateProjection(Camera& cam)
 {
     cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
     // Required if using Vulkan (left-handed coordinate-system)
     cam.viewProj.proj[1][1] *= -1.0;
 }
 
-void set_camera_projection(camera_t& camera, uint32_t width, uint32_t height)
+void UpdateProjection(Camera& camera, uint32_t width, uint32_t height)
 {
     camera.width = width;
     camera.height = height;
 
-    update_projection(camera);
+    UpdateProjection(camera);
 }

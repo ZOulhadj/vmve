@@ -1,18 +1,18 @@
 #include "filesystem.hpp"
 
 
-std::vector<directory_item> get_directory_items(const std::string& directory)
+std::vector<DirectoryItem> GetDirectoryItems(const std::string& directory)
 {
-    std::vector<directory_item> items;
+    std::vector<DirectoryItem> items;
 
     std::filesystem::path current_path(directory);
 
     if (current_path.has_parent_path()) {
-        directory_item item{};
+        DirectoryItem item{};
 
         item.path = current_path.parent_path().string();
         item.name = "..";
-        item.type = directory_item_type::directory;
+        item.type = ItemType::directory;
         item.size = 0;
 
         items.push_back(item);
@@ -20,7 +20,7 @@ std::vector<directory_item> get_directory_items(const std::string& directory)
 
 
     for (const auto& entry : std::filesystem::directory_iterator(directory)) {
-        directory_item item{};
+        DirectoryItem item{};
 
         current_path = entry.path();
 
@@ -32,10 +32,10 @@ std::vector<directory_item> get_directory_items(const std::string& directory)
         // Therefore, we need to check if the current entry is a directory or
         // file and set the file size accordingly.
         if (entry.is_directory()) {
-            item.type = directory_item_type::directory;
+            item.type = ItemType::directory;
             item.size = 0;
         } else {
-            item.type = directory_item_type::file;
+            item.type = ItemType::file;
             item.size = entry.file_size();
         }
 

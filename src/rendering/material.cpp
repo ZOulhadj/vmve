@@ -5,24 +5,24 @@
 
 
 
-void create_material(material_t& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler)
+void CreateMaterial(Material& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler)
 {
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
-    material.descriptor_set = allocate_descriptor_set(layout);
+    material.descriptor_set = AllocateDescriptorSet(layout);
 
     for (std::size_t i = 0; i < material.textures.size(); ++i) {
-        update_binding(material.descriptor_set, bindings[i], material.textures[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, sampler);
+        UpdateBinding(material.descriptor_set, bindings[i], material.textures[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, sampler);
     }
 }
 
-void destroy_material(material_t& material)
+void DestroyMaterial(Material& material)
 {
-    destroy_images(material.textures);
+    DestroyImages(material.textures);
 }
 
-void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, material_t& material)
+void BindMaterial(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, Material& material)
 {
-    uint32_t current_frame = get_current_frame();
+    uint32_t current_frame = GetFrameIndex();
     vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, 1, &material.descriptor_set, 0, nullptr);
 }

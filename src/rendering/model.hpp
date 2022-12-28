@@ -23,44 +23,44 @@
 
 // One material per mesh
 
-struct mesh_t {
+struct Mesh {
     std::string name;
 
-    std::vector<vertex_t> vertices;
+    std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
     
     // A list of indices so we know we textures this mesh uses
     std::vector<uint32_t> textures;
 
-    vertex_array_t vertex_array;
+    VertexArray vertex_array;
     VkDescriptorSet descriptor_set;
 };
 
-struct mesh_texture_t {
+struct MeshTexture {
     std::filesystem::path path;
-    image_buffer_t texture;
+    ImageBuffer texture;
 };
 
-struct model_t {
+struct Model {
     std::string path;
 
     // A list of all the unique textures
     std::vector<std::filesystem::path> unique_texture_paths;
-    std::vector<image_buffer_t> unique_textures;
+    std::vector<ImageBuffer> unique_textures;
 
     //std::vector<mesh_texture_t> unique_textures;
     
-    std::vector<mesh_t> meshes;
+    std::vector<Mesh> meshes;
 
     std::string name;
 };
 
-model_t load_model(const std::filesystem::path& path);
-void destroy_model(model_t& model);
+Model LoadModel(const std::filesystem::path& path);
+void DestroyModel(Model& model);
 
 
-void upload_model_to_gpu(model_t& model, VkDescriptorSetLayout layout,
+void UploadModelToGPU(Model& model, VkDescriptorSetLayout layout,
     std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler);
 
 

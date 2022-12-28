@@ -15,18 +15,18 @@
 // ... 
 
 
-struct material_t
+struct Material
 {
     VkDescriptorSet descriptor_set = nullptr;
 
-    std::vector<image_buffer_t> textures;
+    std::vector<ImageBuffer> textures;
 
 };
 
 
-void create_material(material_t& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler);
-void destroy_material(material_t& material);
+void CreateMaterial(Material& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler);
+void DestroyMaterial(Material& material);
 
-void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, material_t& material);
+void BindMaterial(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, Material& material);
 
 #endif

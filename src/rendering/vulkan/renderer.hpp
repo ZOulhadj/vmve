@@ -14,26 +14,21 @@
 
 #include "logging.hpp"
 
-enum class renderer_api {
-    vulkan,
-    direct3d
-};
-
-enum class buffer_mode {
+enum class BufferMode {
     standard = 2,
     triple   = 3
 };
 
-enum class vsync_mode {
+enum class VSyncMode {
     disabled = 0,
     enabled  = 1,
     enabled_mailbox = 2
 };
 
-struct swapchain_t {
+struct Swapchain {
     VkSwapchainKHR handle;
 
-    std::vector<image_buffer_t> images;
+    std::vector<ImageBuffer> images;
 };
 
 struct Frame {
@@ -51,8 +46,8 @@ struct Frame {
 };
 
 struct render_target {
-    image_buffer_t image;
-    image_buffer_t depth;
+    ImageBuffer image;
+    ImageBuffer depth;
 
     // This stores the same size as the image buffers
     VkExtent2D extent;
@@ -61,18 +56,18 @@ struct render_target {
 };
 
 
-struct framebuffer_attachment
+struct FramebufferAttachment
 {
     // TEMP: Can this be a single image instead of multiple frames?
-    std::vector<image_buffer_t> image;
+    std::vector<ImageBuffer> image;
     VkImageUsageFlags usage;
 };
 
 
-struct framebuffer
+struct RenderPass
 {
     std::vector<VkFramebuffer> handle;
-    std::vector<framebuffer_attachment> attachments;
+    std::vector<FramebufferAttachment> attachments;
 
     uint32_t width;
     uint32_t height;
@@ -80,31 +75,24 @@ struct framebuffer
     VkRenderPass render_pass;
 };
 
-struct descriptor_set_layout
-{
-    VkDescriptorType   type;
-    VkShaderStageFlags stages;
-};
-
-
 // TODO: Add support for adding specific offsets
 template<typename T>
-struct vertex_binding
+struct VertexBinding
 {
-    vertex_binding(VkVertexInputRate rate)
+    VertexBinding(VkVertexInputRate rate)
         : inputRate(rate), bindingSize(sizeof(T))
     {}
 
     // TODO: Make use of actual type instead of a VkFormat
-    void add_attribute(VkFormat format, std::string_view = nullptr)
+    void AddAttribute(VkFormat format, std::string_view = nullptr)
     {
         static std::size_t attributeSize = 0;
 
-        attributeSize += format_to_size(format);
+        attributeSize += FormatToSize(format);
 
         if (attributeSize > bindingSize)
         {
-            logger::err("Total attribute size is larger than binding size");
+            Logger::Error("Total attribute size is larger than binding size");
             return;
         }
 
@@ -116,91 +104,88 @@ struct vertex_binding
     std::vector<VkFormat> attributes;
 };
 
-struct pipeline_info {
+struct PipelineInfo {
     uint32_t binding_layout_size;
     std::vector<VkFormat> binding_format;
     uint32_t blend_count;
-    std::vector<shader> shaders;
+    std::vector<Shader> shaders;
     bool wireframe;
     bool depth_testing;
     VkCullModeFlags cull_mode;
 };
 
-struct upload_context
+struct UploadContext
 {
     VkFence         Fence;
     VkCommandPool   CmdPool;
     VkCommandBuffer CmdBuffer;
 };
 
-struct renderer_t
+struct VulkanRenderer
 {
-    renderer_context_t ctx;
+    RendererContext ctx;
 
-    upload_context submit;
-    shader_compiler compiler;
+    UploadContext submit;
+    ShaderCompiler compiler;
 
     VkDescriptorPool descriptor_pool;
 
     VkDebugUtilsMessengerEXT messenger;
 };
 
-renderer_t* create_renderer(const window_t* window, buffer_mode buffering_mode, vsync_mode sync_mode);
-void destroy_renderer(renderer_t* renderer);
+VulkanRenderer* CreateRenderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode);
+void DestroyRenderer(VulkanRenderer* renderer);
 
-renderer_t* get_renderer();
-renderer_context_t& get_renderer_context();
-uint32_t get_current_frame();
-uint32_t get_current_swapchain_image();
-uint32_t get_swapchain_image_count();
+VulkanRenderer* GetRenderer();
+RendererContext& GetRendererContext();
+uint32_t GetFrameIndex();
+uint32_t GetSwapchainFrameIndex();
+uint32_t GetSwapchainImageCount();
 
-VkRenderPass create_ui_render_pass();
-VkRenderPass create_render_pass();
-void destroy_render_pass(VkRenderPass render_pass);
+void AddFramebufferAttachment(RenderPass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
 
-std::vector<VkCommandBuffer> begin_render_target(const framebuffer& fb,
-                                                 const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
-std::vector<render_target> create_render_targets(VkRenderPass render_pass, VkExtent2D extent);
-void recreate_render_targets(VkRenderPass render_pass, std::vector<render_target>& render_targets, VkExtent2D extent);
+void CreateRenderPass(RenderPass& fb);
+void CreateRenderPass2(RenderPass& fb, bool ui = false);
+void DestroyRenderPass(RenderPass& fb);
 
-std::vector<render_target> create_ui_render_targets(VkRenderPass render_pass, VkExtent2D extent);
-void recreate_ui_render_targets(VkRenderPass render_pass, std::vector<render_target>& render_targets, VkExtent2D extent);
-
-void destroy_render_targets(std::vector<render_target>& render_targets);
+void ResizeFramebuffer(RenderPass& fb, const glm::vec2& size);
 
 
-VkPipelineLayout create_pipeline_layout(const std::vector<VkDescriptorSetLayout>& descriptor_sets,
+
+std::vector<VkCommandBuffer> BeginRenderPass(const RenderPass& fb, const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+std::vector<VkCommandBuffer> BeginRenderPass2(RenderPass& fb, const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+std::vector<VkCommandBuffer> BeginRenderPass3(RenderPass& fb, const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+void EndRenderPass(std::vector<VkCommandBuffer>& buffers);
+
+VkPipelineLayout CreatePipelineLayout(const std::vector<VkDescriptorSetLayout>& descriptor_sets,
                                         std::size_t push_constant_size = 0,
                                         VkShaderStageFlags push_constant_shader_stages = 0);
-VkPipeline create_pipeline(pipeline_info& pipelineInfo, VkPipelineLayout layout, VkRenderPass render_pass);
-void destroy_pipeline(VkPipeline pipeline);
-void destroy_pipeline_layout(VkPipelineLayout layout);
+VkPipeline CreatePipeline(PipelineInfo& pipelineInfo, VkPipelineLayout layout, VkRenderPass render_pass);
+void DestroyPipeline(VkPipeline pipeline);
+void DestroyPipelineLayout(VkPipelineLayout layout);
 
-bool begin_rendering();
-void end_rendering();
+bool BeginFrame();
+void EndFrame();
 
-//////////////////////////////////////////////////////////////////////////
-
-void add_framebuffer_attachment(framebuffer& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
-
-void create_render_pass(framebuffer& fb);
-void destroy_render_pass(framebuffer& fb);
-
-void recreate_render_pass(framebuffer& fb, const glm::vec2& size);
-//////////////////////////////////////////////////////////////////////////
-
-std::vector<VkCommandBuffer> begin_render_target(VkRenderPass render_pass, const std::vector<render_target>& render_targets);
-std::vector<VkCommandBuffer> begin_ui_render_target(VkRenderPass render_pass, const std::vector<render_target>& render_targets);
-void end_render_target(std::vector<VkCommandBuffer>& buffers);
-
-void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets);
-void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets, std::size_t size);
-void bind_pipeline(std::vector<VkCommandBuffer>& buffers, VkPipeline pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
-void render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, instance_t& instance);
-void render_draw(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode);
+void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets);
+void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets, std::size_t size);
+void BindPipeline(std::vector<VkCommandBuffer>& buffers, VkPipeline pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
+void Render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, Instance& instance);
+void Render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode);
 
 // Indicates to the GPU to wait for all commands to finish before continuing.
 // Often used when create or destroying resources in device local memory.
-void renderer_wait();
+void WaitForGPU();
+
+const auto AttachmentsToImages = [](const std::vector<FramebufferAttachment>& attachments, uint32_t index)
+{
+    std::vector<ImageBuffer> images(attachments[index].image.size());
+
+    for (std::size_t i = 0; i < images.size(); ++i) {
+        images[i] = attachments[index].image[i];
+    }
+
+    return images;
+};
 
 #endif

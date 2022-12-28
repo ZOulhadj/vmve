@@ -2,37 +2,37 @@
 #define MY_ENGINE_QUATERNION_CAMERA_HPP
 
 
-struct frustum_plane {
+struct FrustumPlane {
     glm::vec3 normal;
     float distance_from_origin;
 };
 
-struct camera_frustum {
-    frustum_plane top;
-    frustum_plane bottom;
-    frustum_plane left;
-    frustum_plane right;
-    frustum_plane near;
-    frustum_plane far;
+struct Frustum {
+    FrustumPlane top;
+    FrustumPlane bottom;
+    FrustumPlane left;
+    FrustumPlane right;
+    FrustumPlane near;
+    FrustumPlane far;
 };
 
 
-enum class camera_projection_mode {
+enum class ProjectionMode {
     perspective,
     ortho
 };
 
-enum class camera_mode {
-    first_person,
-    look_at
+enum class CameraType {
+    FirstPerson,
+    LookAt
 };
 
-struct view_projection {
+struct ViewProjection {
     glm::mat4 view;
     glm::mat4 proj;
 };
 
-struct camera_t {
+struct Camera {
     glm::vec3 position;
     glm::vec3 front_vector;
     glm::vec3 right_vector;
@@ -53,18 +53,18 @@ struct camera_t {
 
     float near;
 
-    view_projection viewProj;
+    ViewProjection viewProj;
 
     bool first_mouse;
 };
 
 
-camera_frustum create_camera_frustum(const camera_t& camera);
+Frustum CreateCameraFrustum(const Camera& camera);
 
-camera_t create_camera(const glm::vec3& position, float fov, float speed);
-void update_camera(camera_t& camera, const glm::vec2& cursor_pos);
-void update_projection(camera_t& cam);
-void set_camera_projection(camera_t& camera, uint32_t width, uint32_t height);
+Camera CreateCamera(const glm::vec3& position, float fov, float speed);
+void UpdateCamera(Camera& camera, const glm::vec2& cursor_pos);
+void UpdateProjection(Camera& cam);
+void UpdateProjection(Camera& camera, uint32_t width, uint32_t height);
 
 
 #endif

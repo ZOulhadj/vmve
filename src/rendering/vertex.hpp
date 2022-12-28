@@ -2,7 +2,7 @@
 #define MY_ENGINE_VERTEX_HPP
 
 
-struct vertex_t
+struct Vertex
 {
     glm::vec3 position;
     glm::vec3 normal;

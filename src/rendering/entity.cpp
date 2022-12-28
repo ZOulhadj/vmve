@@ -1,6 +1,6 @@
 #include "entity.hpp"
 
-void translate(instance_t& e, const glm::vec3& position)
+void Translate(Instance& e, const glm::vec3& position)
 {
     // todo: temp matrix reset
     e.matrix = glm::mat4(1.0f);
@@ -9,34 +9,34 @@ void translate(instance_t& e, const glm::vec3& position)
     e.position = position;
 }
 
-void rotate(instance_t& e, float deg, const glm::vec3& axis)
+void Rotate(Instance& e, float deg, const glm::vec3& axis)
 {
     e.matrix = glm::rotate(e.matrix, glm::radians(deg), axis);
 }
 
-void rotate(instance_t& e, const glm::vec3& axis)
+void Rotate(Instance& e, const glm::vec3& axis)
 {
     e.matrix = glm::rotate(e.matrix, glm::radians(axis.x), glm::vec3(1.0f, 0.0f, 0.0f));
     e.matrix = glm::rotate(e.matrix, glm::radians(axis.y), glm::vec3(0.0f, 1.0f, 0.0f));
     e.matrix = glm::rotate(e.matrix, glm::radians(axis.z), glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
-void scale(instance_t& e, float scale)
+void Scale(Instance& e, float scale)
 {
     e.matrix = glm::scale(e.matrix, glm::vec3(scale));
 }
 
-void scale(instance_t& e, const glm::vec3& axis)
+void Scale(Instance& e, const glm::vec3& axis)
 {
     e.matrix = glm::scale(e.matrix, axis);
 }
 
-glm::vec3 get_position_from_matrix(const instance_t& e)
+glm::vec3 GetPosFromMatrix(const Instance& e)
 {
     return { e.matrix[3].x, e.matrix[3].y, e.matrix[3].z };
 }
 
-glm::vec3 get_scale_from_matrix(const instance_t& e)
+glm::vec3 GetScaleFromMatrix(const Instance& e)
 {
     //const float x1 = glm::pow(e.matrix[0].x, 2);
     //const float x2 = glm::pow(e.matrix[0].y, 2);
@@ -59,7 +59,7 @@ glm::vec3 get_scale_from_matrix(const instance_t& e)
     return glm::vec3(0.0f);
 }
 
-glm::vec3 get_rotation_from_matrix(const instance_t& e)
+glm::vec3 GetRotFromMatrix(const Instance& e)
 {
     /*return { e.matrix[0].x, e.matrix[1].y, e.matrix[2].z };*/
 

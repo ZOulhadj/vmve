@@ -33,7 +33,7 @@
 #include <windows.h>
 #undef far
 #undef near
-
+#undef CreateWindow
 //#include <d3d12.h>
 
 #endif

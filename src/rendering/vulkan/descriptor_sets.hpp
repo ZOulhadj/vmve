@@ -4,21 +4,21 @@
 #include "buffer.hpp"
 
 
-VkDescriptorPool create_descriptor_pool();
+VkDescriptorPool CreateDescriptorPool();
 
-VkDescriptorSetLayoutBinding create_binding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stages);
+VkDescriptorSetLayoutBinding CreateBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stages);
 
-VkDescriptorSetLayout create_descriptor_layout(std::vector<VkDescriptorSetLayoutBinding> bindings);
-void destroy_descriptor_layout(VkDescriptorSetLayout layout);
+VkDescriptorSetLayout CreateDescriptorLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
+void DestroyDescriptorLayout(VkDescriptorSetLayout layout);
 
-VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
-std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout);
+VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout);
+std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout);
 
-void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, buffer_t& buffer, std::size_t size);
-void update_binding(VkDescriptorSet descriptor_set, const VkDescriptorSetLayoutBinding& binding, image_buffer_t& buffer, VkImageLayout layout, VkSampler sampler);
-void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, image_buffer_t& buffer, VkImageLayout layout, VkSampler sampler);
-void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, std::vector<image_buffer_t>& buffer, VkImageLayout layout, VkSampler sampler);
+void UpdateBinding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, Buffer& buffer, std::size_t size);
+void UpdateBinding(VkDescriptorSet descriptor_set, const VkDescriptorSetLayoutBinding& binding, ImageBuffer& buffer, VkImageLayout layout, VkSampler sampler);
+void UpdateBinding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, ImageBuffer& buffer, VkImageLayout layout, VkSampler sampler);
+void UpdateBinding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, std::vector<ImageBuffer>& buffer, VkImageLayout layout, VkSampler sampler);
 
-void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, VkDescriptorSet descriptor_set);
+void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, VkDescriptorSet descriptor_set);
 
 #endif

@@ -77,9 +77,9 @@ static void custom_colors() {
 }
 
 
-ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass renderPass)
+ImGuiContext* CreateUI(const VulkanRenderer* renderer, VkRenderPass renderPass)
 {
-    logger::info("Initializing user interface");
+    Logger::Info("Initializing user interface");
 
     ImGuiContext* context{};
 
@@ -110,30 +110,30 @@ ImGuiContext* create_user_interface(const renderer_t* renderer, VkRenderPass ren
     init_info.DescriptorPool  = renderer->descriptor_pool;
     init_info.Subpass         = 0;
     init_info.MinImageCount   = 2;
-    init_info.ImageCount      = get_swapchain_image_count();
+    init_info.ImageCount      = GetSwapchainImageCount();
     init_info.MSAASamples     = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator       = nullptr;
-    init_info.CheckVkResultFn = vk_check;
+    init_info.CheckVkResultFn = VkCheck;
 
     if (!ImGui_ImplVulkan_Init(&init_info, renderPass))
         return nullptr;
 
 
     // Submit ImGui fonts to the GPU in order to be used during rendering.
-    submit_to_gpu([&] { ImGui_ImplVulkan_CreateFontsTexture(renderer->submit.CmdBuffer); });
+    SubmitToGPU([&] { ImGui_ImplVulkan_CreateFontsTexture(renderer->submit.CmdBuffer); });
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 
     return context;
 }
 
-void destroy_user_interface(ImGuiContext* context)
+void DestroyUI(ImGuiContext* context)
 {
     if (!context)
         return;
 
 
-    logger::info("Terminating user interface");
+    Logger::Info("Terminating user interface");
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -141,7 +141,7 @@ void destroy_user_interface(ImGuiContext* context)
     ImGui::DestroyContext(context);
 }
 
-void begin_ui()
+void BeginUI()
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -150,7 +150,7 @@ void begin_ui()
     ImGuizmo::BeginFrame();
 }
 
-void end_ui(std::vector<VkCommandBuffer>& buffers)
+void EndUI(std::vector<VkCommandBuffer>& buffers)
 {
     ImGui::EndFrame();
 
@@ -159,13 +159,13 @@ void end_ui(std::vector<VkCommandBuffer>& buffers)
     ImGui::RenderPlatformWindowsDefault();
 
 
-    const uint32_t current_frame = get_current_frame();
+    const uint32_t current_frame = GetFrameIndex();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffers[current_frame]);
 }
 
 
 
-void recreate_ui_texture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler)
+void RecreateUITexture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler)
 {
     for (std::size_t i = 0; i < texture_id.size(); ++i) {
         ImGui_ImplVulkan_RemoveTexture(texture_id[i]);
@@ -173,13 +173,13 @@ void recreate_ui_texture(std::vector<VkDescriptorSet>& texture_id, VkImageView v
     }
 }
 
-std::string render_file_explorer(const std::filesystem::path& root)
+std::string RenderFileExplorer(const std::filesystem::path& root)
 {
     static std::string current_dir = root.string();
     static std::string file;
     static std::string complete_path;
 
-    static std::vector<directory_item> items = get_directory_items(current_dir.c_str());
+    static std::vector<DirectoryItem> items = GetDirectoryItems(current_dir.c_str());
     static int index = 0;
 
     ImGui::SameLine();
@@ -187,7 +187,7 @@ std::string render_file_explorer(const std::filesystem::path& root)
 
     if (ImGui::BeginListBox("##empty", ImVec2(-FLT_MIN, 0))) {
         for (std::size_t i = 0; i < items.size(); ++i) {
-            const directory_item_type file_type = items[i].type;
+            const ItemType file_type = items[i].type;
             const std::string file_name = items[i].name;
 
             const ImVec2 combo_pos = ImGui::GetCursorScreenPos();
@@ -213,7 +213,7 @@ std::string render_file_explorer(const std::filesystem::path& root)
             }
 #else
            
-            if (file_type == directory_item_type::file) {
+            if (file_type == ItemType::file) {
                 if (selected) {
                     file = file_name;
                     index = i;
@@ -221,11 +221,11 @@ std::string render_file_explorer(const std::filesystem::path& root)
                 }
                 ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), file_name.c_str());
             }
-            else if (file_type == directory_item_type::directory) {
+            else if (file_type == ItemType::directory) {
                 if (selected) {
                     current_dir = items[i].path;
                     complete_path = current_dir;
-                    items = get_directory_items(current_dir);
+                    items = GetDirectoryItems(current_dir);
                     index = 0;
                 }
                 ImGui::TextColored(ImVec4(0.5, 0.5, 0.5, 1.0), file_name.c_str());
@@ -243,7 +243,7 @@ std::string render_file_explorer(const std::filesystem::path& root)
     return complete_path;
 }
 
-void render_demo_window()
+void RenderDemoWindow()
 {
     static bool show = false;
     if (ImGui::Button("Show demo window"))

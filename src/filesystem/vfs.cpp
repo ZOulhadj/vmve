@@ -1,24 +1,24 @@
 #include "vfs.hpp"
 
-vfs& vfs::get()
+VFS& VFS::Get()
 {
-    static vfs instance;
+    static VFS instance;
 
     return instance;
 }
 
 
-void vfs::mount(const std::string& virtual_path, const std::filesystem::path& real_path)
+void VFS::Mount(const std::string& virtual_path, const std::filesystem::path& real_path)
 {
     _mount_points[virtual_path].push_back(real_path);
 }
 
-void vfs::unmount(const std::string& virtual_path)
+void VFS::UnMount(const std::string& virtual_path)
 {
     _mount_points[virtual_path].clear();
 }
 
-std::filesystem::path vfs::get_path(const std::string& virtual_path)
+std::filesystem::path VFS::GetPath(const std::string& virtual_path)
 {
 
     std::string full_path = virtual_path;
@@ -85,12 +85,12 @@ std::filesystem::path vfs::get_path(const std::string& virtual_path)
 }
 
 
-void mount_vfs(const std::string& virtual_path, const std::filesystem::path& real_path)
+void MountPath(const std::string& virtual_path, const std::filesystem::path& real_path)
 {
-    vfs::get().mount(virtual_path, real_path);
+    VFS::Get().Mount(virtual_path, real_path);
 }
 
-std::filesystem::path get_vfs_path(const std::string& virtual_path)
+std::filesystem::path GetVFSPath(const std::string& virtual_path)
 {
-    return vfs::get().get_path(virtual_path);
+    return VFS::Get().GetPath(virtual_path);
 }

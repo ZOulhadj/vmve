@@ -3,9 +3,9 @@
 #include "renderer.hpp"
 #include "logging.hpp"
 
-VkDescriptorPool create_descriptor_pool()
+VkDescriptorPool CreateDescriptorPool()
 {
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
     VkDescriptorPool pool{};
 
@@ -27,16 +27,16 @@ VkDescriptorPool create_descriptor_pool()
 
     VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
     pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    pool_info.poolSizeCount = u32(pool_sizes.size());
+    pool_info.poolSizeCount = U32(pool_sizes.size());
     pool_info.pPoolSizes = pool_sizes.data();
     pool_info.maxSets = pool_info.poolSizeCount * max_sizes;
 
-    vk_check(vkCreateDescriptorPool(rc.device.device, &pool_info, nullptr, &pool));
+    VkCheck(vkCreateDescriptorPool(rc.device.device, &pool_info, nullptr, &pool));
 
     return pool;
 }
 
-VkDescriptorSetLayoutBinding create_binding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stages)
+VkDescriptorSetLayoutBinding CreateBinding(uint32_t binding, VkDescriptorType type, VkShaderStageFlags stages)
 {
     VkDescriptorSetLayoutBinding desc_binding{};
 
@@ -48,31 +48,31 @@ VkDescriptorSetLayoutBinding create_binding(uint32_t binding, VkDescriptorType t
     return desc_binding;
 }
 
-VkDescriptorSetLayout create_descriptor_layout(std::vector<VkDescriptorSetLayoutBinding> bindings)
+VkDescriptorSetLayout CreateDescriptorLayout(std::vector<VkDescriptorSetLayoutBinding> bindings)
 {
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
     VkDescriptorSetLayout layout{};
 
     VkDescriptorSetLayoutCreateInfo info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-    info.bindingCount = u32(bindings.size());
+    info.bindingCount = U32(bindings.size());
     info.pBindings = bindings.data();
-    vk_check(vkCreateDescriptorSetLayout(rc.device.device, &info, nullptr, &layout));
+    VkCheck(vkCreateDescriptorSetLayout(rc.device.device, &info, nullptr, &layout));
 
     return layout;
 }
 
-void destroy_descriptor_layout(VkDescriptorSetLayout layout)
+void DestroyDescriptorLayout(VkDescriptorSetLayout layout)
 {
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
     vkDestroyDescriptorSetLayout(rc.device.device, layout, nullptr);
 }
 
-VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout)
+VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout)
 {
-    const renderer_t* r = get_renderer();
-    const renderer_context_t& rc = get_renderer_context();
+    const VulkanRenderer* r = GetRenderer();
+    const RendererContext& rc = GetRendererContext();
 
     VkDescriptorSet descriptor_sets{};
 
@@ -80,35 +80,35 @@ VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout)
     allocate_info.descriptorPool = r->descriptor_pool;
     allocate_info.descriptorSetCount = 1;
     allocate_info.pSetLayouts = &layout;
-    vk_check(vkAllocateDescriptorSets(rc.device.device, &allocate_info, &descriptor_sets));
+    VkCheck(vkAllocateDescriptorSets(rc.device.device, &allocate_info, &descriptor_sets));
 
     return descriptor_sets;
 }
 
-std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout)
+std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout)
 {
-    const renderer_t* r = get_renderer();
-    const renderer_context_t& rc = get_renderer_context();
+    const VulkanRenderer* r = GetRenderer();
+    const RendererContext& rc = GetRendererContext();
 
-    std::vector<VkDescriptorSet> descriptor_sets(get_swapchain_image_count());
+    std::vector<VkDescriptorSet> descriptor_sets(GetSwapchainImageCount());
 
     // allocate descriptor sets
     std::vector<VkDescriptorSetLayout> layouts(descriptor_sets.size(), layout);
 
     VkDescriptorSetAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
     allocate_info.descriptorPool = r->descriptor_pool;
-    allocate_info.descriptorSetCount = u32(layouts.size());
+    allocate_info.descriptorSetCount = U32(layouts.size());
     allocate_info.pSetLayouts = layouts.data();
-    vk_check(vkAllocateDescriptorSets(rc.device.device, &allocate_info, descriptor_sets.data()));
+    VkCheck(vkAllocateDescriptorSets(rc.device.device, &allocate_info, descriptor_sets.data()));
 
     return descriptor_sets;
 }
 
-void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, buffer_t& buffer, std::size_t size)
+void UpdateBinding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, Buffer& buffer, std::size_t size)
 {
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
-    for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
+    for (std::size_t i = 0; i < GetSwapchainImageCount(); ++i) {
         VkDescriptorBufferInfo sceneInfo{};
         sceneInfo.buffer = buffer.buffer;
         sceneInfo.offset = 0;
@@ -127,9 +127,9 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const V
 }
 
 
-void update_binding(VkDescriptorSet descriptor_set, const VkDescriptorSetLayoutBinding& binding, image_buffer_t& buffer, VkImageLayout layout, VkSampler sampler)
+void UpdateBinding(VkDescriptorSet descriptor_set, const VkDescriptorSetLayoutBinding& binding, ImageBuffer& buffer, VkImageLayout layout, VkSampler sampler)
 {
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
     VkDescriptorImageInfo buffer_info{};
     buffer_info.imageLayout = layout;
@@ -146,11 +146,11 @@ void update_binding(VkDescriptorSet descriptor_set, const VkDescriptorSetLayoutB
     vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
 }
 
-void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, image_buffer_t& buffer, VkImageLayout layout, VkSampler sampler)
+void UpdateBinding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, ImageBuffer& buffer, VkImageLayout layout, VkSampler sampler)
 {
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
-    for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
+    for (std::size_t i = 0; i < GetSwapchainImageCount(); ++i) {
         VkDescriptorImageInfo buffer_info{};
         buffer_info.imageLayout = layout;
         buffer_info.imageView = buffer.view;
@@ -167,11 +167,11 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const V
     }
 }
 
-void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, std::vector<image_buffer_t>& buffer, VkImageLayout layout, VkSampler sampler)
+void UpdateBinding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, std::vector<ImageBuffer>& buffer, VkImageLayout layout, VkSampler sampler)
 {
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
-    for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
+    for (std::size_t i = 0; i < GetSwapchainImageCount(); ++i) {
         VkDescriptorImageInfo buffer_info{};
         buffer_info.imageLayout = layout;
         buffer_info.imageView = buffer[i].view;
@@ -188,9 +188,9 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const V
     }
 }
 
-void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, VkDescriptorSet descriptor_set)
+void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, VkDescriptorSet descriptor_set)
 {
-    uint32_t current_frame = get_current_frame();
+    uint32_t current_frame = GetFrameIndex();
     vkCmdBindDescriptorSets(buffers[current_frame],
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         layout,

@@ -2,14 +2,14 @@
 
 #include "../logging.hpp"
 
-command_line_options parse_command_line_args(int argc, char** argv)
+CLIOptions ParseCLIArgs(int argc, char** argv)
 {
-    command_line_options options{};
+    CLIOptions options{};
 
-    logger::info("Parsing {} arguments:", argc);
+    Logger::Info("Parsing {} arguments:", argc);
     
     for (std::size_t i = 0; i < argc; ++i) {
-        logger::info("\t{}", argv[i]);
+        Logger::Info("\t{}", argv[i]);
     }
 
 

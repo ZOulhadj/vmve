@@ -7,7 +7,7 @@
 #include "rendering/vulkan/texture.hpp"
 #include "model.hpp"
 
-struct instance_t
+struct Instance
 {  
     // TODO: Some of these member variables a here as we need to be able
     // to individually work with an instance. In the future, once instanced
@@ -16,7 +16,7 @@ struct instance_t
     uint32_t id;
     std::string name;
 
-    model_t* model;
+    Model* model;
     
     glm::vec3 position;
     glm::vec3 rotation;
@@ -26,13 +26,13 @@ struct instance_t
     glm::mat4 matrix = glm::mat4(1.0f);
 };
 
-void translate(instance_t& e, const glm::vec3& position);
-void rotate(instance_t& e, float deg, const glm::vec3& axis);
-void rotate(instance_t& e, const glm::vec3& axis);
-void scale(instance_t& e, float scale);
-void scale(instance_t& e, const glm::vec3& axis);
-glm::vec3 get_position_from_matrix(const instance_t& e);
-glm::vec3 get_scale_from_matrix(const instance_t& e);
-glm::vec3 get_rotation_from_matrix(const instance_t& e);
+void Translate(Instance& e, const glm::vec3& position);
+void Rotate(Instance& e, float deg, const glm::vec3& axis);
+void Rotate(Instance& e, const glm::vec3& axis);
+void Scale(Instance& e, float scale);
+void Scale(Instance& e, const glm::vec3& axis);
+glm::vec3 GetPosFromMatrix(const Instance& e);
+glm::vec3 GetScaleFromMatrix(const Instance& e);
+glm::vec3 GetRotFromMatrix(const Instance& e);
 
 #endif

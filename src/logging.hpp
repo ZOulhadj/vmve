@@ -2,49 +2,49 @@
 #define MY_ENGINE_LOGGING_HPP
 
 
-enum class log_type {
+enum class LogType {
     undefined,
     info,
     warning,
     error
 };
 
-struct log_message {
-    log_type type;
+struct LogMessage {
+    LogType type;
     std::string message;
 };
 
-class logger {
+class Logger {
 public:
     template <typename... Args>
-    static void info(std::string_view fmt, Args&&... args)
+    static void Info(std::string_view fmt, Args&&... args)
     {
-        log(log_type::info, "[INFO]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
+        Log(LogType::info, "[INFO]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
     }
 
     template <typename... Args>
-    static void warn(std::string_view fmt, Args&&... args)
+    static void Warning(std::string_view fmt, Args&&... args)
     {
-        log(log_type::warning, "[WARN]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
+        Log(LogType::warning, "[WARN]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
     }
 
     template <typename... Args>
-    static void err(std::string_view fmt, Args&&... args)
+    static void Error(std::string_view fmt, Args&&... args)
     {
-        log(log_type::error, "[ERROR]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
+        Log(LogType::error, "[ERROR]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
     }
 
-    static std::vector<log_message>& get_logs();
-    static std::size_t get_log_limit();
+    static std::vector<LogMessage>& GetLogs();
+    static std::size_t GetLogLimit();
 
-    static void clear_logs();
+    static void ClearLogs();
 private:
-    static void check_log_limit();
-    static void log(log_type type, const std::string& message);
+    static void CheckLogLimit();
+    static void Log(LogType type, const std::string& message);
 private:
-    static const std::size_t _log_limit = 10'000;
+    static const std::size_t m_LogLimit = 10'000;
 
-    static std::vector<log_message> _logs;
+    static std::vector<LogMessage> m_Logs;
 };
 
 #endif

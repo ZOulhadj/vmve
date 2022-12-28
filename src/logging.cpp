@@ -1,45 +1,45 @@
 #include "logging.hpp"
 
 
-std::vector<log_message> logger::_logs;
+std::vector<LogMessage> Logger::m_Logs;
 
-void logger::check_log_limit()
+void Logger::CheckLogLimit()
 {
-    if (_logs.size() < _log_limit)
+    if (m_Logs.size() < m_LogLimit)
         return;
 
     // At this point, the number of logs have reached their maximum limit.
     // So we will remove the first element of the vector or in other words,
     // the oldest log message.
-    _logs.erase(_logs.begin());
+    m_Logs.erase(m_Logs.begin());
 }
 
-void logger::log(log_type type, const std::string& message)
+void Logger::Log(LogType type, const std::string& message)
 {
-    check_log_limit();
+    CheckLogLimit();
 
-    log_message msg{};
+    LogMessage msg{};
     msg.type    = type;
     msg.message = message;
 
-    _logs.push_back(msg);
+    m_Logs.push_back(msg);
 
 #if defined(_DEBUG)
     printf("%s\n", message.c_str());
 #endif
 }
 
-std::vector<log_message>& logger::get_logs()
+std::vector<LogMessage>& Logger::GetLogs()
 {
-    return _logs;
+    return m_Logs;
 }
 
-std::size_t logger::get_log_limit()
+std::size_t Logger::GetLogLimit()
 {
-    return _log_limit;
+    return m_LogLimit;
 }
 
-void logger::clear_logs()
+void Logger::ClearLogs()
 {
-    _logs.clear();
+    m_Logs.clear();
 }

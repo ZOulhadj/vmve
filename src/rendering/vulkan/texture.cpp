@@ -7,19 +7,19 @@
 
 #include "logging.hpp"
 
-static image_buffer_t create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
+static ImageBuffer create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
 {
-    image_buffer_t buffer{};
+    ImageBuffer buffer{};
 
-    const renderer_t* renderer = get_renderer();
+    const VulkanRenderer* renderer = GetRenderer();
 
     // We do "* 4" because each pixel has four channels red, green, blue and alpha
-    buffer_t staging_buffer = create_staging_buffer(texture, (width * height) * 4);
+    Buffer staging_buffer = CreateStagingBuffer(texture, (width * height) * 4);
 
-    buffer = create_image({width, height}, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    buffer = CreateImage({width, height}, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     // Upload texture data into GPU memory by doing a layout transition
-    submit_to_gpu([&]() {
+    SubmitToGPU([&]() {
         // todo: barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         // todo: barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
@@ -81,7 +81,7 @@ static image_buffer_t create_texture_buffer(unsigned char* texture, uint32_t wid
 
     });
 
-    destroy_buffer(staging_buffer);
+    DestroyBuffer(staging_buffer);
 
     return buffer;
 }
@@ -90,16 +90,16 @@ static image_buffer_t create_texture_buffer(unsigned char* texture, uint32_t wid
 
 
 
-image_buffer_t load_texture(const std::filesystem::path& path, bool flip_y, VkFormat format)
+ImageBuffer LoadTexture(const std::filesystem::path& path, bool flip_y, VkFormat format)
 {
-    image_buffer_t buffer{};
+    ImageBuffer buffer{};
 
     // Load the texture from the file system.
     int width, height, channels;
     stbi_set_flip_vertically_on_load(flip_y);
     unsigned char* texture = stbi_load(path.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
-        logger::err("Failed to load texture at path: {}", path.string().c_str());
+        Logger::Error("Failed to load texture at path: {}", path.string().c_str());
 
         stbi_image_free(texture);
 
@@ -121,7 +121,7 @@ VkSampler create_sampler(VkFilter filtering, const uint32_t anisotropic_level)
 {
     VkSampler sampler{};
 
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
     // get the maximum supported anisotropic filtering level
     VkPhysicalDeviceProperties properties{};
@@ -131,7 +131,7 @@ VkSampler create_sampler(VkFilter filtering, const uint32_t anisotropic_level)
     if (anisotropic_level > properties.limits.maxSamplerAnisotropy) {
         ansi_level = properties.limits.maxSamplerAnisotropy;
 
-        logger::warn("Anisotropic level of {} not supported. Using the maximum level of {} instead", anisotropic_level, ansi_level);
+        Logger::Warning("Anisotropic level of {} not supported. Using the maximum level of {} instead", anisotropic_level, ansi_level);
     }
 
     VkSamplerCreateInfo sampler_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
@@ -151,15 +151,15 @@ VkSampler create_sampler(VkFilter filtering, const uint32_t anisotropic_level)
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    vk_check(vkCreateSampler(rc.device.device, &sampler_info, nullptr,
+    VkCheck(vkCreateSampler(rc.device.device, &sampler_info, nullptr,
                              &sampler));
 
     return sampler;
 }
 
-void destroy_sampler(VkSampler sampler)
+void DestroySampler(VkSampler sampler)
 {
-    const renderer_context_t& rc = get_renderer_context();
+    const RendererContext& rc = GetRendererContext();
 
     if (sampler) {
         vkDestroySampler(rc.device.device, sampler, nullptr);

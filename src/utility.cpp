@@ -1,6 +1,6 @@
 #include "utility.hpp"
 
-std::string load_file(const std::filesystem::path& path)
+std::string LoadFile(const std::filesystem::path& path)
 {
     std::ifstream file(path.string());
     std::stringstream buffer;
@@ -9,7 +9,7 @@ std::string load_file(const std::filesystem::path& path)
     return buffer.str();
 }
 
-double get_delta_time()
+double GetDeltaTime()
 {
 
 
@@ -30,8 +30,8 @@ double get_delta_time()
     return delta_time;
 }
 
-glm::vec2 world_to_screen(window_t* window,
-                          camera_t& camera,
+glm::vec2 WorldToScreen(Window* window,
+                          Camera& camera,
                           const glm::vec3& position,
                           const glm::vec2& offset)
 {
