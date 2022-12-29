@@ -61,6 +61,7 @@ VkPipeline geometry_pipeline{};
 VkPipeline lighting_pipeline{};
 
 VkPipeline skyspherePipeline{};
+VkPipeline skysphereNewPipeline{};
 VkPipeline wireframePipeline{};
 
 
@@ -182,11 +183,11 @@ static void EndDocking()
 
 static std::vector<std::future<void>> futures;
 static std::mutex model_mutex;
-static void LoadMesh(std::vector<Model>& models, const std::filesystem::path& path)
+static void LoadMesh(std::vector<Model>& models, const std::filesystem::path& path, bool flipUVs)
 {
     Logger::Info("Loading mesh {}", path.string());
 
-    Model model = LoadModel(path);
+    Model model = LoadModel(path, flipUVs);
     UploadModelToGPU(model, material_layout, { mat_albdo_binding, mat_normal_binding, mat_specular_binding }, g_texture_sampler);
 
     std::lock_guard<std::mutex> lock(model_mutex);
@@ -274,7 +275,11 @@ static void RenderMainMenu()
 
 
     if (load_model_open) {
+        static bool flip_uv = false;
         ImGui::Begin("Load Model", &load_model_open);
+        
+        ImGui::Checkbox("Flip UVs", &flip_uv);
+
         std::string model_path = RenderFileExplorer(GetVFSPath("/models"));
 
         if (ImGui::Button("Load")) {
@@ -282,12 +287,10 @@ static void RenderMainMenu()
 #if defined(ASYNC_LOADING)
             futures.push_back(std::async(std::launch::async, LoadMesh, std::ref(g_models), model_path));
 #else
-            LoadMesh(g_models, model_path);
+            LoadMesh(g_models, model_path, flip_uv);
 #endif
         }
 
-        static bool flip_uv = false;
-        ImGui::Checkbox("Flip UVs", &flip_uv);
 
         ImGui::End();
     }
@@ -425,6 +428,36 @@ static void RenderObjectWindow()
         static int unique_instance_ids = 1;
         static int current_model_item = 0;
 
+        // TEMP: Create a list of just model names from all the models
+        std::vector<const char*> model_names(g_models.size());
+        for (std::size_t i = 0; i < model_names.size(); ++i)
+            model_names[i] = g_models[i].name.c_str();
+
+        ImGui::Combo("Model", &current_model_item, model_names.data(), model_names.size());
+        ImGui::BeginDisabled(g_models.empty());
+        if (ImGui::Button("Remove model")) {
+            // Remove all instances which use the current model
+            std::size_t size = g_instances.size();
+            for (std::size_t i = 0; i < size; ++i)
+            {
+                if (g_instances[i].model == &g_models[current_model_item])
+                {
+                    g_instances.erase(g_instances.begin() + i);
+                    size--;
+                }
+            }
+
+
+            // Remove model from list and memory
+            WaitForGPU();
+
+            DestroyModel(g_models[current_model_item]);
+            g_models.erase(g_models.begin() + current_model_item);
+
+        
+        }
+        ImGui::EndDisabled();
+
         ImGui::BeginDisabled(g_models.empty());
         if (ImGui::Button("Add instance")) {
 
@@ -457,13 +490,6 @@ static void RenderObjectWindow()
                 instance_index--;
         }
         ImGui::EndDisabled();
-
-        // TEMP: Create a list of just model names from all the models
-        std::vector<const char*> model_names(g_models.size());
-        for (std::size_t i = 0; i < model_names.size(); ++i)
-            model_names[i] = g_models[i].name.c_str();
-
-        ImGui::Combo("Model", &current_model_item, model_names.data(), model_names.size());
 
         // Options
         static ImGuiTableFlags flags =
@@ -515,6 +541,7 @@ static void RenderObjectWindow()
 
             ImGui::Text("ID: %04d", item.id);
             ImGui::Text("Name: %s", item.name.c_str());
+//            ImGui::Combo("Model", );
             ImGui::SliderFloat3("Translation", glm::value_ptr(item.position), -50.0f, 50.0f);
             ImGui::SliderFloat3("Rotation", glm::value_ptr(item.rotation), -360.0f, 360.0f);
             ImGui::SliderFloat3("Scale", glm::value_ptr(item.scale), 0.1f, 100.0f);
@@ -538,6 +565,10 @@ static void RenderGlobalWindow()
     static bool lock_camera_frustum = false;
     static bool first_time = true;
     static std::string gpu_name;
+
+    static bool skyboxWindowOpen = false;
+
+
     if (first_time) {
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(GetRendererContext().device.gpu, &properties);
@@ -604,21 +635,9 @@ static void RenderGlobalWindow()
             ImGui::SliderFloat("Light strength", &scene.lightPosStrength.w, 0.0f, 1.0f);
 
             ImGui::Text("Skybox");
-            static bool open = false;
             ImGui::SameLine();
             if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
-                open = true;
-
-            if (open) {
-                std::string path = RenderFileExplorer(GetVFSPath("/textures"));
-
-
-                // If a valid path is found, delete current texture, load and create the new texture
-                if (!path.empty()) {
-                    open = false;
-                }
-
-            }
+                skyboxWindowOpen = true;
         }
 
         if (ImGui::CollapsingHeader("Camera"))
@@ -717,6 +736,32 @@ static void RenderGlobalWindow()
         ImGui::Separator();
 
         RenderDemoWindow();
+
+
+
+
+
+        if (skyboxWindowOpen)
+        {
+            ImGui::Begin("Load Skybox", &skyboxWindowOpen);
+
+            std::string path = RenderFileExplorer(GetVFSPath("/textures"));
+
+            if (ImGui::Button("Load"))
+            {
+                // Wait for GPU to finish commands
+                // Remove skybox resources
+                // load new skybox texture and allocate resources
+            }
+
+            ImGui::End();
+        }
+
+
+
+
+
+
     }
     ImGui::End();
 }
@@ -860,6 +905,13 @@ int main(int argc, char** argv)
     g_fb_sampler = CreateSampler(VK_FILTER_LINEAR);
     g_texture_sampler = CreateSampler(VK_FILTER_LINEAR);
 
+    RenderPass shadowPass{};
+    AddFramebufferAttachment(shadowPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 2048, 2048 });
+    CreateRenderPass2(shadowPass);
+
+    RenderPass skyboxPass{};
+    AddFramebufferAttachment(skyboxPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { 1280, 720 });
+    CreateRenderPass2(skyboxPass);
 
     RenderPass offscreenPass{};
     AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, { 1280, 720 });
@@ -878,9 +930,6 @@ int main(int argc, char** argv)
     AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { window->width, window->height });
     CreateRenderPass2(uiPass, true);
 
-    RenderPass shadowPass{};
-    AddFramebufferAttachment(shadowPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 2048, 2048 });
-    CreateRenderPass2(shadowPass);
     
 
     ImGuiContext* uiContext = CreateUI(renderer, uiPass.render_pass);
@@ -954,6 +1003,12 @@ int main(int argc, char** argv)
 
     //////////////////////////////////////////////////////////////////////////
 
+    VkPipelineLayout skyskpherePipelineLayout = CreatePipelineLayout(
+        { geometry_layout },
+        0,
+        VK_SHADER_STAGE_VERTEX_BIT
+    );
+
     VkPipelineLayout rendering_pipeline_layout = CreatePipelineLayout(
         { geometry_layout, material_layout },
         sizeof(glm::mat4),
@@ -981,7 +1036,7 @@ int main(int argc, char** argv)
     Shader lighting_vs = CreateVertexShader(LoadFile(GetVFSPath("/shaders/deferred/lighting.vert")));
     Shader lighting_fs = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/deferred/lighting.frag")));
 
-    Shader skysphere_vs = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphere.vert")));
+    Shader skysphereVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphere.vert")));
     Shader skysphereFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphere.frag")));
 
 
@@ -1023,16 +1078,16 @@ int main(int argc, char** argv)
     }
     {
         info.wireframe = false;
-        info.shaders = { skysphere_vs, geometry_fs };
+        info.shaders = { skysphereVS, geometry_fs };
         info.depth_testing = false;
-        info.cull_mode = VK_CULL_MODE_NONE;
+        info.cull_mode = VK_CULL_MODE_FRONT_BIT;
         skyspherePipeline = CreatePipeline(info, rendering_pipeline_layout, offscreenPass.render_pass);
     }
 
 
     // Delete all individual shaders since they are now part of the various pipelines
     DestroyShader(skysphereFS);
-    DestroyShader(skysphere_vs);
+    DestroyShader(skysphereVS);
     DestroyShader(lighting_fs);
     DestroyShader(lighting_vs);
     DestroyShader(geometry_fs);
@@ -1087,7 +1142,7 @@ int main(int argc, char** argv)
     CreateMaterial(sun_material, bindings, material_layout, g_texture_sampler);
 
     Material skysphere_material;
-    skysphere_material.textures.push_back(LoadTexture(GetVFSPath("/textures/skysphere1.png")));
+    skysphere_material.textures.push_back(LoadTexture(GetVFSPath("/textures/skysphere2.jpg")));
     skysphere_material.textures.push_back(empty_normal_map);
     skysphere_material.textures.push_back(empty_specular_map);
     CreateMaterial(skysphere_material, bindings, material_layout, g_texture_sampler);
@@ -1204,6 +1259,9 @@ int main(int argc, char** argv)
             Render(compositeCmdBuffer, lighting_pipeline_layout, renderMode);
             EndRenderPass(compositeCmdBuffer);
             
+            //////////////////////////////////////////////////////////////////////////
+
+
             //////////////////////////////////////////////////////////////////////////
             auto uiCmdBuffer = BeginRenderPass3(uiPass);
             BeginUI();
@@ -1324,10 +1382,12 @@ int main(int argc, char** argv)
 
     DestroyPipelineLayout(lighting_pipeline_layout);
     DestroyPipelineLayout(rendering_pipeline_layout);
+    DestroyPipelineLayout(skyskpherePipelineLayout);
 
     DestroyRenderPass(uiPass);
     DestroyRenderPass(compositePass);
     DestroyRenderPass(offscreenPass);
+    DestroyRenderPass(skyboxPass);
 
     DestroySampler(g_texture_sampler);
     DestroySampler(g_fb_sampler);

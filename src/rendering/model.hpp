@@ -56,7 +56,7 @@ struct Model {
     std::string name;
 };
 
-Model LoadModel(const std::filesystem::path& path);
+Model LoadModel(const std::filesystem::path& path, bool flipUVs = true);
 void DestroyModel(Model& model);
 
 

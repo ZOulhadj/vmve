@@ -172,18 +172,20 @@ static void process_node(Model& model, aiNode* node, const aiScene* scene)
 }
 
 
-Model LoadModel(const std::filesystem::path& path)
+Model LoadModel(const std::filesystem::path& path, bool flipUVs)
 {
     Model model{};
 
     Assimp::Importer importer;
 
 
-    const unsigned int flags = aiProcessPreset_TargetRealtime_Fast |
-                               aiProcess_FlipWindingOrder |
-                               aiProcess_MakeLeftHanded |
-                               aiProcess_FlipUVs
-                               ;
+    unsigned int flags = aiProcessPreset_TargetRealtime_Fast |
+        aiProcess_FlipWindingOrder |
+        aiProcess_MakeLeftHanded;
+
+
+    if (flipUVs)
+        flags |= aiProcess_FlipUVs;
 
     const aiScene* scene = importer.ReadFile(path.string(), flags);
 

@@ -28,9 +28,9 @@ static uint32_t currentImage = 0;
 static uint32_t current_frame = 0;
 
 
-static std::vector<VkCommandBuffer> geometry_cmd_buffers;
-static std::vector<VkCommandBuffer> viewport_cmd_buffers;
-static std::vector<VkCommandBuffer> ui_cmd_buffers;
+static std::vector<VkCommandBuffer> offscreenCmdBuffers;
+static std::vector<VkCommandBuffer> compositeCmdBuffers;
+static std::vector<VkCommandBuffer> uiCmdBuffers;
 
 static VkExtent2D GetSurfaceSize(const VkSurfaceCapabilitiesKHR& surface)
 {
@@ -271,9 +271,9 @@ static void destroy_command_pool()
 
 static void CreateCommandBuffers()
 {
-    geometry_cmd_buffers.resize(frames_in_flight);
-    viewport_cmd_buffers.resize(frames_in_flight);
-    ui_cmd_buffers.resize(frames_in_flight);
+    offscreenCmdBuffers.resize(frames_in_flight);
+    compositeCmdBuffers.resize(frames_in_flight);
+    uiCmdBuffers.resize(frames_in_flight);
 
     VkCommandBufferAllocateInfo allocate_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
     allocate_info.commandPool = cmd_pool;
@@ -281,10 +281,10 @@ static void CreateCommandBuffers()
     allocate_info.commandBufferCount = 1;
 
     for (std::size_t i = 0; i < frames_in_flight; ++i) {
-        VkCheck(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &geometry_cmd_buffers[i]));
+        VkCheck(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &offscreenCmdBuffers[i]));
 
-        VkCheck(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &viewport_cmd_buffers[i]));
-        VkCheck(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &ui_cmd_buffers[i]));
+        VkCheck(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &compositeCmdBuffers[i]));
+        VkCheck(vkAllocateCommandBuffers(g_rc->device.device, &allocate_info, &uiCmdBuffers[i]));
     }
 }
 
@@ -390,11 +390,11 @@ void CreateRenderPass2(RenderPass& fb, bool ui)
 
 std::vector<VkCommandBuffer> BeginRenderPass(const RenderPass& fb, const glm::vec4& clear_color)
 {
-    VkCheck(vkResetCommandBuffer(geometry_cmd_buffers[current_frame], 0));
+    VkCheck(vkResetCommandBuffer(offscreenCmdBuffers[current_frame], 0));
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    VkCheck(vkBeginCommandBuffer(geometry_cmd_buffers[current_frame], &begin_info));
+    VkCheck(vkBeginCommandBuffer(offscreenCmdBuffers[current_frame], &begin_info));
 
 
     VkViewport viewport{};
@@ -409,8 +409,8 @@ std::vector<VkCommandBuffer> BeginRenderPass(const RenderPass& fb, const glm::ve
     scissor.offset = { 0, 0 };
     scissor.extent = { fb.width, fb.height };
 
-    vkCmdSetViewport(geometry_cmd_buffers[current_frame], 0, 1, &viewport);
-    vkCmdSetScissor(geometry_cmd_buffers[current_frame], 0, 1, &scissor);
+    vkCmdSetViewport(offscreenCmdBuffers[current_frame], 0, 1, &viewport);
+    vkCmdSetScissor(offscreenCmdBuffers[current_frame], 0, 1, &scissor);
 
     std::array<VkClearValue, 5> clear_values{};
     clear_values[0].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
@@ -432,9 +432,9 @@ std::vector<VkCommandBuffer> BeginRenderPass(const RenderPass& fb, const glm::ve
     renderPassInfo.clearValueCount = U32(clear_values.size());
     renderPassInfo.pClearValues = clear_values.data();
 
-    vkCmdBeginRenderPass(geometry_cmd_buffers[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(offscreenCmdBuffers[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    return geometry_cmd_buffers;
+    return offscreenCmdBuffers;
 
 }
 
@@ -880,7 +880,7 @@ void EndFrame()
     geometry_submit.pWaitSemaphores = &g_frames[current_frame].acquired_semaphore;
     geometry_submit.pWaitDstStageMask = &wait_stage;
     geometry_submit.commandBufferCount = 1;
-    geometry_submit.pCommandBuffers = &geometry_cmd_buffers[current_frame];
+    geometry_submit.pCommandBuffers = &offscreenCmdBuffers[current_frame];
     geometry_submit.signalSemaphoreCount = 1;
     geometry_submit.pSignalSemaphores = &g_frames[current_frame].geometry_semaphore;
     VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &geometry_submit, VK_NULL_HANDLE));
@@ -890,7 +890,7 @@ void EndFrame()
     lighting_submit.pWaitSemaphores = &g_frames[current_frame].geometry_semaphore;
     lighting_submit.pWaitDstStageMask = &wait_stage;
     lighting_submit.commandBufferCount = 1;
-    lighting_submit.pCommandBuffers = &viewport_cmd_buffers[current_frame];
+    lighting_submit.pCommandBuffers = &compositeCmdBuffers[current_frame];
     lighting_submit.signalSemaphoreCount = 1;
     lighting_submit.pSignalSemaphores = &g_frames[current_frame].lighting_semaphore;
     VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &lighting_submit, VK_NULL_HANDLE));
@@ -900,7 +900,7 @@ void EndFrame()
     ui_submit.pWaitSemaphores = &g_frames[current_frame].lighting_semaphore;
     ui_submit.pWaitDstStageMask = &wait_stage;
     ui_submit.commandBufferCount = 1;
-    ui_submit.pCommandBuffers = &ui_cmd_buffers[current_frame];
+    ui_submit.pCommandBuffers = &uiCmdBuffers[current_frame];
     ui_submit.signalSemaphoreCount = 1;
     ui_submit.pSignalSemaphores = &g_frames[current_frame].released_semaphore;
     VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &ui_submit, g_frames[current_frame].submit_fence));
@@ -1083,11 +1083,11 @@ void ResizeFramebuffer(RenderPass& fb, const glm::vec2& size)
 
 std::vector<VkCommandBuffer> BeginRenderPass2(RenderPass& fb, const glm::vec4& clear_color)
 {
-    VkCheck(vkResetCommandBuffer(viewport_cmd_buffers[current_frame], 0));
+    VkCheck(vkResetCommandBuffer(compositeCmdBuffers[current_frame], 0));
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    VkCheck(vkBeginCommandBuffer(viewport_cmd_buffers[current_frame], &begin_info));
+    VkCheck(vkBeginCommandBuffer(compositeCmdBuffers[current_frame], &begin_info));
 
 
     VkViewport viewport{};
@@ -1102,8 +1102,8 @@ std::vector<VkCommandBuffer> BeginRenderPass2(RenderPass& fb, const glm::vec4& c
     scissor.offset = { 0, 0 };
     scissor.extent = { fb.width, fb.height };
 
-    vkCmdSetViewport(viewport_cmd_buffers[current_frame], 0, 1, &viewport);
-    vkCmdSetScissor(viewport_cmd_buffers[current_frame], 0, 1, &scissor);
+    vkCmdSetViewport(compositeCmdBuffers[current_frame], 0, 1, &viewport);
+    vkCmdSetScissor(compositeCmdBuffers[current_frame], 0, 1, &scissor);
 
     const VkClearValue clear_value = { {{ clear_color.r, clear_color.g, clear_color.b, clear_color.a }} };
 
@@ -1119,18 +1119,18 @@ std::vector<VkCommandBuffer> BeginRenderPass2(RenderPass& fb, const glm::vec4& c
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clear_value;
 
-    vkCmdBeginRenderPass(viewport_cmd_buffers[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(compositeCmdBuffers[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    return viewport_cmd_buffers;
+    return compositeCmdBuffers;
 }
 
 std::vector<VkCommandBuffer> BeginRenderPass3(RenderPass& fb, const glm::vec4& clear_color)
 {
-    VkCheck(vkResetCommandBuffer(ui_cmd_buffers[current_frame], 0));
+    VkCheck(vkResetCommandBuffer(uiCmdBuffers[current_frame], 0));
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    VkCheck(vkBeginCommandBuffer(ui_cmd_buffers[current_frame], &begin_info));
+    VkCheck(vkBeginCommandBuffer(uiCmdBuffers[current_frame], &begin_info));
 
 
     VkViewport viewport{};
@@ -1145,8 +1145,8 @@ std::vector<VkCommandBuffer> BeginRenderPass3(RenderPass& fb, const glm::vec4& c
     scissor.offset = { 0, 0 };
     scissor.extent = { fb.width, fb.height };
 
-    vkCmdSetViewport(ui_cmd_buffers[current_frame], 0, 1, &viewport);
-    vkCmdSetScissor(ui_cmd_buffers[current_frame], 0, 1, &scissor);
+    vkCmdSetViewport(uiCmdBuffers[current_frame], 0, 1, &viewport);
+    vkCmdSetScissor(uiCmdBuffers[current_frame], 0, 1, &scissor);
 
     const VkClearValue clear_value = { {{ clear_color.r, clear_color.g, clear_color.b, clear_color.a }} };
 
@@ -1162,9 +1162,9 @@ std::vector<VkCommandBuffer> BeginRenderPass3(RenderPass& fb, const glm::vec4& c
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clear_value;
 
-    vkCmdBeginRenderPass(ui_cmd_buffers[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(uiCmdBuffers[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    return ui_cmd_buffers;
+    return uiCmdBuffers;
 }
 
 void EndRenderPass(std::vector<VkCommandBuffer>& buffers)
