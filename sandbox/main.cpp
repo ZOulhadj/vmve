@@ -1140,90 +1140,84 @@ int main(int argc, char** argv)
         static bool swapchain_ready = true;
 
         // This is where the main rendering starts
-        if (swapchain_ready = BeginFrame()) {
+        if (swapchain_ready = BeginFrame())
+        {
+            //////////////////////////////////////////////////////////////////////////
+
+            auto cmd_buffer = BeginRenderPass(offscreenPass);
+
+            BindDescriptorSet(cmd_buffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
+
+            // Render the sky sphere
+            BindPipeline(cmd_buffer, skyspherePipeline, geometry_sets);
+            for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
             {
-                auto cmd_buffer = BeginRenderPass(offscreenPass);
-
-                BindDescriptorSet(cmd_buffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
-                
-                // Render the sky sphere
-                BindPipeline(cmd_buffer, skyspherePipeline, geometry_sets);
-                
-                for (std::size_t i = 0; i < sphere.meshes.size(); ++i) {
-                    BindMaterial(cmd_buffer, rendering_pipeline_layout, skysphere_material);
-                    bind_vertex_array(cmd_buffer, sphere.meshes[i].vertex_array);
-                    Render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
-                }
-                // Render the models
-                BindPipeline(cmd_buffer, current_pipeline, geometry_sets);
-
-                // render light
-                for (std::size_t i = 0; i < sphere.meshes.size(); ++i) {
-                    BindMaterial(cmd_buffer, rendering_pipeline_layout, sun_material);
-                    Render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, sun_instance);
-                }
-
-                // TODO: Currently we are rendering each instance individually 
-                // which is a very naive. Firstly, instances should be rendered
-                // in batches using instanced rendering. We are also constantly
-                // rebinding the descriptor sets (material) and vertex buffers
-                // for each instance even though the data is exactly the same.
-                // 
-                // A proper solution should be designed and implemented in the 
-                // near future.
-                for (std::size_t i = 0; i < g_instances.size(); ++i) {
-                    Instance& instance = g_instances[i];
-
-                    Translate(instance, instance.position);
-                    Rotate(instance, instance.rotation);
-                    Scale(instance, instance.scale);
-                    for (std::size_t i = 0; i < instance.model->meshes.size(); ++i) {
-                        BindDescriptorSet(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].descriptor_set);
-                        bind_vertex_array(cmd_buffer, instance.model->meshes[i].vertex_array);
-                        Render(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].vertex_array.index_count, instance);
-                    }
-                }
-
-                EndRenderPass(cmd_buffer);
+                BindMaterial(cmd_buffer, rendering_pipeline_layout, skysphere_material);
+                BindVertexArray(cmd_buffer, sphere.meshes[i].vertex_array);
+                Render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
             }
 
+            // Render the models
+            BindPipeline(cmd_buffer, current_pipeline, geometry_sets);
 
-
-            // lighting pass
+            // render light
+            for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
             {
-                auto cmd_buffer = BeginRenderPass2(compositePass);
-
-
-                BindDescriptorSet(cmd_buffer, lighting_pipeline_layout, lighting_sets);
-
-                BindPipeline(cmd_buffer, lighting_pipeline, lighting_sets);
-                Render(cmd_buffer, lighting_pipeline_layout, renderMode);
-                EndRenderPass(cmd_buffer);
+                BindMaterial(cmd_buffer, rendering_pipeline_layout, sun_material);
+                Render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, sun_instance);
             }
 
-
-            // gui pass
+            // TODO: Currently we are rendering each instance individually 
+            // which is a very naive. Firstly, instances should be rendered
+            // in batches using instanced rendering. We are also constantly
+            // rebinding the descriptor sets (material) and vertex buffers
+            // for each instance even though the data is exactly the same.
+            // 
+            // A proper solution should be designed and implemented in the 
+            // near future.
+            for (std::size_t i = 0; i < g_instances.size(); ++i)
             {
-                auto cmd_buffer = BeginRenderPass3(uiPass);
-                BeginUI();
+                Instance& instance = g_instances[i];
 
-                BeginDocking();
+                Translate(instance, instance.position);
+                Rotate(instance, instance.rotation);
+                Scale(instance, instance.scale);
+                for (std::size_t i = 0; i < instance.model->meshes.size(); ++i)
                 {
-                    RenderMainMenu();
-                    RenderDockspace();
-                    RenderObjectWindow();
-                    RenderGlobalWindow();
-                    RenderConsoleWindow();
-                    RenderViewportWindow();
+                    BindDescriptorSet(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].descriptor_set);
+                    BindVertexArray(cmd_buffer, instance.model->meshes[i].vertex_array);
+                    Render(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].vertex_array.index_count, instance);
                 }
-                EndDocking();
-
-                EndUI(cmd_buffer);
-
-                EndRenderPass(cmd_buffer);
             }
 
+            EndRenderPass(cmd_buffer);
 
+            //////////////////////////////////////////////////////////////////////////
+            auto cmd_buffer = BeginRenderPass2(compositePass);
+
+
+            BindDescriptorSet(cmd_buffer, lighting_pipeline_layout, lighting_sets);
+
+            BindPipeline(cmd_buffer, lighting_pipeline, lighting_sets);
+            Render(cmd_buffer, lighting_pipeline_layout, renderMode);
+            EndRenderPass(cmd_buffer);
+            
+            //////////////////////////////////////////////////////////////////////////
+            auto cmd_buffer = BeginRenderPass3(uiPass);
+            BeginUI();
+
+            BeginDocking();
+            RenderMainMenu();
+            RenderDockspace();
+            RenderObjectWindow();
+            RenderGlobalWindow();
+            RenderConsoleWindow();
+            RenderViewportWindow();
+            EndDocking();
+
+            EndUI(cmd_buffer);
+
+            EndRenderPass(cmd_buffer);
 
             // todo: copy image from last pass to swapchain image
 
