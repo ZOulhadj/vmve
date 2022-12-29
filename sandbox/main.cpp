@@ -829,6 +829,7 @@ static void EventCallback(event& e);
 
 int main(int argc, char** argv)
 {
+
     // Start application timer
     startTime = std::chrono::high_resolution_clock::now();
 
@@ -852,6 +853,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    
 
 
     // Create rendering passes and render targets
@@ -876,9 +878,10 @@ int main(int argc, char** argv)
     AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { window->width, window->height });
     CreateRenderPass2(uiPass, true);
 
-    //framebuffer shadow_framebuffer{};
-    //add_framebuffer_attachment(shadow_framebuffer, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 2048, 2048 });
-    //create_render_pass(shadow_framebuffer);
+    RenderPass shadowPass{};
+    AddFramebufferAttachment(shadowPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 2048, 2048 });
+    CreateRenderPass2(shadowPass);
+    
 
     ImGuiContext* uiContext = CreateUI(renderer, uiPass.render_pass);
 
@@ -897,7 +900,6 @@ int main(int argc, char** argv)
     MountPath("shaders", rootDir + "assets/shaders");
     MountPath("fonts", rootDir + "assets/fonts");
 
-    //////////////////////////////////////////////////////////////////////////
 
     // Convert render target attachments into flat arrays for descriptor binding
     std::vector<ImageBuffer> positions = AttachmentsToImages(offscreenPass.attachments, 0);
@@ -1144,27 +1146,27 @@ int main(int argc, char** argv)
         {
             //////////////////////////////////////////////////////////////////////////
 
-            auto cmd_buffer = BeginRenderPass(offscreenPass);
+            auto offscreenCmdBuffer = BeginRenderPass(offscreenPass);
 
-            BindDescriptorSet(cmd_buffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
+            BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
 
             // Render the sky sphere
-            BindPipeline(cmd_buffer, skyspherePipeline, geometry_sets);
+            BindPipeline(offscreenCmdBuffer, skyspherePipeline, geometry_sets);
             for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
             {
-                BindMaterial(cmd_buffer, rendering_pipeline_layout, skysphere_material);
-                BindVertexArray(cmd_buffer, sphere.meshes[i].vertex_array);
-                Render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
+                BindMaterial(offscreenCmdBuffer, rendering_pipeline_layout, skysphere_material);
+                BindVertexArray(offscreenCmdBuffer, sphere.meshes[i].vertex_array);
+                Render(offscreenCmdBuffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
             }
 
             // Render the models
-            BindPipeline(cmd_buffer, current_pipeline, geometry_sets);
+            BindPipeline(offscreenCmdBuffer, current_pipeline, geometry_sets);
 
             // render light
             for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
             {
-                BindMaterial(cmd_buffer, rendering_pipeline_layout, sun_material);
-                Render(cmd_buffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, sun_instance);
+                BindMaterial(offscreenCmdBuffer, rendering_pipeline_layout, sun_material);
+                Render(offscreenCmdBuffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, sun_instance);
             }
 
             // TODO: Currently we are rendering each instance individually 
@@ -1184,26 +1186,26 @@ int main(int argc, char** argv)
                 Scale(instance, instance.scale);
                 for (std::size_t i = 0; i < instance.model->meshes.size(); ++i)
                 {
-                    BindDescriptorSet(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].descriptor_set);
-                    BindVertexArray(cmd_buffer, instance.model->meshes[i].vertex_array);
-                    Render(cmd_buffer, rendering_pipeline_layout, instance.model->meshes[i].vertex_array.index_count, instance);
+                    BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, instance.model->meshes[i].descriptor_set);
+                    BindVertexArray(offscreenCmdBuffer, instance.model->meshes[i].vertex_array);
+                    Render(offscreenCmdBuffer, rendering_pipeline_layout, instance.model->meshes[i].vertex_array.index_count, instance);
                 }
             }
 
-            EndRenderPass(cmd_buffer);
+            EndRenderPass(offscreenCmdBuffer);
 
             //////////////////////////////////////////////////////////////////////////
-            auto cmd_buffer = BeginRenderPass2(compositePass);
+            auto compositeCmdBuffer = BeginRenderPass2(compositePass);
 
 
-            BindDescriptorSet(cmd_buffer, lighting_pipeline_layout, lighting_sets);
+            BindDescriptorSet(compositeCmdBuffer, lighting_pipeline_layout, lighting_sets);
 
-            BindPipeline(cmd_buffer, lighting_pipeline, lighting_sets);
-            Render(cmd_buffer, lighting_pipeline_layout, renderMode);
-            EndRenderPass(cmd_buffer);
+            BindPipeline(compositeCmdBuffer, lighting_pipeline, lighting_sets);
+            Render(compositeCmdBuffer, lighting_pipeline_layout, renderMode);
+            EndRenderPass(compositeCmdBuffer);
             
             //////////////////////////////////////////////////////////////////////////
-            auto cmd_buffer = BeginRenderPass3(uiPass);
+            auto uiCmdBuffer = BeginRenderPass3(uiPass);
             BeginUI();
 
             BeginDocking();
@@ -1215,9 +1217,9 @@ int main(int argc, char** argv)
             RenderViewportWindow();
             EndDocking();
 
-            EndUI(cmd_buffer);
+            EndUI(uiCmdBuffer);
 
-            EndRenderPass(cmd_buffer);
+            EndRenderPass(uiCmdBuffer);
 
             // todo: copy image from last pass to swapchain image
 
