@@ -40,7 +40,7 @@ layout(push_constant) uniform constant
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	projCoords = projCoords * 0.5 + 0.5;
+	//projCoords = projCoords * 0.5 + 0.5;
 	float lightDist = texture(samplerShadowDepth, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
