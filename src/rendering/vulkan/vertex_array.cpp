@@ -48,7 +48,7 @@ void DestroyVertexArray(VertexArray& vertexArray) {
     DestroyBuffer(vertexArray.vertex_buffer);
 }
 
-void BindVertexArray(std::vector<VkCommandBuffer>& buffers, const VertexArray& vertexArray) {
+void BindVertexArray(const std::vector<VkCommandBuffer>& buffers, const VertexArray& vertexArray) {
 
     uint32_t current_frame = GetFrameIndex();
 

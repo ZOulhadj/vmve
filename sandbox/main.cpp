@@ -84,8 +84,7 @@ struct SandboxScene {
     glm::vec4 ambientSpecular = glm::vec4(0.05f, 1.0f, 16.0f, 0.0f);
     glm::vec4 cameraPosition = glm::vec4(0.0f, 2.0f, -5.0f, 0.0f);
 
-    // light position (x, y, z), light strength
-    glm::vec4 lightPosStrength = glm::vec4(2.0f, 5.0f, 2.0f, 1.0f);
+    glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
 } scene;
 
 
@@ -631,8 +630,7 @@ static void RenderGlobalWindow()
             ImGui::SliderFloat("Ambient", &scene.ambientSpecular.x, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular strength", &scene.ambientSpecular.y, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
-            ImGui::SliderFloat3("Light position", glm::value_ptr(scene.lightPosStrength), -100.0f, 100.0f);
-            ImGui::SliderFloat("Light strength", &scene.lightPosStrength.w, 0.0f, 1.0f);
+            ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.lightDirection), -1.0f, 1.0f);
 
             ImGui::Text("Skybox");
             ImGui::SameLine();
@@ -950,15 +948,18 @@ int main(int argc, char** argv)
     MountPath("fonts", rootDir + "assets/fonts");
 
 
-    // Convert render target attachments into flat arrays for descriptor binding
-    std::vector<ImageBuffer> positions = AttachmentsToImages(offscreenPass.attachments, 0);
-    std::vector<ImageBuffer> normals = AttachmentsToImages(offscreenPass.attachments, 1);
-    std::vector<ImageBuffer> colors = AttachmentsToImages(offscreenPass.attachments, 2);
-    std::vector<ImageBuffer> speculars = AttachmentsToImages(offscreenPass.attachments, 3);
-    std::vector<ImageBuffer> depths = AttachmentsToImages(offscreenPass.attachments, 4);
-
     Buffer camera_buffer = CreateUniformBuffer(sizeof(ViewProjection));
     Buffer scene_buffer = CreateUniformBuffer(sizeof(SandboxScene));
+
+    VkDescriptorSetLayoutBinding skyboxCameraBinding = CreateBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
+    VkDescriptorSetLayoutBinding skyboxTextureBinding = CreateBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayout skyboxLayout = CreateDescriptorLayout({ skyboxCameraBinding, skyboxTextureBinding });
+    std::vector<VkDescriptorSet> skyboxSets = AllocateDescriptorSets(skyboxLayout);
+    std::vector<ImageBuffer> skyboxDepths = AttachmentsToImages(skyboxPass.attachments, 0);
+    UpdateBinding(skyboxSets, skyboxCameraBinding, camera_buffer, sizeof(ViewProjection));
+    UpdateBinding(skyboxSets, skyboxTextureBinding, skyboxDepths, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
+
+
 
     VkDescriptorSetLayoutBinding camera_binding = CreateBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
     VkDescriptorSetLayout geometry_layout = CreateDescriptorLayout({ camera_binding });
@@ -982,6 +983,14 @@ int main(int argc, char** argv)
         scene_binding
     });
     std::vector<VkDescriptorSet> lighting_sets = AllocateDescriptorSets(lighting_layout);
+    // Convert render target attachments into flat arrays for descriptor binding
+    std::vector<ImageBuffer> positions = AttachmentsToImages(offscreenPass.attachments, 0);
+    std::vector<ImageBuffer> normals = AttachmentsToImages(offscreenPass.attachments, 1);
+    std::vector<ImageBuffer> colors = AttachmentsToImages(offscreenPass.attachments, 2);
+    std::vector<ImageBuffer> speculars = AttachmentsToImages(offscreenPass.attachments, 3);
+    std::vector<ImageBuffer> depths = AttachmentsToImages(offscreenPass.attachments, 4);
+
+
     UpdateBinding(lighting_sets, positions_binding, positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
     UpdateBinding(lighting_sets, normals_binding, normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
     UpdateBinding(lighting_sets, colors_binding, colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
@@ -1004,9 +1013,7 @@ int main(int argc, char** argv)
     //////////////////////////////////////////////////////////////////////////
 
     VkPipelineLayout skyskpherePipelineLayout = CreatePipelineLayout(
-        { geometry_layout },
-        0,
-        VK_SHADER_STAGE_VERTEX_BIT
+        { skyboxLayout }
     );
 
     VkPipelineLayout rendering_pipeline_layout = CreatePipelineLayout(
@@ -1039,6 +1046,10 @@ int main(int argc, char** argv)
     Shader skysphereVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphere.vert")));
     Shader skysphereFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphere.frag")));
 
+    Shader skysphereNewVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphereNew.vert")));
+    Shader skysphereNewFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphereNew.frag")));
+
+
 
     PipelineInfo info{};
     info.binding_layout_size = vert.bindingSize;
@@ -1068,7 +1079,7 @@ int main(int argc, char** argv)
 
 
     {
-        info.binding_layout_size = vert.bindingSize;
+        info.binding_layout_size = vert.maxBindingSize;
         info.binding_format = vert.attributes;
         info.blend_count = 4;
         info.shaders = { geometry_vs, geometry_fs };
@@ -1083,9 +1094,16 @@ int main(int argc, char** argv)
         info.cull_mode = VK_CULL_MODE_FRONT_BIT;
         skyspherePipeline = CreatePipeline(info, rendering_pipeline_layout, offscreenPass.render_pass);
     }
+    {
+        info.blend_count = 1;
+        info.shaders = { skysphereNewVS, skysphereNewFS };
+        skysphereNewPipeline = CreatePipeline(info, skyskpherePipelineLayout, skyboxPass.render_pass);
+    }
 
 
     // Delete all individual shaders since they are now part of the various pipelines
+    DestroyShader(skysphereNewFS);
+    DestroyShader(skysphereNewVS);
     DestroyShader(skysphereFS);
     DestroyShader(skysphereVS);
     DestroyShader(lighting_fs);
@@ -1134,13 +1152,6 @@ int main(int argc, char** argv)
     UploadModelToGPU(sphere, material_layout, bindings, g_texture_sampler);
         
 
-    // create materials
-    Material sun_material;
-    sun_material.textures.push_back(LoadTexture(GetVFSPath("/textures/sun.png")));
-    sun_material.textures.push_back(empty_normal_map);
-    sun_material.textures.push_back(empty_specular_map);
-    CreateMaterial(sun_material, bindings, material_layout, g_texture_sampler);
-
     Material skysphere_material;
     skysphere_material.textures.push_back(LoadTexture(GetVFSPath("/textures/skysphere2.jpg")));
     skysphere_material.textures.push_back(empty_normal_map);
@@ -1151,7 +1162,6 @@ int main(int argc, char** argv)
 
     // create instances
     Instance skyboxsphere_instance;
-    Instance sun_instance;
     Instance model_instance;
 
 
@@ -1185,9 +1195,6 @@ int main(int argc, char** argv)
 
         scene.cameraPosition = glm::vec4(camera.position, 0.0f);
 
-        // set sun position
-        Translate(sun_instance, glm::vec3(scene.lightPosStrength));
-
         // copy data into uniform buffer
         SetBufferData(camera_buffer, &camera.viewProj, sizeof(ViewProjection));
         SetBufferData(scene_buffer, &scene);
@@ -1200,29 +1207,29 @@ int main(int argc, char** argv)
         if (swapchain_ready = BeginFrame())
         {
             //////////////////////////////////////////////////////////////////////////
+            //auto skyboxCmdBuffer = BeginRenderPass2(skyboxPass);
+
+            //// Render the sky sphere
+            //BindPipeline(offscreenCmdBuffer, skyspherePipeline, geometry_sets);
+            //for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
+            //{
+            //    BindMaterial(offscreenCmdBuffer, rendering_pipeline_layout, skysphere_material);
+            //    BindVertexArray(offscreenCmdBuffer, sphere.meshes[i].vertex_array);
+            //    Render(offscreenCmdBuffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
+            //}
+
+            //EndRenderPass(skyboxCmdBuffer);
+
+
+            //////////////////////////////////////////////////////////////////////////
 
             auto offscreenCmdBuffer = BeginRenderPass(offscreenPass);
 
-            BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
 
-            // Render the sky sphere
-            BindPipeline(offscreenCmdBuffer, skyspherePipeline, geometry_sets);
-            for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
-            {
-                BindMaterial(offscreenCmdBuffer, rendering_pipeline_layout, skysphere_material);
-                BindVertexArray(offscreenCmdBuffer, sphere.meshes[i].vertex_array);
-                Render(offscreenCmdBuffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
-            }
+            BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
 
             // Render the models
             BindPipeline(offscreenCmdBuffer, current_pipeline, geometry_sets);
-
-            // render light
-            for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
-            {
-                BindMaterial(offscreenCmdBuffer, rendering_pipeline_layout, sun_material);
-                Render(offscreenCmdBuffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, sun_instance);
-            }
 
             // TODO: Currently we are rendering each instance individually 
             // which is a very naive. Firstly, instances should be rendered
@@ -1239,17 +1246,21 @@ int main(int argc, char** argv)
                 Translate(instance, instance.position);
                 Rotate(instance, instance.rotation);
                 Scale(instance, instance.scale);
-                for (std::size_t i = 0; i < instance.model->meshes.size(); ++i)
-                {
-                    BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, instance.model->meshes[i].descriptor_set);
-                    BindVertexArray(offscreenCmdBuffer, instance.model->meshes[i].vertex_array);
-                    Render(offscreenCmdBuffer, rendering_pipeline_layout, instance.model->meshes[i].vertex_array.index_count, instance);
-                }
+                RenderModel(instance, offscreenCmdBuffer, rendering_pipeline_layout);
             }
 
             EndRenderPass(offscreenCmdBuffer);
 
             //////////////////////////////////////////////////////////////////////////
+
+           /* auto shadowCmdBuffer = BeginRenderPass2(shadowPass);
+
+
+
+            EndRenderPass(shadowCmdBuffer);*/
+
+            //////////////////////////////////////////////////////////////////////////
+
             auto compositeCmdBuffer = BeginRenderPass2(compositePass);
 
 
@@ -1278,6 +1289,7 @@ int main(int argc, char** argv)
             EndUI(uiCmdBuffer);
 
             EndRenderPass(uiCmdBuffer);
+            //////////////////////////////////////////////////////////////////////////
 
             // todo: copy image from last pass to swapchain image
 
@@ -1357,11 +1369,10 @@ int main(int argc, char** argv)
     for (auto& model : g_models)
         DestroyModel(model);
 
-    DestroyImage(empty_normal_map);
-    DestroyImage(empty_specular_map);
+    //DestroyImage(empty_normal_map);
+    //DestroyImage(empty_specular_map);
 
     // TODO: Remove textures but not the fallback ones that these materials refer to 
-    DestroyMaterial(sun_material);
     DestroyMaterial(skysphere_material);
 
     DestroyVertexArray(quad);
@@ -1388,6 +1399,7 @@ int main(int argc, char** argv)
     DestroyRenderPass(compositePass);
     DestroyRenderPass(offscreenPass);
     DestroyRenderPass(skyboxPass);
+    DestroyRenderPass(shadowPass);
 
     DestroySampler(g_texture_sampler);
     DestroySampler(g_fb_sampler);

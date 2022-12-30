@@ -1193,14 +1193,14 @@ void BindPipeline(std::vector<VkCommandBuffer>& buffers, VkPipeline pipeline, co
     vkCmdBindPipeline(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 }
 
-void Render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, Instance& instance)
+void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, Instance& instance)
 {
     vkCmdPushConstants(buffers[current_frame], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
     vkCmdDrawIndexed(buffers[current_frame], index_count, 1, 0, 0, 0);
 }
 
 
-void Render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode)
+void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode)
 {
     vkCmdPushConstants(buffers[current_frame], layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(int), &draw_mode);
     vkCmdDraw(buffers[current_frame], 3, 1, 0, 0);

@@ -17,8 +17,7 @@ layout(binding = 5) uniform scene_ubo
     vec4 ambientSpecular;
     vec4 cameraPosition;
 
-    // light position (x, y, z), light strength
-    vec4 lightPosStrength;
+	vec3 lightDirection;
 } scene;
 
 layout (location = 0) in vec2 inUV;
@@ -71,23 +70,18 @@ void main()
 
 	// constants
 	vec3 camera_pos = scene.cameraPosition.xyz;
-	vec3 light_pos = scene.lightPosStrength.xyz;
-	float light_strength = scene.lightPosStrength.w;
-
-
-
 
 	vec3 final_color = vec3(0.0);
 
 
 	//////////////// AMBIENT ////////////////
 	float ambient_strength = scene.ambientSpecular.r;
-	vec3 ambient = albedo * light_strength * ambient_strength;
+	vec3 ambient = albedo * ambient_strength;
 
 	final_color += ambient;
 
 	//////////////// DIFFUSE ////////////////
-	vec3 light_dir = normalize(light_pos - world_pos);
+	vec3 light_dir = normalize(-scene.lightDirection);
 	float diffuse_factor = dot(normal, light_dir);
 
 	// If we are facing away from the light simply return and don't do any
@@ -100,12 +94,12 @@ void main()
 
 	// At this stage, we know that additional lighting calculations are needed
 	// since we are facing the light.
-    vec3 diffuse = albedo * light_strength * diffuse_factor;
+    vec3 diffuse = albedo * diffuse_factor;
 	final_color += diffuse;
 
 
 	//////////////// SPECULAR ////////////////
-	vec3 light_reflect_dir = reflect(-light_dir, normal);
+	vec3 light_reflect_dir = reflect(scene.lightDirection, normal);
 	vec3 camera_dir = normalize(camera_pos - world_pos);
 	//vec3 halfway_dir = normalize(camera_dir + light_dir);
 
@@ -115,7 +109,7 @@ void main()
 		return;
 	}
 
-	vec3 specular = vec3(spec) * light_strength * pow(specular_factor, scene.ambientSpecular.b);
+	vec3 specular = vec3(spec) * pow(specular_factor, scene.ambientSpecular.b);
 	final_color += specular;
 
 

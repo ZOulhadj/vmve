@@ -80,17 +80,15 @@ template<typename T>
 struct VertexBinding
 {
     VertexBinding(VkVertexInputRate rate)
-        : inputRate(rate), bindingSize(sizeof(T))
+        : inputRate(rate), bindingSize(0), maxBindingSize(sizeof(T))
     {}
 
     // TODO: Make use of actual type instead of a VkFormat
     void AddAttribute(VkFormat format, std::string_view = nullptr)
     {
-        static std::size_t attributeSize = 0;
+        bindingSize += FormatToSize(format);
 
-        attributeSize += FormatToSize(format);
-
-        if (attributeSize > bindingSize)
+        if (bindingSize > maxBindingSize)
         {
             Logger::Error("Total attribute size is larger than binding size");
             return;
@@ -101,6 +99,7 @@ struct VertexBinding
 
     VkVertexInputRate inputRate;
     std::size_t bindingSize;
+    std::size_t maxBindingSize;
     std::vector<VkFormat> attributes;
 };
 
@@ -170,8 +169,8 @@ void EndFrame();
 void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets);
 void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets, std::size_t size);
 void BindPipeline(std::vector<VkCommandBuffer>& buffers, VkPipeline pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
-void Render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, Instance& instance);
-void Render(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode);
+void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, Instance& instance);
+void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode);
 
 // Indicates to the GPU to wait for all commands to finish before continuing.
 // Often used when create or destroying resources in device local memory.

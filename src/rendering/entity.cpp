@@ -1,5 +1,7 @@
 #include "entity.hpp"
 
+#include "rendering/vulkan/renderer.hpp"
+
 void Translate(Instance& e, const glm::vec3& position)
 {
     // todo: temp matrix reset
@@ -65,3 +67,17 @@ glm::vec3 GetRotFromMatrix(const Instance& e)
 
     return glm::vec3(0.0f);
 }
+
+
+void RenderModel(Instance& instance, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout)
+{
+    for (std::size_t i = 0; i < instance.model->meshes.size(); ++i)
+    {
+        BindDescriptorSet(cmdBuffer, pipelineLayout, instance.model->meshes[i].descriptor_set);
+        BindVertexArray(cmdBuffer, instance.model->meshes[i].vertex_array);
+        Render(cmdBuffer, pipelineLayout, instance.model->meshes[i].vertex_array.index_count, instance);
+    }
+
+}
+
+

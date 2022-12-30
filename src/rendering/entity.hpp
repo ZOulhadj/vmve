@@ -35,4 +35,7 @@ glm::vec3 GetPosFromMatrix(const Instance& e);
 glm::vec3 GetScaleFromMatrix(const Instance& e);
 glm::vec3 GetRotFromMatrix(const Instance& e);
 
+void RenderModel(Instance& instance, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
+
+
 #endif

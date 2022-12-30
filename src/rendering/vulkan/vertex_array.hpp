@@ -14,6 +14,6 @@ struct VertexArray {
 VertexArray CreateVertexArray(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
 void DestroyVertexArray(VertexArray& vertexArray);
 
-void BindVertexArray(std::vector<VkCommandBuffer>& buffers, const VertexArray& vertexArray);
+void BindVertexArray(const std::vector<VkCommandBuffer>& buffers, const VertexArray& vertexArray);
 
 #endif

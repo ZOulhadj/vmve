@@ -80,29 +80,22 @@ static bool HasExtensions(std::string_view name, const std::vector<VkExtensionPr
 // based on the number of components and data type.
 static uint32_t FormatToSize(VkFormat format)
 {
-    uint32_t size = 0;
-
     switch (format) {
     case VK_FORMAT_R32G32_SFLOAT:
-        size = 2 * sizeof(float);
-        break;
+        return 2 * sizeof(float);
     case VK_FORMAT_R32G32B32_SFLOAT:
-        size = 3 * sizeof(float);
-        break;
+        return 3 * sizeof(float);
     case VK_FORMAT_R64G64B64_SFLOAT:
-        size = 3 * sizeof(double);
+        return 3 * sizeof(double);
     case VK_FORMAT_R32G32B32A32_SFLOAT:
-        size = 4 * sizeof(float);
-        break;
+        return 4 * sizeof(float);
     case VK_FORMAT_R64G64B64A64_SFLOAT:
-        size = 4 * sizeof(double);
-        break;
+        return 4 * sizeof(double);
     default:
-        size = 0;
-        break;
+        return 0;
     }
 
-    return size;
+    return 0;
 }
 
 

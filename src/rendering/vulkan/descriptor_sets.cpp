@@ -188,7 +188,7 @@ void UpdateBinding(const std::vector<VkDescriptorSet>& descriptor_sets, const Vk
     }
 }
 
-void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, VkDescriptorSet descriptor_set)
+void BindDescriptorSet(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, VkDescriptorSet descriptor_set)
 {
     uint32_t current_frame = GetFrameIndex();
     vkCmdBindDescriptorSets(buffers[current_frame],
