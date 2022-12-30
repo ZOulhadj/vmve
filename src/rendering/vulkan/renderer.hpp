@@ -150,10 +150,15 @@ void DestroyRenderPass(RenderPass& fb);
 void ResizeFramebuffer(RenderPass& fb, const glm::vec2& size);
 
 
+std::vector<VkCommandBuffer> CreateCommandBuffer();
 
-std::vector<VkCommandBuffer> BeginRenderPass(const RenderPass& fb, const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
-std::vector<VkCommandBuffer> BeginRenderPass2(RenderPass& fb, const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
-std::vector<VkCommandBuffer> BeginRenderPass3(RenderPass& fb, const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+void BeginCommandBuffer(const std::vector<VkCommandBuffer>& cmdBuffer);
+void EndCommandBuffer(const std::vector<VkCommandBuffer>& cmdBuffer);
+
+void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, const RenderPass& fb, const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+void BeginRenderPass2(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass& fb, const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+void BeginRenderPass3(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass& fb, const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 void EndRenderPass(std::vector<VkCommandBuffer>& buffers);
 
 VkPipelineLayout CreatePipelineLayout(const std::vector<VkDescriptorSetLayout>& descriptor_sets,
@@ -164,7 +169,7 @@ void DestroyPipeline(VkPipeline pipeline);
 void DestroyPipelineLayout(VkPipelineLayout layout);
 
 bool BeginFrame();
-void EndFrame();
+void EndFrame(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers);
 
 void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets);
 void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets, std::size_t size);

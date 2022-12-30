@@ -1112,6 +1112,12 @@ int main(int argc, char** argv)
     DestroyShader(geometry_vs);
 
 
+    // Create required command buffers
+    std::vector<VkCommandBuffer> offscreenCmdBuffer = CreateCommandBuffer();
+    std::vector<VkCommandBuffer> compositeCmdBuffer = CreateCommandBuffer();
+    std::vector<VkCommandBuffer> uiCmdBuffer = CreateCommandBuffer();
+
+
 
     // Built-in resources
     const std::vector<Vertex> quad_vertices {
@@ -1206,95 +1212,97 @@ int main(int argc, char** argv)
         // This is where the main rendering starts
         if (swapchain_ready = BeginFrame())
         {
-            //////////////////////////////////////////////////////////////////////////
-            //auto skyboxCmdBuffer = BeginRenderPass2(skyboxPass);
-
-            //// Render the sky sphere
-            //BindPipeline(offscreenCmdBuffer, skyspherePipeline, geometry_sets);
-            //for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
-            //{
-            //    BindMaterial(offscreenCmdBuffer, rendering_pipeline_layout, skysphere_material);
-            //    BindVertexArray(offscreenCmdBuffer, sphere.meshes[i].vertex_array);
-            //    Render(offscreenCmdBuffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
-            //}
-
-            //EndRenderPass(skyboxCmdBuffer);
-
-
-            //////////////////////////////////////////////////////////////////////////
-
-            auto offscreenCmdBuffer = BeginRenderPass(offscreenPass);
-
-
-            BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
-
-            // Render the models
-            BindPipeline(offscreenCmdBuffer, current_pipeline, geometry_sets);
-
-            // TODO: Currently we are rendering each instance individually 
-            // which is a very naive. Firstly, instances should be rendered
-            // in batches using instanced rendering. We are also constantly
-            // rebinding the descriptor sets (material) and vertex buffers
-            // for each instance even though the data is exactly the same.
-            // 
-            // A proper solution should be designed and implemented in the 
-            // near future.
-            for (std::size_t i = 0; i < g_instances.size(); ++i)
+            BeginCommandBuffer(offscreenCmdBuffer);
             {
-                Instance& instance = g_instances[i];
 
-                Translate(instance, instance.position);
-                Rotate(instance, instance.rotation);
-                Scale(instance, instance.scale);
-                RenderModel(instance, offscreenCmdBuffer, rendering_pipeline_layout);
+                //auto skyboxCmdBuffer = BeginRenderPass2(skyboxPass);
+
+                //// Render the sky sphere
+                //BindPipeline(offscreenCmdBuffer, skyspherePipeline, geometry_sets);
+                //for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
+                //{
+                //    BindMaterial(offscreenCmdBuffer, rendering_pipeline_layout, skysphere_material);
+                //    BindVertexArray(offscreenCmdBuffer, sphere.meshes[i].vertex_array);
+                //    Render(offscreenCmdBuffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
+                //}
+
+                //EndRenderPass(skyboxCmdBuffer);
+
+
+
+                BeginRenderPass(offscreenCmdBuffer, offscreenPass);
+                BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
+                BindPipeline(offscreenCmdBuffer, current_pipeline, geometry_sets);
+
+                // TODO: Currently we are rendering each instance individually 
+                // which is a very naive. Firstly, instances should be rendered
+                // in batches using instanced rendering. We are also constantly
+                // rebinding the descriptor sets (material) and vertex buffers
+                // for each instance even though the data is exactly the same.
+                // 
+                // A proper solution should be designed and implemented in the 
+                // near future.
+                for (std::size_t i = 0; i < g_instances.size(); ++i)
+                {
+                    Instance& instance = g_instances[i];
+
+                    Translate(instance, instance.position);
+                    Rotate(instance, instance.rotation);
+                    Scale(instance, instance.scale);
+                    RenderModel(instance, offscreenCmdBuffer, rendering_pipeline_layout);
+                }
+                EndRenderPass(offscreenCmdBuffer);
+
+               /* auto shadowCmdBuffer = BeginRenderPass2(shadowPass);
+
+
+
+                EndRenderPass(shadowCmdBuffer);*/
             }
-
-            EndRenderPass(offscreenCmdBuffer);
-
-            //////////////////////////////////////////////////////////////////////////
-
-           /* auto shadowCmdBuffer = BeginRenderPass2(shadowPass);
-
-
-
-            EndRenderPass(shadowCmdBuffer);*/
+            EndCommandBuffer(offscreenCmdBuffer);
 
             //////////////////////////////////////////////////////////////////////////
 
-            auto compositeCmdBuffer = BeginRenderPass2(compositePass);
+            BeginCommandBuffer(compositeCmdBuffer);
+            {
+                BeginRenderPass2(compositeCmdBuffer, compositePass);
 
 
-            BindDescriptorSet(compositeCmdBuffer, lighting_pipeline_layout, lighting_sets);
+                BindDescriptorSet(compositeCmdBuffer, lighting_pipeline_layout, lighting_sets);
 
-            BindPipeline(compositeCmdBuffer, lighting_pipeline, lighting_sets);
-            Render(compositeCmdBuffer, lighting_pipeline_layout, renderMode);
-            EndRenderPass(compositeCmdBuffer);
+                BindPipeline(compositeCmdBuffer, lighting_pipeline, lighting_sets);
+                Render(compositeCmdBuffer, lighting_pipeline_layout, renderMode);
+                EndRenderPass(compositeCmdBuffer);
+            }
+            EndCommandBuffer(compositeCmdBuffer);
             
-            //////////////////////////////////////////////////////////////////////////
-
 
             //////////////////////////////////////////////////////////////////////////
-            auto uiCmdBuffer = BeginRenderPass3(uiPass);
-            BeginUI();
 
-            BeginDocking();
-            RenderMainMenu();
-            RenderDockspace();
-            RenderObjectWindow();
-            RenderGlobalWindow();
-            RenderConsoleWindow();
-            RenderViewportWindow();
-            EndDocking();
+            BeginCommandBuffer(uiCmdBuffer);
+            {
+                BeginRenderPass3(uiCmdBuffer, uiPass);
+                BeginUI();
 
-            EndUI(uiCmdBuffer);
+                BeginDocking();
+                RenderMainMenu();
+                RenderDockspace();
+                RenderObjectWindow();
+                RenderGlobalWindow();
+                RenderConsoleWindow();
+                RenderViewportWindow();
+                EndDocking();
 
-            EndRenderPass(uiCmdBuffer);
-            //////////////////////////////////////////////////////////////////////////
+                EndUI(uiCmdBuffer);
+
+                EndRenderPass(uiCmdBuffer);
+            }
+            EndCommandBuffer(uiCmdBuffer);
 
             // todo: copy image from last pass to swapchain image
 
 
-            EndFrame();
+            EndFrame({ offscreenCmdBuffer, compositeCmdBuffer, uiCmdBuffer });
         }
 
 
