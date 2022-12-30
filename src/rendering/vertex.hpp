@@ -9,8 +9,6 @@ struct Vertex
     glm::vec2 uv;
 
     glm::vec3 tangent;
-
-    float padding;
 };
 
 
