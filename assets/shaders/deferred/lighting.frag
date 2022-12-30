@@ -10,8 +10,13 @@ layout (binding = 1) uniform sampler2D samplerNormal;
 layout (binding = 2) uniform sampler2D samplerAlbedo;
 layout (binding = 3) uniform sampler2D samplerSpecular;
 layout (binding = 4) uniform sampler2D samplerDepth;
+layout (binding = 5) uniform sampler2D samplerShadowDepth;
+layout (binding = 6) uniform lightViewMatrix
+{
+	mat4 matrix;
+} light;
 
-layout(binding = 5) uniform scene_ubo
+layout(binding = 7) uniform scene_ubo
 {
     // ambient Strength, specular strength, specular shininess, empty
     vec4 ambientSpecular;
@@ -30,6 +35,20 @@ layout(push_constant) uniform constant
     int mode;
 } view_mode;
 
+
+
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
+{
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	//projCoords = projCoords * 0.5 + 0.5;
+	float closestDepth = texture(samplerShadowDepth, projCoords.xy).r;
+	float currentDepth = projCoords.z;
+	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+	float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
+
+	return shadow;	
+}
+
 void main()
 {
 	// textures
@@ -38,6 +57,7 @@ void main()
 	vec3 albedo = texture(samplerAlbedo, inUV).rgb;
 	float spec = texture(samplerSpecular, inUV).r;
 	float depth = texture(samplerDepth, inUV).r;
+	float shadowDepth = texture(samplerShadowDepth, inUV).r;
 
 	// For debugging purposes
 	if (view_mode.mode > 0) {
@@ -58,6 +78,9 @@ void main()
 			case 5:
 				debug_color = vec3(depth);
 				break;
+			case 6:
+				debug_color = vec3(shadowDepth);
+				break;
 		}
 
 		outFragcolor = vec4(debug_color, 1.0);
@@ -71,47 +94,28 @@ void main()
 	// constants
 	vec3 camera_pos = scene.cameraPosition.xyz;
 
-	vec3 final_color = vec3(0.0);
 
 
 	//////////////// AMBIENT ////////////////
 	float ambient_strength = scene.ambientSpecular.r;
-	vec3 ambient = albedo * ambient_strength;
+	vec3 ambient = vec3(ambient_strength);
 
-	final_color += ambient;
 
 	//////////////// DIFFUSE ////////////////
 	vec3 light_dir = normalize(-scene.lightDirection);
-	float diffuse_factor = dot(normal, light_dir);
-
-	// If we are facing away from the light simply return and don't do any
-	// additional lighting calculations
-	if (diffuse_factor <= 0) {
-		outFragcolor = vec4(final_color, 1.0);
-		return;
-	}
-
-
-	// At this stage, we know that additional lighting calculations are needed
-	// since we are facing the light.
-    vec3 diffuse = albedo * diffuse_factor;
-	final_color += diffuse;
-
+	float diffuse_factor = max(dot(normal, light_dir), 0.0);
+	vec3 diffuse = vec3(diffuse_factor);
 
 	//////////////// SPECULAR ////////////////
 	vec3 light_reflect_dir = reflect(scene.lightDirection, normal);
 	vec3 camera_dir = normalize(camera_pos - world_pos);
 	//vec3 halfway_dir = normalize(camera_dir + light_dir);
 
-	float specular_factor = dot(light_reflect_dir, camera_dir);
-	if (specular_factor <= 0) {
-		outFragcolor = vec4(final_color, 1.0);
-		return;
-	}
+	vec3 specular = vec3(pow(max(dot(light_reflect_dir, camera_dir), 0.0), scene.ambientSpecular.b));
 
-	vec3 specular = vec3(spec) * pow(specular_factor, scene.ambientSpecular.b);
-	final_color += specular;
+	vec4 fragPosLightSpace = light.matrix * vec4(world_pos, 1.0);
+	float shadow = ShadowCalculation(fragPosLightSpace, normal, light_dir);
 
-
-	outFragcolor = vec4(final_color, 1.0);
+	vec3 result = (ambient + (1.0 - shadow) * (diffuse + specular)) * albedo;
+	outFragcolor = vec4(result, 1.0);
 }

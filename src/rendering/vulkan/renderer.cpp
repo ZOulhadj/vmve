@@ -397,7 +397,7 @@ void EndCommandBuffer(const std::vector<VkCommandBuffer>& cmdBuffer)
 
 
 
-void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, const RenderPass& fb, const glm::vec4& clear_color)
+void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, const RenderPass& fb, const glm::vec4& clearColor, const glm::vec2& clearDepthStencil)
 {
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -415,11 +415,11 @@ void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, const Render
     vkCmdSetScissor(cmdBuffer[current_frame], 0, 1, &scissor);
 
     std::array<VkClearValue, 5> clear_values{};
-    clear_values[0].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
-    clear_values[1].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
-    clear_values[2].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
-    clear_values[3].color = { { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
-    clear_values[4].depthStencil = { 0.0f, 0 };
+    clear_values[0].color = { { clearColor.r, clearColor.g, clearColor.b, clearColor.a } };
+    clear_values[1].color = { { clearColor.r, clearColor.g, clearColor.b, clearColor.a } };
+    clear_values[2].color = { { clearColor.r, clearColor.g, clearColor.b, clearColor.a } };
+    clear_values[3].color = { { clearColor.r, clearColor.g, clearColor.b, clearColor.a } };
+    clear_values[4].depthStencil = { clearDepthStencil.r, (uint32_t)clearDepthStencil.g };
 
     VkRect2D render_area{};
     render_area.offset = { 0, 0 };
@@ -470,47 +470,10 @@ void BeginRenderPass2(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass&
     vkCmdBeginRenderPass(cmdBuffer[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void BeginRenderPass3(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass& fb, const glm::vec4& clear_color)
-{
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float)fb.width;
-    viewport.height = (float)fb.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
-    scissor.extent = { fb.width, fb.height };
-
-    vkCmdSetViewport(cmdBuffer[current_frame], 0, 1, &viewport);
-    vkCmdSetScissor(cmdBuffer[current_frame], 0, 1, &scissor);
-
-    const VkClearValue clear_value = { {{ clear_color.r, clear_color.g, clear_color.b, clear_color.a }} };
-
-    VkRect2D render_area{};
-    render_area.offset = { 0, 0 };
-    render_area.extent.width = fb.width;
-    render_area.extent.height = fb.height;
-
-    VkRenderPassBeginInfo renderPassInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    renderPassInfo.renderPass = fb.render_pass;
-    renderPassInfo.framebuffer = fb.handle[currentImage];
-    renderPassInfo.renderArea = render_area;
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clear_value;
-
-    vkCmdBeginRenderPass(cmdBuffer[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
-
 void EndRenderPass(std::vector<VkCommandBuffer>& buffers)
 {
     vkCmdEndRenderPass(buffers[current_frame]);
 }
-
-
-
 
 VkPipelineLayout CreatePipelineLayout(const std::vector<VkDescriptorSetLayout>& descriptor_sets, 
                                         std::size_t push_constant_size /*= 0*/, 

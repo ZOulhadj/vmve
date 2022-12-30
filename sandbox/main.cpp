@@ -57,13 +57,14 @@ glm::vec2 current_viewport_size{};
 bool resize_viewport = false;
 glm::vec2 resize_extent;
 
+
 VkPipeline geometry_pipeline{};
 VkPipeline lighting_pipeline{};
 
 VkPipeline skyspherePipeline{};
 VkPipeline skysphereNewPipeline{};
 VkPipeline wireframePipeline{};
-
+VkPipeline shadowMappingPipeline{};
 
 VkPipeline current_pipeline{};
 
@@ -84,8 +85,14 @@ struct SandboxScene {
     glm::vec4 ambientSpecular = glm::vec4(0.05f, 1.0f, 16.0f, 0.0f);
     glm::vec4 cameraPosition = glm::vec4(0.0f, 2.0f, -5.0f, 0.0f);
 
-    glm::vec3 lightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
+    glm::vec3 lightDirection = glm::vec3(0.01f, -1.0f, 0.01f);
 } scene;
+
+glm::vec3 lightPosition = glm::vec3(0.0f, 200.0f, 0.0f);
+
+struct LightData {
+    glm::mat4 lightViewMatrix;
+} lightData;
 
 
 // Stores a collection of unique models 
@@ -614,8 +621,8 @@ static void RenderGlobalWindow()
             static int current_buffer_mode = (int)buf_mode::triple_buffering;
             static std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
             ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
-            enum class render_mode { full, color, specular, position, normal, depth };
-            static std::array<const char*, 6> elems_names = { "Full", "Color", "Specular", "Position", "Normal", "Depth" };
+            enum class render_mode { full, color, specular, position, normal, depth, shadow_depth};
+            static std::array<const char*, 7> elems_names = { "Full", "Color", "Specular", "Position", "Normal", "Depth", "Shadow Depth"};
 
             ImGui::Combo("Render mode", &renderMode, elems_names.data(), elems_names.size());
         }
@@ -631,6 +638,7 @@ static void RenderGlobalWindow()
             ImGui::SliderFloat("Specular strength", &scene.ambientSpecular.y, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
             ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.lightDirection), -1.0f, 1.0f);
+            ImGui::SliderFloat3("Sun position (depth)", glm::value_ptr(lightPosition), -400.0f, 400.0f);
 
             ImGui::Text("Skybox");
             ImGui::SameLine();
@@ -948,15 +956,22 @@ int main(int argc, char** argv)
     MountPath("fonts", rootDir + "assets/fonts");
 
 
-    Buffer camera_buffer = CreateUniformBuffer(sizeof(ViewProjection));
-    Buffer scene_buffer = CreateUniformBuffer(sizeof(SandboxScene));
+    Buffer lightBuffer = CreateUniformBuffer(sizeof(LightData));
+    Buffer cameraBuffer = CreateUniformBuffer(sizeof(ViewProjection));
+    Buffer sceneBuffer = CreateUniformBuffer(sizeof(SandboxScene));
+
+    VkDescriptorSetLayoutBinding shadowBinding = CreateBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
+    VkDescriptorSetLayout shadowLayout = CreateDescriptorLayout({ shadowBinding });
+    std::vector<VkDescriptorSet> shadowSets = AllocateDescriptorSets(shadowLayout);
+    UpdateBinding(shadowSets, shadowBinding, lightBuffer, sizeof(LightData));
+
 
     VkDescriptorSetLayoutBinding skyboxCameraBinding = CreateBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
     VkDescriptorSetLayoutBinding skyboxTextureBinding = CreateBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayout skyboxLayout = CreateDescriptorLayout({ skyboxCameraBinding, skyboxTextureBinding });
     std::vector<VkDescriptorSet> skyboxSets = AllocateDescriptorSets(skyboxLayout);
     std::vector<ImageBuffer> skyboxDepths = AttachmentsToImages(skyboxPass.attachments, 0);
-    UpdateBinding(skyboxSets, skyboxCameraBinding, camera_buffer, sizeof(ViewProjection));
+    UpdateBinding(skyboxSets, skyboxCameraBinding, cameraBuffer, sizeof(ViewProjection));
     UpdateBinding(skyboxSets, skyboxTextureBinding, skyboxDepths, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
 
 
@@ -964,7 +979,7 @@ int main(int argc, char** argv)
     VkDescriptorSetLayoutBinding camera_binding = CreateBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
     VkDescriptorSetLayout geometry_layout = CreateDescriptorLayout({ camera_binding });
     std::vector<VkDescriptorSet> geometry_sets = AllocateDescriptorSets(geometry_layout);
-    UpdateBinding(geometry_sets, camera_binding, camera_buffer, sizeof(ViewProjection));
+    UpdateBinding(geometry_sets, camera_binding, cameraBuffer, sizeof(ViewProjection));
 
     //////////////////////////////////////////////////////////////////////////
 
@@ -973,13 +988,17 @@ int main(int argc, char** argv)
     VkDescriptorSetLayoutBinding colors_binding = CreateBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayoutBinding specular_binding = CreateBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayoutBinding depths_binding = CreateBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkDescriptorSetLayoutBinding scene_binding = CreateBinding(5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding shadow_depths_binding = CreateBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding shadow_matrix_binding = CreateBinding(6, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkDescriptorSetLayoutBinding scene_binding = CreateBinding(7, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayout lighting_layout = CreateDescriptorLayout({
         positions_binding,
         normals_binding,
         colors_binding,
         specular_binding,
         depths_binding,
+        shadow_depths_binding,
+        shadow_matrix_binding,
         scene_binding
     });
     std::vector<VkDescriptorSet> lighting_sets = AllocateDescriptorSets(lighting_layout);
@@ -989,6 +1008,7 @@ int main(int argc, char** argv)
     std::vector<ImageBuffer> colors = AttachmentsToImages(offscreenPass.attachments, 2);
     std::vector<ImageBuffer> speculars = AttachmentsToImages(offscreenPass.attachments, 3);
     std::vector<ImageBuffer> depths = AttachmentsToImages(offscreenPass.attachments, 4);
+    std::vector<ImageBuffer> shadow_depths = AttachmentsToImages(shadowPass.attachments, 0);
 
 
     UpdateBinding(lighting_sets, positions_binding, positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
@@ -996,7 +1016,9 @@ int main(int argc, char** argv)
     UpdateBinding(lighting_sets, colors_binding, colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
     UpdateBinding(lighting_sets, specular_binding, speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
     UpdateBinding(lighting_sets, depths_binding, depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_fb_sampler);
-    UpdateBinding(lighting_sets, scene_binding, scene_buffer, sizeof(SandboxScene));
+    UpdateBinding(lighting_sets, shadow_depths_binding, shadow_depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_fb_sampler);
+    UpdateBinding(lighting_sets, shadow_matrix_binding, lightBuffer, sizeof(LightData));
+    UpdateBinding(lighting_sets, scene_binding, sceneBuffer, sizeof(SandboxScene));
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -1011,6 +1033,11 @@ int main(int argc, char** argv)
     });
 
     //////////////////////////////////////////////////////////////////////////
+    VkPipelineLayout shadowMappingPiplelineLayout = CreatePipelineLayout(
+        { shadowLayout },
+        sizeof(glm::mat4),
+        VK_SHADER_STAGE_VERTEX_BIT
+    );
 
     VkPipelineLayout skyskpherePipelineLayout = CreatePipelineLayout(
         { skyboxLayout }
@@ -1031,12 +1058,15 @@ int main(int argc, char** argv)
 
 
 
+
     VertexBinding<Vertex> vert(VK_VERTEX_INPUT_RATE_VERTEX);
     vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
     vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
     vert.AddAttribute(VK_FORMAT_R32G32_SFLOAT, "UV");
     vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
 
+    Shader shadowMappingVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/shadow_mapping.vert")));
+    Shader shadowMappingFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/shadow_mapping.frag")));
 
     Shader geometry_vs = CreateVertexShader(LoadFile(GetVFSPath("/shaders/deferred/geometry.vert")));
     Shader geometry_fs = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/deferred/geometry.frag")));
@@ -1099,6 +1129,12 @@ int main(int argc, char** argv)
         info.shaders = { skysphereNewVS, skysphereNewFS };
         skysphereNewPipeline = CreatePipeline(info, skyskpherePipelineLayout, skyboxPass.render_pass);
     }
+    {
+        info.shaders = { shadowMappingVS, shadowMappingFS };
+        info.cull_mode = VK_CULL_MODE_BACK_BIT;
+        info.depth_testing = true;
+        shadowMappingPipeline = CreatePipeline(info, shadowMappingPiplelineLayout, shadowPass.render_pass);
+    }
 
 
     // Delete all individual shaders since they are now part of the various pipelines
@@ -1110,6 +1146,8 @@ int main(int argc, char** argv)
     DestroyShader(lighting_vs);
     DestroyShader(geometry_fs);
     DestroyShader(geometry_vs);
+    DestroyShader(shadowMappingFS);
+    DestroyShader(shadowMappingVS);
 
 
     // Create required command buffers
@@ -1192,6 +1230,8 @@ int main(int argc, char** argv)
         // same no matter how fast the CPU is running.
         delta_time = GetDeltaTime();
 
+
+
         // Only update movement and camera view when in viewport mode
         if (in_viewport) {
             UpdateInput(camera, delta_time);
@@ -1199,11 +1239,22 @@ int main(int argc, char** argv)
         }
         UpdateProjection(camera);
 
+
+        // Set sun view matrix
+        float near = 1.0f, far = 1500.0f;
+        float lightProjSize = 500.0f;
+        glm::mat4 lightProjection = glm::ortho(-lightProjSize, lightProjSize, -lightProjSize, lightProjSize, near, far);
+        // TODO: Construct a dummy sun "position" for the depth calculation based on the direction vector and some random distance
+        glm::mat4 lightView = glm::lookAt(lightPosition, scene.lightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
+        lightData.lightViewMatrix = lightProjection * lightView;
+        lightData.lightViewMatrix[1][1] *= -1.0;
+
         scene.cameraPosition = glm::vec4(camera.position, 0.0f);
 
         // copy data into uniform buffer
-        SetBufferData(camera_buffer, &camera.viewProj, sizeof(ViewProjection));
-        SetBufferData(scene_buffer, &scene);
+        SetBufferData(lightBuffer, &lightData, sizeof(LightData));
+        SetBufferData(cameraBuffer, &camera.viewProj, sizeof(ViewProjection));
+        SetBufferData(sceneBuffer, &scene);
 
 
 
@@ -1214,6 +1265,7 @@ int main(int argc, char** argv)
         {
             BeginCommandBuffer(offscreenCmdBuffer);
             {
+
 
                 //auto skyboxCmdBuffer = BeginRenderPass2(skyboxPass);
 
@@ -1228,10 +1280,33 @@ int main(int argc, char** argv)
 
                 //EndRenderPass(skyboxCmdBuffer);
 
+                BindDescriptorSet(offscreenCmdBuffer, shadowMappingPiplelineLayout, shadowSets, sizeof(LightData));
+                BeginRenderPass2(offscreenCmdBuffer, shadowPass);
+               
+                BindPipeline(offscreenCmdBuffer, shadowMappingPipeline, shadowSets);
+                for (std::size_t i = 0; i < g_instances.size(); ++i)
+                {
+                    Instance& instance = g_instances[i];
+
+                    Translate(instance, instance.position);
+                    Rotate(instance, instance.rotation);
+                    Scale(instance, instance.scale);
+
+                    for (std::size_t i = 0; i < instance.model->meshes.size(); ++i)
+                    {
+                        BindVertexArray(offscreenCmdBuffer, instance.model->meshes[i].vertex_array);
+                        Render(offscreenCmdBuffer, shadowMappingPiplelineLayout, instance.model->meshes[i].vertex_array.index_count, instance);
+                    }
+                }
 
 
-                BeginRenderPass(offscreenCmdBuffer, offscreenPass);
+
+                EndRenderPass(offscreenCmdBuffer);
+
+
                 BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
+                BeginRenderPass(offscreenCmdBuffer, offscreenPass);
+
                 BindPipeline(offscreenCmdBuffer, current_pipeline, geometry_sets);
 
                 // TODO: Currently we are rendering each instance individually 
@@ -1253,11 +1328,6 @@ int main(int argc, char** argv)
                 }
                 EndRenderPass(offscreenCmdBuffer);
 
-               /* auto shadowCmdBuffer = BeginRenderPass2(shadowPass);
-
-
-
-                EndRenderPass(shadowCmdBuffer);*/
             }
             EndCommandBuffer(offscreenCmdBuffer);
 
@@ -1268,7 +1338,7 @@ int main(int argc, char** argv)
                 BeginRenderPass2(compositeCmdBuffer, compositePass);
 
 
-                BindDescriptorSet(compositeCmdBuffer, lighting_pipeline_layout, lighting_sets);
+                BindDescriptorSet(compositeCmdBuffer, lighting_pipeline_layout, lighting_sets, sizeof(LightData));
 
                 BindPipeline(compositeCmdBuffer, lighting_pipeline, lighting_sets);
                 Render(compositeCmdBuffer, lighting_pipeline_layout, renderMode);
@@ -1281,7 +1351,7 @@ int main(int argc, char** argv)
 
             BeginCommandBuffer(uiCmdBuffer);
             {
-                BeginRenderPass3(uiCmdBuffer, uiPass);
+                BeginRenderPass2(uiCmdBuffer, uiPass);
                 BeginUI();
 
                 BeginDocking();
@@ -1387,8 +1457,9 @@ int main(int argc, char** argv)
 
 
     // Destroy rendering resources
-    DestroyBuffer(camera_buffer);
-    DestroyBuffer(scene_buffer);
+    DestroyBuffer(cameraBuffer);
+    DestroyBuffer(sceneBuffer);
+    DestroyBuffer(lightBuffer);
 
     DestroyDescriptorLayout(material_layout);
     DestroyDescriptorLayout(lighting_layout);
@@ -1398,10 +1469,12 @@ int main(int argc, char** argv)
     DestroyPipeline(skyspherePipeline);
     DestroyPipeline(lighting_pipeline);
     DestroyPipeline(geometry_pipeline);
+    DestroyPipeline(shadowMappingPipeline);
 
     DestroyPipelineLayout(lighting_pipeline_layout);
     DestroyPipelineLayout(rendering_pipeline_layout);
     DestroyPipelineLayout(skyskpherePipelineLayout);
+    DestroyPipelineLayout(shadowMappingPiplelineLayout);
 
     DestroyRenderPass(uiPass);
     DestroyRenderPass(compositePass);
