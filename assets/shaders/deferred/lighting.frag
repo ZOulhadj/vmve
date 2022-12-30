@@ -40,11 +40,11 @@ layout(push_constant) uniform constant
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	//projCoords = projCoords * 0.5 + 0.5;
-	float closestDepth = texture(samplerShadowDepth, projCoords.xy).r;
+	projCoords = projCoords * 0.5 + 0.5;
+	float lightDist = texture(samplerShadowDepth, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-	float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
+	float shadow = currentDepth - bias > lightDist ? 1.0 : 0.0;
 
 	return shadow;	
 }
@@ -102,16 +102,16 @@ void main()
 
 
 	//////////////// DIFFUSE ////////////////
-	vec3 light_dir = normalize(-scene.lightDirection);
+	vec3 light_dir = normalize(scene.lightDirection - world_pos);
 	float diffuse_factor = max(dot(normal, light_dir), 0.0);
 	vec3 diffuse = vec3(diffuse_factor);
 
 	//////////////// SPECULAR ////////////////
-	vec3 light_reflect_dir = reflect(scene.lightDirection, normal);
+	vec3 light_reflect_dir = reflect(-scene.lightDirection, normal);
 	vec3 camera_dir = normalize(camera_pos - world_pos);
-	//vec3 halfway_dir = normalize(camera_dir + light_dir);
+	vec3 halfway_dir = normalize(camera_dir + light_dir);
 
-	vec3 specular = vec3(pow(max(dot(light_reflect_dir, camera_dir), 0.0), scene.ambientSpecular.b));
+	vec3 specular = vec3(pow(max(dot(normal, halfway_dir), 0.0), scene.ambientSpecular.b));
 
 	vec4 fragPosLightSpace = light.matrix * vec4(world_pos, 1.0);
 	float shadow = ShadowCalculation(fragPosLightSpace, normal, light_dir);

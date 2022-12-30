@@ -94,6 +94,9 @@ struct LightData {
     glm::mat4 lightViewMatrix;
 } lightData;
 
+float shadowMapNear = 0.1f, shadowMapFar = 400.0f;
+float lightProjSize = 400.0f;
+
 
 // Stores a collection of unique models 
 std::vector<Model> g_models;
@@ -638,7 +641,10 @@ static void RenderGlobalWindow()
             ImGui::SliderFloat("Specular strength", &scene.ambientSpecular.y, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
             ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.lightDirection), -1.0f, 1.0f);
-            ImGui::SliderFloat3("Sun position (depth)", glm::value_ptr(lightPosition), -400.0f, 400.0f);
+            ImGui::SliderFloat3("Sun position (depth)", glm::value_ptr(lightPosition), -200.0f, 200.0f);
+            ImGui::SliderFloat("Shadow near", &shadowMapNear, 0.1f, 1.0f);
+            ImGui::SliderFloat("Shadow far", &shadowMapFar, 5.0f, 600.0f);
+            ImGui::SliderFloat("Ortho size", &lightProjSize, 10.0f, 600.0f);
 
             ImGui::Text("Skybox");
             ImGui::SameLine();
@@ -1241,11 +1247,13 @@ int main(int argc, char** argv)
 
 
         // Set sun view matrix
-        float near = 1.0f, far = 1500.0f;
-        float lightProjSize = 500.0f;
-        glm::mat4 lightProjection = glm::ortho(-lightProjSize, lightProjSize, -lightProjSize, lightProjSize, near, far);
+         glm::mat4 lightProjection = glm::mat4(1.0f);
+        lightProjection = glm::ortho(-lightProjSize, lightProjSize, -lightProjSize, lightProjSize, shadowMapNear, shadowMapFar);
+
         // TODO: Construct a dummy sun "position" for the depth calculation based on the direction vector and some random distance
-        glm::mat4 lightView = glm::lookAt(lightPosition, scene.lightDirection, glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 lightView = glm::mat4(1.0f);
+        lightView = glm::lookAt(lightPosition, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
         lightData.lightViewMatrix = lightProjection * lightView;
         lightData.lightViewMatrix[1][1] *= -1.0;
 
