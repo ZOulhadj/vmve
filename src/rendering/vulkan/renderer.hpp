@@ -158,8 +158,8 @@ void EndCommandBuffer(const std::vector<VkCommandBuffer>& cmdBuffer);
 
 void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, 
     const RenderPass& fb, 
-    const glm::vec4& clearColor = glm::vec4(0.0f),
-    const glm::vec2& clearDepthStencil = glm::vec2(0.0f));
+    const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+    const glm::vec2& clearDepthStencil = glm::vec2(0.0f, 0.0f));
 
 void BeginRenderPass2(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass& fb, const glm::vec4& clear_color = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 void EndRenderPass(std::vector<VkCommandBuffer>& buffers);

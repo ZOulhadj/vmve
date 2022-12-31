@@ -581,7 +581,7 @@ VkPipeline CreatePipeline(PipelineInfo& pipelineInfo, VkPipelineLayout layout, V
     VkPipelineDepthStencilStateCreateInfo depth_stencil_state_info { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
     depth_stencil_state_info.depthTestEnable       = pipelineInfo.depth_testing;
     depth_stencil_state_info.depthWriteEnable      = VK_TRUE;
-    depth_stencil_state_info.depthCompareOp        = VK_COMPARE_OP_GREATER_OR_EQUAL; // default: VK_COMPARE_OP_LESS
+    depth_stencil_state_info.depthCompareOp        = VK_COMPARE_OP_GREATER_OR_EQUAL; // default: VK_COMPARE_OP_LESS 
     depth_stencil_state_info.depthBoundsTestEnable = VK_FALSE;
     depth_stencil_state_info.minDepthBounds        = 0.0f;
     depth_stencil_state_info.maxDepthBounds        = 1.0f;

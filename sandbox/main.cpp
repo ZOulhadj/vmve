@@ -85,18 +85,18 @@ struct SandboxScene {
     glm::vec4 ambientSpecular = glm::vec4(0.05f, 1.0f, 16.0f, 0.0f);
     glm::vec4 cameraPosition = glm::vec4(0.0f, 2.0f, -5.0f, 0.0f);
 
-    glm::vec3 lightDirection = glm::vec3(0.01f, -1.0f, 0.01f);
+    glm::vec3 sunDirection = glm::vec3(0.01f, -1.0f, 0.01f);
+    glm::vec3 sunPosition = glm::vec3(0.01f, 200.0f, 0.01f);
 } scene;
 
-glm::vec3 lightPosition = glm::vec3(0.0f, 200.0f, 0.0f);
 
-struct LightData {
-    glm::mat4 lightViewMatrix;
-} lightData;
+struct SunData {
+    glm::mat4 viewProj;
+} sunData;
 
-float shadowMapNear = 0.1f, shadowMapFar = 400.0f;
-float lightProjSize = 400.0f;
-
+float shadowMapNear = 1.0f, shadowMapFar = 2000.0f;
+float sunOrthoSize = 400.0f;
+float sunDistance = 1000.0f;
 
 // Stores a collection of unique models 
 std::vector<Model> g_models;
@@ -116,8 +116,6 @@ static bool in_viewport = false;
 static std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 //static float uptime   = 0.0f;
 static double delta_time = 0.0f;
-
-static CameraType cam_mode = CameraType::FirstPerson;
 
 VkDescriptorSet skysphere_dset;
 
@@ -211,6 +209,7 @@ static void RenderMainMenu()
     static bool load_model_open = false;
     static bool export_model_open = false;
     static bool performance_profiler = false;
+    static bool gBufferVisualizer = false;
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
@@ -249,6 +248,10 @@ static void RenderMainMenu()
                 performance_profiler = true;
             }
 
+
+            if (ImGui::MenuItem("G-Buffer Visualizer")) {
+                gBufferVisualizer = true;
+            }
 
             ImGui::EndMenu();
         }
@@ -399,6 +402,17 @@ static void RenderMainMenu()
           
         ImGui::End();
     }
+
+
+    if (gBufferVisualizer) {
+        ImGui::Begin("G-Buffer Visualizer", &gBufferVisualizer);
+
+        // TODO: Show all g-buffer images here
+
+        ImGui::End();
+    }
+
+
 }
 
 static void RenderDockspace()
@@ -640,11 +654,11 @@ static void RenderGlobalWindow()
             ImGui::SliderFloat("Ambient", &scene.ambientSpecular.x, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular strength", &scene.ambientSpecular.y, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
-            ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.lightDirection), -1.0f, 1.0f);
-            ImGui::SliderFloat3("Sun position (depth)", glm::value_ptr(lightPosition), -200.0f, 200.0f);
+            ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.sunDirection), -1.0f, 1.0f);
+            ImGui::SliderFloat("Shadow map distance", &sunDistance, 1.0f, 1000.0f);
             ImGui::SliderFloat("Shadow near", &shadowMapNear, 0.1f, 1.0f);
-            ImGui::SliderFloat("Shadow far", &shadowMapFar, 5.0f, 600.0f);
-            ImGui::SliderFloat("Ortho size", &lightProjSize, 10.0f, 600.0f);
+            ImGui::SliderFloat("Shadow far", &shadowMapFar, 5.0f, 2000.0f);
+            ImGui::SliderFloat("Ortho size", &sunOrthoSize, 10.0f, 600.0f);
 
             ImGui::Text("Skybox");
             ImGui::SameLine();
@@ -654,16 +668,22 @@ static void RenderGlobalWindow()
 
         if (ImGui::CollapsingHeader("Camera"))
         {
-            std::array<const char*, 2> projections = { "Perspective", "Orthographic" };
-            int current_projection = 0;
-            ImGui::Combo("Projection", &current_projection, projections.data(), projections.size());
-
-            if (ImGui::RadioButton("First person", cam_mode == CameraType::FirstPerson)) {
-                cam_mode = CameraType::FirstPerson;
+            if (ImGui::RadioButton("Perspective", camera.projection == CameraProjection::Perspective))
+            {
+                camera.projection = CameraProjection::Perspective;
             }
             ImGui::SameLine();
-            if (ImGui::RadioButton("Look at", cam_mode == CameraType::LookAt)) {
-                cam_mode = CameraType::LookAt;
+            if (ImGui::RadioButton("Orthographic", camera.projection == CameraProjection::Orthographic))
+            {
+                camera.projection = CameraProjection::Orthographic;
+            }
+
+            if (ImGui::RadioButton("First person", camera.type == CameraType::FirstPerson)) {
+                camera.type = CameraType::FirstPerson;
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Look at", camera.type == CameraType::LookAt)) {
+                camera.type = CameraType::LookAt;
             }
 
             ImGui::Text("Position");
@@ -914,11 +934,11 @@ int main(int argc, char** argv)
 
 
     // Create rendering passes and render targets
-    g_fb_sampler = CreateSampler(VK_FILTER_LINEAR);
+    g_fb_sampler = CreateSampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
     g_texture_sampler = CreateSampler(VK_FILTER_LINEAR);
 
     RenderPass shadowPass{};
-    AddFramebufferAttachment(shadowPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 2048, 2048 });
+    AddFramebufferAttachment(shadowPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 4096, 4096 });
     CreateRenderPass2(shadowPass);
 
     RenderPass skyboxPass{};
@@ -962,14 +982,14 @@ int main(int argc, char** argv)
     MountPath("fonts", rootDir + "assets/fonts");
 
 
-    Buffer lightBuffer = CreateUniformBuffer(sizeof(LightData));
+    Buffer sunBuffer = CreateUniformBuffer(sizeof(SunData));
     Buffer cameraBuffer = CreateUniformBuffer(sizeof(ViewProjection));
     Buffer sceneBuffer = CreateUniformBuffer(sizeof(SandboxScene));
 
     VkDescriptorSetLayoutBinding shadowBinding = CreateBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
     VkDescriptorSetLayout shadowLayout = CreateDescriptorLayout({ shadowBinding });
     std::vector<VkDescriptorSet> shadowSets = AllocateDescriptorSets(shadowLayout);
-    UpdateBinding(shadowSets, shadowBinding, lightBuffer, sizeof(LightData));
+    UpdateBinding(shadowSets, shadowBinding, sunBuffer, sizeof(SunData));
 
 
     VkDescriptorSetLayoutBinding skyboxCameraBinding = CreateBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT);
@@ -1023,7 +1043,7 @@ int main(int argc, char** argv)
     UpdateBinding(lighting_sets, specular_binding, speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
     UpdateBinding(lighting_sets, depths_binding, depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_fb_sampler);
     UpdateBinding(lighting_sets, shadow_depths_binding, shadow_depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_fb_sampler);
-    UpdateBinding(lighting_sets, shadow_matrix_binding, lightBuffer, sizeof(LightData));
+    UpdateBinding(lighting_sets, shadow_matrix_binding, sunBuffer, sizeof(SunData));
     UpdateBinding(lighting_sets, scene_binding, sceneBuffer, sizeof(SandboxScene));
 
 
@@ -1216,8 +1236,7 @@ int main(int argc, char** argv)
 
 
     current_pipeline = geometry_pipeline;
-    camera = CreateCamera({0.0f, 2.0f, -5.0f}, 60.0f, 5.0f);
-
+    camera = CreatePerspectiveCamera(CameraType::FirstPerson, { 0.0f, 2.0f, -5.0f }, 60.0f, 20.0f);
 
     running = true;
 
@@ -1247,20 +1266,29 @@ int main(int argc, char** argv)
 
 
         // Set sun view matrix
-         glm::mat4 lightProjection = glm::mat4(1.0f);
-        lightProjection = glm::ortho(-lightProjSize, lightProjSize, -lightProjSize, lightProjSize, shadowMapNear, shadowMapFar);
-
+        glm::mat4 sunProjMatrix = glm::ortho(
+            -sunOrthoSize, 
+            sunOrthoSize,
+            -sunOrthoSize,
+            sunOrthoSize, 
+            shadowMapNear, 
+            shadowMapFar
+        );
+        //sunProjMatrix[1][1] *= -1.0;
         // TODO: Construct a dummy sun "position" for the depth calculation based on the direction vector and some random distance
-        glm::mat4 lightView = glm::mat4(1.0f);
-        lightView = glm::lookAt(lightPosition, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        scene.sunPosition = -scene.sunDirection * sunDistance;
 
-        lightData.lightViewMatrix = lightProjection * lightView;
-        lightData.lightViewMatrix[1][1] *= -1.0;
+        glm::mat4 sunViewMatrix = glm::lookAt(
+            scene.sunPosition,
+            glm::vec3(0.0f), 
+            glm::vec3(0.0f, 1.0f, 0.0f)
+        );
+        sunData.viewProj = sunProjMatrix * sunViewMatrix;
 
         scene.cameraPosition = glm::vec4(camera.position, 0.0f);
 
         // copy data into uniform buffer
-        SetBufferData(lightBuffer, &lightData, sizeof(LightData));
+        SetBufferData(sunBuffer, &sunData, sizeof(SunData));
         SetBufferData(cameraBuffer, &camera.viewProj, sizeof(ViewProjection));
         SetBufferData(sceneBuffer, &scene);
 
@@ -1273,8 +1301,6 @@ int main(int argc, char** argv)
         {
             BeginCommandBuffer(offscreenCmdBuffer);
             {
-
-
                 //auto skyboxCmdBuffer = BeginRenderPass2(skyboxPass);
 
                 //// Render the sky sphere
@@ -1288,7 +1314,7 @@ int main(int argc, char** argv)
 
                 //EndRenderPass(skyboxCmdBuffer);
 
-                BindDescriptorSet(offscreenCmdBuffer, shadowMappingPiplelineLayout, shadowSets, sizeof(LightData));
+                BindDescriptorSet(offscreenCmdBuffer, shadowMappingPiplelineLayout, shadowSets, sizeof(SunData));
                 BeginRenderPass2(offscreenCmdBuffer, shadowPass);
                
                 BindPipeline(offscreenCmdBuffer, shadowMappingPipeline, shadowSets);
@@ -1346,7 +1372,7 @@ int main(int argc, char** argv)
                 BeginRenderPass2(compositeCmdBuffer, compositePass);
 
 
-                BindDescriptorSet(compositeCmdBuffer, lighting_pipeline_layout, lighting_sets, sizeof(LightData));
+                BindDescriptorSet(compositeCmdBuffer, lighting_pipeline_layout, lighting_sets, sizeof(SunData));
 
                 BindPipeline(compositeCmdBuffer, lighting_pipeline, lighting_sets);
                 Render(compositeCmdBuffer, lighting_pipeline_layout, renderMode);
@@ -1467,7 +1493,7 @@ int main(int argc, char** argv)
     // Destroy rendering resources
     DestroyBuffer(cameraBuffer);
     DestroyBuffer(sceneBuffer);
-    DestroyBuffer(lightBuffer);
+    DestroyBuffer(sunBuffer);
 
     DestroyDescriptorLayout(material_layout);
     DestroyDescriptorLayout(lighting_layout);

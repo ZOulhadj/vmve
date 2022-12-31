@@ -17,9 +17,9 @@ struct Frustum {
 };
 
 
-enum class ProjectionMode {
-    perspective,
-    ortho
+enum class CameraProjection {
+    Perspective,
+    Orthographic
 };
 
 enum class CameraType {
@@ -33,6 +33,10 @@ struct ViewProjection {
 };
 
 struct Camera {
+    CameraType type;
+    CameraProjection projection;
+
+
     glm::vec3 position;
     glm::vec3 front_vector;
     glm::vec3 right_vector;
@@ -52,6 +56,7 @@ struct Camera {
     float fov;
 
     float near;
+    float far;
 
     ViewProjection viewProj;
 
@@ -61,7 +66,10 @@ struct Camera {
 
 Frustum CreateCameraFrustum(const Camera& camera);
 
-Camera CreateCamera(const glm::vec3& position, float fov, float speed);
+Camera CreatePerspectiveCamera(CameraType type, const glm::vec3& position, float fov, float speed);
+Camera CreateOrthographicCamera(CameraType type, const glm::vec3& position, float speed);
+
+//Camera CreateCamera(const glm::vec3& position, float fov, float speed);
 void UpdateCamera(Camera& camera, const glm::vec2& cursor_pos);
 void UpdateProjection(Camera& cam);
 void UpdateProjection(Camera& camera, uint32_t width, uint32_t height);

@@ -10,7 +10,6 @@
 
 static void custom_style() {
     ImGuiStyle& style = ImGui::GetStyle();
-
     style.TabRounding = 0.0f;
     //style.FrameRounding = 2.0f;
 }

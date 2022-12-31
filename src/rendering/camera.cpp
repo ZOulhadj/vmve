@@ -35,32 +35,11 @@ Frustum CreateCameraFrustum(const Camera& cam)
     return frustum;
 }
 
-
-
-
-// Reversed Z infinite perspective
-// GLM provides various types of perspective functions including infinitePerspective()
-// but a reversed depth version (far-near) is not. Thus, below is my own version
-// that creates an infinite perspective from towards near without a far plane.
-glm::mat4 infinite_perspective(float fovy, const glm::vec2& size, float near)
-{
-	const float h = glm::cot(0.5f * fovy);
-	const float w = h * size.y / size.x;
-
-    glm::mat4 result = glm::mat4(0.0f);
-	result[0][0] = w;
-	result[1][1] = h;
-	result[2][2] = 0.0f;
-	result[2][3] = 1.0f;
-	result[3][2] = near;
-
-    return result;
-}
-
-Camera CreateCamera(const glm::vec3& position, float fov, float speed)
+static Camera CreateCamera(CameraType type, CameraProjection projection, const glm::vec3& pos, float speed, float fov)
 {
     Camera cam{};
-    cam.position    = position;
+
+    cam.position    = pos;
     cam.orientation = glm::quat(1, 0, 0, 0);
     cam.width       = 1280.0f;
     cam.height      = 720.0f;
@@ -70,17 +49,93 @@ Camera CreateCamera(const glm::vec3& position, float fov, float speed)
     cam.roll        = 0.0f;
     cam.fov         = fov;
     cam.near        = 0.1f;
-    cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
-    cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
+    cam.far = 2000.0f;
+
+    if (type == CameraType::FirstPerson)
+    {
+        cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) * 
+                                           glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
+    }
+    else if (type == CameraType::LookAt)
+    {
+        cam.viewProj.view = glm::lookAt(cam.position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    }
+
+
+    if (projection == CameraProjection::Perspective)
+    {
+        cam.viewProj.proj = glm::perspective(glm::radians(fov), cam.width / cam.height, cam.far, cam.near);
+        //cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
+    }
+    else if (projection == CameraProjection::Orthographic)
+    {
+        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.far, cam.near);
+    }
 
     // Required if using Vulkan (left-handed coordinate-system)
     cam.viewProj.proj[1][1] *= -1.0;
 
 
-    cam.first_mouse = true;
-
     return cam;
 }
+
+
+Camera CreatePerspectiveCamera(CameraType type, const glm::vec3& position, float fov, float speed)
+{
+    return CreateCamera(type, CameraProjection::Perspective, position, speed, fov);
+}
+
+
+Camera CreateOrthographicCamera(CameraType type, const glm::vec3& position, float speed)
+{
+    // Note that an orthographic camera does not use FOV
+    return CreateCamera(type, CameraProjection::Orthographic, position, speed, 0.0f);
+}
+
+// Reversed Z infinite perspective
+// GLM provides various types of perspective functions including infinitePerspective()
+// but a reversed depth version (far-near) is not. Thus, below is my own version
+// that creates an infinite perspective from towards near without a far plane.
+//glm::mat4 infinite_perspective(float fovy, const glm::vec2& size, float near)
+//{
+//	const float h = glm::cot(0.5f * fovy);
+//	const float w = h * size.y / size.x;
+//
+//    glm::mat4 result = glm::mat4(0.0f);
+//	result[0][0] = w;
+//	result[1][1] = h;
+//	result[2][2] = 0.0f;
+//	result[2][3] = 1.0f;
+//	result[3][2] = near;
+//
+//    return result;
+//}
+//
+//Camera CreateCamera(const glm::vec3& position, float fov, float speed)
+//{
+//    Camera cam{};
+//    cam.position    = position;
+//    cam.orientation = glm::quat(1, 0, 0, 0);
+//    cam.width       = 1280.0f;
+//    cam.height      = 720.0f;
+//    cam.speed       = speed;
+//    cam.view_speed  = 0.1f;
+//    cam.roll_speed  = 45.0f;
+//    cam.roll        = 0.0f;
+//    cam.fov         = fov;
+//    cam.near        = 0.1f;
+//    cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
+//    cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
+//
+//    // Required if using Vulkan (left-handed coordinate-system)
+//    cam.viewProj.proj[1][1] *= -1.0;
+//
+//
+//    cam.first_mouse = true;
+//
+//    return cam;
+//}
+
 void UpdateCamera(Camera& camera, const glm::vec2& cursor_pos)
 {
     // todo(zak): Need to fix unwanted roll when rotating
@@ -129,7 +184,15 @@ void UpdateCamera(Camera& camera, const glm::vec2& cursor_pos)
 
 void UpdateProjection(Camera& cam)
 {
-    cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
+    if (cam.projection == CameraProjection::Perspective)
+    {
+        cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), cam.width / cam.height, cam.far, cam.near);
+    }
+    else if (cam.projection == CameraProjection::Orthographic)
+    {
+        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.far, cam.near);
+    }
+
     // Required if using Vulkan (left-handed coordinate-system)
     cam.viewProj.proj[1][1] *= -1.0;
 }

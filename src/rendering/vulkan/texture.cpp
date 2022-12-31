@@ -117,7 +117,7 @@ ImageBuffer LoadTexture(const std::filesystem::path& path, bool flip_y, VkFormat
 }
 
 
-VkSampler CreateSampler(VkFilter filtering, const uint32_t anisotropic_level)
+VkSampler CreateSampler(VkFilter filtering, const uint32_t anisotropic_level, VkSamplerAddressMode addressMode)
 {
     VkSampler sampler{};
 
@@ -137,12 +137,12 @@ VkSampler CreateSampler(VkFilter filtering, const uint32_t anisotropic_level)
     VkSamplerCreateInfo sampler_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
     sampler_info.magFilter = filtering;
     sampler_info.minFilter = filtering;
-    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeU = addressMode;
+    sampler_info.addressModeV = addressMode;
+    sampler_info.addressModeW = addressMode;
     sampler_info.anisotropyEnable = ansi_level > 0 ? VK_TRUE : VK_FALSE;
     sampler_info.maxAnisotropy = (float)ansi_level;
-    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
     sampler_info.compareEnable = VK_FALSE;
     sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;

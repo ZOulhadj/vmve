@@ -2,10 +2,10 @@
 
 layout(location = 0) in vec3 position;
 
-layout(binding = 0) uniform light_data 
+layout(binding = 0) uniform SunData
 {
-    mat4 lightViewMatrix;
-} light;
+    mat4 viewProj;
+} sun;
 
 
 layout(push_constant) uniform constant
@@ -15,5 +15,5 @@ layout(push_constant) uniform constant
 
 void main()
 {
-    gl_Position = light.lightViewMatrix * obj.model * vec4(position, 1.0);
+    gl_Position = sun.viewProj * obj.model * vec4(position, 1.0);
 }

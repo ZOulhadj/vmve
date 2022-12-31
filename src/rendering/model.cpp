@@ -181,7 +181,11 @@ Model LoadModel(const std::filesystem::path& path, bool flipUVs)
 
     unsigned int flags = aiProcessPreset_TargetRealtime_Fast |
         aiProcess_FlipWindingOrder |
-        aiProcess_MakeLeftHanded;
+        aiProcess_MakeLeftHanded |
+        aiProcess_GenBoundingBoxes |
+        aiProcess_OptimizeMeshes |
+        aiProcess_OptimizeGraph |
+        aiProcess_ImproveCacheLocality;
 
 
     if (flipUVs)
