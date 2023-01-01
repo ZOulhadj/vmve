@@ -38,34 +38,39 @@ layout(push_constant) uniform constant
 
 
 
-float ShadowCalculation(vec3 fragPos, vec3 normal, vec3 lightDir)
+float ShadowCalculation(vec3 fragPos) 
 {
 	// TODO: Maybe this needs to be in a vertex shader?
 	vec4 fragPosLightSpace = sun.viewProj * vec4(fragPos, 1.0);
 
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	//projCoords.y = -projCoords.y;
-	projCoords = projCoords * 0.5 + 0.5;
+    vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
 
 	float shadowDepth = texture(samplerShadowDepth, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 
 	// Check if current pixel is in shadow
-	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);  
-	float shadow = currentDepth - bias > shadowDepth ? 1.0 : 0.0;
-    
-	return shadow;	
+	//float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);  
+	float shadow = currentDepth > shadowDepth ? 1.0 : 0.0;
+
+	return shadowDepth;	
 }
 
 void main()
 {
 	// textures
 	vec3 world_pos = texture(samplerPosition, inUV).rgb;
-	vec3 normal = normalize(texture(samplerNormal, inUV).rgb);
+	vec3 normal = texture(samplerNormal, inUV).rgb;
 	vec3 albedo = texture(samplerAlbedo, inUV).rgb;
 	float spec = texture(samplerSpecular, inUV).r;
 	float depth = texture(samplerDepth, inUV).r;
-	float shadowDepth = texture(samplerShadowDepth, inUV).r;
+
+	// TODO: Maybe this needs to be in a vertex shader?
+	vec4 fragPosLightSpace = sun.viewProj * vec4(world_pos, 1.0);
+
+    vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
+
+	float shadowDepth = texture(samplerShadowDepth, projCoords.xy).r;
+
 
 	// For debugging purposes
 	if (view_mode.mode > 0) {
@@ -87,7 +92,7 @@ void main()
 				debug_color = depth.rrr;
 				break;
 			case 6:
-				debug_color = shadowDepth.rrr;
+				debug_color = shadowDepth.rrr; 
 				break;
 		}
 
@@ -96,34 +101,26 @@ void main()
 	}
 
 
-
-
-
-	// constants
-	vec3 camera_pos = scene.cameraPosition.xyz;
-
-
+	vec3 lightColor = vec3(1.0);
 
 	//////////////// AMBIENT ////////////////
-	float ambient_strength = scene.ambientSpecular.r;
-	vec3 ambient = vec3(ambient_strength);
+	vec3 ambient = scene.ambientSpecular.rrr * lightColor;
 
 
 	//////////////// DIFFUSE ////////////////
-	vec3 light_dir = normalize(-scene.sunDirection);
-	float diffuse_factor = max(dot(normal, light_dir), 0.0);
-	vec3 diffuse = vec3(diffuse_factor);
+	vec3 light_dir = normalize(scene.sunPosition - world_pos);
+	float diffuse_factor = max(dot(light_dir, normal), 0.0);
+	vec3 diffuse = diffuse_factor * lightColor;
 
 	//////////////// SPECULAR ////////////////
-	vec3 camera_dir = normalize(camera_pos - world_pos);
+	vec3 camera_dir = normalize(scene.cameraPosition.xyz - world_pos);
 	vec3 halfway_dir = normalize(camera_dir + light_dir);
 	//vec3 light_reflect_dir = reflect(-scene.sunDirection, normal);
 
-	vec3 specularReflect = reflect(-light_dir, normal);
-	float specFactor = max(0.0, dot(specularReflect, camera_dir));
-	vec3 specular = vec3(pow(specFactor, scene.ambientSpecular.b));
+	float specFactor = max(dot(normal, halfway_dir), 0.0);
+	vec3 specular = pow(specFactor, scene.ambientSpecular.b) * lightColor;
 
-	float shadow = ShadowCalculation(world_pos, normal, light_dir);
+	float shadow = ShadowCalculation(world_pos);
 
 	vec3 result = (ambient + (1.0 - shadow) * (diffuse + specular)) * albedo;
 	outFragcolor = vec4(result, 1.0);

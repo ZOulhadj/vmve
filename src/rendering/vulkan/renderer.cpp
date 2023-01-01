@@ -453,8 +453,9 @@ void BeginRenderPass2(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass&
     vkCmdSetViewport(cmdBuffer[current_frame], 0, 1, &viewport);
     vkCmdSetScissor(cmdBuffer[current_frame], 0, 1, &scissor);
 
-    const VkClearValue clear_value = { {{ clear_color.r, clear_color.g, clear_color.b, clear_color.a }} };
-
+    VkClearValue clear_value = { {{ clear_color.r, clear_color.g, clear_color.b, clear_color.a }} };
+    clear_value.depthStencil = { 1.0f, 0 };
+    
     VkRect2D render_area{};
     render_area.offset = { 0, 0 };
     render_area.extent.width = fb.width;
@@ -581,7 +582,7 @@ VkPipeline CreatePipeline(PipelineInfo& pipelineInfo, VkPipelineLayout layout, V
     VkPipelineDepthStencilStateCreateInfo depth_stencil_state_info { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
     depth_stencil_state_info.depthTestEnable       = pipelineInfo.depth_testing;
     depth_stencil_state_info.depthWriteEnable      = VK_TRUE;
-    depth_stencil_state_info.depthCompareOp        = VK_COMPARE_OP_GREATER_OR_EQUAL; // default: VK_COMPARE_OP_LESS 
+    depth_stencil_state_info.depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL; // default: VK_COMPARE_OP_GREATER_OR_EQUAL
     depth_stencil_state_info.depthBoundsTestEnable = VK_FALSE;
     depth_stencil_state_info.minDepthBounds        = 0.0f;
     depth_stencil_state_info.maxDepthBounds        = 1.0f;
@@ -1127,11 +1128,16 @@ void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout l
 }
 
 
-void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets, std::size_t size)
+void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers,
+    VkPipelineLayout layout, 
+    const std::vector<VkDescriptorSet>& descriptorSets, 
+    std::vector<uint32_t> sizes)
 {
-    const uint32_t uniform_offset = pad_uniform_buffer_size(size) * current_frame;
-    const std::array<uint32_t, 1> offsets = { uniform_offset };
-    vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[current_frame], offsets.size(), offsets.data());
+    std::vector<uint32_t> sz(sizes);
+    for (std::size_t i = 0; i < sz.size(); ++i)
+        sz[i] = pad_uniform_buffer_size(sizes[i]) * current_frame;
+
+    vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[current_frame], sz.size(), sz.data());
 }
 
 void BindPipeline(std::vector<VkCommandBuffer>& buffers, VkPipeline pipeline, const std::vector<VkDescriptorSet>& descriptorSets)

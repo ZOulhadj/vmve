@@ -10,10 +10,6 @@ layout(location = 1) out vec3 vertex_position;
 layout(location = 2) out vec3 vertex_normal;
 layout(location = 3) out vec3 vertex_tangent;
 
-//layout(location = 3) out vec3 tangentLightPos;
-//layout(location = 4) out vec3 tangentViewPos;
-//layout(location = 5) out vec3 tangentFragPos;
-//
 
 layout(binding = 0) uniform model_view_projection {
     mat4 view;

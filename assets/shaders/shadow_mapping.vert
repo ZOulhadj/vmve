@@ -16,4 +16,5 @@ layout(push_constant) uniform constant
 void main()
 {
     gl_Position = sun.viewProj * obj.model * vec4(position, 1.0);
+
 }

@@ -95,8 +95,7 @@ struct SunData {
 } sunData;
 
 float shadowNear = 1.0f, shadowFar = 2000.0f;
-float projSize = 400.0f;
-float sunDistance = 1000.0f;
+float sunDistance = 400.0f;
 
 // Stores a collection of unique models 
 std::vector<Model> g_models;
@@ -655,10 +654,9 @@ static void RenderGlobalWindow()
             ImGui::SliderFloat("Specular strength", &scene.ambientSpecular.y, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
             ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.sunDirection), -1.0f, 1.0f);
-            ImGui::SliderFloat("Shadow map distance", &sunDistance, 1.0f, 1000.0f);
+            ImGui::SliderFloat("Shadow map distance", &sunDistance, 1.0f, 2000.0f);
             ImGui::SliderFloat("Shadow near", &shadowNear, 0.1f, 1.0f);
             ImGui::SliderFloat("Shadow far", &shadowFar, 5.0f, 2000.0f);
-            ImGui::SliderFloat("Ortho size", &projSize, 1.0f, 600.0f);
 
             ImGui::Text("Skybox");
             ImGui::SameLine();
@@ -927,11 +925,11 @@ int main(int argc, char** argv)
 
 
     // Create rendering passes and render targets
-    g_fb_sampler = CreateSampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+    g_fb_sampler = CreateSampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
     g_texture_sampler = CreateSampler(VK_FILTER_LINEAR);
 
     RenderPass shadowPass{};
-    AddFramebufferAttachment(shadowPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 4096, 4096 });
+    AddFramebufferAttachment(shadowPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 1024, 1024 });
     CreateRenderPass2(shadowPass);
 
     RenderPass skyboxPass{};
@@ -1134,6 +1132,7 @@ int main(int argc, char** argv)
         info.shaders = { geometry_vs, geometry_fs };
         info.wireframe = true;
         info.depth_testing = true;
+        info.cull_mode = VK_CULL_MODE_BACK_BIT;
         wireframePipeline = CreatePipeline(info, rendering_pipeline_layout, offscreenPass.render_pass);
     }
     {
@@ -1259,8 +1258,8 @@ int main(int argc, char** argv)
 
 
         // Set sun view matrix
-        glm::mat4 sunProjMatrix = glm::ortho(-projSize, projSize, -projSize, projSize, shadowFar, shadowNear);
-        sunProjMatrix[1][1] *= -1.0;
+        glm::mat4 sunProjMatrix = glm::ortho(-sunDistance / 2.0f, sunDistance / 2.0f, sunDistance / 2.0f, -sunDistance / 2.0f, shadowNear, shadowFar);
+        //sunProjMatrix[1][1] *= -1.0;
         //sunProjMatrix[2][2] = -sunProjMatrix[2][2];
         //sunProjMatrix[2][3] = -sunProjMatrix[2][3] + 1.0;
         // TODO: Construct a dummy sun "position" for the depth calculation based on the direction vector and some random distance
@@ -1302,7 +1301,7 @@ int main(int argc, char** argv)
 
                 //EndRenderPass(skyboxCmdBuffer);
 
-                BindDescriptorSet(offscreenCmdBuffer, shadowMappingPiplelineLayout, shadowSets, sizeof(SunData));
+                BindDescriptorSet(offscreenCmdBuffer, shadowMappingPiplelineLayout, shadowSets, { sizeof(SunData) });
                 BeginRenderPass2(offscreenCmdBuffer, shadowPass);
                
                 BindPipeline(offscreenCmdBuffer, shadowMappingPipeline, shadowSets);
@@ -1326,7 +1325,7 @@ int main(int argc, char** argv)
                 EndRenderPass(offscreenCmdBuffer);
 
 
-                BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, geometry_sets, sizeof(ViewProjection));
+                BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, geometry_sets, { sizeof(ViewProjection) });
                 BeginRenderPass(offscreenCmdBuffer, offscreenPass);
 
                 BindPipeline(offscreenCmdBuffer, current_pipeline, geometry_sets);
@@ -1359,8 +1358,7 @@ int main(int argc, char** argv)
             {
                 BeginRenderPass2(compositeCmdBuffer, compositePass);
 
-
-                BindDescriptorSet(compositeCmdBuffer, lighting_pipeline_layout, lighting_sets, sizeof(SunData));
+                BindDescriptorSet(compositeCmdBuffer, lighting_pipeline_layout, lighting_sets, { sizeof(SunData) });
 
                 BindPipeline(compositeCmdBuffer, lighting_pipeline, lighting_sets);
                 Render(compositeCmdBuffer, lighting_pipeline_layout, renderMode);
