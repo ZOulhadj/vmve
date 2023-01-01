@@ -94,8 +94,8 @@ struct SunData {
     glm::mat4 viewProj;
 } sunData;
 
-float shadowMapNear = 1.0f, shadowMapFar = 2000.0f;
-float sunOrthoSize = 400.0f;
+float shadowNear = 1.0f, shadowFar = 2000.0f;
+float projSize = 400.0f;
 float sunDistance = 1000.0f;
 
 // Stores a collection of unique models 
@@ -656,9 +656,9 @@ static void RenderGlobalWindow()
             ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
             ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.sunDirection), -1.0f, 1.0f);
             ImGui::SliderFloat("Shadow map distance", &sunDistance, 1.0f, 1000.0f);
-            ImGui::SliderFloat("Shadow near", &shadowMapNear, 0.1f, 1.0f);
-            ImGui::SliderFloat("Shadow far", &shadowMapFar, 5.0f, 2000.0f);
-            ImGui::SliderFloat("Ortho size", &sunOrthoSize, 10.0f, 600.0f);
+            ImGui::SliderFloat("Shadow near", &shadowNear, 0.1f, 1.0f);
+            ImGui::SliderFloat("Shadow far", &shadowFar, 5.0f, 2000.0f);
+            ImGui::SliderFloat("Ortho size", &projSize, 1.0f, 600.0f);
 
             ImGui::Text("Skybox");
             ImGui::SameLine();
@@ -669,22 +669,15 @@ static void RenderGlobalWindow()
         if (ImGui::CollapsingHeader("Camera"))
         {
             if (ImGui::RadioButton("Perspective", camera.projection == CameraProjection::Perspective))
-            {
                 camera.projection = CameraProjection::Perspective;
-            }
             ImGui::SameLine();
             if (ImGui::RadioButton("Orthographic", camera.projection == CameraProjection::Orthographic))
-            {
                 camera.projection = CameraProjection::Orthographic;
-            }
-
-            if (ImGui::RadioButton("First person", camera.type == CameraType::FirstPerson)) {
+            if (ImGui::RadioButton("First person", camera.type == CameraType::FirstPerson))
                 camera.type = CameraType::FirstPerson;
-            }
             ImGui::SameLine();
-            if (ImGui::RadioButton("Look at", camera.type == CameraType::LookAt)) {
+            if (ImGui::RadioButton("Look at", camera.type == CameraType::LookAt))
                 camera.type = CameraType::LookAt;
-            }
 
             ImGui::Text("Position");
             //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
@@ -726,7 +719,7 @@ static void RenderGlobalWindow()
             camera.fov = glm::degrees(fov_rad);
 
             ImGui::SliderFloat("Near plane", &camera.near, 0.1f, 10.0f, "%.1f m");
-
+            ImGui::SliderFloat("Far plane", &camera.far, 10.0f, 2000.0f, "%.1f m");
             ImGui::Checkbox("Lock frustum", &lock_camera_frustum);
         }
 
@@ -1266,21 +1259,16 @@ int main(int argc, char** argv)
 
 
         // Set sun view matrix
-        glm::mat4 sunProjMatrix = glm::ortho(
-            -sunOrthoSize, 
-            sunOrthoSize,
-            -sunOrthoSize,
-            sunOrthoSize, 
-            shadowMapNear, 
-            shadowMapFar
-        );
-        //sunProjMatrix[1][1] *= -1.0;
+        glm::mat4 sunProjMatrix = glm::ortho(-projSize, projSize, -projSize, projSize, shadowFar, shadowNear);
+        sunProjMatrix[1][1] *= -1.0;
+        //sunProjMatrix[2][2] = -sunProjMatrix[2][2];
+        //sunProjMatrix[2][3] = -sunProjMatrix[2][3] + 1.0;
         // TODO: Construct a dummy sun "position" for the depth calculation based on the direction vector and some random distance
         scene.sunPosition = -scene.sunDirection * sunDistance;
 
         glm::mat4 sunViewMatrix = glm::lookAt(
             scene.sunPosition,
-            glm::vec3(0.0f), 
+            glm::vec3(0.0f),
             glm::vec3(0.0f, 1.0f, 0.0f)
         );
         sunData.viewProj = sunProjMatrix * sunViewMatrix;
