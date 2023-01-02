@@ -44,6 +44,8 @@ std::vector<VkDescriptorSet> framebuffer_id;
 VkSampler g_fb_sampler;
 VkSampler g_texture_sampler;
 
+
+
 VkDescriptorSetLayoutBinding mat_albdo_binding;
 VkDescriptorSetLayoutBinding mat_normal_binding;
 VkDescriptorSetLayoutBinding mat_specular_binding;
@@ -108,7 +110,8 @@ static float windSpeed = 2.0f;
 static int timeOfDay = 10;
 static int renderMode = 0;
 
-
+static bool vsync = true;
+static bool update_swapchain_vsync = false;
 static bool running   = true;
 static bool minimised = false;
 static bool in_viewport = false;
@@ -603,7 +606,6 @@ static void RenderGlobalWindow()
     ImGuiIO& io = ImGui::GetIO();
 
     static bool wireframe = false;
-    static bool vsync = true;
     static bool depth = false;
     static int swapchain_images = 3;
 
@@ -654,10 +656,12 @@ static void RenderGlobalWindow()
             //if (ImGui::Checkbox("Wireframe", &wireframe))
             //    wireframe ? current_pipeline = wireframePipeline : current_pipeline = geometry_pipeline;
 
-            ImGui::Checkbox("VSync", &vsync);
+            if (ImGui::Checkbox("VSync", &vsync))
+            {
+                update_swapchain_vsync = true;
+            }
 
-            enum class buf_mode { double_buffering, triple_buffering };
-            static int current_buffer_mode = (int)buf_mode::triple_buffering;
+            static int current_buffer_mode = (int)BufferMode::Double;
             static std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
             ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
         }
@@ -934,7 +938,7 @@ int main(int argc, char** argv)
 
     window->event_callback = EventCallback;
 
-    VulkanRenderer* renderer = CreateRenderer(window, BufferMode::standard, VSyncMode::enabled);
+    VulkanRenderer* renderer = CreateRenderer(window, BufferMode::Double, VSyncMode::Enabled);
     if (!renderer) {
         Logger::Error("Failed to create renderer");
         return 0;
@@ -1233,6 +1237,8 @@ int main(int argc, char** argv)
 
     while (running)
     {
+        UpdateWindow(window);
+
         // If the application is minimized then only wait for events and don't
         // do anything else. This ensures the application does not waste resources
         // performing other operations such as maths and rendering when the window
@@ -1330,7 +1336,7 @@ int main(int argc, char** argv)
                 BindDescriptorSet(offscreenCmdBuffer, offscreenPipelineLayout, geometry_sets, { sizeof(ViewProjection) });
                 BeginRenderPass(offscreenCmdBuffer, offscreenPass);
 
-                BindPipeline(offscreenCmdBuffer, offscreenPipeline);
+                BindPipeline(offscreenCmdBuffer, wireframePipeline);
 
                 // TODO: Currently we are rendering each instance individually 
                 // which is a very naive. Firstly, instances should be rendered
@@ -1402,7 +1408,8 @@ int main(int argc, char** argv)
         // to resize within the UI functions then we would be attempting to
         // recreate resources using a new size before submitting to the GPU
         // which causes an error. Need to figure out how to do this properly.
-        if (resize_viewport) {
+        if (resize_viewport)
+        {
             VkExtent2D extent = { U32(current_viewport_size.x), U32(current_viewport_size.y) };
             UpdateProjection(camera, extent.width, extent.height);
             
@@ -1432,7 +1439,8 @@ int main(int argc, char** argv)
         }
 
         // todo: should this be here?
-        if (!swapchain_ready) {
+        if (!swapchain_ready)
+        {
             Logger::Info("Swapchain being resized ({}, {})", window->width, window->height);
 
             WaitForGPU();
@@ -1448,8 +1456,20 @@ int main(int argc, char** argv)
         }
 
 
+        if (update_swapchain_vsync)
+        {
+            WaitForGPU();
 
-        UpdateWindow(window);
+            RecreateSwapchain(BufferMode::Double, vsync ? VSyncMode::Enabled : VSyncMode::Disabled);
+
+            DestroyRenderPass(uiPass);
+            AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { window->width, window->height });
+            CreateRenderPass2(uiPass, true);
+
+            update_swapchain_vsync = false;
+        }
+
+
     }
 
 

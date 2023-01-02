@@ -15,14 +15,14 @@
 #include "logging.hpp"
 
 enum class BufferMode {
-    standard = 2,
-    triple   = 3
+    Double = 2,
+    Triple   = 3
 };
 
 enum class VSyncMode {
-    disabled = 0,
-    enabled  = 1,
-    enabled_mailbox = 2
+    Disabled = 0,
+    Enabled  = 1,
+    Enabled_Mailbox = 2
 };
 
 struct Swapchain {
@@ -33,16 +33,16 @@ struct Swapchain {
 
 struct Frame {
     // CPU -> GPU sync
-    VkFence submit_fence;
+    VkFence submitFence;
 
     // Frame -> Frame sync (GPU)
-    VkSemaphore acquired_semaphore;
-    VkSemaphore released_semaphore;
+    VkSemaphore imageReadySemaphore;
+    VkSemaphore imageCompleteSemaphore;
 
 
 
-    VkSemaphore geometry_semaphore;
-    VkSemaphore lighting_semaphore;
+    VkSemaphore offscreenSemaphore;
+    VkSemaphore deferredSemaphore;
 };
 
 struct render_target {
@@ -167,6 +167,9 @@ RendererContext& GetRendererContext();
 uint32_t GetFrameIndex();
 uint32_t GetSwapchainFrameIndex();
 uint32_t GetSwapchainImageCount();
+
+
+void RecreateSwapchain(BufferMode bufferMode, VSyncMode vsync);
 
 void AddFramebufferAttachment(RenderPass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
 

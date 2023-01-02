@@ -15,7 +15,7 @@ static Swapchain g_swapchain{};
 
 static VkCommandPool cmd_pool;
 
-static std::vector<Frame> g_frames;
+static std::vector<Frame> gFrames;
 
 // The frame and image index variables are NOT the same thing.
 // The currentFrame always goes 0..1..2 -> 0..1..2. The currentImage
@@ -25,7 +25,7 @@ static std::vector<Frame> g_frames;
 // 
 // The currnt frame is used for obtaining the correct resources in order.
 static uint32_t currentImage = 0;
-static uint32_t current_frame = 0;
+static uint32_t gCurrentFrame = 0;
 
 static VkExtent2D GetSurfaceSize(const VkSurfaceCapabilitiesKHR& surface)
 {
@@ -73,10 +73,10 @@ static uint32_t FindSuitableImageCount(VkSurfaceCapabilitiesKHR capabilities, Bu
 
 static VkPresentModeKHR FindSuitablePresentMode(const std::vector<VkPresentModeKHR>& present_modes, VSyncMode vsync)
 {
-    if (vsync == VSyncMode::disabled)
+    if (vsync == VSyncMode::Disabled)
         return VK_PRESENT_MODE_IMMEDIATE_KHR;
 
-    if (vsync == VSyncMode::enabled)
+    if (vsync == VSyncMode::Enabled)
         return VK_PRESENT_MODE_FIFO_KHR;
 
     for (auto& present : present_modes) {
@@ -224,14 +224,14 @@ static std::vector<Frame> CreateFrames(uint32_t frames_in_flight)
     VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
     for (Frame& frame : frames) {
-        VkCheck(vkCreateFence(g_rc->device.device, &fence_info, nullptr, &frame.submit_fence));
-        VkCheck(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.acquired_semaphore));
-        VkCheck(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.released_semaphore));
+        VkCheck(vkCreateFence(g_rc->device.device, &fence_info, nullptr, &frame.submitFence));
+        VkCheck(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.imageReadySemaphore));
+        VkCheck(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.imageCompleteSemaphore));
 
 
         // temp
-        VkCheck(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.geometry_semaphore));
-        VkCheck(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.lighting_semaphore));
+        VkCheck(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.offscreenSemaphore));
+        VkCheck(vkCreateSemaphore(g_rc->device.device, &semaphore_info, nullptr, &frame.deferredSemaphore));
     }
 
     return frames;
@@ -241,11 +241,11 @@ static std::vector<Frame> CreateFrames(uint32_t frames_in_flight)
 static void DestroyFrames(std::vector<Frame>& frames)
 {
     for (Frame& frame : frames) {
-        vkDestroySemaphore(g_rc->device.device, frame.lighting_semaphore, nullptr);
-        vkDestroySemaphore(g_rc->device.device, frame.geometry_semaphore, nullptr);
-        vkDestroySemaphore(g_rc->device.device, frame.released_semaphore, nullptr);
-        vkDestroySemaphore(g_rc->device.device, frame.acquired_semaphore, nullptr);
-        vkDestroyFence(g_rc->device.device, frame.submit_fence, nullptr);
+        vkDestroySemaphore(g_rc->device.device, frame.deferredSemaphore, nullptr);
+        vkDestroySemaphore(g_rc->device.device, frame.offscreenSemaphore, nullptr);
+        vkDestroySemaphore(g_rc->device.device, frame.imageCompleteSemaphore, nullptr);
+        vkDestroySemaphore(g_rc->device.device, frame.imageReadySemaphore, nullptr);
+        vkDestroyFence(g_rc->device.device, frame.submitFence, nullptr);
     }
 }
 
@@ -382,16 +382,16 @@ std::vector<VkCommandBuffer> CreateCommandBuffer()
 
 void BeginCommandBuffer(const std::vector<VkCommandBuffer>& cmdBuffer)
 {
-    VkCheck(vkResetCommandBuffer(cmdBuffer[current_frame], 0));
+    VkCheck(vkResetCommandBuffer(cmdBuffer[gCurrentFrame], 0));
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    VkCheck(vkBeginCommandBuffer(cmdBuffer[current_frame], &begin_info));
+    VkCheck(vkBeginCommandBuffer(cmdBuffer[gCurrentFrame], &begin_info));
 }
 
 void EndCommandBuffer(const std::vector<VkCommandBuffer>& cmdBuffer)
 {
-    VkCheck(vkEndCommandBuffer(cmdBuffer[current_frame]));
+    VkCheck(vkEndCommandBuffer(cmdBuffer[gCurrentFrame]));
 }
 
 
@@ -411,8 +411,8 @@ void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, const Render
     scissor.offset = { 0, 0 };
     scissor.extent = { fb.width, fb.height };
 
-    vkCmdSetViewport(cmdBuffer[current_frame], 0, 1, &viewport);
-    vkCmdSetScissor(cmdBuffer[current_frame], 0, 1, &scissor);
+    vkCmdSetViewport(cmdBuffer[gCurrentFrame], 0, 1, &viewport);
+    vkCmdSetScissor(cmdBuffer[gCurrentFrame], 0, 1, &scissor);
 
     std::array<VkClearValue, 5> clear_values{};
     clear_values[0].color = { { clearColor.r, clearColor.g, clearColor.b, clearColor.a } };
@@ -433,7 +433,7 @@ void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, const Render
     renderPassInfo.clearValueCount = U32(clear_values.size());
     renderPassInfo.pClearValues = clear_values.data();
 
-    vkCmdBeginRenderPass(cmdBuffer[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(cmdBuffer[gCurrentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void BeginRenderPass2(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass& fb, const glm::vec4& clear_color)
@@ -450,8 +450,8 @@ void BeginRenderPass2(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass&
     scissor.offset = { 0, 0 };
     scissor.extent = { fb.width, fb.height };
 
-    vkCmdSetViewport(cmdBuffer[current_frame], 0, 1, &viewport);
-    vkCmdSetScissor(cmdBuffer[current_frame], 0, 1, &scissor);
+    vkCmdSetViewport(cmdBuffer[gCurrentFrame], 0, 1, &viewport);
+    vkCmdSetScissor(cmdBuffer[gCurrentFrame], 0, 1, &scissor);
 
     VkClearValue clear_value = { {{ clear_color.r, clear_color.g, clear_color.b, clear_color.a }} };
     clear_value.depthStencil = { 1.0f, 0 };
@@ -468,12 +468,12 @@ void BeginRenderPass2(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass&
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clear_value;
 
-    vkCmdBeginRenderPass(cmdBuffer[current_frame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(cmdBuffer[gCurrentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void EndRenderPass(std::vector<VkCommandBuffer>& buffers)
 {
-    vkCmdEndRenderPass(buffers[current_frame]);
+    vkCmdEndRenderPass(buffers[gCurrentFrame]);
 }
 
 VkPipelineLayout CreatePipelineLayout(const std::vector<VkDescriptorSetLayout>& descriptor_sets, 
@@ -649,7 +649,7 @@ VulkanRenderer* CreateRenderer(const Window* window, BufferMode buffering_mode, 
 
     renderer->descriptor_pool = CreateDescriptorPool();
 
-    g_frames = CreateFrames(frames_in_flight);
+    gFrames = CreateFrames(frames_in_flight);
 
     CreateCommandPool();    
     //CreateCommandBuffers();
@@ -670,7 +670,7 @@ void DestroyRenderer(VulkanRenderer* renderer)
 
     DestroyDebugCallback(renderer->messenger);
 
-    DestroyFrames(g_frames);
+    DestroyFrames(gFrames);
 
     DestroySwapchain(g_swapchain);
 
@@ -691,7 +691,7 @@ RendererContext& GetRendererContext()
 
 uint32_t GetFrameIndex()
 {
-    return current_frame;
+    return gCurrentFrame;
 }
 
 uint32_t GetSwapchainFrameIndex()
@@ -704,20 +704,46 @@ uint32_t GetSwapchainImageCount()
     return g_swapchain.images.size();
 }
 
+
+void RecreateSwapchain(BufferMode bufferMode, VSyncMode vsync)
+{
+    g_buffering = bufferMode;
+    g_vsync = vsync;
+
+    DestroySwapchain(g_swapchain);
+    g_swapchain = CreateSwapchain();
+}
+
 bool BeginFrame()
 {
     // Wait for the GPU to finish all work before getting the next image
-    VkCheck(vkWaitForFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence, VK_TRUE, UINT64_MAX));
+    VkCheck(vkWaitForFences(g_rc->device.device, 1, &gFrames[gCurrentFrame].submitFence, VK_TRUE, UINT64_MAX));
 
     // Keep attempting to acquire the next frame.
     VkResult result = vkAcquireNextImageKHR(g_rc->device.device,
         g_swapchain.handle,
         UINT64_MAX,
-        g_frames[current_frame].acquired_semaphore,
+        gFrames[gCurrentFrame].imageReadySemaphore,
         nullptr,
         &currentImage);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    {
+#if 1 
+        // When resizing the swapchain, the acquired semaphore does not get
+        // signaled as no queue submissions takes place. This is an issue since
+        // vkAcquireNextImageKHR expects the acquired semaphore to be in an
+        // signaled state. As a temporary solution we create a dummy queue 
+        // submit that signals the acquired semaphore.
+        // This issue is mentioned here: https://github.com/KhronosGroup/Vulkan-Docs/issues/1059
+        VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = &gFrames[gCurrentFrame].imageReadySemaphore;
+        submit_info.pWaitDstStageMask = &waitStage;
+        VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, VK_NULL_HANDLE));
+#endif
+
         // Wait for all GPU operations to complete before destroy and recreating
         // any resources.
         WaitForGPU();
@@ -729,7 +755,7 @@ bool BeginFrame()
 
 
     // reset fence when about to submit work to the GPU
-    VkCheck(vkResetFences(g_rc->device.device, 1, &g_frames[current_frame].submit_fence));
+    VkCheck(vkResetFences(g_rc->device.device, 1, &gFrames[gCurrentFrame].submitFence));
 
 
 
@@ -747,65 +773,25 @@ void EndFrame(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers)
     // 3. Viewport
     //
 
-    const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-#if 1 
     std::vector<VkCommandBuffer> buffers(cmdBuffers.size());
     for (std::size_t i = 0; i < buffers.size(); ++i)
-        buffers[i] = cmdBuffers[i][current_frame];
+        buffers[i] = cmdBuffers[i][gCurrentFrame];
 
-    //const std::array<VkCommandBuffer, 3> cmd_buffers{
-    //    geometry_cmd_buffers[current_frame],
-    //    viewport_cmd_buffers[current_frame],
-    //    ui_cmd_buffers[current_frame]
-    //};
-
+    const VkPipelineStageFlags waitState = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submit_info.waitSemaphoreCount   = 1;
-    submit_info.pWaitSemaphores      = &g_frames[current_frame].acquired_semaphore;
-    submit_info.pWaitDstStageMask    = &wait_stage;
+    submit_info.pWaitSemaphores      = &gFrames[gCurrentFrame].imageReadySemaphore;
+    submit_info.pWaitDstStageMask    = &waitState;
     submit_info.commandBufferCount   = U32(buffers.size());
     submit_info.pCommandBuffers      = buffers.data();
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores    = &g_frames[current_frame].released_semaphore;
-    VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, g_frames[current_frame].submit_fence));
-#else
-    VkSubmitInfo geometry_submit{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-    geometry_submit.waitSemaphoreCount = 1;
-    geometry_submit.pWaitSemaphores = &g_frames[current_frame].acquired_semaphore;
-    geometry_submit.pWaitDstStageMask = &wait_stage;
-    geometry_submit.commandBufferCount = 1;
-    geometry_submit.pCommandBuffers = &offscreenCmdBuffers[current_frame];
-    geometry_submit.signalSemaphoreCount = 1;
-    geometry_submit.pSignalSemaphores = &g_frames[current_frame].geometry_semaphore;
-    VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &geometry_submit, VK_NULL_HANDLE));
-
-    VkSubmitInfo lighting_submit{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-    lighting_submit.waitSemaphoreCount = 1;
-    lighting_submit.pWaitSemaphores = &g_frames[current_frame].geometry_semaphore;
-    lighting_submit.pWaitDstStageMask = &wait_stage;
-    lighting_submit.commandBufferCount = 1;
-    lighting_submit.pCommandBuffers = &compositeCmdBuffers[current_frame];
-    lighting_submit.signalSemaphoreCount = 1;
-    lighting_submit.pSignalSemaphores = &g_frames[current_frame].lighting_semaphore;
-    VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &lighting_submit, VK_NULL_HANDLE));
-
-    VkSubmitInfo ui_submit{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-    ui_submit.waitSemaphoreCount = 1;
-    ui_submit.pWaitSemaphores = &g_frames[current_frame].lighting_semaphore;
-    ui_submit.pWaitDstStageMask = &wait_stage;
-    ui_submit.commandBufferCount = 1;
-    ui_submit.pCommandBuffers = &uiCmdBuffers[current_frame];
-    ui_submit.signalSemaphoreCount = 1;
-    ui_submit.pSignalSemaphores = &g_frames[current_frame].released_semaphore;
-    VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &ui_submit, g_frames[current_frame].submit_fence));
-
-
-#endif
+    submit_info.pSignalSemaphores    = &gFrames[gCurrentFrame].imageCompleteSemaphore;
+    VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, gFrames[gCurrentFrame].submitFence));
 
     // request the GPU to present the rendered image onto the screen
     VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores    = &g_frames[current_frame].released_semaphore;
+    present_info.pWaitSemaphores    = &gFrames[gCurrentFrame].imageCompleteSemaphore;
     present_info.swapchainCount     = 1;
     present_info.pSwapchains        = &g_swapchain.handle;
     present_info.pImageIndices      = &currentImage;
@@ -821,7 +807,7 @@ void EndFrame(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers)
 
     // Once the image has been shown onto the window, we can move onto the next
     // frame, and so we increment the frame index.
-    current_frame = (current_frame + 1) % frames_in_flight;
+    gCurrentFrame = (gCurrentFrame + 1) % frames_in_flight;
 }
 
 
@@ -976,7 +962,7 @@ void ResizeFramebuffer(RenderPass& fb, const glm::vec2& size)
 
 void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets)
 {
-    vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[current_frame], 0, nullptr);
+    vkCmdBindDescriptorSets(buffers[gCurrentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[gCurrentFrame], 0, nullptr);
 }
 
 
@@ -987,26 +973,26 @@ void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers,
 {
     std::vector<uint32_t> sz(sizes);
     for (std::size_t i = 0; i < sz.size(); ++i)
-        sz[i] = pad_uniform_buffer_size(sizes[i]) * current_frame;
+        sz[i] = pad_uniform_buffer_size(sizes[i]) * gCurrentFrame;
 
-    vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[current_frame], sz.size(), sz.data());
+    vkCmdBindDescriptorSets(buffers[gCurrentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[gCurrentFrame], sz.size(), sz.data());
 }
 
 void BindPipeline(std::vector<VkCommandBuffer>& buffers, const Pipeline& pipeline)
 {
-    vkCmdBindPipeline(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_Pipeline);
+    vkCmdBindPipeline(buffers[gCurrentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_Pipeline);
 }
 
 void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, Instance& instance)
 {
-    vkCmdPushConstants(buffers[current_frame], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
-    vkCmdDrawIndexed(buffers[current_frame], index_count, 1, 0, 0, 0);
+    vkCmdPushConstants(buffers[gCurrentFrame], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
+    vkCmdDrawIndexed(buffers[gCurrentFrame], index_count, 1, 0, 0, 0);
 }
 
 
 void Render(const std::vector<VkCommandBuffer>& buffers)
 {
-    vkCmdDraw(buffers[current_frame], 3, 1, 0, 0);
+    vkCmdDraw(buffers[gCurrentFrame], 3, 1, 0, 0);
 }
 
 void WaitForGPU()
