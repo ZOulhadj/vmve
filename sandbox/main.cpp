@@ -58,15 +58,15 @@ bool resize_viewport = false;
 glm::vec2 resize_extent;
 
 
-VkPipeline geometry_pipeline{};
-VkPipeline lighting_pipeline{};
+//VkPipeline geometry_pipeline{};
+//VkPipeline lighting_pipeline{};
 
-VkPipeline skyspherePipeline{};
-VkPipeline skysphereNewPipeline{};
-VkPipeline wireframePipeline{};
-VkPipeline shadowMappingPipeline{};
+//VkPipeline skyspherePipeline{};
+//VkPipeline skysphereNewPipeline{};
+//VkPipeline wireframePipeline{};
+//VkPipeline shadowMappingPipeline{};
 
-VkPipeline current_pipeline{};
+//VkPipeline current_pipeline{};
 
 
 Camera camera{};
@@ -118,6 +118,11 @@ static double delta_time = 0.0f;
 
 VkDescriptorSet skysphere_dset;
 
+std::vector<VkDescriptorSet> positionsUI;
+std::vector<VkDescriptorSet> colorsUI;
+std::vector<VkDescriptorSet> normalsUI;
+std::vector<VkDescriptorSet> specularsUI;
+std::vector<VkDescriptorSet> depthsUI;
 
 static void UpdateInput(Camera& camera, double deltaTime)
 {
@@ -406,7 +411,25 @@ static void RenderMainMenu()
     if (gBufferVisualizer) {
         ImGui::Begin("G-Buffer Visualizer", &gBufferVisualizer);
 
-        // TODO: Show all g-buffer images here
+        const uint32_t currentImage = GetSwapchainFrameIndex();
+        const ImVec2& size = ImGui::GetContentRegionAvail() / 2;
+
+        //ImGui::Text("Positions");
+        //ImGui::SameLine();
+        ImGui::Image(positionsUI[currentImage], size);
+        //ImGui::Text("Colors");
+        ImGui::SameLine();
+        ImGui::Image(colorsUI[currentImage], size);
+        //ImGui::Text("Normals");
+        //ImGui::SameLine();
+        
+        ImGui::Image(normalsUI[currentImage], size);
+        //ImGui::Text("Speculars");
+        ImGui::SameLine();
+        ImGui::Image(specularsUI[currentImage], size);
+
+        ImGui::Image(depthsUI[currentImage], size);
+        
 
         ImGui::End();
     }
@@ -628,8 +651,8 @@ static void RenderGlobalWindow()
             ImGui::Text("Delta time: %.4f ms/frame", delta_time);
             ImGui::Text("GPU: %s", gpu_name.c_str());
 
-            if (ImGui::Checkbox("Wireframe", &wireframe))
-                wireframe ? current_pipeline = wireframePipeline : current_pipeline = geometry_pipeline;
+            //if (ImGui::Checkbox("Wireframe", &wireframe))
+            //    wireframe ? current_pipeline = wireframePipeline : current_pipeline = geometry_pipeline;
 
             ImGui::Checkbox("VSync", &vsync);
 
@@ -637,10 +660,6 @@ static void RenderGlobalWindow()
             static int current_buffer_mode = (int)buf_mode::triple_buffering;
             static std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
             ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
-            enum class render_mode { full, color, specular, position, normal, depth, shadow_depth};
-            static std::array<const char*, 7> elems_names = { "Full", "Color", "Specular", "Position", "Normal", "Depth", "Shadow Depth"};
-
-            ImGui::Combo("Render mode", &renderMode, elems_names.data(), elems_names.size());
         }
 
         if (ImGui::CollapsingHeader("Environment"))
@@ -955,7 +974,7 @@ int main(int argc, char** argv)
 
     
 
-    ImGuiContext* uiContext = CreateUI(renderer, uiPass.render_pass);
+    ImGuiContext* uiContext = CreateUI(renderer, uiPass.renderPass);
 
 
     framebuffer_id.resize(GetSwapchainImageCount());
@@ -999,7 +1018,6 @@ int main(int argc, char** argv)
     UpdateBinding(geometry_sets, camera_binding, cameraBuffer, sizeof(ViewProjection));
 
     //////////////////////////////////////////////////////////////////////////
-
     VkDescriptorSetLayoutBinding positions_binding = CreateBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayoutBinding normals_binding = CreateBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkDescriptorSetLayoutBinding colors_binding = CreateBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1038,6 +1056,17 @@ int main(int argc, char** argv)
     UpdateBinding(lighting_sets, scene_binding, sceneBuffer, sizeof(SandboxScene));
 
 
+    // Create descriptor sets for g-buffer images for UI
+    for (std::size_t i = 0; i < positions.size(); ++i)
+    {
+        positionsUI.push_back(ImGui_ImplVulkan_AddTexture(g_fb_sampler, positions[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        normalsUI.push_back(ImGui_ImplVulkan_AddTexture(g_fb_sampler, normals[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        colorsUI.push_back(ImGui_ImplVulkan_AddTexture(g_fb_sampler, colors[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        specularsUI.push_back(ImGui_ImplVulkan_AddTexture(g_fb_sampler, speculars[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        depthsUI.push_back(ImGui_ImplVulkan_AddTexture(g_fb_sampler, depths[i].view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL));
+    }
+
+
     //////////////////////////////////////////////////////////////////////////
 
     mat_albdo_binding = CreateBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1048,39 +1077,35 @@ int main(int argc, char** argv)
         mat_normal_binding,
         mat_specular_binding
     });
+    std::vector<VkDescriptorSetLayoutBinding> bindings = { mat_albdo_binding, mat_normal_binding, mat_specular_binding };
+
 
     //////////////////////////////////////////////////////////////////////////
-    VkPipelineLayout shadowMappingPiplelineLayout = CreatePipelineLayout(
+    VkPipelineLayout shadowPipelineLayout = CreatePipelineLayout(
         { shadowLayout },
         sizeof(glm::mat4),
         VK_SHADER_STAGE_VERTEX_BIT
     );
 
-    VkPipelineLayout skyskpherePipelineLayout = CreatePipelineLayout(
+    VkPipelineLayout skyspherePipelineLayout = CreatePipelineLayout(
         { skyboxLayout }
     );
 
-    VkPipelineLayout rendering_pipeline_layout = CreatePipelineLayout(
+    VkPipelineLayout offscreenPipelineLayout = CreatePipelineLayout(
         { geometry_layout, material_layout },
         sizeof(glm::mat4),
         VK_SHADER_STAGE_VERTEX_BIT
     );
 
-    VkPipelineLayout lighting_pipeline_layout = CreatePipelineLayout(
-        { lighting_layout },
-        sizeof(int),
-        VK_SHADER_STAGE_FRAGMENT_BIT
+    VkPipelineLayout compositePipelineLayout = CreatePipelineLayout(
+        { lighting_layout }
     );
 
-
-
-
-
-    VertexBinding<Vertex> vert(VK_VERTEX_INPUT_RATE_VERTEX);
-    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
-    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
-    vert.AddAttribute(VK_FORMAT_R32G32_SFLOAT, "UV");
-    vert.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
+    VertexBinding<Vertex> vertexBinding(VK_VERTEX_INPUT_RATE_VERTEX);
+    vertexBinding.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
+    vertexBinding.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
+    vertexBinding.AddAttribute(VK_FORMAT_R32G32_SFLOAT, "UV");
+    vertexBinding.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
 
     Shader shadowMappingVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/shadow_mapping.vert")));
     Shader shadowMappingFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/shadow_mapping.frag")));
@@ -1095,65 +1120,40 @@ int main(int argc, char** argv)
 
     Shader skysphereNewVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphereNew.vert")));
     Shader skysphereNewFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphereNew.frag")));
+      
+    Pipeline offscreenPipeline(offscreenPipelineLayout, offscreenPass);
+    offscreenPipeline.EnableVertexBinding(vertexBinding);
+    offscreenPipeline.SetShaderPipeline({ geometry_vs, geometry_fs });
+    offscreenPipeline.SetInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    offscreenPipeline.SetRasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
+    offscreenPipeline.EnableDepthStencil(VK_COMPARE_OP_LESS_OR_EQUAL);
+    offscreenPipeline.SetColorBlend(4);
+    offscreenPipeline.CreatePipeline();
 
+    Pipeline wireframePipeline(offscreenPipelineLayout, offscreenPass);
+    wireframePipeline.EnableVertexBinding(vertexBinding);
+    wireframePipeline.SetShaderPipeline({ geometry_vs, geometry_fs });
+    wireframePipeline.SetInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    wireframePipeline.SetRasterization(VK_POLYGON_MODE_LINE, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
+    wireframePipeline.EnableDepthStencil(VK_COMPARE_OP_LESS_OR_EQUAL);
+    wireframePipeline.SetColorBlend(4);
+    wireframePipeline.CreatePipeline();
 
+    Pipeline shadowPipeline(shadowPipelineLayout, shadowPass);
+    shadowPipeline.EnableVertexBinding(vertexBinding);
+    shadowPipeline.SetShaderPipeline({ shadowMappingVS, shadowMappingFS });
+    shadowPipeline.SetInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    shadowPipeline.SetRasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
+    shadowPipeline.EnableDepthStencil(VK_COMPARE_OP_LESS_OR_EQUAL);
+    shadowPipeline.SetColorBlend(1);
+    shadowPipeline.CreatePipeline();
 
-    PipelineInfo info{};
-    info.binding_layout_size = vert.bindingSize;
-    info.binding_format = vert.attributes;
-    info.wireframe = false;
-    info.depth_testing = true;
-    info.blend_count = 4;
-    info.cull_mode = VK_CULL_MODE_BACK_BIT;
-
-
-    // Deferred shading pipelines
-    {
-        info.wireframe = false;
-        info.depth_testing = true;
-        info.shaders = { geometry_vs, geometry_fs };
-        geometry_pipeline = CreatePipeline(info, rendering_pipeline_layout, offscreenPass.render_pass);
-    }
-    {
-        info.depth_testing = false;
-        info.shaders = { lighting_vs, lighting_fs };
-        //info.cull_mode = VK_CULL_MODE_FRONT_BIT;
-        info.binding_layout_size = 0;
-        info.blend_count = 1;
-        info.wireframe = false;
-        lighting_pipeline = CreatePipeline(info, lighting_pipeline_layout, compositePass.render_pass);
-    }
-
-
-    {
-        info.binding_layout_size = vert.maxBindingSize;
-        info.binding_format = vert.attributes;
-        info.blend_count = 4;
-        info.shaders = { geometry_vs, geometry_fs };
-        info.wireframe = true;
-        info.depth_testing = true;
-        info.cull_mode = VK_CULL_MODE_BACK_BIT;
-        wireframePipeline = CreatePipeline(info, rendering_pipeline_layout, offscreenPass.render_pass);
-    }
-    {
-        info.wireframe = false;
-        info.shaders = { skysphereVS, geometry_fs };
-        info.depth_testing = false;
-        info.cull_mode = VK_CULL_MODE_FRONT_BIT;
-        skyspherePipeline = CreatePipeline(info, rendering_pipeline_layout, offscreenPass.render_pass);
-    }
-    {
-        info.blend_count = 1;
-        info.shaders = { skysphereNewVS, skysphereNewFS };
-        skysphereNewPipeline = CreatePipeline(info, skyskpherePipelineLayout, skyboxPass.render_pass);
-    }
-    {
-        info.shaders = { shadowMappingVS, shadowMappingFS };
-        info.cull_mode = VK_CULL_MODE_BACK_BIT;
-        info.depth_testing = true;
-        shadowMappingPipeline = CreatePipeline(info, shadowMappingPiplelineLayout, shadowPass.render_pass);
-    }
-
+    Pipeline compositePipeline(compositePipelineLayout, compositePass);
+    compositePipeline.SetShaderPipeline({ lighting_vs, lighting_fs });
+    compositePipeline.SetInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    compositePipeline.SetRasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
+    compositePipeline.SetColorBlend(1);
+    compositePipeline.CreatePipeline();
 
     // Delete all individual shaders since they are now part of the various pipelines
     DestroyShader(skysphereNewFS);
@@ -1209,7 +1209,6 @@ int main(int argc, char** argv)
 
     Model sphere = LoadModel(GetVFSPath("/models/sphere.obj"));
 
-    std::vector<VkDescriptorSetLayoutBinding> bindings = { mat_albdo_binding, mat_normal_binding, mat_specular_binding };
 
     UploadModelToGPU(sphere, material_layout, bindings, g_texture_sampler);
         
@@ -1227,17 +1226,19 @@ int main(int argc, char** argv)
     Instance model_instance;
 
 
-    current_pipeline = geometry_pipeline;
+    //current_pipeline = offscreenPipeline.m_Pipeline;
     camera = CreatePerspectiveCamera(CameraType::FirstPerson, { 0.0f, 2.0f, -5.0f }, 60.0f, 20.0f);
 
     running = true;
 
-    while (running) {
+    while (running)
+    {
         // If the application is minimized then only wait for events and don't
         // do anything else. This ensures the application does not waste resources
         // performing other operations such as maths and rendering when the window
         // is not visible.
-        if (minimised) {
+        if (minimised)
+        {
             glfwWaitEvents();
             continue;
         }
@@ -1250,7 +1251,8 @@ int main(int argc, char** argv)
 
 
         // Only update movement and camera view when in viewport mode
-        if (in_viewport) {
+        if (in_viewport)
+        {
             UpdateInput(camera, delta_time);
             UpdateCamera(camera, GetMousePos());
         }
@@ -1301,10 +1303,10 @@ int main(int argc, char** argv)
 
                 //EndRenderPass(skyboxCmdBuffer);
 
-                BindDescriptorSet(offscreenCmdBuffer, shadowMappingPiplelineLayout, shadowSets, { sizeof(SunData) });
+                BindDescriptorSet(offscreenCmdBuffer, shadowPipelineLayout, shadowSets, { sizeof(SunData) });
                 BeginRenderPass2(offscreenCmdBuffer, shadowPass);
                
-                BindPipeline(offscreenCmdBuffer, shadowMappingPipeline, shadowSets);
+                BindPipeline(offscreenCmdBuffer, shadowPipeline);
                 for (std::size_t i = 0; i < g_instances.size(); ++i)
                 {
                     Instance& instance = g_instances[i];
@@ -1316,7 +1318,7 @@ int main(int argc, char** argv)
                     for (std::size_t i = 0; i < instance.model->meshes.size(); ++i)
                     {
                         BindVertexArray(offscreenCmdBuffer, instance.model->meshes[i].vertex_array);
-                        Render(offscreenCmdBuffer, shadowMappingPiplelineLayout, instance.model->meshes[i].vertex_array.index_count, instance);
+                        Render(offscreenCmdBuffer, shadowPipelineLayout, instance.model->meshes[i].vertex_array.index_count, instance);
                     }
                 }
 
@@ -1325,10 +1327,10 @@ int main(int argc, char** argv)
                 EndRenderPass(offscreenCmdBuffer);
 
 
-                BindDescriptorSet(offscreenCmdBuffer, rendering_pipeline_layout, geometry_sets, { sizeof(ViewProjection) });
+                BindDescriptorSet(offscreenCmdBuffer, offscreenPipelineLayout, geometry_sets, { sizeof(ViewProjection) });
                 BeginRenderPass(offscreenCmdBuffer, offscreenPass);
 
-                BindPipeline(offscreenCmdBuffer, current_pipeline, geometry_sets);
+                BindPipeline(offscreenCmdBuffer, offscreenPipeline);
 
                 // TODO: Currently we are rendering each instance individually 
                 // which is a very naive. Firstly, instances should be rendered
@@ -1345,7 +1347,7 @@ int main(int argc, char** argv)
                     Translate(instance, instance.position);
                     Rotate(instance, instance.rotation);
                     Scale(instance, instance.scale);
-                    RenderModel(instance, offscreenCmdBuffer, rendering_pipeline_layout);
+                    RenderModel(instance, offscreenCmdBuffer, offscreenPipelineLayout);
                 }
                 EndRenderPass(offscreenCmdBuffer);
 
@@ -1358,10 +1360,10 @@ int main(int argc, char** argv)
             {
                 BeginRenderPass2(compositeCmdBuffer, compositePass);
 
-                BindDescriptorSet(compositeCmdBuffer, lighting_pipeline_layout, lighting_sets, { sizeof(SunData) });
+                BindDescriptorSet(compositeCmdBuffer, compositePipelineLayout, lighting_sets, { sizeof(SunData) });
 
-                BindPipeline(compositeCmdBuffer, lighting_pipeline, lighting_sets);
-                Render(compositeCmdBuffer, lighting_pipeline_layout, renderMode);
+                BindPipeline(compositeCmdBuffer, compositePipeline);
+                Render(compositeCmdBuffer);
                 EndRenderPass(compositeCmdBuffer);
             }
             EndCommandBuffer(compositeCmdBuffer);
@@ -1484,17 +1486,18 @@ int main(int argc, char** argv)
     DestroyDescriptorLayout(material_layout);
     DestroyDescriptorLayout(lighting_layout);
     DestroyDescriptorLayout(geometry_layout);
+    DestroyDescriptorLayout(skyboxLayout);
+    DestroyDescriptorLayout(shadowLayout);
 
-    DestroyPipeline(wireframePipeline);
-    DestroyPipeline(skyspherePipeline);
-    DestroyPipeline(lighting_pipeline);
-    DestroyPipeline(geometry_pipeline);
-    DestroyPipeline(shadowMappingPipeline);
+    DestroyPipeline(wireframePipeline.m_Pipeline);
+    DestroyPipeline(compositePipeline.m_Pipeline);
+    DestroyPipeline(offscreenPipeline.m_Pipeline);
+    DestroyPipeline(shadowPipeline.m_Pipeline);
 
-    DestroyPipelineLayout(lighting_pipeline_layout);
-    DestroyPipelineLayout(rendering_pipeline_layout);
-    DestroyPipelineLayout(skyskpherePipelineLayout);
-    DestroyPipelineLayout(shadowMappingPiplelineLayout);
+    DestroyPipelineLayout(compositePipelineLayout);
+    DestroyPipelineLayout(offscreenPipelineLayout);
+    DestroyPipelineLayout(skyspherePipelineLayout);
+    DestroyPipelineLayout(shadowPipelineLayout);
 
     DestroyRenderPass(uiPass);
     DestroyRenderPass(compositePass);
@@ -1586,22 +1589,3 @@ static void EventCallback(event& e)
     dispatcher.dispatch<window_minimized_event>(minimized_window);
     dispatcher.dispatch<window_not_minimized_event>(not_minimized_window);
 }
-
-
-
-// Render the grid floor
-//bind_pipeline(deferred_cmd_buffers, gridPipeline, geometry_desc_sets);
-//bind_vertex_array(deferred_cmd_buffers, quad);
-//render(deferred_cmd_buffers, gridPipeline.layout, quad.index_count, grid_instance);
-
-
-// Render the sun
-//bind_pipeline(cmd_buffer, billboardPipeline, g_descriptor_sets);
-//bind_material(cmd_buffer, billboardPipeline.layout, sun_material);
-//bind_vertex_array(cmd_buffer, quad);
-//render(cmd_buffer, billboardPipeline.layout, quad.index_count, sun_instance);
-
-
-//bind_material(cmd_buffer, skyspherePipeline.layout, sun_material);
-//bind_vertex_array(cmd_buffer, icosphere);
-//render(cmd_buffer, skyspherePipeline.layout, icosphere.index_count, sun_instance);

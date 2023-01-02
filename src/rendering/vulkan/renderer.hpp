@@ -72,7 +72,7 @@ struct RenderPass
     uint32_t width;
     uint32_t height;
 
-    VkRenderPass render_pass;
+    VkRenderPass renderPass;
 };
 
 // TODO: Add support for adding specific offsets
@@ -103,14 +103,41 @@ struct VertexBinding
     std::vector<VkFormat> attributes;
 };
 
-struct PipelineInfo {
-    uint32_t binding_layout_size;
-    std::vector<VkFormat> binding_format;
-    uint32_t blend_count;
-    std::vector<Shader> shaders;
-    bool wireframe;
-    bool depth_testing;
-    VkCullModeFlags cull_mode;
+// Set... Functions are required
+// Enable... Functions are optional
+struct Pipeline
+{
+    Pipeline(VkPipelineLayout layout, RenderPass& renderPass)
+        : m_Layout(layout), m_Pipeline(nullptr), m_RenderPass(renderPass)
+    {}
+
+    void EnableVertexBinding(const VertexBinding<Vertex>& binding);
+    void SetShaderPipeline(std::vector<Shader> shaders);
+    void SetInputAssembly(VkPrimitiveTopology topology, bool primitiveRestart = false);
+    void SetRasterization(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace);
+    void EnableDepthStencil(VkCompareOp compare);
+    void EnableMultisampling(VkSampleCountFlagBits samples);
+    void SetColorBlend(uint32_t blendCount); // temp
+
+    void CreatePipeline();
+
+
+    VkPipelineLayout m_Layout;
+    VkPipeline m_Pipeline;
+    RenderPass& m_RenderPass;
+
+    // temp
+    std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+    std::vector<VkPipelineColorBlendAttachmentState> blends;
+
+    std::optional<VkPipelineVertexInputStateCreateInfo> m_VertexInputInfo;
+    std::vector<VkPipelineShaderStageCreateInfo> m_ShaderStageInfos;
+    VkPipelineInputAssemblyStateCreateInfo m_InputAssemblyInfo;
+    VkPipelineRasterizationStateCreateInfo m_RasterizationInfo;
+    std::optional<VkPipelineMultisampleStateCreateInfo> m_MultisampleInfo;
+    std::optional<VkPipelineDepthStencilStateCreateInfo> m_DepthStencilInfo;
+    VkPipelineColorBlendStateCreateInfo m_BlendInfo;
 };
 
 struct UploadContext
@@ -167,7 +194,6 @@ void EndRenderPass(std::vector<VkCommandBuffer>& buffers);
 VkPipelineLayout CreatePipelineLayout(const std::vector<VkDescriptorSetLayout>& descriptor_sets,
                                         std::size_t push_constant_size = 0,
                                         VkShaderStageFlags push_constant_shader_stages = 0);
-VkPipeline CreatePipeline(PipelineInfo& pipelineInfo, VkPipelineLayout layout, VkRenderPass render_pass);
 void DestroyPipeline(VkPipeline pipeline);
 void DestroyPipelineLayout(VkPipelineLayout layout);
 
@@ -179,9 +205,9 @@ void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers,
     VkPipelineLayout layout, 
     const std::vector<VkDescriptorSet>& descriptorSets, 
     std::vector<uint32_t> sizes);
-void BindPipeline(std::vector<VkCommandBuffer>& buffers, VkPipeline pipeline, const std::vector<VkDescriptorSet>& descriptorSets);
+void BindPipeline(std::vector<VkCommandBuffer>& buffers, const Pipeline& pipeline);
 void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, Instance& instance);
-void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, int draw_mode);
+void Render(const std::vector<VkCommandBuffer>& buffers);
 
 // Indicates to the GPU to wait for all commands to finish before continuing.
 // Often used when create or destroying resources in device local memory.

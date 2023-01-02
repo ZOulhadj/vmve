@@ -30,14 +30,6 @@ layout (location = 0) in vec2 inUV;
 
 layout (location = 0) out vec4 outFragcolor;
 
-
-layout(push_constant) uniform constant
-{
-    int mode;
-} view_mode;
-
-
-
 float ShadowCalculation(vec3 fragPos) 
 {
 	// TODO: Maybe this needs to be in a vertex shader?
@@ -63,43 +55,11 @@ void main()
 	vec3 albedo = texture(samplerAlbedo, inUV).rgb;
 	float spec = texture(samplerSpecular, inUV).r;
 	float depth = texture(samplerDepth, inUV).r;
-
+	
 	// TODO: Maybe this needs to be in a vertex shader?
 	vec4 fragPosLightSpace = sun.viewProj * vec4(world_pos, 1.0);
-
     vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
-
 	float shadowDepth = texture(samplerShadowDepth, projCoords.xy).r;
-
-
-	// For debugging purposes
-	if (view_mode.mode > 0) {
-		vec3 debug_color = vec3(0.0);
-		switch (view_mode.mode) {
-			case 1:
-				debug_color = albedo;
-				break;
-			case 2:
-				debug_color = vec3(spec);
-				break;
-			case 3:
-				debug_color = world_pos;
-				break;
-			case 4:
-				debug_color = normal;
-				break;
-			case 5:
-				debug_color = depth.rrr;
-				break;
-			case 6:
-				debug_color = shadowDepth.rrr; 
-				break;
-		}
-
-		outFragcolor = vec4(debug_color, 1.0);
-		return; 
-	}
-
 
 	vec3 lightColor = vec3(1.0);
 
