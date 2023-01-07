@@ -5,16 +5,31 @@
 //#include "vmve.hpp"
 //#include "ui.hpp"
 
+
+
+static bool inViewport = false;
+
+
 int main()
 {
     Engine* engine = InitializeEngine();
 
     CreateCamera(engine, 45.0f, 20.0f);
 
-    //SetEnviromentMap();
-
     while (UpdateEngine(engine))
     {
+        // only update input and camera when in the viewport
+        if (inViewport)
+        {
+
+        }
+
+
+        // Render shadow pass
+        // Render deferred pass
+        // Render Ui pass
+
+
         EnginePresent(engine);
     }
 

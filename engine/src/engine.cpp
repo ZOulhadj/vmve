@@ -1060,7 +1060,7 @@ Engine* InitializeEngine()
     {
         { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT }
     };
-  
+
     shadowLayout = CreateDescriptorLayout(shadowBindings);
     shadowSets = AllocateDescriptorSets(shadowLayout);
     UpdateBinding(shadowSets, shadowBindings[0], engine->sunBuffer, sizeof(SunData));
