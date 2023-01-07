@@ -1,9 +1,8 @@
 build/
 out/
-cmake-build-debug/
-cmake-build-release/
-.idea/
 .vs/
 
-CMakeSettings.json
+engine/build
+vmve/build
+vmve/vendor
 imgui.ini
