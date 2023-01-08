@@ -382,7 +382,7 @@ static void RenderMainMenu()
 
         ImGui::Begin("Export Model", &export_model_open);
 
-        std::string current_path = RenderFileExplorer(GetVFSPath("/models"));
+        std::string current_path = RenderFileExplorer(gTempEnginePtr->execPath);
 
         ImGui::InputText("File name", filename, 50);
 
@@ -913,13 +913,13 @@ static void RenderConsoleWindow()
             for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
                 ImVec4 log_color;
                 switch (logs[index].type) {
-                case LogType::info:
+                case LogType::Info:
                     log_color = white;
                     break;
-                case LogType::warning:
+                case LogType::Warning:
                     log_color = yellow;
                     break;
-                case LogType::error:
+                case LogType::Error:
                     log_color = red;
                     break;
                 }
@@ -998,6 +998,8 @@ Engine* InitializeEngine()
     engine->startTime = std::chrono::high_resolution_clock::now();
 
     // Get the current path of the executable
+    // TODO: MAX_PATH is ok to use however, for a long term solution another 
+    // method should used since some paths can go beyond this limit.
     wchar_t fileName[MAX_PATH];
     GetModuleFileName(nullptr, fileName, sizeof(fileName));
     engine->execPath = std::filesystem::path(fileName).parent_path();
