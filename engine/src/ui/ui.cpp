@@ -164,11 +164,12 @@ void EndUI(std::vector<VkCommandBuffer>& buffers)
 
 
 
-void RecreateUITexture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler)
+void RecreateUITexture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler, bool depth)
 {
-    for (std::size_t i = 0; i < texture_id.size(); ++i) {
+    for (std::size_t i = 0; i < texture_id.size(); ++i)
+    {
         ImGui_ImplVulkan_RemoveTexture(texture_id[i]);
-        texture_id[i] = ImGui_ImplVulkan_AddTexture(sampler, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        texture_id[i] = ImGui_ImplVulkan_AddTexture(sampler, view, depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 }
 

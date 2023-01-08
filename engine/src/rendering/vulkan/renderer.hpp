@@ -25,13 +25,15 @@ enum class VSyncMode {
     Enabled_Mailbox = 2
 };
 
-struct Swapchain {
+struct Swapchain
+{
     VkSwapchainKHR handle;
 
     std::vector<ImageBuffer> images;
 };
 
-struct Frame {
+struct Frame
+{
     // CPU -> GPU sync
     VkFence submitFence;
 
@@ -44,17 +46,6 @@ struct Frame {
     VkSemaphore offscreenSemaphore;
     VkSemaphore deferredSemaphore;
 };
-
-struct render_target {
-    ImageBuffer image;
-    ImageBuffer depth;
-
-    // This stores the same size as the image buffers
-    VkExtent2D extent;
-
-    VkFramebuffer fb;
-};
-
 
 struct FramebufferAttachment
 {
@@ -73,6 +64,9 @@ struct RenderPass
     uint32_t height;
 
     VkRenderPass renderPass;
+
+    // temp
+    bool is_ui;
 };
 
 // TODO: Add support for adding specific offsets
@@ -169,11 +163,11 @@ void RecreateSwapchain(BufferMode bufferMode, VSyncMode vsync);
 
 void AddFramebufferAttachment(RenderPass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
 
-void CreateRenderPass(RenderPass& fb);
+void CreateRenderPass(RenderPass& rp);
 void CreateRenderPass2(RenderPass& fb, bool ui = false);
 void DestroyRenderPass(RenderPass& fb);
 
-void ResizeFramebuffer(RenderPass& fb, const glm::vec2& size);
+void ResizeFramebuffer(RenderPass& fb, VkExtent2D extent);
 
 
 std::vector<VkCommandBuffer> CreateCommandBuffer();

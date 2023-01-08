@@ -461,12 +461,73 @@ void Pipeline::CreatePipeline()
 
 
 
+static void CreateFramebuffer(RenderPass& rp)
+{
+    rp.handle.resize(GetSwapchainImageCount());
+    for (std::size_t i = 0; i < rp.handle.size(); ++i) {
+        std::vector<VkImageView> attachment_views;
+        for (std::size_t j = 0; j < rp.attachments.size(); ++j) {
 
-void CreateRenderPass2(RenderPass& fb, bool ui)
+            if (rp.is_ui)
+            {
+                attachment_views.push_back(g_swapchain.images[i].view);
+                continue;
+            }
+                
+
+            attachment_views.push_back(rp.attachments[j].image[i].view);
+        }
+
+        VkFramebufferCreateInfo framebuffer_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+        framebuffer_info.renderPass = rp.renderPass;
+        framebuffer_info.attachmentCount = U32(attachment_views.size());
+        framebuffer_info.pAttachments = attachment_views.data();
+        framebuffer_info.width = rp.width;
+        framebuffer_info.height = rp.height;
+        framebuffer_info.layers = 1;
+
+        VkCheck(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info, nullptr, &rp.handle[i]));
+    }
+}
+
+static void DestroyFramebuffer(RenderPass& rp)
+{
+    for (std::size_t i = 0; i < rp.handle.size(); ++i) {
+        for (std::size_t j = 0; j < rp.attachments.size(); ++j) {
+            DestroyImages(rp.attachments[j].image);
+        }
+        rp.attachments.clear();
+        vkDestroyFramebuffer(g_rc->device.device, rp.handle[i], nullptr);
+    }
+    rp.handle.clear();
+}
+
+
+void AddFramebufferAttachment(RenderPass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent)
+{
+    // Check if color or depth
+    FramebufferAttachment attachment{};
+
+    // create framebuffer image
+    attachment.image.resize(GetSwapchainImageCount());
+    for (auto& image : attachment.image)
+        image = CreateImage(extent, format, usage);
+    attachment.usage = usage;
+
+    fb.attachments.push_back(attachment);
+
+    // HACK: The framebuffer size is whichever attachment was last added.
+    // Not sure how to tackle this since a single framebuffer can have
+    // multiple image views per frame.
+    fb.width = extent.width;
+    fb.height = extent.height;
+}
+
+void CreateRenderPass(RenderPass& rp)
 {
     // attachment descriptions
     std::vector<VkAttachmentDescription> descriptions;
-    for (auto& attachment : fb.attachments) {
+    for (auto& attachment : rp.attachments) {
         VkAttachmentDescription description{};
         description.format = attachment.image[0].format;
         description.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -478,7 +539,101 @@ void CreateRenderPass2(RenderPass& fb, bool ui)
 
         if (IsDepth(attachment)) {
             description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-        } else {
+        }
+        else {
+            description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        }
+
+        descriptions.push_back(description);
+    }
+
+
+    // attachment references
+    std::vector<VkAttachmentReference> color_references;
+    VkAttachmentReference depth_reference{};
+
+    uint32_t attachment_index = 0;
+    bool has_depth = false;
+    for (auto& attachment : rp.attachments) {
+        if (IsDepth(attachment)) {
+            // A Framebuffer can only have a single depth attachment
+            assert(!has_depth);
+            has_depth = true;
+
+            depth_reference.attachment = attachment_index;
+            depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        }
+        else {
+            color_references.push_back({ attachment_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+        }
+
+        attachment_index++;
+    }
+
+    // Use subpass dependencies for attachment layout transitions
+    std::array<VkSubpassDependency, 2> dependencies;
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = U32(color_references.size());
+    subpass.pColorAttachments = color_references.data();
+    if (has_depth)
+        subpass.pDepthStencilAttachment = &depth_reference;
+
+    VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+    render_pass_info.attachmentCount = U32(descriptions.size());
+    render_pass_info.pAttachments = descriptions.data();
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 2;
+    render_pass_info.pDependencies = dependencies.data();
+
+    VkCheck(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr,
+        &rp.renderPass));
+
+    rp.is_ui = false;
+
+    //////////////////////////////////////////////////////////////////////////
+    CreateFramebuffer(rp);
+}
+
+
+
+
+
+void CreateRenderPass2(RenderPass& rp, bool ui)
+{
+    // attachment descriptions
+    std::vector<VkAttachmentDescription> descriptions;
+    for (auto& attachment : rp.attachments) {
+        VkAttachmentDescription description{};
+        description.format = attachment.image[0].format;
+        description.samples = VK_SAMPLE_COUNT_1_BIT;
+        description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        if (IsDepth(attachment)) {
+            description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        }
+        else {
             description.finalLayout = !ui ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         }
 
@@ -492,7 +647,7 @@ void CreateRenderPass2(RenderPass& fb, bool ui)
 
     uint32_t attachment_index = 0;
     bool has_depth = false;
-    for (auto& attachment : fb.attachments) {
+    for (auto& attachment : rp.attachments) {
         if (IsDepth(attachment)) {
             // A Framebuffer can only have a single depth attachment
             assert(!has_depth);
@@ -500,7 +655,8 @@ void CreateRenderPass2(RenderPass& fb, bool ui)
 
             depth_reference.attachment = attachment_index;
             depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        } else {
+        }
+        else {
             color_references.push_back({ attachment_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
         }
 
@@ -532,35 +688,41 @@ void CreateRenderPass2(RenderPass& fb, bool ui)
     render_pass_info.pDependencies = &dependency;
 
     VkCheck(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr,
-        &fb.renderPass));
+        &rp.renderPass));
+
+    rp.is_ui = ui;
 
     //////////////////////////////////////////////////////////////////////////
-    fb.handle.resize(GetSwapchainImageCount());
-    for (std::size_t i = 0; i < fb.handle.size(); ++i) {
-        std::vector<VkImageView> attachment_views;
-        for (std::size_t j = 0; j < fb.attachments.size(); ++j) {
-            // TEMP
-            if (ui) {
-                attachment_views.push_back(g_swapchain.images[i].view);
-                continue;
-            }
-
-            attachment_views.push_back(fb.attachments[j].image[i].view);
-        }
-
-        VkFramebufferCreateInfo framebuffer_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
-        framebuffer_info.renderPass = fb.renderPass;
-        framebuffer_info.attachmentCount = U32(attachment_views.size());
-        framebuffer_info.pAttachments = attachment_views.data();
-        framebuffer_info.width = fb.width;
-        framebuffer_info.height = fb.height;
-        framebuffer_info.layers = 1;
-
-        VkCheck(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info, nullptr, &fb.handle[i]));
-    }
-
-
+    CreateFramebuffer(rp);
 }
+
+
+void DestroyRenderPass(RenderPass& fb)
+{
+    DestroyFramebuffer(fb);
+
+    vkDestroyRenderPass(g_rc->device.device, fb.renderPass, nullptr);
+}
+
+
+void ResizeFramebuffer(RenderPass& fb, VkExtent2D extent)
+{
+    std::vector<FramebufferAttachment> old_attachments = fb.attachments;
+
+
+    DestroyFramebuffer(fb);
+
+    for (auto& attachment : old_attachments)
+        AddFramebufferAttachment(fb, attachment.usage, attachment.image[0].format, extent);
+
+
+    fb.width = extent.width;
+    fb.height = extent.height;
+
+    CreateFramebuffer(fb);
+}
+
+
 
 std::vector<VkCommandBuffer> CreateCommandBuffer()
 {
@@ -908,6 +1070,11 @@ void RecreateSwapchain(BufferMode bufferMode, VSyncMode vsync)
     g_buffering = bufferMode;
     g_vsync = vsync;
 
+    Logger::Info("Swapchain being resized ({}, {})", 
+        g_rc->window->width, 
+        g_rc->window->height
+    );
+
     DestroySwapchain(g_swapchain);
     g_swapchain = CreateSwapchain();
 }
@@ -1006,156 +1173,6 @@ void EndFrame(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers)
     // Once the image has been shown onto the window, we can move onto the next
     // frame, and so we increment the frame index.
     gCurrentFrame = (gCurrentFrame + 1) % frames_in_flight;
-}
-
-
-void AddFramebufferAttachment(RenderPass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent)
-{
-    // Check if color or depth
-    FramebufferAttachment attachment{};
-
-    // create framebuffer image
-    attachment.image.resize(GetSwapchainImageCount());
-    for (auto& image : attachment.image)
-        image = CreateImage(extent, format, usage);
-    attachment.usage = usage;
-
-    fb.attachments.push_back(attachment);
-
-    // HACK: The framebuffer size is whichever attachment was last added.
-    // Not sure how to tackle this since a single framebuffer can have
-    // multiple image views per frame.
-    fb.width = extent.width;
-    fb.height = extent.height;
-}
-
-void CreateRenderPass(RenderPass& fb)
-{
-    // attachment descriptions
-    std::vector<VkAttachmentDescription> descriptions;
-    for (auto& attachment : fb.attachments) {
-        VkAttachmentDescription description{};
-        description.format = attachment.image[0].format;
-        description.samples = VK_SAMPLE_COUNT_1_BIT;
-        description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-        if (IsDepth(attachment)) {
-            description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-        } else {
-            description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        }
-
-        descriptions.push_back(description);
-    }
-
-
-    // attachment references
-    std::vector<VkAttachmentReference> color_references;
-    VkAttachmentReference depth_reference{};
-
-    uint32_t attachment_index = 0;
-    bool has_depth = false;
-    for (auto& attachment : fb.attachments) {
-        if (IsDepth(attachment)) {
-            // A Framebuffer can only have a single depth attachment
-            assert(!has_depth);
-            has_depth = true;
-
-            depth_reference.attachment = attachment_index;
-            depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        } else {
-            color_references.push_back({ attachment_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
-        }
-
-        attachment_index++;
-    }
-
-    // Use subpass dependencies for attachment layout transitions
-    std::array<VkSubpassDependency, 2> dependencies;
-    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[0].dstSubpass = 0;
-    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-    dependencies[1].srcSubpass = 0;
-    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-    dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = U32(color_references.size());
-    subpass.pColorAttachments = color_references.data();
-    if (has_depth)
-        subpass.pDepthStencilAttachment = &depth_reference;
-
-    VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
-    render_pass_info.attachmentCount = U32(descriptions.size());
-    render_pass_info.pAttachments = descriptions.data();
-    render_pass_info.subpassCount = 1;
-    render_pass_info.pSubpasses = &subpass;
-    render_pass_info.dependencyCount = 2;
-    render_pass_info.pDependencies = dependencies.data();
-
-    VkCheck(vkCreateRenderPass(g_rc->device.device, &render_pass_info, nullptr,
-        &fb.renderPass));
-
-    //////////////////////////////////////////////////////////////////////////
-    fb.handle.resize(GetSwapchainImageCount());
-    for (std::size_t i = 0; i < fb.handle.size(); ++i) {
-        std::vector<VkImageView> attachment_views;
-        for (std::size_t j = 0; j < fb.attachments.size(); ++j) {
-            attachment_views.push_back(fb.attachments[j].image[i].view);
-        }
-
-        VkFramebufferCreateInfo framebuffer_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
-        framebuffer_info.renderPass = fb.renderPass;
-        framebuffer_info.attachmentCount = U32(attachment_views.size());
-        framebuffer_info.pAttachments = attachment_views.data();
-        framebuffer_info.width = fb.width;
-        framebuffer_info.height = fb.height;
-        framebuffer_info.layers = 1;
-
-        VkCheck(vkCreateFramebuffer(g_rc->device.device, &framebuffer_info, nullptr, &fb.handle[i]));
-    }
-
-}
-
-void DestroyRenderPass(RenderPass& fb)
-{
-    for (std::size_t i = 0; i < fb.handle.size(); ++i) {
-        for (std::size_t j = 0; j < fb.attachments.size(); ++j) {
-            DestroyImages(fb.attachments[j].image);
-        }
-        fb.attachments.clear();
-
-        vkDestroyFramebuffer(g_rc->device.device, fb.handle[i], nullptr);
-    }
-
-
-    vkDestroyRenderPass(g_rc->device.device, fb.renderPass, nullptr);
-}
-
-
-void ResizeFramebuffer(RenderPass& fb, const glm::vec2& size)
-{
-    std::vector<FramebufferAttachment> old_attachments = fb.attachments;
-    DestroyRenderPass(fb);
-
-    for (const auto& attachment : old_attachments) {
-        AddFramebufferAttachment(fb, attachment.usage, attachment.image[0].format, {U32(size.x), U32(size.y)});
-    }
-    CreateRenderPass(fb);
 }
 
 void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets)

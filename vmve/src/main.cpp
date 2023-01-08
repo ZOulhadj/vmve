@@ -5,9 +5,9 @@
 //#include "vmve.hpp"
 //#include "ui.hpp"
 
-
-
-static bool inViewport = false;
+#include <vector>
+#include <string>
+#include <filesystem>
 
 
 int main()
@@ -16,19 +16,9 @@ int main()
 
     CreateCamera(engine, 45.0f, 20.0f);
 
+
     while (UpdateEngine(engine))
     {
-        // only update input and camera when in the viewport
-        if (inViewport)
-        {
-
-        }
-
-
-        // Render shadow pass
-        // Render deferred pass
-        // Render Ui pass
-
 
         EnginePresent(engine);
     }

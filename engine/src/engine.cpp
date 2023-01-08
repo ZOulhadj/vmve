@@ -114,6 +114,8 @@ std::vector<VkDescriptorSet> offscreenSets;
 
 VkDescriptorSetLayout compositeLayout;
 std::vector<VkDescriptorSet> compositeSets;
+std::vector<ImageBuffer> viewport;
+
 std::vector<ImageBuffer> positions;
 std::vector<ImageBuffer> normals;
 std::vector<ImageBuffer> colors;
@@ -124,8 +126,7 @@ std::vector<ImageBuffer> shadow_depths;
 std::vector<VkDescriptorSetLayoutBinding> materialBindings;
 VkDescriptorSetLayout materialLayout;
 
-std::vector<VkDescriptorSet> framebuffer_id;
-
+std::vector<VkDescriptorSet> viewportUI;
 
 std::vector<VkDescriptorSet> positionsUI;
 std::vector<VkDescriptorSet> colorsUI;
@@ -200,7 +201,7 @@ static void UpdateInput(Camera& camera, double deltaTime)
 
 // temp
 glm::vec2 old_viewport_size{};
-glm::vec2 current_viewport_size{};
+glm::vec2 viewport_size{};
 bool resize_viewport = false;
 glm::vec2 resize_extent;
 
@@ -948,23 +949,23 @@ static void RenderViewportWindow()
     {
         static bool first_time = true;
         // If new size is different than old size we will resize all contents
-        current_viewport_size = { ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y };
+        viewport_size = { ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y };
 
         if (first_time) {
-            old_viewport_size = current_viewport_size;
+            old_viewport_size = viewport_size;
             first_time = false;
         }
 
-        if (current_viewport_size != old_viewport_size) {
+        if (viewport_size != old_viewport_size) {
             resize_viewport = true;
 
-            old_viewport_size = current_viewport_size;
+            old_viewport_size = viewport_size;
         }
 
         // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
         // when the viewport window resizes.
         uint32_t current_image = GetSwapchainFrameIndex();
-        ImGui::Image(framebuffer_id[current_image], { current_viewport_size.x, current_viewport_size.y });
+        ImGui::Image(viewportUI[current_image], { viewport_size.x, viewport_size.y });
     }
     ImGui::End();
 }
@@ -1026,7 +1027,7 @@ Engine* InitializeEngine()
 
     AddFramebufferAttachment(compositePass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { 1280, 720 });
     CreateRenderPass2(compositePass);
-    std::vector<ImageBuffer> lighting_views = AttachmentsToImages(compositePass.attachments, 0);
+    viewport = AttachmentsToImages(compositePass.attachments, 0);
 
 
     AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { engine->window->width, engine->window->height });
@@ -1036,9 +1037,9 @@ Engine* InitializeEngine()
     engine->ui = CreateUI(engine->renderer, uiPass.renderPass);
 
 
-    framebuffer_id.resize(GetSwapchainImageCount());
-    for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
-        framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(gFramebufferSampler, lighting_views[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    viewportUI.resize(GetSwapchainImageCount());
+    for (std::size_t i = 0; i < viewportUI.size(); ++i) {
+        viewportUI[i] = ImGui_ImplVulkan_AddTexture(gFramebufferSampler, viewport[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
 
@@ -1060,7 +1061,7 @@ Engine* InitializeEngine()
     {
         { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT }
     };
-
+  
     shadowLayout = CreateDescriptorLayout(shadowBindings);
     shadowSets = AllocateDescriptorSets(shadowLayout);
     UpdateBinding(shadowSets, shadowBindings[0], engine->sunBuffer, sizeof(SunData));
@@ -1077,6 +1078,8 @@ Engine* InitializeEngine()
     skyboxDepths = AttachmentsToImages(skyboxPass.attachments, 0);
     UpdateBinding(skyboxSets, skyboxBindings[0], engine->cameraBuffer, sizeof(ViewProjection));
     UpdateBinding(skyboxSets, skyboxBindings[1], skyboxDepths, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
+
+
 
 
     std::vector<VkDescriptorSetLayoutBinding> offscreenBindings
@@ -1301,10 +1304,9 @@ bool UpdateEngine(Engine* engine)
     // do anything else. This ensures the application does not waste resources
     // performing other operations such as maths and rendering when the window
     // is not visible.
-    if (engine->minimized)
+    while (engine->minimized)
     {
         glfwWaitEvents();
-        return engine->running;
     }
 
     // Calculate the amount that has passed since the last frame. This value
@@ -1470,30 +1472,62 @@ void EnginePresent(Engine* engine)
     // which causes an error. Need to figure out how to do this properly.
     if (resize_viewport)
     {
-        VkExtent2D extent = { U32(current_viewport_size.x), U32(current_viewport_size.y) };
-        UpdateProjection(engine->camera, extent.width, extent.height);
+        VkExtent2D size{};
+        size.width = viewport_size.x;
+        size.height = viewport_size.y;
 
-        //WaitForGPU();
+        UpdateProjection(engine->camera, size.width, size.height);
 
-        //recreate_render_pass(geometry_framebuffer, current_viewport_size);
-        //positions = attachments_to_images(geometry_framebuffer.attachments, 0);
-        //normals = attachments_to_images(geometry_framebuffer.attachments, 1);
-        //colors = attachments_to_images(geometry_framebuffer.attachments, 2);
-        //speculars = attachments_to_images(geometry_framebuffer.attachments, 3);
-        //depths = attachments_to_images(geometry_framebuffer.attachments, 4);
-        //update_binding(lighting_sets, positions_binding, positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
-        //update_binding(lighting_sets, normals_binding, normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
-        //update_binding(lighting_sets, colors_binding, colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
-        //update_binding(lighting_sets, specular_binding, speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_fb_sampler);
-        //update_binding(lighting_sets, depths_binding, depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_fb_sampler);
+        WaitForGPU();
+
+        // TODO: You would think that resizing is easy.... Yet, there seems to
+        // be multiple issues such as stuttering, and image layout being 
+        // undefined. Needs to be fixed.
+#if 0
+        ResizeFramebuffer(offscreenPass, size);
+        ResizeFramebuffer(compositePass, size);
+
+        // TODO: update all image buffer descriptor sets
+        positions = AttachmentsToImages(offscreenPass.attachments, 0);
+        normals = AttachmentsToImages(offscreenPass.attachments, 1);
+        colors = AttachmentsToImages(offscreenPass.attachments, 2);
+        speculars = AttachmentsToImages(offscreenPass.attachments, 3);
+        depths = AttachmentsToImages(offscreenPass.attachments, 4);
+
+        viewport = AttachmentsToImages(compositePass.attachments, 0);
+
+        std::vector<VkDescriptorSetLayoutBinding> compositeBindings
+        {
+            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+            { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+            { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+            { 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+            { 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+        };
+        UpdateBinding(compositeSets, compositeBindings[0], positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
+        UpdateBinding(compositeSets, compositeBindings[1], normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
+        UpdateBinding(compositeSets, compositeBindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
+        UpdateBinding(compositeSets, compositeBindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
+        UpdateBinding(compositeSets, compositeBindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, gFramebufferSampler);
+
+        // Create descriptor sets for g-buffer images for UI
 
 
-        //recreate_render_targets(lighting_pass, lighting_render_targets, extent);
+        // TODO: Causes stuttering for some reason
+        // This is related to the order, creating the textures the other way seemed
+        // to fix it...
+        for (auto& image : viewport)
+            RecreateUITexture(viewportUI, image.view, gFramebufferSampler);
 
-        //for (std::size_t i = 0; i < framebuffer_id.size(); ++i) {
-        //    ImGui_ImplVulkan_RemoveTexture(framebuffer_id[i]);
-        //    framebuffer_id[i] = ImGui_ImplVulkan_AddTexture(g_fb_sampler, lighting_render_targets[i].image.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        //}
+        for (std::size_t i = 0; i < GetSwapchainImageCount(); ++i)
+        {
+            RecreateUITexture(positionsUI, positions[i].view, gFramebufferSampler);
+            RecreateUITexture(normalsUI, normals[i].view, gFramebufferSampler);
+            RecreateUITexture(colorsUI, colors[i].view, gFramebufferSampler);
+            RecreateUITexture(specularsUI, speculars[i].view, gFramebufferSampler);
+            RecreateUITexture(depthsUI, depths[i].view, gFramebufferSampler, true);
+        }
+#endif
 
         resize_viewport = false;
     }
@@ -1501,16 +1535,9 @@ void EnginePresent(Engine* engine)
     // todo: should this be here?
     if (!swapchain_ready)
     {
-        Logger::Info("Swapchain being resized ({}, {})", engine->window->width, engine->window->height);
-
         WaitForGPU();
 
-        // TODO: Replace with function that will simply resize the framebuffer using the same
-        // properties.
-        DestroyRenderPass(uiPass);
-        AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { engine->window->width, engine->window->height });
-        CreateRenderPass2(uiPass, true);
-
+        ResizeFramebuffer(uiPass, { gTempEnginePtr->window->width, gTempEnginePtr->window->height });
 
         swapchain_ready = true;
     }
@@ -1523,9 +1550,6 @@ void EnginePresent(Engine* engine)
 
         RecreateSwapchain(BufferMode::Double, vsync ? VSyncMode::Enabled : VSyncMode::Disabled);
 
-        DestroyRenderPass(uiPass);
-        AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { window->width, window->height });
-        CreateRenderPass2(uiPass, true);
 
         update_swapchain_vsync = false;
     }
@@ -1541,7 +1565,7 @@ void TerminateEngine(Engine* engine)
     WaitForGPU();
 
     //ImGui_ImplVulkan_RemoveTexture(skysphere_dset);
-    for (auto& framebuffer : framebuffer_id)
+    for (auto& framebuffer : viewportUI)
         ImGui_ImplVulkan_RemoveTexture(framebuffer);
 
     DestroyModel(sphere);
@@ -1608,10 +1632,11 @@ void CreateCamera(Engine* engine, float fovy, float speed)
 // TODO: Event system stuff
 static bool press(key_pressed_event& e)
 {
-    if (e.get_key_code() == GLFW_KEY_F1) {
+    if (e.get_key_code() == GLFW_KEY_F1)
+    {
         in_viewport = !in_viewport;
-        //camera.first_mouse = true;
-        //glfwSetInputMode(window->handle, GLFW_CURSOR, in_viewport ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+        gTempEnginePtr->camera.first_mouse = true;
+        glfwSetInputMode(gTempEnginePtr->window->handle, GLFW_CURSOR, in_viewport ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
 
     return true;
@@ -1651,13 +1676,13 @@ static bool close_window(window_closed_event& e)
 
 static bool minimized_window(window_minimized_event& e)
 {
-    //minimised = true;
+    gTempEnginePtr->minimized = true;
     return true;
 }
 
 static bool not_minimized_window(window_not_minimized_event& e)
 {
-    //minimised = false;
+    gTempEnginePtr->minimized = false;
     return true;
 }
 
