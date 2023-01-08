@@ -45,6 +45,7 @@ struct Engine
     ImGuiContext* ui;
 
 
+    std::filesystem::path execPath;
     bool running;
     bool minimized;
     std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
@@ -90,6 +91,11 @@ struct SunData
     glm::mat4 viewProj;
 } sunData;
 
+
+static VkExtent2D shadowMapSize = { 2048, 2048 };
+
+// Default framebuffer at startup
+static VkExtent2D framebufferSize = { 1280, 720 };
 
 VkSampler gFramebufferSampler;
 VkSampler gTextureSampler;
@@ -353,7 +359,7 @@ static void RenderMainMenu()
 
         ImGui::Checkbox("Flip UVs", &flip_uv);
 
-        std::string model_path = RenderFileExplorer(GetVFSPath("/models"));
+        std::string model_path = RenderFileExplorer(gTempEnginePtr->execPath);
 
         if (ImGui::Button("Load")) {
             //#define ASYNC_LOADING
@@ -442,7 +448,10 @@ static void RenderMainMenu()
         }
 #endif
 
-        ImGui::Button("Export");
+        if (ImGui::Button("Export"))
+        {
+
+        }
 
         ImGui::End();
     }
@@ -880,7 +889,12 @@ static void RenderConsoleWindow()
             Logger::ClearLogs();
 
         ImGui::SameLine();
-        ImGui::Button("Export");
+        if (ImGui::Button("Export"))
+        {
+            std::ofstream output("logs.txt");
+            for (auto& message : Logger::GetLogs())
+                output << message.message << "\n";
+        }
         ImGui::SameLine();
         ImGui::Checkbox("Auto-scroll", &auto_scroll);
         ImGui::SameLine();
@@ -976,19 +990,27 @@ static void EventCallback(event& e);
 
 Engine* InitializeEngine()
 {
+    Logger::Info("Initializing application");
+
     auto engine = new Engine();
 
     // Start application timer
     engine->startTime = std::chrono::high_resolution_clock::now();
 
-    Logger::Info("Initializing application");
+    // Get the current path of the executable
+    wchar_t fileName[MAX_PATH];
+    GetModuleFileName(nullptr, fileName, sizeof(fileName));
+    engine->execPath = std::filesystem::path(fileName).parent_path();
+
+    Logger::Info("Executable directory: {}", engine->execPath.string());
 
     // Parse command line arguments
     //CLIOptions options = ParseCLIArgs(argc, argv);
 
     // Initialize core systems
     engine->window = CreateWindow("VMVE", 1280, 720);
-    if (!engine->window) {
+    if (!engine->window)
+    {
         Logger::Error("Failed to create window");
         return nullptr;
     }
@@ -996,52 +1018,11 @@ Engine* InitializeEngine()
     engine->window->event_callback = EventCallback;
 
     engine->renderer = CreateRenderer(engine->window, BufferMode::Double, VSyncMode::Enabled);
-    if (!engine->renderer) {
+    if (!engine->renderer)
+    {
         Logger::Error("Failed to create renderer");
         return nullptr;
     }
-
-
-
-
-    // Create rendering passes and render targets
-    gFramebufferSampler = CreateSampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
-    gTextureSampler = CreateSampler(VK_FILTER_LINEAR);
-
-
-    AddFramebufferAttachment(shadowPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 1024, 1024 });
-    CreateRenderPass2(shadowPass);
-
-
-    AddFramebufferAttachment(skyboxPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { 1280, 720 });
-    CreateRenderPass2(skyboxPass);
-
-
-    AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, { 1280, 720 });
-    AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, { 1280, 720 });
-    AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { 1280, 720 });
-    AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8_SRGB, { 1280, 720 });
-    AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, { 1280, 720 });
-    CreateRenderPass(offscreenPass);
-
-
-    AddFramebufferAttachment(compositePass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { 1280, 720 });
-    CreateRenderPass2(compositePass);
-    viewport = AttachmentsToImages(compositePass.attachments, 0);
-
-
-    AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { engine->window->width, engine->window->height });
-    CreateRenderPass2(uiPass, true);
-
-
-    engine->ui = CreateUI(engine->renderer, uiPass.renderPass);
-
-
-    viewportUI.resize(GetSwapchainImageCount());
-    for (std::size_t i = 0; i < viewportUI.size(); ++i) {
-        viewportUI[i] = ImGui_ImplVulkan_AddTexture(gFramebufferSampler, viewport[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    }
-
 
 
     // Mount specific VFS folders
@@ -1051,6 +1032,45 @@ Engine* InitializeEngine()
     MountPath("textures", rootDir + "assets/textures");
     MountPath("fonts", rootDir + "assets/fonts");
     MountPath("shaders", rootDir1 + "/shaders");
+
+
+    // Create rendering passes and render targets
+    gFramebufferSampler = CreateSampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+    gTextureSampler = CreateSampler(VK_FILTER_LINEAR);
+
+    {
+        AddFramebufferAttachment(shadowPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, shadowMapSize);
+        CreateRenderPass2(shadowPass);
+    }
+    {
+        AddFramebufferAttachment(skyboxPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
+        CreateRenderPass2(skyboxPass);
+    }
+    {    
+        AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, framebufferSize);
+        AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, framebufferSize);
+        AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
+        AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8_SRGB, framebufferSize);
+        AddFramebufferAttachment(offscreenPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, framebufferSize);
+        CreateRenderPass(offscreenPass);
+    }
+    {
+        AddFramebufferAttachment(compositePass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
+        CreateRenderPass2(compositePass);
+        viewport = AttachmentsToImages(compositePass.attachments, 0);
+    }
+    {
+        AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
+        CreateRenderPass2(uiPass, true);
+    }
+
+    engine->ui = CreateUI(engine->renderer, uiPass.renderPass);
+
+
+    for (std::size_t i = 0; i < GetSwapchainImageCount(); ++i)
+        viewportUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, viewport[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+
+
 
 
     engine->sunBuffer = CreateUniformBuffer(sizeof(SunData));

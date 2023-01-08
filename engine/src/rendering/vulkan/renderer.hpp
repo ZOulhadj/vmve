@@ -15,8 +15,8 @@
 #include "logging.hpp"
 
 enum class BufferMode {
-    Double = 2,
-    Triple   = 3
+    Double,
+    Triple
 };
 
 enum class VSyncMode {

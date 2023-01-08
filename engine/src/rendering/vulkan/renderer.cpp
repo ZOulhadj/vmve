@@ -53,8 +53,11 @@ static uint32_t FindSuitableImageCount(VkSurfaceCapabilitiesKHR capabilities, Bu
     const uint32_t min = capabilities.minImageCount + 1;
     const uint32_t max = capabilities.maxImageCount;
 
-    const uint32_t requested = (uint32_t)mode;
-
+    uint32_t requested = 0;
+    if (mode == BufferMode::Double)
+        requested = 2;
+    else if (mode == BufferMode::Triple)
+        requested = 3;
 
     // check if requested image count
     if (min <= requested)
