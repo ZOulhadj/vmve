@@ -988,7 +988,7 @@ static void RenderViewportWindow()
 
 static void EventCallback(event& e);
 
-Engine* InitializeEngine()
+Engine* InitializeEngine(EngineInfo info)
 {
     Logger::Info("Initializing application");
 
@@ -1006,16 +1006,16 @@ Engine* InitializeEngine()
 
     Logger::Info("Executable directory: {}", engine->execPath.string());
 
-    // Parse command line arguments
-    //CLIOptions options = ParseCLIArgs(argc, argv);
-
     // Initialize core systems
-    engine->window = CreateWindow("VMVE", 1280, 720);
+    engine->window = CreateWindow("VMVE", info.windowWidth, info.windowHeight);
     if (!engine->window)
     {
         Logger::Error("Failed to create window");
         return nullptr;
     }
+
+    if (info.iconPath)
+        SetWindowIcon(engine->window, info.iconPath);
 
     engine->window->event_callback = EventCallback;
 

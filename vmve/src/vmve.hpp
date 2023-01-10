@@ -14,38 +14,25 @@
 //
 
 
-struct vmve_file_header
+struct VmveHeader
 {
-    std::string version;
+    const char* version;
     int encryption_mode;
 };
 
-struct vmve_file_data
+struct VmveData
 {
     const char* data;
 };
 
-struct vmve_file_format
+struct Vmve
 {
-    vmve_file_header header;
-    vmve_file_data   data;
+    VmveHeader header;
+    VmveData   data;
 };
 
-void write_vmve_file(vmve_file_format& file_format, std::string_view path)
-{
-    std::ofstream file(path.data(), std::ios::binary);
-    file.write(reinterpret_cast<const char*>(&file_format), sizeof(vmve_file_format));
-}
-
-vmve_file_format read_vmve_file(std::string_view path)
-{
-    vmve_file_format file_format{};
-
-    std::ifstream file(path.data(), std::ios::binary);
-    file.read(reinterpret_cast<char*>(&file_format), sizeof(vmve_file_format));
-
-    return file_format;
-}
+void VmveWriteFile(Vmve& file_format, const char* path);
+Vmve VmveReadFile(const char* path);
 
 
 // Data

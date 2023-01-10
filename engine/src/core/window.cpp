@@ -218,6 +218,25 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
     return window;
 }
 
+
+void SetWindowIcon(const Window* window, const std::filesystem::path& iconPath)
+{
+    GLFWimage images[1]{};
+    images[0].pixels = stbi_load(iconPath.string().c_str(), &images[0].width, &images[0].height, 0, STBI_rgb_alpha);
+
+    if (!images[0].pixels)
+    {
+        Logger::Error("Failed to load window icon {}", iconPath.string());
+
+        stbi_image_free(images[0].pixels);
+        return;
+    }
+
+    glfwSetWindowIcon(window->handle, 1, images);
+
+    stbi_image_free(images[0].pixels);
+}
+
 // Destroys the window and terminates the GLFW library.
 void DestroyWindow(Window* window)
 {

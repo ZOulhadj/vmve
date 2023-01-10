@@ -26,6 +26,12 @@ struct Window
 ///
 Window* CreateWindow(const char* name, uint32_t width, uint32_t height);
 
+
+///
+/// Sets an icon for the specified window handle.
+/// 
+void SetWindowIcon(const Window* window, const std::filesystem::path& iconPath);
+
 ///
 /// Destroys the window and terminates the GLFW library.
 ///

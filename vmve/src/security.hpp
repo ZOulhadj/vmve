@@ -11,12 +11,10 @@
 #include <files.h>
 #include <osrng.h>
 #include <hex.h>
-#include <cryptopp/dh.h>
-//#include <cryptopp/osrng.h>
-#include <cryptopp/integer.h>
+#include <integer.h>
+#include <dh.h>
 
-
-struct aes_data
+struct AES_Data
 {
     CryptoPP::SecByteBlock key{};
     CryptoPP::SecByteBlock iv{};
@@ -24,9 +22,9 @@ struct aes_data
     std::string data;
 };
 
-aes_data aes_encrypt(const std::string& text)
+AES_Data EncryptAES(const std::string& text)
 {
-    aes_data data{};
+    AES_Data data{};
 
     CryptoPP::AutoSeededRandomPool random_pool;
 
@@ -49,16 +47,16 @@ aes_data aes_encrypt(const std::string& text)
     return data;
 }
 
-std::string aes_decrypt(std::string_view data, const CryptoPP::SecByteBlock& key, const CryptoPP::SecByteBlock& iv)
+std::string DecrptAES(const AES_Data& data)
 {
     std::string text;
 
     // Set decryption key and IV
     CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryption;
-    decryption.SetKeyWithIV(key, key.size(), iv);
+    decryption.SetKeyWithIV(data.key, data.key.size(), data.iv);
 
     // Decrypt
-    CryptoPP::StringSource s(data.data(), true, new CryptoPP::StreamTransformationFilter(decryption, new CryptoPP::StringSink(text)));
+    CryptoPP::StringSource s(data.data.data(), true, new CryptoPP::StreamTransformationFilter(decryption, new CryptoPP::StringSink(text)));
 
     return text;
 }

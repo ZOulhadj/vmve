@@ -4,5 +4,6 @@ out/
 
 engine/build
 vmve/build
-vmve/vendor
+vmve/vendor/
 imgui.ini
+*/JSON
