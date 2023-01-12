@@ -813,6 +813,43 @@ void EngineRemoveInstance(Engine* engine, int instanceID)
 
 
 
+void EngineGetInstanceID(Engine* engine, int instanceIndex, int* instanceID)
+{
+    *instanceID = engine->instances[instanceIndex].id;
+}
+
+const char* EngineGetInstanceName(Engine* engine, int instanceIndex)
+{
+    return engine->instances[instanceIndex].name.c_str();
+}
+
+void EngineGetInstancePosition(Engine* engine, int instanceIndex, float* position)
+{
+    Instance& instance = engine->instances[instanceIndex];
+
+    position[0] = instance.position.x;
+    position[1] = instance.position.y;
+    position[2] = instance.position.z;
+}
+
+void EngineGetInstanceRotation(Engine* engine, int instanceIndex, float* rotation)
+{
+    Instance& instance = engine->instances[instanceIndex];
+
+    rotation[0] = instance.rotation.x;
+    rotation[1] = instance.rotation.y;
+    rotation[2] = instance.rotation.z;
+}
+
+void EngineGetInstanceScale(Engine* engine, int instanceIndex, float* scale)
+{
+    Instance& instance = engine->instances[instanceIndex];
+
+    scale[0] = instance.scale.x;
+    scale[1] = instance.scale.y;
+    scale[2] = instance.scale.z;
+}
+
 void EngineSetEnvironmentMap(const char* path)
 {
     // Delete existing environment map if any
@@ -948,6 +985,23 @@ double EngineGetDeltaTime(Engine* engine)
     return engine->deltaTime;
 }
 
+
+void EngineGetUptime(Engine* engine, int* hours, int* minutes, int* seconds)
+{
+    const auto [h, m, s] = GetDuration(engine->startTime);
+
+    *hours = h;
+    *minutes = m;
+    *seconds = s;
+}
+
+void EngineGetMemoryStats(Engine* engine, float* memoryUsage, unsigned int* maxMemory)
+{
+    const MEMORYSTATUSEX memoryStatus = get_memory_status();
+
+    *memoryUsage = memoryStatus.dwMemoryLoad / 100.0f;
+    *maxMemory = memoryStatus.ullTotalPhys / 1'000'000'000;
+}
 
 const char* EngineDisplayFileExplorer(Engine* engine, const char* path)
 {

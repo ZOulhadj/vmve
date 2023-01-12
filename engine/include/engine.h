@@ -46,9 +46,19 @@ const char* EngineGetModelName(Engine* engine, int modelID);
 int EngineGetInstanceCount(Engine* engine);
 void EngineAddInstance(Engine* engine, int modelID, float x, float y, float z);
 void EngineRemoveInstance(Engine* engine, int instanceID);
+void EngineGetInstanceID(Engine* engine, int instanceIndex, int* instanceID);
+const char* EngineGetInstanceName(Engine* engine, int instanceIndex);
+void EngineGetInstancePosition(Engine* engine, int instanceIndex, float* position);
+void EngineGetInstanceRotation(Engine* engine, int instanceIndex, float* rotation);
+void EngineGetInstanceScale(Engine* engine, int instanceIndex, float* scale);
 
 // Timing
 double EngineGetDeltaTime(Engine* engine);
+void EngineGetUptime(Engine* engine, int* hours, int* minutes, int* seconds);
+
+
+// Memory
+void EngineGetMemoryStats(Engine* engine, float* memoryUsage, unsigned int* maxMemory);
 
 // Filesystem
 const char* EngineDisplayFileExplorer(Engine* engine, const char* path); // TEMP: Must be moved to VMVE
