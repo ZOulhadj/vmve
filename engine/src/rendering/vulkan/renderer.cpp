@@ -1082,7 +1082,7 @@ void RecreateSwapchain(BufferMode bufferMode, VSyncMode vsync)
     g_swapchain = CreateSwapchain();
 }
 
-bool BeginFrame()
+bool GetNextSwapchainImage()
 {
     // Wait for the GPU to finish all work before getting the next image
     VkCheck(vkWaitForFences(g_rc->device.device, 1, &gFrames[gCurrentFrame].submitFence, VK_TRUE, UINT64_MAX));
@@ -1097,7 +1097,7 @@ bool BeginFrame()
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
-#if 1 
+#if 1
         // When resizing the swapchain, the acquired semaphore does not get
         // signaled as no queue submissions takes place. This is an issue since
         // vkAcquireNextImageKHR expects the acquired semaphore to be in an
@@ -1130,16 +1130,17 @@ bool BeginFrame()
     return true;
 }
 
-void EndFrame(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers)
+
+void SubmitWork(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers)
 {
     // TODO: sync each set of command buffers so that one does not run before 
-    // the other has finished.
-    //
-    // For example, command buffers should run in the following order
-    // 1. Geometry
-    // 2. Lighting
-    // 3. Viewport
-    //
+// the other has finished.
+//
+// For example, command buffers should run in the following order
+// 1. Geometry
+// 2. Lighting
+// 3. Viewport
+//
 
     std::vector<VkCommandBuffer> buffers(cmdBuffers.size());
     for (std::size_t i = 0; i < buffers.size(); ++i)
@@ -1147,35 +1148,46 @@ void EndFrame(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers)
 
     const VkPipelineStageFlags waitState = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-    submit_info.waitSemaphoreCount   = 1;
-    submit_info.pWaitSemaphores      = &gFrames[gCurrentFrame].imageReadySemaphore;
-    submit_info.pWaitDstStageMask    = &waitState;
-    submit_info.commandBufferCount   = U32(buffers.size());
-    submit_info.pCommandBuffers      = buffers.data();
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &gFrames[gCurrentFrame].imageReadySemaphore;
+    submit_info.pWaitDstStageMask = &waitState;
+    submit_info.commandBufferCount = U32(buffers.size());
+    submit_info.pCommandBuffers = buffers.data();
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores    = &gFrames[gCurrentFrame].imageCompleteSemaphore;
+    submit_info.pSignalSemaphores = &gFrames[gCurrentFrame].imageCompleteSemaphore;
     VkCheck(vkQueueSubmit(g_rc->device.graphics_queue, 1, &submit_info, gFrames[gCurrentFrame].submitFence));
+}
 
+
+bool DisplaySwapchainImage()
+{
+    // TODO: This should be moved into its own function call. 
+    // Once all framebuffers have been rendered to, we do a blit and then call 
+    // present
     // request the GPU to present the rendered image onto the screen
     VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores    = &gFrames[gCurrentFrame].imageCompleteSemaphore;
-    present_info.swapchainCount     = 1;
-    present_info.pSwapchains        = &g_swapchain.handle;
-    present_info.pImageIndices      = &currentImage;
-    present_info.pResults           = nullptr;
+    present_info.pWaitSemaphores = &gFrames[gCurrentFrame].imageCompleteSemaphore;
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = &g_swapchain.handle;
+    present_info.pImageIndices = &currentImage;
+    present_info.pResults = nullptr;
     VkResult result = vkQueuePresentKHR(g_rc->device.graphics_queue, &present_info);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        throw std::runtime_error("Implement rebuild of swapchain and framebuffers. ");
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    {
+        WaitForGPU();
+
+        ResizeSwapchain(g_swapchain);
+
+        return false;
     }
-
-
-
 
     // Once the image has been shown onto the window, we can move onto the next
     // frame, and so we increment the frame index.
     gCurrentFrame = (gCurrentFrame + 1) % frames_in_flight;
+
+    return true;
 }
 
 void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets)

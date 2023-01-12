@@ -4,8 +4,7 @@
 
 enum class LogType
 {
-    Unknown,
-    Info,
+    Info = 0,
     Warning,
     Error
 };

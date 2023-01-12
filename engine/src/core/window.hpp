@@ -11,6 +11,7 @@ struct Window
     const char* name;
     uint32_t    width;
     uint32_t    height;
+    bool        minimized;
 
     EventFunc  event_callback;
 };

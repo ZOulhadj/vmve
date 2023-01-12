@@ -3,7 +3,6 @@
 
 
 // Engine header files section
-#include "../src/core/command_line.hpp"
 #include "../src/core/window.hpp"
 #include "../src/core/input.hpp"
 #if defined(_WIN32)
@@ -47,7 +46,6 @@ struct Engine
 
     std::filesystem::path execPath;
     bool running;
-    bool minimized;
     std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
     double deltaTime;
 
@@ -60,6 +58,13 @@ struct Engine
     // Scene information
     Camera camera;
 
+
+    std::vector<Model> models;
+    std::vector<Instance> instances;
+
+
+    bool swapchainReady;
+    bool uiPassEnabled;
 };
 
 // Just here for the time being as events don't have direct access to the engine
@@ -104,7 +109,6 @@ RenderPass shadowPass{};
 RenderPass skyboxPass{};
 RenderPass offscreenPass{};
 RenderPass compositePass{};
-RenderPass uiPass{};
 
 VkDescriptorSetLayout shadowLayout;
 std::vector<VkDescriptorSet> shadowSets;
@@ -132,13 +136,7 @@ std::vector<ImageBuffer> shadow_depths;
 std::vector<VkDescriptorSetLayoutBinding> materialBindings;
 VkDescriptorSetLayout materialLayout;
 
-std::vector<VkDescriptorSet> viewportUI;
 
-std::vector<VkDescriptorSet> positionsUI;
-std::vector<VkDescriptorSet> colorsUI;
-std::vector<VkDescriptorSet> normalsUI;
-std::vector<VkDescriptorSet> specularsUI;
-std::vector<VkDescriptorSet> depthsUI;
 
 VkPipelineLayout shadowPipelineLayout;
 VkPipelineLayout skyspherePipelineLayout;
@@ -152,6 +150,15 @@ Pipeline shadowPipeline;
 
 std::vector<VkCommandBuffer> offscreenCmdBuffer;
 std::vector<VkCommandBuffer> compositeCmdBuffer;
+
+// UI related stuff
+RenderPass uiPass{};
+std::vector<VkDescriptorSet> viewportUI;
+std::vector<VkDescriptorSet> positionsUI;
+std::vector<VkDescriptorSet> colorsUI;
+std::vector<VkDescriptorSet> normalsUI;
+std::vector<VkDescriptorSet> specularsUI;
+std::vector<VkDescriptorSet> depthsUI;
 std::vector<VkCommandBuffer> uiCmdBuffer;
 
 
@@ -163,20 +170,9 @@ Model sphere;
 Instance skyboxInstance;
 Instance modelInstance;
 
-std::vector<Model> gModels; // Stores a collection of unique models
-std::vector<Instance> gInstances; // Stores the actual unique properties for every object in the world
-
 float shadowNear = 1.0f, shadowFar = 2000.0f;
 float sunDistance = 400.0f;
 
-static float temperature = 23.5;
-static float windSpeed = 2.0f;
-static int timeOfDay = 10;
-static int renderMode = 0;
-
-static bool vsync = true;
-static bool update_swapchain_vsync = false;
-static bool in_viewport = false;
 
 
 static void UpdateInput(Camera& camera, double deltaTime)
@@ -201,794 +197,9 @@ static void UpdateInput(Camera& camera, double deltaTime)
 }
 
 
-
-
-// Global GUI flags and settings
-
-// temp
-glm::vec2 old_viewport_size{};
-glm::vec2 viewport_size{};
-bool resize_viewport = false;
-glm::vec2 resize_extent;
-
-// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-// because it would be confusing to have two docking targets within each others.
-static ImGuiWindowFlags docking_flags = ImGuiWindowFlags_MenuBar |
-ImGuiWindowFlags_NoDocking |
-ImGuiWindowFlags_NoTitleBar |
-ImGuiWindowFlags_NoCollapse |
-ImGuiWindowFlags_NoResize |
-ImGuiWindowFlags_NoMove |
-ImGuiWindowFlags_NoNavFocus |
-ImGuiWindowFlags_NoBringToFrontOnFocus;
-
-static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode; // ImGuiDockNodeFlags_NoTabBar
-
-static ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
-
-const char* object_window = "Object";
-const char* console_window = "Console";
-const char* viewport_window = "Viewport";
-const char* scene_window = "Global";
-
-static bool editor_open = false;
-static bool window_open = true;
-
-
-static void BeginDocking()
-{
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("Editor", &editor_open, docking_flags);
-    ImGui::PopStyleVar(3);
-}
-
-static void EndDocking()
-{
-    ImGui::End();
-}
-
-static std::vector<std::future<void>> futures;
-static std::mutex model_mutex;
-static void LoadMesh(std::vector<Model>& models, const std::filesystem::path& path, bool flipUVs)
-{
-    Logger::Info("Loading mesh {}", path.string());
-
-    Model model = LoadModel(path, flipUVs);
-    UploadModelToGPU(model, materialLayout, materialBindings, gTextureSampler);
-
-    std::lock_guard<std::mutex> lock(model_mutex);
-    models.push_back(model);
-
-    Logger::Info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path.string());
-};
-
-static void RenderMainMenu()
-{
-    static bool about_open = false;
-    static bool load_model_open = false;
-    static bool export_model_open = false;
-    static bool performance_profiler = false;
-    static bool gBufferVisualizer = false;
-
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-
-            load_model_open = ImGui::MenuItem("Load model");
-            export_model_open = ImGui::MenuItem("Export model");
-            ImGui::MenuItem("Exit");
-
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Settings")) {
-            if (ImGui::BeginMenu("Theme")) {
-                static bool isDark = true;
-                static bool isLight = false;
-
-
-                if (ImGui::MenuItem("Dark", "", &isDark)) {
-                    ImGui::StyleColorsDark();
-                    isLight = false;
-                }
-
-                if (ImGui::MenuItem("Light", "", &isLight)) {
-                    ImGui::StyleColorsLight();
-                    isDark = false;
-                }
-
-                ImGui::EndMenu();
-            }
-
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Tools")) {
-            if (ImGui::MenuItem("Performance Profiler")) {
-                performance_profiler = true;
-            }
-
-
-            if (ImGui::MenuItem("G-Buffer Visualizer")) {
-                gBufferVisualizer = true;
-            }
-
-            ImGui::EndMenu();
-        }
-
-
-        if (ImGui::BeginMenu("Help")) {
-            if (ImGui::MenuItem("About"))
-                about_open = true;
-
-            ImGui::MenuItem("Shortcuts");
-
-            ImGui::EndMenu();
-        }
-
-
-
-        ImGui::EndMenuBar();
-    }
-
-
-    if (about_open)
-    {
-        ImGui::Begin("About", &about_open);
-#if 0
-        ImGui::Text("Build version: %s", buildVersion);
-        ImGui::Text("Build date: %s", buildDate);
-        ImGui::Separator();
-        ImGui::Text("Author: %s", authorName);
-        ImGui::Text("Contact: %s", authorEmail);
-        ImGui::Separator();
-        ImGui::TextWrapped("Description: %s", applicationAbout);
-#endif
-        ImGui::End();
-    }
-
-
-    if (load_model_open) {
-        static bool flip_uv = false;
-        ImGui::Begin("Load Model", &load_model_open);
-
-        ImGui::Checkbox("Flip UVs", &flip_uv);
-
-        std::string model_path = RenderFileExplorer(gTempEnginePtr->execPath);
-
-        if (ImGui::Button("Load")) {
-            //#define ASYNC_LOADING
-#if defined(ASYNC_LOADING)
-            futures.push_back(std::async(std::launch::async, LoadMesh, std::ref(gModels), model_path));
-#else
-            LoadMesh(gModels, model_path, flip_uv);
-#endif
-        }
-
-
-        ImGui::End();
-    }
-
-    if (export_model_open) {
-        static bool use_encryption = false;
-        static bool show_key = false;
-        static int current_encryption_mode = 0;
-        static char filename[50];
-
-        ImGui::Begin("Export Model", &export_model_open);
-
-        std::string current_path = RenderFileExplorer(gTempEnginePtr->execPath);
-
-        ImGui::InputText("File name", filename, 50);
-
-        ImGui::Checkbox("Encryption", &use_encryption);
-#if 0
-        if (use_encryption) {
-            static std::array<const char*, 4> encryption_alogrithms = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
-            static std::array<const char*, 2> key_lengths = { "256 bits (Recommended)", "128 bit" };
-            static std::array<unsigned char, 2> key_length_bytes = { 32, 16 };
-            static int current_key_length = 0;
-            static CryptoPP::SecByteBlock key{};
-            static CryptoPP::SecByteBlock iv{};
-            static bool key_generated = false;
-            static std::string k;
-            static std::string i;
-
-
-            ImGui::Combo("Key length", &current_key_length, key_lengths.data(), key_lengths.size());
-            ImGui::Combo("Encryption method", &current_encryption_mode, encryption_alogrithms.data(), encryption_alogrithms.size());
-
-            if (ImGui::Button("Generate key")) {
-                CryptoPP::AutoSeededRandomPool random_pool;
-
-                // Set key and IV byte lengths
-                key = CryptoPP::SecByteBlock(key_length_bytes[current_key_length]);
-                iv = CryptoPP::SecByteBlock(CryptoPP::AES::BLOCKSIZE);
-
-                // Generate key and IV
-                random_pool.GenerateBlock(key, key.size());
-                random_pool.GenerateBlock(iv, iv.size());
-
-                // Set key and IV to encryption mode
-                CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
-                encryption.SetKeyWithIV(key, key.size(), iv);
-
-                // Convert from bytes into hex
-                {
-                    CryptoPP::HexEncoder hex_encoder;
-                    hex_encoder.Put(key, sizeof(byte) * key.size());
-                    hex_encoder.MessageEnd();
-                    k.resize(hex_encoder.MaxRetrievable());
-                    hex_encoder.Get((byte*)&k[0], k.size());
-                }
-                {
-                    // TODO: IV hex does not get created for some reason.
-                    CryptoPP::HexDecoder hex_encoder;
-                    hex_encoder.Put(iv, sizeof(byte) * iv.size());
-                    hex_encoder.MessageEnd();
-                    i.resize(hex_encoder.MaxRetrievable());
-                    hex_encoder.Get((byte*)&i[0], i.size());
-                }
-
-                key_generated = true;
-            }
-
-            if (key_generated) {
-                ImGui::Text("Key: %s", k.c_str());
-                ImGui::Text("IV: %s", i.c_str());
-            }
-
-            //ImGui::InputText("Key", key, 20, show_key ? ImGuiInputTextFlags_None : ImGuiInputTextFlags_Password);
-            //ImGui::Checkbox("Show key", &show_key);
-        }
-#endif
-
-        if (ImGui::Button("Export"))
-        {
-
-        }
-
-        ImGui::End();
-    }
-
-
-
-    if (performance_profiler) {
-        ImGui::Begin("Performance Profiler", &performance_profiler);
-
-        if (ImGui::CollapsingHeader("CPU Timers")) {
-            ImGui::Text("%.2fms - Applicaiton::Render", 15.41f);
-            ImGui::Text("%.2fms - GeometryPass::Render", 12.23f);
-        }
-
-        if (ImGui::CollapsingHeader("GPU Timers")) {
-            ImGui::Text("%fms - VkQueueSubmit", 0.018f);
-        }
-
-
-        ImGui::End();
-    }
-
-
-    if (gBufferVisualizer) {
-        ImGui::Begin("G-Buffer Visualizer", &gBufferVisualizer);
-
-        const uint32_t currentImage = GetSwapchainFrameIndex();
-        const ImVec2& size = ImGui::GetContentRegionAvail() / 2;
-
-        //ImGui::Text("Positions");
-        //ImGui::SameLine();
-        ImGui::Image(positionsUI[currentImage], size);
-        //ImGui::Text("Colors");
-        ImGui::SameLine();
-        ImGui::Image(colorsUI[currentImage], size);
-        //ImGui::Text("Normals");
-        //ImGui::SameLine();
-
-        ImGui::Image(normalsUI[currentImage], size);
-        //ImGui::Text("Speculars");
-        ImGui::SameLine();
-        ImGui::Image(specularsUI[currentImage], size);
-
-        ImGui::Image(depthsUI[currentImage], size);
-
-
-        ImGui::End();
-    }
-
-
-}
-
-static void RenderDockspace()
-{
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-
-    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-    if (!ImGui::DockBuilderGetNode(dockspace_id)) {
-        ImGui::DockBuilderRemoveNode(dockspace_id);
-        ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
-        ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
-
-        ImGuiID dock_main_id = dockspace_id;
-        ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.2f, nullptr, &dock_main_id);
-        ImGuiID dock_left_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
-        ImGuiID dock_down_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.2f, nullptr, &dock_main_id);
-
-
-        ImGui::DockBuilderDockWindow(object_window, dock_right_id);
-        ImGui::DockBuilderDockWindow(scene_window, dock_left_id);
-        ImGui::DockBuilderDockWindow(console_window, dock_down_id);
-        ImGui::DockBuilderDockWindow(viewport_window, dock_main_id);
-
-        ImGui::DockBuilderFinish(dock_main_id);
-    }
-    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-
-}
-
-static void RenderObjectWindow()
-{
-    // Object window
-    ImGui::Begin(object_window, &window_open, window_flags);
-    {
-        static int instance_index = -1;
-        static int unique_instance_ids = 1;
-        static int current_model_item = 0;
-
-        // TEMP: Create a list of just model names from all the models
-        std::vector<const char*> model_names(gModels.size());
-        for (std::size_t i = 0; i < model_names.size(); ++i)
-            model_names[i] = gModels[i].name.c_str();
-
-        ImGui::Combo("Model", &current_model_item, model_names.data(), model_names.size());
-        ImGui::BeginDisabled(gModels.empty());
-        if (ImGui::Button("Remove model")) {
-            // Remove all instances which use the current model
-            std::size_t size = gInstances.size();
-            for (std::size_t i = 0; i < size; ++i)
-            {
-                if (gInstances[i].model == &gModels[current_model_item])
-                {
-                    gInstances.erase(gInstances.begin() + i);
-                    size--;
-                }
-            }
-
-
-            // Remove model from list and memory
-            WaitForGPU();
-
-            DestroyModel(gModels[current_model_item]);
-            gModels.erase(gModels.begin() + current_model_item);
-
-
-        }
-        ImGui::EndDisabled();
-
-        ImGui::BeginDisabled(gModels.empty());
-        if (ImGui::Button("Add instance")) {
-
-            Instance instance{};
-            instance.id = unique_instance_ids;
-            instance.name = "Unnamed";
-            instance.model = &gModels[current_model_item];
-            instance.position = glm::vec3(0.0f);
-            instance.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-            instance.scale = glm::vec3(1.0f, 1.0f, 1.0f);
-            instance.matrix = glm::mat4(1.0f);
-
-            gInstances.push_back(instance);
-
-            ++unique_instance_ids;
-            instance_index = gInstances.size() - 1;
-        }
-        ImGui::EndDisabled();
-
-        ImGui::SameLine();
-
-        ImGui::BeginDisabled(gInstances.empty());
-        if (ImGui::Button("Remove instance")) {
-
-            gInstances.erase(gInstances.begin() + instance_index);
-
-
-            // Ensure that index does not go below 0
-            if (instance_index > 0)
-                instance_index--;
-        }
-        ImGui::EndDisabled();
-
-        // Options
-        static ImGuiTableFlags flags =
-            ImGuiTableFlags_Resizable | ImGuiTableFlags_Hideable | ImGuiTableFlags_BordersOuter |
-            ImGuiTableFlags_BordersV | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_ScrollY;
-
-        const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
-        const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
-
-        if (ImGui::BeginTable("Objects", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f)) {
-            ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, 0.0f, 0);
-            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 0.0f, 1);
-            ImGui::TableSetupScrollFreeze(0, 1);
-            ImGui::TableHeadersRow();
-
-            ImGuiListClipper clipper;
-            clipper.Begin(gInstances.size());
-            while (clipper.Step()) {
-                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
-                    Instance& item = gInstances[i];
-                    char label[32];
-                    sprintf(label, "%04d", item.id);
-
-
-                    bool is_current_item = (i == instance_index);
-
-                    ImGui::PushID(label);
-                    ImGui::TableNextRow();
-
-                    ImGui::TableNextColumn();
-                    if (ImGui::Selectable(label, is_current_item, ImGuiSelectableFlags_SpanAllColumns)) {
-                        instance_index = i;
-                    }
-                    ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(item.name.c_str());
-
-                    ImGui::PopID();
-                }
-            }
-            ImGui::EndTable();
-        }
-
-
-        if (gInstances.size() > 0) {
-            ImGui::BeginChild("Object Properties");
-
-            Instance& item = gInstances[instance_index];
-
-
-            ImGui::Text("ID: %04d", item.id);
-            ImGui::Text("Name: %s", item.name.c_str());
-            //            ImGui::Combo("Model", );
-            ImGui::SliderFloat3("Translation", glm::value_ptr(item.position), -50.0f, 50.0f);
-            ImGui::SliderFloat3("Rotation", glm::value_ptr(item.rotation), -360.0f, 360.0f);
-            ImGui::SliderFloat3("Scale", glm::value_ptr(item.scale), 0.1f, 100.0f);
-
-            ImGui::EndChild();
-        }
-
-    }
-    ImGui::End();
-}
-
-static void RenderGlobalWindow(Engine* engine)
-{
-    ImGuiIO& io = ImGui::GetIO();
-
-    static bool wireframe = false;
-    static bool depth = false;
-    static int swapchain_images = 3;
-
-    static bool lock_camera_frustum = false;
-    static bool first_time = true;
-    static std::string gpu_name;
-
-    static bool skyboxWindowOpen = false;
-
-
-    if (first_time) {
-        VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(GetRendererContext().device.gpu, &properties);
-        gpu_name = std::string(properties.deviceName);
-
-        first_time = false;
-    }
-
-    ImGui::Begin(scene_window, &window_open, window_flags);
-    {
-        if (ImGui::CollapsingHeader("Application"))
-        {
-            const auto [hours, minutes, seconds] = GetDuration(engine->startTime);
-
-            ImGui::Text("Uptime: %d:%d:%d", hours, minutes, seconds);
-
-#if defined(_WIN32)
-            const MEMORYSTATUSEX memoryStatus = get_memory_status();
-
-            const float memoryUsage = memoryStatus.dwMemoryLoad / 100.0f;
-            const int64_t totalMemory = memoryStatus.ullTotalPhys / 1'000'000'000;
-
-            char buf[32];
-            sprintf(buf, "%.1f GB/%lld GB", (memoryUsage * totalMemory), totalMemory);
-            ImGui::ProgressBar(memoryUsage, ImVec2(0.f, 0.f), buf);
-            ImGui::SameLine();
-            ImGui::Text("System memory");
-#endif
-
-        }
-
-        if (ImGui::CollapsingHeader("Renderer"))
-        {
-            ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::Text("Delta time: %.4f ms/frame", engine->deltaTime);
-            ImGui::Text("GPU: %s", gpu_name.c_str());
-
-            //if (ImGui::Checkbox("Wireframe", &wireframe))
-            //    wireframe ? current_pipeline = wireframePipeline : current_pipeline = geometry_pipeline;
-
-            if (ImGui::Checkbox("VSync", &vsync))
-            {
-                update_swapchain_vsync = true;
-            }
-
-            static int current_buffer_mode = (int)BufferMode::Double;
-            static std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
-            ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
-        }
-
-        if (ImGui::CollapsingHeader("Environment"))
-        {
-            // todo: Maybe we could use std::chrono for the time here?
-            ImGui::SliderInt("Time of day", &timeOfDay, 0.0f, 23.0f, "%d:00");
-            ImGui::SliderFloat("Temperature", &temperature, -20.0f, 50.0f, "%.1f C");
-            ImGui::SliderFloat("Wind speed", &windSpeed, 0.0f, 15.0f, "%.1f m/s");
-            ImGui::Separator();
-            ImGui::SliderFloat("Ambient", &scene.ambientSpecular.x, 0.0f, 1.0f);
-            ImGui::SliderFloat("Specular strength", &scene.ambientSpecular.y, 0.0f, 1.0f);
-            ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
-            ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.sunDirection), -1.0f, 1.0f);
-            ImGui::SliderFloat("Shadow map distance", &sunDistance, 1.0f, 2000.0f);
-            ImGui::SliderFloat("Shadow near", &shadowNear, 0.1f, 1.0f);
-            ImGui::SliderFloat("Shadow far", &shadowFar, 5.0f, 2000.0f);
-
-            ImGui::Text("Skybox");
-            //ImGui::SameLine();
-            //if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
-            //    skyboxWindowOpen = true;
-        }
-
-        if (ImGui::CollapsingHeader("Camera"))
-        {
-            if (ImGui::RadioButton("Perspective", engine->camera.projection == CameraProjection::Perspective))
-                engine->camera.projection = CameraProjection::Perspective;
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Orthographic", engine->camera.projection == CameraProjection::Orthographic))
-                engine->camera.projection = CameraProjection::Orthographic;
-            if (ImGui::RadioButton("First person", engine->camera.type == CameraType::FirstPerson))
-                engine->camera.type = CameraType::FirstPerson;
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Look at", engine->camera.type == CameraType::LookAt))
-                engine->camera.type = CameraType::LookAt;
-
-            ImGui::Text("Position");
-            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
-            //ImGui::PopFont();
-            ImGui::SameLine();
-            ImGui::Text("%.2f", engine->camera.position.x);
-            ImGui::SameLine();
-            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
-            //ImGui::PopFont();
-            ImGui::SameLine();
-            ImGui::Text("%.2f", engine->camera.position.y);
-            ImGui::SameLine();
-            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-            ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
-            //ImGui::PopFont();
-            ImGui::SameLine();
-            ImGui::Text("%.2f", engine->camera.position.z);
-
-            ImGui::Text("Direction");
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
-            ImGui::SameLine();
-            ImGui::Text("%.2f", engine->camera.front_vector.x);
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
-            ImGui::SameLine();
-            ImGui::Text("%.2f", engine->camera.front_vector.y);
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
-            ImGui::SameLine();
-            ImGui::Text("%.2f", engine->camera.front_vector.z);
-
-            ImGui::SliderFloat("Speed", &engine->camera.speed, 0.0f, 20.0f, "%.1f m/s");
-            float roll_rad = glm::radians(engine->camera.roll_speed);
-            ImGui::SliderAngle("Roll Speed", &roll_rad, 0.0f, 45.0f);
-            float fov_rad = glm::radians(engine->camera.fov);
-            ImGui::SliderAngle("Field of view", &fov_rad, 10.0f, 120.0f);
-            engine->camera.fov = glm::degrees(fov_rad);
-
-            ImGui::SliderFloat("Near plane", &engine->camera.near, 0.1f, 10.0f, "%.1f m");
-            ImGui::SliderFloat("Far plane", &engine->camera.far, 10.0f, 2000.0f, "%.1f m");
-            ImGui::Checkbox("Lock frustum", &lock_camera_frustum);
-        }
-
-        static bool edit_shaders = false;
-        if (ImGui::Button("Edit shaders"))
-            edit_shaders = true;
-
-
-
-        ImGui::Text("Viewport mode: %s", in_viewport ? "Enabled" : "Disabled");
-
-
-        if (edit_shaders) {
-            ImGui::Begin("Edit Shaders", &edit_shaders);
-
-            static char text[1024 * 16] =
-                "/*\n"
-                " The Pentium F00F bug, shorthand for F0 0F C7 C8,\n"
-                " the hexadecimal encoding of one offending instruction,\n"
-                " more formally, the invalid operand with locked CMPXCHG8B\n"
-                " instruction bug, is a design flaw in the majority of\n"
-                " Intel Pentium, Pentium MMX, and Pentium OverDrive\n"
-                " processors (all in the P5 microarchitecture).\n"
-                "*/\n\n"
-                "label:\n"
-                "\tlock cmpxchg8b eax\n";
-
-            static ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput;
-            ImGui::CheckboxFlags("ImGuiInputTextFlags_ReadOnly", &flags, ImGuiInputTextFlags_ReadOnly);
-            ImGui::CheckboxFlags("ImGuiInputTextFlags_AllowTabInput", &flags, ImGuiInputTextFlags_AllowTabInput);
-            ImGui::CheckboxFlags("ImGuiInputTextFlags_CtrlEnterForNewLine", &flags, ImGuiInputTextFlags_CtrlEnterForNewLine);
-            ImGui::InputTextMultiline("##source", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), flags);
-
-            ImGui::End();
-        }
-
-
-
-        ImGui::Separator();
-
-        RenderDemoWindow();
-
-
-
-
-
-        if (skyboxWindowOpen)
-        {
-            ImGui::Begin("Load Skybox", &skyboxWindowOpen);
-
-            std::string path = RenderFileExplorer(GetVFSPath("/textures"));
-
-            if (ImGui::Button("Load"))
-            {
-                // Wait for GPU to finish commands
-                // Remove skybox resources
-                // load new skybox texture and allocate resources
-            }
-
-            ImGui::End();
-        }
-
-
-
-
-
-
-    }
-    ImGui::End();
-}
-
-static void RenderConsoleWindow()
-{
-    static bool auto_scroll = true;
-
-    ImGui::Begin(console_window, &window_open, window_flags);
-    {
-        const std::vector<LogMessage>& logs = Logger::GetLogs();
-
-
-        if (ImGui::Button("Clear"))
-            Logger::ClearLogs();
-
-        ImGui::SameLine();
-        if (ImGui::Button("Export"))
-        {
-            std::ofstream output("logs.txt");
-            for (auto& message : Logger::GetLogs())
-                output << message.message << "\n";
-        }
-        ImGui::SameLine();
-        ImGui::Checkbox("Auto-scroll", &auto_scroll);
-        ImGui::SameLine();
-        ImGui::Text("Logs: %d/%d", logs.size(), Logger::GetLogLimit());
-        ImGui::Separator();
-
-        static const ImVec4 white = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-        static const ImVec4 yellow = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
-        static const ImVec4 red = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-
-        ImGui::BeginChild("Logs", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-        ImGuiListClipper clipper;
-        clipper.Begin(logs.size());
-        while (clipper.Step()) {
-            for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
-                ImVec4 log_color;
-                switch (logs[index].type) {
-                case LogType::Info:
-                    log_color = white;
-                    break;
-                case LogType::Warning:
-                    log_color = yellow;
-                    break;
-                case LogType::Error:
-                    log_color = red;
-                    break;
-                }
-
-                //ImGui::PushTextWrapPos();
-                ImGui::TextColored(log_color, logs[index].message.c_str());
-                //ImGui::PopTextWrapPos();
-            }
-        }
-        for (auto& log : logs) {
-
-        }
-
-
-        // TODO: Allow the user to disable auto scroll checkbox even if the
-        // scrollbar is at the bottom.
-
-        // Scroll to bottom of console window to view the most recent logs
-        if (auto_scroll)
-            ImGui::SetScrollHereY(1.0f);
-
-        auto_scroll = ImGui::GetScrollY() == ImGui::GetScrollMaxY();
-
-
-        ImGui::EndChild();
-    }
-    ImGui::End();
-}
-
-static void RenderViewportWindow()
-{
-    ImGuiIO& io = ImGui::GetIO();
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin(viewport_window, &window_open, window_flags);
-
-    //in_viewport = ImGui::IsWindowFocused();
-
-    ImGui::PopStyleVar(2);
-    {
-        static bool first_time = true;
-        // If new size is different than old size we will resize all contents
-        viewport_size = { ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y };
-
-        if (first_time) {
-            old_viewport_size = viewport_size;
-            first_time = false;
-        }
-
-        if (viewport_size != old_viewport_size) {
-            resize_viewport = true;
-
-            old_viewport_size = viewport_size;
-        }
-
-        // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
-        // when the viewport window resizes.
-        uint32_t current_image = GetSwapchainFrameIndex();
-        ImGui::Image(viewportUI[current_image], { viewport_size.x, viewport_size.y });
-    }
-    ImGui::End();
-}
-
-
-
 static void EventCallback(event& e);
 
-Engine* InitializeEngine(EngineInfo info)
+Engine* EngineInitialize(EngineInfo info)
 {
     Logger::Info("Initializing application");
 
@@ -1061,17 +272,6 @@ Engine* InitializeEngine(EngineInfo info)
         CreateRenderPass2(compositePass);
         viewport = AttachmentsToImages(compositePass.attachments, 0);
     }
-    {
-        AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
-        CreateRenderPass2(uiPass, true);
-    }
-
-    engine->ui = CreateUI(engine->renderer, uiPass.renderPass);
-
-
-    for (std::size_t i = 0; i < GetSwapchainImageCount(); ++i)
-        viewportUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, viewport[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-
 
 
 
@@ -1142,16 +342,6 @@ Engine* InitializeEngine(EngineInfo info)
     UpdateBinding(compositeSets, compositeBindings[5], shadow_depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, gFramebufferSampler);
     UpdateBinding(compositeSets, compositeBindings[6], engine->sunBuffer, sizeof(SunData));
     UpdateBinding(compositeSets, compositeBindings[7], engine->sceneBuffer, sizeof(SandboxScene));
-
-    // Create descriptor sets for g-buffer images for UI
-    for (std::size_t i = 0; i < positions.size(); ++i)
-    {
-        positionsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, positions[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        normalsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, normals[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        colorsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, colors[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        specularsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, speculars[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        depthsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, depths[i].view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL));
-    }
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -1261,7 +451,6 @@ Engine* InitializeEngine(EngineInfo info)
     // Create required command buffers
     offscreenCmdBuffer = CreateCommandBuffer();
     compositeCmdBuffer = CreateCommandBuffer();
-    uiCmdBuffer = CreateCommandBuffer();
 
 
 
@@ -1318,7 +507,8 @@ Engine* InitializeEngine(EngineInfo info)
     return engine;
 }
 
-bool UpdateEngine(Engine* engine)
+
+bool EngineUpdate(Engine* engine)
 {
     UpdateWindow(engine->window);
 
@@ -1326,7 +516,7 @@ bool UpdateEngine(Engine* engine)
     // do anything else. This ensures the application does not waste resources
     // performing other operations such as maths and rendering when the window
     // is not visible.
-    while (engine->minimized)
+    while (engine->window->minimized)
     {
         glfwWaitEvents();
     }
@@ -1335,15 +525,6 @@ bool UpdateEngine(Engine* engine)
     // is then used with inputs and physics to ensure that the result is the
     // same no matter how fast the CPU is running.
     engine->deltaTime = GetDeltaTime();
-
-    // Only update movement and camera view when in viewport mode
-    if (in_viewport)
-    {
-        UpdateInput(engine->camera, engine->deltaTime);
-        UpdateCamera(engine->camera, GetMousePos());
-    }
-    UpdateProjection(engine->camera);
-
 
     // Set sun view matrix
     glm::mat4 sunProjMatrix = glm::ortho(-sunDistance / 2.0f, sunDistance / 2.0f, sunDistance / 2.0f, -sunDistance / 2.0f, shadowNear, shadowFar);
@@ -1370,215 +551,126 @@ bool UpdateEngine(Engine* engine)
 
     return engine->running;
 }
+void EngineBeginRender(Engine* engine)
+{
+    engine->swapchainReady = GetNextSwapchainImage();
+
+    // If the swapchain is not ready the swapchain will be resized and then we
+    // need to resize any framebuffers.
+    if (!engine->swapchainReady)
+    {
+        ResizeFramebuffer(uiPass, { gTempEnginePtr->window->width, gTempEnginePtr->window->height });
+        engine->swapchainReady = true;
+    }
+}
+
+void EngineRender(Engine* engine)
+{
+    if (!engine->swapchainReady)
+        return;
+
+    BeginCommandBuffer(offscreenCmdBuffer);
+    {
+        //auto skyboxCmdBuffer = BeginRenderPass2(skyboxPass);
+
+        //// Render the sky sphere
+        //BindPipeline(offscreenCmdBuffer, skyspherePipeline, geometry_sets);
+        //for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
+        //{
+        //    BindMaterial(offscreenCmdBuffer, rendering_pipeline_layout, skysphere_material);
+        //    BindVertexArray(offscreenCmdBuffer, sphere.meshes[i].vertex_array);
+        //    Render(offscreenCmdBuffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
+        //}
+
+        //EndRenderPass(skyboxCmdBuffer);
+
+        BindDescriptorSet(offscreenCmdBuffer, shadowPipelineLayout, shadowSets, { sizeof(SunData) });
+        BeginRenderPass2(offscreenCmdBuffer, shadowPass);
+
+        BindPipeline(offscreenCmdBuffer, shadowPipeline);
+        for (std::size_t i = 0; i < engine->instances.size(); ++i)
+        {
+            Instance& instance = engine->instances[i];
+
+            Translate(instance, instance.position);
+            Rotate(instance, instance.rotation);
+            Scale(instance, instance.scale);
+
+            for (std::size_t i = 0; i < instance.model->meshes.size(); ++i)
+            {
+                BindVertexArray(offscreenCmdBuffer, instance.model->meshes[i].vertex_array);
+                Render(offscreenCmdBuffer, shadowPipelineLayout, instance.model->meshes[i].vertex_array.index_count, instance);
+            }
+        }
+
+
+
+        EndRenderPass(offscreenCmdBuffer);
+
+
+        BindDescriptorSet(offscreenCmdBuffer, offscreenPipelineLayout, offscreenSets, { sizeof(ViewProjection) });
+        BeginRenderPass(offscreenCmdBuffer, offscreenPass);
+
+        BindPipeline(offscreenCmdBuffer, offscreenPipeline);
+
+        // TODO: Currently we are rendering each instance individually
+        // which is a very naive. Firstly, instances should be rendered
+        // in batches using instanced rendering. We are also constantly
+        // rebinding the descriptor sets (material) and vertex buffers
+        // for each instance even though the data is exactly the same.
+        //
+        // A proper solution should be designed and implemented in the
+        // near future.
+        for (std::size_t i = 0; i < engine->instances.size(); ++i)
+        {
+            Instance& instance = engine->instances[i];
+
+            Translate(instance, instance.position);
+            Rotate(instance, instance.rotation);
+            Scale(instance, instance.scale);
+            RenderModel(instance, offscreenCmdBuffer, offscreenPipelineLayout);
+        }
+        EndRenderPass(offscreenCmdBuffer);
+
+    }
+    EndCommandBuffer(offscreenCmdBuffer);
+
+    //////////////////////////////////////////////////////////////////////////
+
+    BeginCommandBuffer(compositeCmdBuffer);
+    {
+        BeginRenderPass2(compositeCmdBuffer, compositePass);
+
+        BindDescriptorSet(compositeCmdBuffer, compositePipelineLayout, compositeSets, { sizeof(SunData) });
+
+        BindPipeline(compositeCmdBuffer, compositePipeline);
+        Render(compositeCmdBuffer);
+        EndRenderPass(compositeCmdBuffer);
+    }
+    EndCommandBuffer(compositeCmdBuffer);
+
+}
 
 void EnginePresent(Engine* engine)
 {
-    static bool swapchain_ready = true;
+    if (!engine->swapchainReady)
+        return;
 
-    // This is where the main rendering starts
-    if (swapchain_ready = BeginFrame())
+    if (engine->uiPassEnabled)
+        SubmitWork({ offscreenCmdBuffer, compositeCmdBuffer, uiCmdBuffer });
+    else
+        SubmitWork({ offscreenCmdBuffer, compositeCmdBuffer });
+
+
+    if (!DisplaySwapchainImage())
     {
-        BeginCommandBuffer(offscreenCmdBuffer);
-        {
-            //auto skyboxCmdBuffer = BeginRenderPass2(skyboxPass);
-
-            //// Render the sky sphere
-            //BindPipeline(offscreenCmdBuffer, skyspherePipeline, geometry_sets);
-            //for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
-            //{
-            //    BindMaterial(offscreenCmdBuffer, rendering_pipeline_layout, skysphere_material);
-            //    BindVertexArray(offscreenCmdBuffer, sphere.meshes[i].vertex_array);
-            //    Render(offscreenCmdBuffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
-            //}
-
-            //EndRenderPass(skyboxCmdBuffer);
-
-            BindDescriptorSet(offscreenCmdBuffer, shadowPipelineLayout, shadowSets, { sizeof(SunData) });
-            BeginRenderPass2(offscreenCmdBuffer, shadowPass);
-
-            BindPipeline(offscreenCmdBuffer, shadowPipeline);
-            for (std::size_t i = 0; i < gInstances.size(); ++i)
-            {
-                Instance& instance = gInstances[i];
-
-                Translate(instance, instance.position);
-                Rotate(instance, instance.rotation);
-                Scale(instance, instance.scale);
-
-                for (std::size_t i = 0; i < instance.model->meshes.size(); ++i)
-                {
-                    BindVertexArray(offscreenCmdBuffer, instance.model->meshes[i].vertex_array);
-                    Render(offscreenCmdBuffer, shadowPipelineLayout, instance.model->meshes[i].vertex_array.index_count, instance);
-                }
-            }
-
-
-
-            EndRenderPass(offscreenCmdBuffer);
-
-
-            BindDescriptorSet(offscreenCmdBuffer, offscreenPipelineLayout, offscreenSets, { sizeof(ViewProjection) });
-            BeginRenderPass(offscreenCmdBuffer, offscreenPass);
-
-            BindPipeline(offscreenCmdBuffer, offscreenPipeline);
-
-            // TODO: Currently we are rendering each instance individually
-            // which is a very naive. Firstly, instances should be rendered
-            // in batches using instanced rendering. We are also constantly
-            // rebinding the descriptor sets (material) and vertex buffers
-            // for each instance even though the data is exactly the same.
-            //
-            // A proper solution should be designed and implemented in the
-            // near future.
-            for (std::size_t i = 0; i < gInstances.size(); ++i)
-            {
-                Instance& instance = gInstances[i];
-
-                Translate(instance, instance.position);
-                Rotate(instance, instance.rotation);
-                Scale(instance, instance.scale);
-                RenderModel(instance, offscreenCmdBuffer, offscreenPipelineLayout);
-            }
-            EndRenderPass(offscreenCmdBuffer);
-
-        }
-        EndCommandBuffer(offscreenCmdBuffer);
-
-        //////////////////////////////////////////////////////////////////////////
-
-        BeginCommandBuffer(compositeCmdBuffer);
-        {
-            BeginRenderPass2(compositeCmdBuffer, compositePass);
-
-            BindDescriptorSet(compositeCmdBuffer, compositePipelineLayout, compositeSets, { sizeof(SunData) });
-
-            BindPipeline(compositeCmdBuffer, compositePipeline);
-            Render(compositeCmdBuffer);
-            EndRenderPass(compositeCmdBuffer);
-        }
-        EndCommandBuffer(compositeCmdBuffer);
-
-
-        //////////////////////////////////////////////////////////////////////////
-
-        BeginCommandBuffer(uiCmdBuffer);
-        {
-            BeginRenderPass2(uiCmdBuffer, uiPass);
-            BeginUI();
-
-            BeginDocking();
-            RenderMainMenu();
-            RenderDockspace();
-            RenderObjectWindow();
-            RenderGlobalWindow(engine);
-            RenderConsoleWindow();
-            RenderViewportWindow();
-            EndDocking();
-
-            EndUI(uiCmdBuffer);
-
-            EndRenderPass(uiCmdBuffer);
-    }
-        EndCommandBuffer(uiCmdBuffer);
-
-        // todo: copy image from last pass to swapchain image
-
-
-        EndFrame({ offscreenCmdBuffer, compositeCmdBuffer, uiCmdBuffer });
+        // TODO: Resize framebuffers if unable to display to swapchain
+        assert("Code path not expected! Must implement framebuffer resizing");
     }
 
-
-    // The viewport must resize before rendering to texture. If it were
-    // to resize within the UI functions then we would be attempting to
-    // recreate resources using a new size before submitting to the GPU
-    // which causes an error. Need to figure out how to do this properly.
-    if (resize_viewport)
-    {
-        VkExtent2D size{};
-        size.width = viewport_size.x;
-        size.height = viewport_size.y;
-
-        UpdateProjection(engine->camera, size.width, size.height);
-
-        WaitForGPU();
-
-        // TODO: You would think that resizing is easy.... Yet, there seems to
-        // be multiple issues such as stuttering, and image layout being 
-        // undefined. Needs to be fixed.
-#if 0
-        ResizeFramebuffer(offscreenPass, size);
-        ResizeFramebuffer(compositePass, size);
-
-        // TODO: update all image buffer descriptor sets
-        positions = AttachmentsToImages(offscreenPass.attachments, 0);
-        normals = AttachmentsToImages(offscreenPass.attachments, 1);
-        colors = AttachmentsToImages(offscreenPass.attachments, 2);
-        speculars = AttachmentsToImages(offscreenPass.attachments, 3);
-        depths = AttachmentsToImages(offscreenPass.attachments, 4);
-
-        viewport = AttachmentsToImages(compositePass.attachments, 0);
-
-        std::vector<VkDescriptorSetLayoutBinding> compositeBindings
-        {
-            { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-            { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-            { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-            { 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-            { 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        };
-        UpdateBinding(compositeSets, compositeBindings[0], positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-        UpdateBinding(compositeSets, compositeBindings[1], normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-        UpdateBinding(compositeSets, compositeBindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-        UpdateBinding(compositeSets, compositeBindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-        UpdateBinding(compositeSets, compositeBindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, gFramebufferSampler);
-
-        // Create descriptor sets for g-buffer images for UI
-
-
-        // TODO: Causes stuttering for some reason
-        // This is related to the order, creating the textures the other way seemed
-        // to fix it...
-        for (auto& image : viewport)
-            RecreateUITexture(viewportUI, image.view, gFramebufferSampler);
-
-        for (std::size_t i = 0; i < GetSwapchainImageCount(); ++i)
-        {
-            RecreateUITexture(positionsUI, positions[i].view, gFramebufferSampler);
-            RecreateUITexture(normalsUI, normals[i].view, gFramebufferSampler);
-            RecreateUITexture(colorsUI, colors[i].view, gFramebufferSampler);
-            RecreateUITexture(specularsUI, speculars[i].view, gFramebufferSampler);
-            RecreateUITexture(depthsUI, depths[i].view, gFramebufferSampler, true);
-        }
-#endif
-
-        resize_viewport = false;
-    }
-
-    // todo: should this be here?
-    if (!swapchain_ready)
-    {
-        WaitForGPU();
-
-        ResizeFramebuffer(uiPass, { gTempEnginePtr->window->width, gTempEnginePtr->window->height });
-
-        swapchain_ready = true;
-    }
-
-
-#if 0
-    if (update_swapchain_vsync)
-    {
-        WaitForGPU();
-
-        RecreateSwapchain(BufferMode::Double, vsync ? VSyncMode::Enabled : VSyncMode::Disabled);
-
-
-        update_swapchain_vsync = false;
-    }
-#endif
 }
 
-void TerminateEngine(Engine* engine)
+void EngineTerminate(Engine* engine)
 {
     Logger::Info("Terminating application");
 
@@ -1592,7 +684,7 @@ void TerminateEngine(Engine* engine)
 
     DestroyModel(sphere);
 
-    for (auto& model : gModels)
+    for (auto& model : engine->models)
         DestroyModel(model);
 
     DestroyImage(empty_normal_map);
@@ -1645,21 +737,326 @@ void TerminateEngine(Engine* engine)
     delete engine;
 }
 
-void CreateCamera(Engine* engine, float fovy, float speed)
+void EngineAddModel(Engine* engine, const char* path, bool flipUVs)
+{
+    Logger::Info("Loading mesh {}", path);
+
+    Model model = LoadModel(path, flipUVs);
+    UploadModelToGPU(model, materialLayout, materialBindings, gTextureSampler);
+
+    //std::lock_guard<std::mutex> lock(model_mutex);
+    engine->models.push_back(model);
+
+    Logger::Info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path);
+}
+
+void EngineRemoveModel(Engine* engine, int modelID)
+{
+    // Remove all instances which use the current model
+    std::size_t size = engine->instances.size();
+    for (std::size_t i = 0; i < size; ++i)
+    {
+        if (engine->instances[i].model == &engine->models[modelID])
+        {
+            engine->instances.erase(engine->instances.begin() + i);
+            size--;
+        }
+    }
+
+    // Remove model from list and memory
+    WaitForGPU();
+
+    DestroyModel(engine->models[modelID]);
+    engine->models.erase(engine->models.begin() + modelID);
+}
+
+void EngineAddInstance(Engine* engine, int modelID, float x, float y, float z)
+{
+    // TEMP: instance id
+    static int instanceID = 0;
+
+    Instance instance{};
+    instance.id = instanceID++;
+    instance.name = "Unnamed";
+    instance.model = &engine->models[modelID];
+    instance.position = glm::vec3(0.0f);
+    instance.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+    instance.scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    instance.matrix = glm::mat4(1.0f);
+
+    engine->instances.push_back(instance);
+}
+
+void EngineRemoveInstance(Engine* engine, int instanceID)
+{
+    assert(instanceID >= 0);
+
+    // TODO: Search by instanceID and not index position in vector
+#if 1
+    const auto it = std::find_if(engine->instances.begin(), engine->instances.end(), [=](Instance& instance)
+        {
+            return instance.id == instanceID;
+        });
+
+    if (it == engine->instances.end())
+    {
+        Logger::Warning("Unable to find instance with ID of {} to remove", instanceID);
+        return;
+    }
+
+    // TODO: Get index based on iterator position
+#endif
+
+
+    engine->instances.erase(engine->instances.begin() + instanceID);
+}
+
+
+
+void EngineSetEnvironmentMap(const char* path)
+{
+    // Delete existing environment map if any
+    // Load texture
+    // Update environment map
+}
+
+void EngineCreateCamera(Engine* engine, float fovy, float speed)
 {
     engine->camera = CreatePerspectiveCamera(CameraType::FirstPerson, { 0.0f, 0.0f, 0.0f }, fovy, speed);
 }
 
+void UpdateInput(Engine* engine)
+{
+    UpdateInput(engine->camera, engine->deltaTime);
+}
+
+void EngineUpdateCameraView(Engine* engine)
+{
+    UpdateCamera(engine->camera, GetMousePos());
+}
+
+void EngineUpdateCameraProjection(Engine* engine, int width, int height)
+{
+    UpdateProjection(engine->camera, width, height);
+}
+
+void EngineGetCameraPosition(Engine* engine, float* x, float* y, float* z)
+{
+    *x = engine->camera.position.x;
+    *y = engine->camera.position.y;
+    *z = engine->camera.position.z;
+}
+
+void EngineGetCameraFrontVector(Engine* engine, float* x, float* y, float* z)
+{
+    *x = engine->camera.front_vector.x;
+    *y = engine->camera.front_vector.y;
+    *z = engine->camera.front_vector.z;
+}
+
+float* EngineGetCameraFOV(Engine* engine)
+{
+    return &engine->camera.fov;
+}
+
+float* EngineGetCameraSpeed(Engine* engine)
+{
+    return &engine->camera.speed;
+}
+
+float* EngineGetCameraNear(Engine* engine)
+{
+    return &engine->camera.near;
+}
+
+float* EngineGetCameraFar(Engine* engine)
+{
+    return &engine->camera.far;
+}
+
+void EngineSetCameraPosition(Engine* engine, float x, float y, float z)
+{
+    engine->camera.position = glm::vec3(x, y, z);
+}
+
+void EngineEnableUIPass(Engine* engine)
+{
+    engine->uiPassEnabled = true;
+
+
+    {
+        AddFramebufferAttachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
+        CreateRenderPass2(uiPass, true);
+    }
+
+    engine->ui = CreateUI(engine->renderer, uiPass.renderPass);
+
+
+    for (std::size_t i = 0; i < GetSwapchainImageCount(); ++i)
+        viewportUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, viewport[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+
+    // Create descriptor sets for g-buffer images for UI
+    for (std::size_t i = 0; i < positions.size(); ++i)
+    {
+        positionsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, positions[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        normalsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, normals[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        colorsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, colors[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        specularsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, speculars[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        depthsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, depths[i].view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL));
+    }
+
+    uiCmdBuffer = CreateCommandBuffer();
+}
+
+void EngineBeginUIPass()
+{
+    BeginCommandBuffer(uiCmdBuffer);
+    BeginRenderPass2(uiCmdBuffer, uiPass);
+    BeginUI();
+}
+
+void EngineEndUIPass()
+{
+    EndUI(uiCmdBuffer);
+    EndRenderPass(uiCmdBuffer);
+    EndCommandBuffer(uiCmdBuffer);
+}
+
+void EngineRenderViewportUI(int width, int height)
+{
+    const uint32_t currentImage = GetSwapchainFrameIndex();
+    ImGui::Image(viewportUI[currentImage], ImVec2(width, height));
+}
+
+int EngineGetModelCount(Engine* engine)
+{
+    return engine->models.size();
+}
+
+int EngineGetInstanceCount(Engine* engine)
+{
+    return engine->instances.size();
+}
+
+const char* EngineGetModelName(Engine* engine, int modelID)
+{
+    return engine->models[modelID].name.c_str();
+}
+
+double EngineGetDeltaTime(Engine* engine)
+{
+    return engine->deltaTime;
+}
+
+
+const char* EngineDisplayFileExplorer(Engine* engine, const char* path)
+{
+    static std::string current_dir = path;
+    static std::string file;
+    static std::string complete_path;
+
+    static std::vector<DirectoryItem> items = GetDirectoryItems(current_dir);
+    static int index = 0;
+
+    ImGui::SameLine();
+    //ImGui::Text("[%d]", items.size());
+
+
+    // TODO: Convert to ImGuiClipper
+    if (ImGui::BeginListBox("##empty", ImVec2(-FLT_MIN, 0))) {
+        for (std::size_t i = 0; i < items.size(); ++i) {
+            const ImVec2 combo_pos = ImGui::GetCursorScreenPos();
+            ImGui::SetCursorScreenPos(ImVec2(combo_pos.x + ImGui::GetStyle().FramePadding.x, combo_pos.y));
+
+            const bool selected = ImGui::Selectable(std::string("##" + items[i].name).c_str(), index == i);
+
+
+            ImVec4 itemColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+            if (items[i].type == ItemType::file)
+            {
+                itemColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+                if (selected)
+                {
+                    file = items[i].name;
+                    index = i;
+                    complete_path = current_dir + '/' + file;
+                }
+            }
+            else if (items[i].type == ItemType::directory)
+            {
+                itemColor = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+                if (selected)
+                {
+                    current_dir = items[i].path.c_str();
+                    complete_path = current_dir;
+                    items = GetDirectoryItems(current_dir);
+                    index = 0;
+                }
+
+
+            }
+
+            ImGui::SameLine();
+            ImGui::TextColored(itemColor, items[i].name.c_str());
+
+            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+            if (selected)
+                ImGui::SetItemDefaultFocus();
+
+
+        }
+        ImGui::EndListBox();
+    }
+
+    return complete_path.c_str();
+}
+
+void EngineGetExecutableDirectory(Engine* engine, const char* path)
+{
+    path = engine->execPath.parent_path().string().c_str();
+}
+
+void EngineClearLogs(Engine* engine)
+{
+    Logger::ClearLogs();
+}
+
+void EngineExportLogsToFile(Engine* engine, const char* path)
+{
+    std::ofstream output(path);
+
+    for (auto& message : Logger::GetLogs())
+        output << message.message << "\n";
+}
+
+int EngineGetLogCount(Engine* engine)
+{
+    return Logger::GetLogs().size();
+}
+
+int EngineGetLogType(Engine* engine, int logIndex)
+{
+    return static_cast<int>(Logger::GetLogs()[logIndex].type);
+}
+
+const char* EngineGetLog(Engine* engine, int logIndex)
+{
+    return Logger::GetLogs()[logIndex].message.c_str();
+}
 
 // TODO: Event system stuff
 static bool press(key_pressed_event& e)
 {
+#if 0
     if (e.get_key_code() == GLFW_KEY_F1)
     {
         in_viewport = !in_viewport;
         gTempEnginePtr->camera.first_mouse = true;
         glfwSetInputMode(gTempEnginePtr->window->handle, GLFW_CURSOR, in_viewport ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
+#endif
 
     return true;
 }
@@ -1698,13 +1095,14 @@ static bool close_window(window_closed_event& e)
 
 static bool minimized_window(window_minimized_event& e)
 {
-    gTempEnginePtr->minimized = true;
+    gTempEnginePtr->window->minimized = true;
+
     return true;
 }
 
 static bool not_minimized_window(window_not_minimized_event& e)
 {
-    gTempEnginePtr->minimized = false;
+    gTempEnginePtr->window->minimized = false;
     return true;
 }
 

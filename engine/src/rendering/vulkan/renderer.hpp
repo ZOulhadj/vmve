@@ -190,8 +190,9 @@ VkPipelineLayout CreatePipelineLayout(const std::vector<VkDescriptorSetLayout>& 
 void DestroyPipeline(VkPipeline pipeline);
 void DestroyPipelineLayout(VkPipelineLayout layout);
 
-bool BeginFrame();
-void EndFrame(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers);
+bool GetNextSwapchainImage();
+void SubmitWork(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers);
+bool DisplaySwapchainImage();
 
 void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets);
 void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, 

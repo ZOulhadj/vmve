@@ -18,11 +18,6 @@ void EndUI(std::vector<VkCommandBuffer>& buffers);
 
 void RecreateUITexture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler, bool depth = false);
 
-std::string RenderFileExplorer(const std::filesystem::path& root);
 
-
-
-// TEMP
-void RenderDemoWindow();
 
 #endif
