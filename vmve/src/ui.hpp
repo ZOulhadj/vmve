@@ -2,6 +2,12 @@
 #define VMVE_UI_HPP
 
 
+
+#include <filesystem>
+#include <array>
+#include <vector>
+#include <string>
+
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h> // Docking API

@@ -1,11 +1,5 @@
 #include <engine.h>
 
-
-#include <filesystem>
-#include <array>
-#include <vector>
-#include <string>
-
 #include "vmve.hpp"
 #include "security.hpp"
 #include "ui.hpp"
@@ -37,7 +31,7 @@ int main()
         // Updating
         if (in_viewport)
         {
-            UpdateInput(engine);
+            EngineUpdateInput(engine);
             EngineUpdateCameraView(engine);
         }
 

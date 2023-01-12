@@ -862,7 +862,7 @@ void EngineCreateCamera(Engine* engine, float fovy, float speed)
     engine->camera = CreatePerspectiveCamera(CameraType::FirstPerson, { 0.0f, 0.0f, 0.0f }, fovy, speed);
 }
 
-void UpdateInput(Engine* engine)
+void EngineUpdateInput(Engine* engine)
 {
     UpdateInput(engine->camera, engine->deltaTime);
 }
