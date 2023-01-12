@@ -52,7 +52,7 @@ double EngineGetDeltaTime(Engine* engine);
 
 // Filesystem
 const char* EngineDisplayFileExplorer(Engine* engine, const char* path); // TEMP: Must be moved to VMVE
-void EngineGetExecutableDirectory(Engine* engine, const char* path);
+const char* EngineGetExecutableDirectory(Engine* engine);
 
 // Input
 void UpdateInput(Engine* engine);

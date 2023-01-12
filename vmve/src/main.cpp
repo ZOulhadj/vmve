@@ -179,8 +179,7 @@ static void RenderMainMenu(Engine* engine)
 
         ImGui::Checkbox("Flip UVs", &flip_uv);
 
-        static const char* modelPath;
-        EngineGetExecutableDirectory(engine, modelPath);
+        static const char* modelPath = EngineGetExecutableDirectory(engine);
 
         std::string model_path = EngineDisplayFileExplorer(engine, modelPath);
 
@@ -205,15 +204,15 @@ static void RenderMainMenu(Engine* engine)
 
         ImGui::Begin("Export Model", &export_model_open);
 
-        static const char* exportPath;
-        EngineGetExecutableDirectory(engine, exportPath);
-        std::string current_path = EngineDisplayFileExplorer(engine, exportPath);
+        //static const char* exportPath = EngineGetExecutableDirectory(engine);
+        //std::string current_path = EngineDisplayFileExplorer(engine, exportPath);
 
         ImGui::InputText("File name", filename, 50);
 
         ImGui::Checkbox("Encryption", &use_encryption);
 #if 1
-        if (use_encryption) {
+        if (use_encryption)
+        {
             static std::array<const char*, 4> encryption_alogrithms = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
             static std::array<const char*, 2> key_lengths = { "256 bits (Recommended)", "128 bit" };
             static std::array<unsigned char, 2> key_length_bytes = { 32, 16 };
@@ -228,7 +227,8 @@ static void RenderMainMenu(Engine* engine)
             ImGui::Combo("Key length", &current_key_length, key_lengths.data(), key_lengths.size());
             ImGui::Combo("Encryption method", &current_encryption_mode, encryption_alogrithms.data(), encryption_alogrithms.size());
 
-            if (ImGui::Button("Generate key")) {
+            if (ImGui::Button("Generate key"))
+            {
                 CryptoPP::AutoSeededRandomPool random_pool;
 
                 // Set key and IV byte lengths
@@ -263,15 +263,26 @@ static void RenderMainMenu(Engine* engine)
                 key_generated = true;
             }
 
-            if (key_generated) {
+            if (key_generated)
+            {
                 ImGui::Text("Key: %s", k.c_str());
                 ImGui::Text("IV: %s", i.c_str());
             }
 
             //ImGui::InputText("Key", key, 20, show_key ? ImGuiInputTextFlags_None : ImGuiInputTextFlags_Password);
             //ImGui::Checkbox("Show key", &show_key);
+
+            if (!k.empty())
+            {
+                if (ImGui::Button("Copy to clipboard"))
+                {
+                    ImGui::SetClipboardText(k.c_str());
+                }
+            }
         }
 #endif
+
+
 
         if (ImGui::Button("Export"))
         {
@@ -647,8 +658,7 @@ static void RenderGlobalWindow(Engine* engine)
         {
             ImGui::Begin("Load Skybox", &skyboxWindowOpen);
 
-            static const char* textureDirectory;
-            EngineGetExecutableDirectory(engine, textureDirectory);
+            static const char* textureDirectory = EngineGetExecutableDirectory(engine);
             std::string path = EngineDisplayFileExplorer(engine, textureDirectory);
 
             if (ImGui::Button("Load"))

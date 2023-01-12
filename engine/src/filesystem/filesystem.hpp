@@ -4,9 +4,9 @@
 
 enum class ItemType
 {
-    unknown,
-    file,
-    directory,
+    Unknown,
+    File,
+    Directory,
 };
 
 struct DirectoryItem

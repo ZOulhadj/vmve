@@ -973,7 +973,7 @@ const char* EngineDisplayFileExplorer(Engine* engine, const char* path)
 
             ImVec4 itemColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-            if (items[i].type == ItemType::file)
+            if (items[i].type == ItemType::File)
             {
                 itemColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -984,7 +984,7 @@ const char* EngineDisplayFileExplorer(Engine* engine, const char* path)
                     complete_path = current_dir + '/' + file;
                 }
             }
-            else if (items[i].type == ItemType::directory)
+            else if (items[i].type == ItemType::Directory)
             {
                 itemColor = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
                 if (selected)
@@ -1013,9 +1013,12 @@ const char* EngineDisplayFileExplorer(Engine* engine, const char* path)
     return complete_path.c_str();
 }
 
-void EngineGetExecutableDirectory(Engine* engine, const char* path)
+const char* EngineGetExecutableDirectory(Engine* engine)
 {
-    path = engine->execPath.parent_path().string().c_str();
+    // TODO: Continue from here
+    auto c = engine->execPath.c_str();
+
+    return "";
 }
 
 void EngineClearLogs(Engine* engine)
