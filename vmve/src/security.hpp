@@ -14,52 +14,34 @@
 #include <integer.h>
 #include <dh.h>
 
-struct AES_Data
+
+struct KeyIV
 {
     CryptoPP::SecByteBlock key{};
     CryptoPP::SecByteBlock iv{};
+};
+
+
+struct KeyIVString
+{
+    std::string key;
+    std::string iv;
+};
+
+struct AES_Data
+{
+    KeyIV keyIV;
 
     std::string data;
 };
 
-AES_Data EncryptAES(const std::string& text)
-{
-    AES_Data data{};
-
-    CryptoPP::AutoSeededRandomPool random_pool;
-
-    // Set key and IV byte lengths
-    data.key = CryptoPP::SecByteBlock(CryptoPP::AES::DEFAULT_KEYLENGTH);
-    data.iv  = CryptoPP::SecByteBlock(CryptoPP::AES::BLOCKSIZE);
-
-    // Generate key and IV
-    random_pool.GenerateBlock(data.key, data.key.size());
-    random_pool.GenerateBlock(data.iv, data.iv.size());
-
-    // Set key and IV to encryption mode
-    CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
-    encryption.SetKeyWithIV(data.key, data.key.size(), data.iv);
-
-    // Encrypt text
-    CryptoPP::StringSource s(text, true, new CryptoPP::StreamTransformationFilter(encryption, new CryptoPP::StringSink(data.data)));
 
 
-    return data;
-}
+KeyIV GenerateKeyIV(unsigned char keyLength);
+KeyIVString KeyIVToHex(KeyIV& keyIV);
 
-std::string DecrptAES(const AES_Data& data)
-{
-    std::string text;
-
-    // Set decryption key and IV
-    CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryption;
-    decryption.SetKeyWithIV(data.key, data.key.size(), data.iv);
-
-    // Decrypt
-    CryptoPP::StringSource s(data.data.data(), true, new CryptoPP::StreamTransformationFilter(decryption, new CryptoPP::StringSink(text)));
-
-    return text;
-}
+AES_Data EncryptAES(const std::string& text, unsigned char keyLength);
+std::string DecrptAES(const AES_Data& data);
 
 
 #endif

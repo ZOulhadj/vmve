@@ -2,6 +2,7 @@
 #define VMVE_UI_HPP
 
 
+#include "security.hpp"
 
 #include <filesystem>
 #include <array>
@@ -31,7 +32,7 @@ static int renderMode = 0;
 
 static bool vsync = true;
 static bool update_swapchain_vsync = false;
-static bool in_viewport = false;
+static bool in_viewport = true;
 
 // Global GUI flags and settings
 
@@ -217,74 +218,44 @@ static void RenderMainMenu(Engine* engine)
             static std::array<const char*, 2> keyLengths = { "256 bits (Recommended)", "128 bit" };
             static std::array<unsigned char, 2> keyLengthsBytes = { 32, 16 };
             static int currentKeyLength = 0;
-            static CryptoPP::SecByteBlock key{};
-            static CryptoPP::SecByteBlock iv{};
             static bool isKeyGenerated = false;
-            static std::string keyString;
-            static std::string ivString;
-
+            static KeyIV keyIV;
+            static KeyIVString keyIVString;
 
             ImGui::Combo("Key length", &currentKeyLength, keyLengths.data(), keyLengths.size());
             ImGui::Combo("Encryption method", &current_encryption_mode, encryptionModes.data(), encryptionModes.size());
 
             if (ImGui::Button("Generate key"))
             {
-                CryptoPP::AutoSeededRandomPool randPool;
-
-                // Set key and IV byte lengths
-                key = CryptoPP::SecByteBlock(keyLengthsBytes[currentKeyLength]);
-                iv = CryptoPP::SecByteBlock(CryptoPP::AES::BLOCKSIZE);
-
-                // Generate key and IV
-                randPool.GenerateBlock(key, key.size());
-                randPool.GenerateBlock(iv, iv.size());
-
-                // Set key and IV to encryption mode
-                CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
-                encryption.SetKeyWithIV(key, key.size(), iv);
-
-                // Convert from bytes into hex
-                {
-                    CryptoPP::HexEncoder hex_encoder;
-                    hex_encoder.Put(key, sizeof(CryptoPP::byte) * key.size());
-                    hex_encoder.MessageEnd();
-                    keyString.resize(hex_encoder.MaxRetrievable());
-                    hex_encoder.Get((CryptoPP::byte*)&keyString[0], keyString.size());
-                }
-                {
-                    // TODO: IV hex does not get created for some reason.
-                    CryptoPP::HexDecoder hex_encoder;
-                    hex_encoder.Put(iv, sizeof(CryptoPP::byte) * iv.size());
-                    hex_encoder.MessageEnd();
-                    ivString.resize(hex_encoder.MaxRetrievable());
-                    hex_encoder.Get((CryptoPP::byte*)&ivString[0], ivString.size());
-                }
+                keyIV = GenerateKeyIV(keyLengthsBytes[currentKeyLength]);
+                keyIVString = KeyIVToHex(keyIV);
 
                 isKeyGenerated = true;
             }
 
             if (isKeyGenerated)
             {
-                ImGui::Text("Key: %s", keyString.c_str());
-                ImGui::Text("IV: %s", ivString.c_str());
+                ImGui::Text("Key: %s", keyIVString.key.c_str());
+                ImGui::Text("IV: %s", keyIVString.iv.c_str());
             }
 
             //ImGui::InputText("Key", key, 20, show_key ? ImGuiInputTextFlags_None : ImGuiInputTextFlags_Password);
             //ImGui::Checkbox("Show key", &show_key);
 
-            if (!keyString.empty())
+            if (!keyIVString.key.empty())
             {
                 if (ImGui::Button("Copy Key to clipboard"))
                 {
-                    ImGui::SetClipboardText(keyString.c_str());
+                    ImGui::SetClipboardText(keyIVString.key.c_str());
                 }
             }
 
-            if (!ivString.empty())
+            if (!keyIVString.iv.empty())
             {
+                ImGui::SameLine();
                 if (ImGui::Button("Copy IV to clipboard"))
                 {
-                    ImGui::SetClipboardText(ivString.c_str());
+                    ImGui::SetClipboardText(keyIVString.iv.c_str());
                 }
             }
         }
@@ -294,7 +265,7 @@ static void RenderMainMenu(Engine* engine)
 
         if (ImGui::Button("Export"))
         {
-
+            // TODO: Encrypt data
         }
 
         ImGui::End();

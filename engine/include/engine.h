@@ -33,44 +33,46 @@ struct Engine;
 // Core
 
 //
-//
-//
-//
+// This is the first function that must be called. It initializes all systems
+// such as the window, renderer, audio etc. Takes an EngineInfo as a parameter
+// which provides the required information the engine needs to initialize.
 Engine* EngineInitialize(EngineInfo info);
 
 //
-//
-//
-//
+// The final engine related function call that will terminate all sub-systems
+// and free all engine managed memory. Engine* should be a valid pointer 
+// created by the EngineInitialize function. If NULL is passed then the function
+// simply does nothing.
 void EngineTerminate(Engine* engine);
 
 // Rendering
 
 //
-//
-//
-//
+// Updates the internal state of the engine. This is called every frame before
+// any rendering related function calls. The boolean return value returns true
+// if the engine is running as normal. On the other hand, if the engine is no
+// longer running i.e has been instructed to shutdown then the return value
+// will be false. This function should be used as the condition in a while loop.
 bool EngineUpdate(Engine* engine);
 
 //
-//
-//
-//
+// Obtains the next available frame in preparation for issuing rendering
+// commands to the engine. This must be the first rendering related function
+// call within the main loop.
 void EngineBeginRender(Engine* engine);
 
 //
-//
+// 
 //
 //
 void EngineRender(Engine* engine);
 
 //
-//
-//
-//
+// Executes all the rendering commands issued for the current frame and then
+// presents the results onto the screen.
 void EnginePresent(Engine* engine);
 
-// Enviroment
+// Environment
 
 //
 //
@@ -82,13 +84,13 @@ void EngineSetEnvironmentMap(const char* path);
 // Models
 
 //
-//
+// Loads a model and all associated resources.
 //
 //
 void EngineAddModel(Engine* engine, const char* path, bool flipUVs);
 
 //
-//
+// Removes a model by deallocating all resources a model.
 //
 //
 void EngineRemoveModel(Engine* engine, int modelID);
@@ -203,7 +205,7 @@ void EngineUpdateInput(Engine* engine);
 // Camera
 
 //
-//
+// Initializes a camera.
 //
 //
 void EngineCreateCamera(Engine* engine, float fovy, float speed);
