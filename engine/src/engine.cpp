@@ -44,6 +44,8 @@ struct Engine
     ImGuiContext* ui;
 
 
+    void (*KeyCallback)(Engine* engine, int keyCode);
+
     std::filesystem::path execPath;
     bool running;
     std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
@@ -737,6 +739,11 @@ void EngineTerminate(Engine* engine)
     delete engine;
 }
 
+void RegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode))
+{
+    engine->KeyCallback = KeyCallback;
+}
+
 void EngineAddModel(Engine* engine, const char* path, bool flipUVs)
 {
     Logger::Info("Loading mesh {}", path);
@@ -1075,6 +1082,13 @@ const char* EngineGetExecutableDirectory(Engine* engine)
     return "";
 }
 
+void EngineSetCursorMode(Engine* engine, int cursorMode)
+{
+    int mode = (cursorMode == 0) ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
+
+    glfwSetInputMode(engine->window->handle, GLFW_CURSOR, mode);
+}
+
 void EngineClearLogs(Engine* engine)
 {
     Logger::ClearLogs();
@@ -1106,14 +1120,7 @@ const char* EngineGetLog(Engine* engine, int logIndex)
 // TODO: Event system stuff
 static bool press(key_pressed_event& e)
 {
-#if 0
-    if (e.get_key_code() == GLFW_KEY_F1)
-    {
-        in_viewport = !in_viewport;
-        gTempEnginePtr->camera.first_mouse = true;
-        glfwSetInputMode(gTempEnginePtr->window->handle, GLFW_CURSOR, in_viewport ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
-    }
-#endif
+    gTempEnginePtr->KeyCallback(gTempEnginePtr, e.get_key_code());
 
     return true;
 }

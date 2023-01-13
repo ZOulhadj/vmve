@@ -32,7 +32,7 @@ static int renderMode = 0;
 
 static bool vsync = true;
 static bool update_swapchain_vsync = false;
-static bool in_viewport = true;
+static bool viewportActive = false;
 
 // Global GUI flags and settings
 
@@ -200,7 +200,11 @@ static void RenderMainMenu(Engine* engine)
     {
         static bool use_encryption = false;
         static bool show_key = false;
-        static int current_encryption_mode = 0;
+        static int encryptionModeIndex = 0;
+        static std::array<unsigned char, 2> keyLengthsBytes = { 32, 16 };
+        static int keyLengthIndex = 0;
+        static KeyIV keyIV;
+        static KeyIVString keyIVString;
         static char filename[50];
 
         ImGui::Begin("Export Model", &export_model_open);
@@ -215,19 +219,17 @@ static void RenderMainMenu(Engine* engine)
         if (use_encryption)
         {
             static std::array<const char*, 4> encryptionModes = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
-            static std::array<const char*, 2> keyLengths = { "256 bits (Recommended)", "128 bit" };
-            static std::array<unsigned char, 2> keyLengthsBytes = { 32, 16 };
-            static int currentKeyLength = 0;
+            static std::array<const char*, 2> keyLengths = { "256 bits", "128 bit" };
+
             static bool isKeyGenerated = false;
-            static KeyIV keyIV;
-            static KeyIVString keyIVString;
 
-            ImGui::Combo("Key length", &currentKeyLength, keyLengths.data(), keyLengths.size());
-            ImGui::Combo("Encryption method", &current_encryption_mode, encryptionModes.data(), encryptionModes.size());
 
-            if (ImGui::Button("Generate key"))
+            ImGui::Combo("Encryption method", &encryptionModeIndex, encryptionModes.data(), encryptionModes.size());
+            ImGui::Combo("Key length", &keyLengthIndex, keyLengths.data(), keyLengths.size());
+
+            if (ImGui::Button("Generate Key/IV"))
             {
-                keyIV = GenerateKeyIV(keyLengthsBytes[currentKeyLength]);
+                keyIV = GenerateKeyIV(keyLengthsBytes[keyLengthIndex]);
                 keyIVString = KeyIVToHex(keyIV);
 
                 isKeyGenerated = true;
@@ -237,25 +239,13 @@ static void RenderMainMenu(Engine* engine)
             {
                 ImGui::Text("Key: %s", keyIVString.key.c_str());
                 ImGui::Text("IV: %s", keyIVString.iv.c_str());
-            }
 
-            //ImGui::InputText("Key", key, 20, show_key ? ImGuiInputTextFlags_None : ImGuiInputTextFlags_Password);
-            //ImGui::Checkbox("Show key", &show_key);
-
-            if (!keyIVString.key.empty())
-            {
-                if (ImGui::Button("Copy Key to clipboard"))
+                if (ImGui::Button("Copy to clipboard"))
                 {
-                    ImGui::SetClipboardText(keyIVString.key.c_str());
-                }
-            }
+                    std::string clipboard = "Key: " + keyIVString.key + "\n" +
+                                            "IV: " + keyIVString.iv;
 
-            if (!keyIVString.iv.empty())
-            {
-                ImGui::SameLine();
-                if (ImGui::Button("Copy IV to clipboard"))
-                {
-                    ImGui::SetClipboardText(keyIVString.iv.c_str());
+                    ImGui::SetClipboardText(clipboard.c_str());
                 }
             }
         }
@@ -266,6 +256,14 @@ static void RenderMainMenu(Engine* engine)
         if (ImGui::Button("Export"))
         {
             // TODO: Encrypt data
+            if (encryptionModeIndex == 0) // AES
+            {
+                AES_Data data = EncryptAES("", keyIV);
+            }
+            else if (encryptionModeIndex == 1) // DH
+            {
+                
+            }
         }
 
         ImGui::End();
@@ -273,15 +271,18 @@ static void RenderMainMenu(Engine* engine)
 
 
 
-    if (performance_profiler) {
+    if (performance_profiler)
+    {
         ImGui::Begin("Performance Profiler", &performance_profiler);
 
-        if (ImGui::CollapsingHeader("CPU Timers")) {
+        if (ImGui::CollapsingHeader("CPU Timers"))
+        {
             ImGui::Text("%.2fms - Applicaiton::Render", 15.41f);
             ImGui::Text("%.2fms - GeometryPass::Render", 12.23f);
         }
 
-        if (ImGui::CollapsingHeader("GPU Timers")) {
+        if (ImGui::CollapsingHeader("GPU Timers"))
+        {
             ImGui::Text("%fms - VkQueueSubmit", 0.018f);
         }
 
@@ -325,7 +326,8 @@ static void RenderDockspace()
     ImGuiViewport* viewport = ImGui::GetMainViewport();
 
     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-    if (!ImGui::DockBuilderGetNode(dockspace_id)) {
+    if (!ImGui::DockBuilderGetNode(dockspace_id))
+    {
         ImGui::DockBuilderRemoveNode(dockspace_id);
         ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
         ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
@@ -428,7 +430,8 @@ static void RenderObjectWindow(Engine* engine)
         }
 
 
-        if (EngineGetInstanceCount(engine) > 0) {
+        if (EngineGetInstanceCount(engine) > 0)
+        {
             ImGui::BeginChild("Object Properties");
 
             ImGui::Text("ID: %04d", selectedInstanceID);
@@ -596,7 +599,7 @@ static void RenderGlobalWindow(Engine* engine)
 
 
 
-        ImGui::Text("Viewport mode: %s", in_viewport ? "Enabled" : "Disabled");
+        ImGui::Text("Viewport mode: %s", viewportActive ? "Enabled" : "Disabled");
 
 
         if (edit_shaders) {

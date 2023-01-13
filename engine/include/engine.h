@@ -45,6 +45,9 @@ Engine* EngineInitialize(EngineInfo info);
 // simply does nothing.
 void EngineTerminate(Engine* engine);
 
+// Callbacks
+void RegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode));
+
 // Rendering
 
 //
@@ -195,6 +198,12 @@ const char* EngineDisplayFileExplorer(Engine* engine, const char* path); // TEMP
 const char* EngineGetExecutableDirectory(Engine* engine);
 
 // Input
+
+
+//
+//
+//
+void EngineSetCursorMode(Engine* engine, int cursorMode);
 
 //
 //

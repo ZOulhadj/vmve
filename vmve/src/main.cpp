@@ -4,6 +4,17 @@
 #include "security.hpp"
 #include "ui.hpp"
 
+void KeyCallback(Engine* engine, int keycode)
+{
+    // NOTE: 256 == ESCAPE
+
+    if (keycode == 256)
+    {
+        viewportActive = !viewportActive;
+
+        EngineSetCursorMode(engine, viewportActive);
+    }
+}
 
 int main()
 {
@@ -16,20 +27,23 @@ int main()
 
     Engine* engine = EngineInitialize(info);
 
+    RegisterKeyCallback(engine, KeyCallback);
+
+
     //EngineSetEnviromentMap("environment_map.jpg");
     EngineCreateCamera(engine, 45.0f, 20.0f);
 
     EngineEnableUIPass(engine);
 
 
-    EngineAddModel(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\sponza\\sponza.obj", true);
-    EngineAddInstance(engine, 0, 0.0f, 0.0f, 0.0f);
+//    EngineAddModel(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\sponza\\sponza.obj", true);
+//    EngineAddInstance(engine, 0, 0.0f, 0.0f, 0.0f);
 
 
     while (EngineUpdate(engine))
     {
         // Updating
-        if (in_viewport)
+        if (viewportActive)
         {
             EngineUpdateInput(engine);
             EngineUpdateCameraView(engine);

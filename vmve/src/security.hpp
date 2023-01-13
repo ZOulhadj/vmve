@@ -40,7 +40,9 @@ struct AES_Data
 KeyIV GenerateKeyIV(unsigned char keyLength);
 KeyIVString KeyIVToHex(KeyIV& keyIV);
 
+AES_Data EncryptAES(const std::string& text, KeyIV& keyIV);
 AES_Data EncryptAES(const std::string& text, unsigned char keyLength);
+
 std::string DecrptAES(const AES_Data& data);
 
 

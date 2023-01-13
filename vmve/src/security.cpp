@@ -45,6 +45,23 @@ KeyIVString KeyIVToHex(KeyIV& keyIV)
 }
 
 
+AES_Data EncryptAES(const std::string& text, KeyIV& keyIV)
+{
+    AES_Data data{};
+
+    data.keyIV = keyIV;
+
+    // Set key and IV to encryption mode
+    CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
+    encryption.SetKeyWithIV(data.keyIV.key, data.keyIV.key.size(), data.keyIV.iv);
+
+    // Encrypt text
+    CryptoPP::StringSource s(text, true, new CryptoPP::StreamTransformationFilter(encryption, new CryptoPP::StringSink(data.data)));
+
+
+    return data;
+}
+
 
 AES_Data EncryptAES(const std::string& text, unsigned char keyLength)
 {
