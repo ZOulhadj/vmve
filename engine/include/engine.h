@@ -45,6 +45,8 @@ Engine* EngineInitialize(EngineInfo info);
 // simply does nothing.
 void EngineTerminate(Engine* engine);
 
+void EngineShouldTerminate(Engine* engine);
+
 // Callbacks
 void RegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode));
 

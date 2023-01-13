@@ -4,17 +4,7 @@
 #include "security.hpp"
 #include "ui.hpp"
 
-void KeyCallback(Engine* engine, int keycode)
-{
-    // NOTE: 256 == ESCAPE
-
-    if (keycode == 256)
-    {
-        viewportActive = !viewportActive;
-
-        EngineSetCursorMode(engine, viewportActive);
-    }
-}
+static void KeyCallback(Engine* engine, int keycode);
 
 int main()
 {
@@ -30,7 +20,6 @@ int main()
     RegisterKeyCallback(engine, KeyCallback);
 
 
-    //EngineSetEnviromentMap("environment_map.jpg");
     EngineCreateCamera(engine, 45.0f, 20.0f);
 
     EngineEnableUIPass(engine);
@@ -49,31 +38,29 @@ int main()
             EngineUpdateCameraView(engine);
         }
 
-        if (resize_viewport)
+        if (resizeViewport)
         {
             EngineUpdateCameraProjection(engine, viewport_width, viewport_height);
         }
 
 
-        // Begin rendering commands
         EngineBeginRender(engine);
+        {
+            // Deferred Rendering
+            EngineRender(engine);
 
-        // Deferred Rendering
-        EngineRender(engine);
-
-        // UI Rendering
-        EngineBeginUIPass();
-        BeginDocking();
-        RenderMainMenu(engine);
-        RenderDockspace();
-        RenderObjectWindow(engine);
-        RenderGlobalWindow(engine);
-        RenderConsoleWindow(engine);
-        RenderViewportWindow();
-        EndDocking();
-        EngineEndUIPass();
-
-        // Display to screen
+            // UI Rendering
+            EngineBeginUIPass();
+            BeginDocking();
+            RenderMainMenu(engine);
+            RenderDockspace();
+            RenderObjectWindow(engine);
+            RenderGlobalWindow(engine);
+            RenderConsoleWindow(engine);
+            RenderViewportWindow();
+            EndDocking();
+            EngineEndUIPass();
+        }
         EnginePresent(engine);
     }
 
@@ -83,7 +70,17 @@ int main()
 }
 
 
+void KeyCallback(Engine* engine, int keycode)
+{
+    // NOTE: 256 == ESCAPE
 
+    if (keycode == 256)
+    {
+        viewportActive = !viewportActive;
+
+        EngineSetCursorMode(engine, viewportActive);
+    }
+}
 
 
 // The viewport must resize before rendering to texture. If it were

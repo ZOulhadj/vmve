@@ -739,6 +739,11 @@ void EngineTerminate(Engine* engine)
     delete engine;
 }
 
+void EngineShouldTerminate(Engine* engine)
+{
+    engine->running = false;
+}
+
 void RegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode))
 {
     engine->KeyCallback = KeyCallback;
