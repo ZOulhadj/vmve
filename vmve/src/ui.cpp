@@ -70,6 +70,11 @@ int renderMode = 0;
 bool vsync = true;
 bool update_swapchain_vsync = false;
 
+bool viewportActive = false;
+bool resizeViewport = false;
+float viewport_width = 0;
+float viewport_height = 0;
+
 
 
 static void AboutWindow(bool* open)
@@ -100,10 +105,11 @@ static void LoadModelWindow(Engine* engine, bool* open)
 
     ImGui::Begin("Load Model", open);
 
-    ImGui::Checkbox("Flip UVs", &flip_uv);
-
     static const char* modelPath = EngineGetExecutableDirectory(engine);
     std::string model_path = EngineDisplayFileExplorer(engine, modelPath);
+
+
+    ImGui::Checkbox("Flip UVs", &flip_uv);
 
     if (ImGui::Button("Load"))
     {
@@ -402,11 +408,11 @@ void RenderObjectWindow(Engine* engine)
     // Object window
     ImGui::Begin(object_window, &window_open, window_flags);
     {
-        static int selectedInstanceID = 0;
-        static int unique_instance_ids = 1;
+        static int selectedInstanceIndex = 0;
         static int modelID = 0;
 
         int modelCount = EngineGetModelCount(engine);
+        int instanceCount = EngineGetInstanceCount(engine);
 
         // TEMP: Create a list of just model names from all the models
         std::vector<const char*> modelNames(modelCount);
@@ -414,21 +420,33 @@ void RenderObjectWindow(Engine* engine)
             modelNames[i] = EngineGetModelName(engine, i);
 
         ImGui::Combo("Model", &modelID, modelNames.data(), modelNames.size());
-        ImGui::BeginDisabled(modelCount);
+
+        ImGui::BeginDisabled(modelCount == 0);
         if (ImGui::Button("Remove model"))
             EngineRemoveModel(engine, modelID);
         ImGui::EndDisabled();
 
-        ImGui::BeginDisabled(modelCount);
+        ImGui::BeginDisabled(modelCount == 0);
         if (ImGui::Button("Add instance"))
             EngineAddInstance(engine, modelID, 0.0f, 0.0f, 0.0f);
         ImGui::EndDisabled();
 
         ImGui::SameLine();
 
-        ImGui::BeginDisabled(EngineGetInstanceCount(engine));
+        ImGui::BeginDisabled(instanceCount == 0);
         if (ImGui::Button("Remove instance"))
-            EngineRemoveInstance(engine, selectedInstanceID);
+        {
+            EngineRemoveInstance(engine, selectedInstanceIndex);
+
+            // NOTE: should not go below 0
+
+            // Decrement selected index if at boundary
+            if (instanceCount - 1 == selectedInstanceIndex && selectedInstanceIndex != 0)
+                --selectedInstanceIndex;
+
+            assert(selectedInstanceIndex >= 0);
+        }
+            
         ImGui::EndDisabled();
 
         // Options
@@ -446,6 +464,7 @@ void RenderObjectWindow(Engine* engine)
             ImGui::TableSetupScrollFreeze(0, 1);
             ImGui::TableHeadersRow();
 
+            std::cout << selectedInstanceIndex << "\n";
 
             ImGuiListClipper clipper;
             clipper.Begin(EngineGetInstanceCount(engine));
@@ -453,20 +472,17 @@ void RenderObjectWindow(Engine* engine)
             {
                 for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
                 {
-                    int currentInstanceID;
-                    EngineGetInstanceID(engine, i, &currentInstanceID);
-
                     char label[32];
-                    sprintf(label, "%04d", currentInstanceID);
+                    sprintf(label, "%04d", EngineGetInstanceID(engine, i));
 
-                    bool isCurrentlySelected = (i == currentInstanceID);
+                    bool isCurrentlySelected = (selectedInstanceIndex == i);
 
                     ImGui::PushID(label);
                     ImGui::TableNextRow();
 
                     ImGui::TableNextColumn();
                     if (ImGui::Selectable(label, isCurrentlySelected, ImGuiSelectableFlags_SpanAllColumns))
-                        selectedInstanceID = currentInstanceID;
+                        selectedInstanceIndex = i;
 
                     ImGui::TableNextColumn();
                     ImGui::TextUnformatted(EngineGetInstanceName(engine, i));
@@ -482,16 +498,16 @@ void RenderObjectWindow(Engine* engine)
         {
             ImGui::BeginChild("Object Properties");
 
-            ImGui::Text("ID: %04d", selectedInstanceID);
-            ImGui::Text("Name: %s", EngineGetInstanceName(engine, selectedInstanceID));
+            ImGui::Text("ID: %04d", EngineGetInstanceID(engine, selectedInstanceIndex));
+            ImGui::Text("Name: %s", EngineGetInstanceName(engine, selectedInstanceIndex));
 
 
             float instancePos[3];
             float instanceRot[3];
             float instanceScale[3];
-            EngineGetInstancePosition(engine, selectedInstanceID, instancePos);
-            EngineGetInstanceRotation(engine, selectedInstanceID, instanceRot);
-            EngineGetInstanceScale(engine, selectedInstanceID, instanceScale);
+            EngineGetInstancePosition(engine, selectedInstanceIndex, instancePos);
+            EngineGetInstanceRotation(engine, selectedInstanceIndex, instanceRot);
+            EngineGetInstanceScale(engine, selectedInstanceIndex, instanceScale);
 
             ImGui::SliderFloat3("Translation", instancePos, -50.0f, 50.0f);
             ImGui::SliderFloat3("Rotation", instanceRot, -360.0f, 360.0f);

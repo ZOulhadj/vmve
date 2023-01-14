@@ -29,7 +29,6 @@ struct EngineInfo
 //
 struct Engine;
 
-
 // Core
 
 //
@@ -136,8 +135,11 @@ void EngineRemoveInstance(Engine* engine, int instanceID);
 //
 //
 //
-void EngineGetInstanceID(Engine* engine, int instanceIndex, int* instanceID);
+int EngineGetInstanceID(Engine* engine, int instanceIndex);
 
+
+
+//void EngineGetInstances(Engine* engine, Instance* instance, int* instanceCount);
 //
 //
 //

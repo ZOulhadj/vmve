@@ -11,10 +11,10 @@
 
 
 
-static bool viewportActive = false;
-static bool resizeViewport = false;
-static float viewport_width = 0;
-static float viewport_height = 0;
+extern bool viewportActive;
+extern bool resizeViewport;
+extern float viewport_width;
+extern float viewport_height;
 
 
 

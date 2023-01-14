@@ -46,7 +46,7 @@ struct Engine
 
     void (*KeyCallback)(Engine* engine, int keyCode);
 
-    std::filesystem::path execPath;
+    std::string execPath;
     bool running;
     std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
     double deltaTime;
@@ -179,7 +179,7 @@ float sunDistance = 400.0f;
 
 static void UpdateInput(Camera& camera, double deltaTime)
 {
-    float dt = camera.speed * deltaTime;
+    float dt = camera.speed * (float)deltaTime;
     if (IsKeyDown(GLFW_KEY_W))
         camera.position += camera.front_vector * dt;
     if (IsKeyDown(GLFW_KEY_S))
@@ -215,9 +215,9 @@ Engine* EngineInitialize(EngineInfo info)
     // method should used since some paths can go beyond this limit.
     wchar_t fileName[MAX_PATH];
     GetModuleFileName(nullptr, fileName, sizeof(fileName));
-    engine->execPath = std::filesystem::path(fileName).parent_path();
+    engine->execPath = std::filesystem::path(fileName).parent_path().string();
 
-    Logger::Info("Executable directory: {}", engine->execPath.string());
+    Logger::Info("Executable directory: {}", engine->execPath);
 
     // Initialize core systems
     engine->window = CreateWindow("VMVE", info.windowWidth, info.windowHeight);
@@ -590,10 +590,9 @@ void EngineRender(Engine* engine)
         BeginRenderPass2(offscreenCmdBuffer, shadowPass);
 
         BindPipeline(offscreenCmdBuffer, shadowPipeline);
-        for (std::size_t i = 0; i < engine->instances.size(); ++i)
-        {
-            Instance& instance = engine->instances[i];
 
+        for (auto& instance : engine->instances)
+        {
             Translate(instance, instance.position);
             Rotate(instance, instance.rotation);
             Scale(instance, instance.scale);
@@ -765,6 +764,7 @@ void EngineAddModel(Engine* engine, const char* path, bool flipUVs)
 void EngineRemoveModel(Engine* engine, int modelID)
 {
     // Remove all instances which use the current model
+#if 0
     std::size_t size = engine->instances.size();
     for (std::size_t i = 0; i < size; ++i)
     {
@@ -780,16 +780,16 @@ void EngineRemoveModel(Engine* engine, int modelID)
 
     DestroyModel(engine->models[modelID]);
     engine->models.erase(engine->models.begin() + modelID);
+#endif
 }
 
 void EngineAddInstance(Engine* engine, int modelID, float x, float y, float z)
 {
-    // TEMP: instance id
     static int instanceID = 0;
 
     Instance instance{};
     instance.id = instanceID++;
-    instance.name = "Unnamed";
+    instance.name = engine->models[modelID].name;
     instance.model = &engine->models[modelID];
     instance.position = glm::vec3(0.0f);
     instance.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -803,12 +803,12 @@ void EngineRemoveInstance(Engine* engine, int instanceID)
 {
     assert(instanceID >= 0);
 
-    // TODO: Search by instanceID and not index position in vector
-#if 1
-    const auto it = std::find_if(engine->instances.begin(), engine->instances.end(), [=](Instance& instance)
-        {
-            return instance.id == instanceID;
-        });
+//#define FIND_BY_ID
+#if defined(FIND_BY_ID)
+    const auto it = std::find_if(engine->instances.begin(), engine->instances.end(), [&](Instance& instance)
+    {
+        return instance.id == instanceID;
+    });
 
     if (it == engine->instances.end())
     {
@@ -816,27 +816,32 @@ void EngineRemoveInstance(Engine* engine, int instanceID)
         return;
     }
 
-    // TODO: Get index based on iterator position
+    engine->instances.erase(it);
+#else
+    engine->instances.erase(engine->instances.begin() + instanceID);
 #endif
 
-
-    engine->instances.erase(engine->instances.begin() + instanceID);
+    
 }
 
-
-
-void EngineGetInstanceID(Engine* engine, int instanceIndex, int* instanceID)
+int EngineGetInstanceID(Engine* engine, int instanceIndex)
 {
-    *instanceID = engine->instances[instanceIndex].id;
+    assert(instanceIndex >= 0);
+
+    return engine->instances[instanceIndex].id;
 }
 
 const char* EngineGetInstanceName(Engine* engine, int instanceIndex)
 {
+    assert(instanceIndex >= 0);
+
     return engine->instances[instanceIndex].name.c_str();
 }
 
 void EngineGetInstancePosition(Engine* engine, int instanceIndex, float* position)
 {
+    assert(instanceIndex >= 0);
+
     Instance& instance = engine->instances[instanceIndex];
 
     position[0] = instance.position.x;
@@ -846,6 +851,8 @@ void EngineGetInstancePosition(Engine* engine, int instanceIndex, float* positio
 
 void EngineGetInstanceRotation(Engine* engine, int instanceIndex, float* rotation)
 {
+    assert(instanceIndex >= 0);
+
     Instance& instance = engine->instances[instanceIndex];
 
     rotation[0] = instance.rotation.x;
@@ -855,6 +862,8 @@ void EngineGetInstanceRotation(Engine* engine, int instanceIndex, float* rotatio
 
 void EngineGetInstanceScale(Engine* engine, int instanceIndex, float* scale)
 {
+    assert(instanceIndex >= 0);
+
     Instance& instance = engine->instances[instanceIndex];
 
     scale[0] = instance.scale.x;
@@ -974,17 +983,17 @@ void EngineEndUIPass()
 void EngineRenderViewportUI(int width, int height)
 {
     const uint32_t currentImage = GetSwapchainFrameIndex();
-    ImGui::Image(viewportUI[currentImage], ImVec2(width, height));
+    ImGui::Image(viewportUI[currentImage], ImVec2((float)width, (float)height));
 }
 
 int EngineGetModelCount(Engine* engine)
 {
-    return engine->models.size();
+    return static_cast<int>(engine->models.size());
 }
 
 int EngineGetInstanceCount(Engine* engine)
 {
-    return engine->instances.size();
+    return static_cast<int>(engine->instances.size());
 }
 
 const char* EngineGetModelName(Engine* engine, int modelID)
@@ -1012,60 +1021,58 @@ void EngineGetMemoryStats(Engine* engine, float* memoryUsage, unsigned int* maxM
     const MEMORYSTATUSEX memoryStatus = get_memory_status();
 
     *memoryUsage = memoryStatus.dwMemoryLoad / 100.0f;
-    *maxMemory = memoryStatus.ullTotalPhys / 1'000'000'000;
+    *maxMemory = static_cast<int>(memoryStatus.ullTotalPhys / 1'000'000'000);
 }
 
 const char* EngineDisplayFileExplorer(Engine* engine, const char* path)
 {
+    // TODO: Clean up this function and ensure that no bugs exist
     static std::string current_dir = path;
-    static std::string file;
-    static std::string complete_path;
+    static std::string fullPath;
 
     static std::vector<DirectoryItem> items = GetDirectoryItems(current_dir);
-    static int index = 0;
+    static int currentlySelected = 0;
 
-    ImGui::SameLine();
+    //ImGui::SameLine();
     //ImGui::Text("[%d]", items.size());
 
 
     // TODO: Convert to ImGuiClipper
-    if (ImGui::BeginListBox("##empty", ImVec2(-FLT_MIN, 0))) {
-        for (std::size_t i = 0; i < items.size(); ++i) {
+    if (ImGui::BeginListBox("##empty", ImVec2(-FLT_MIN, 0)))
+    {
+        for (std::size_t i = 0; i < items.size(); ++i)
+        {
+            DirectoryItem item = items[i];
+
             const ImVec2 combo_pos = ImGui::GetCursorScreenPos();
             ImGui::SetCursorScreenPos(ImVec2(combo_pos.x + ImGui::GetStyle().FramePadding.x, combo_pos.y));
 
-            const bool selected = ImGui::Selectable(std::string("##" + items[i].name).c_str(), index == i);
-
-
-            ImVec4 itemColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-            if (items[i].type == ItemType::File)
-            {
-                itemColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-                if (selected)
-                {
-                    file = items[i].name;
-                    index = i;
-                    complete_path = current_dir + '/' + file;
-                }
-            }
-            else if (items[i].type == ItemType::Directory)
-            {
-                itemColor = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
-                if (selected)
-                {
-                    current_dir = items[i].path.c_str();
-                    complete_path = current_dir;
-                    items = GetDirectoryItems(current_dir);
-                    index = 0;
-                }
-
-
-            }
-
+            const bool selected = ImGui::Selectable(std::string("##" + item.name).c_str(), currentlySelected == i);
             ImGui::SameLine();
-            ImGui::TextColored(itemColor, items[i].name.c_str());
+
+
+
+            if (item.type == ItemType::File)
+            {
+                if (selected)
+                {
+                    currentlySelected = static_cast<int>(i);
+                    fullPath = current_dir + '/' + item.name;
+                }
+                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), item.name.c_str());
+            }
+            else if (item.type == ItemType::Directory)
+            {
+                if (selected)
+                {
+                    current_dir = items[i].path;
+                    fullPath = current_dir;
+                    items = GetDirectoryItems(current_dir);
+                    item = items[0];
+                    currentlySelected = 0;
+                }
+                ImGui::TextColored(ImVec4(0.5, 0.5, 0.5, 1.0), item.name.c_str());
+            }
 
             // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
             if (selected)
@@ -1076,15 +1083,12 @@ const char* EngineDisplayFileExplorer(Engine* engine, const char* path)
         ImGui::EndListBox();
     }
 
-    return complete_path.c_str();
+    return fullPath.c_str();
 }
 
 const char* EngineGetExecutableDirectory(Engine* engine)
 {
-    // TODO: Continue from here
-    auto c = engine->execPath.c_str();
-
-    return "";
+    return engine->execPath.c_str();
 }
 
 void EngineSetCursorMode(Engine* engine, int cursorMode)
@@ -1109,7 +1113,7 @@ void EngineExportLogsToFile(Engine* engine, const char* path)
 
 int EngineGetLogCount(Engine* engine)
 {
-    return Logger::GetLogs().size();
+    return static_cast<int>(Logger::GetLogs().size());
 }
 
 int EngineGetLogType(Engine* engine, int logIndex)
