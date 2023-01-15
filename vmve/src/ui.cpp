@@ -464,8 +464,6 @@ void RenderObjectWindow(Engine* engine)
             ImGui::TableSetupScrollFreeze(0, 1);
             ImGui::TableHeadersRow();
 
-            std::cout << selectedInstanceIndex << "\n";
-
             ImGuiListClipper clipper;
             clipper.Begin(EngineGetInstanceCount(engine));
             while (clipper.Step())

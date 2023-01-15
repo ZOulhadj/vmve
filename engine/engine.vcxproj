@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\audio\audio.cpp" />
     <ClCompile Include="src\core\input.cpp" />
     <ClCompile Include="src\core\platform\windows.cpp" />
     <ClCompile Include="src\core\window.cpp" />
@@ -49,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\engine.h" />
+    <ClInclude Include="src\audio\audio.hpp" />
     <ClInclude Include="src\core\input.hpp" />
     <ClInclude Include="src\core\platform\windows.hpp" />
     <ClInclude Include="src\core\window.hpp" />
@@ -144,7 +146,7 @@ _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Lib>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;shaderc_shared.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;shaderc_shared.lib;assimp-vc143-mtd.lib;xaudio2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.231.1\Lib;$(SolutionDir)vendor\glfw\lib;$(SolutionDir)vendor\assimp\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -176,7 +178,7 @@ _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Lib>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;shaderc_shared.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;shaderc_shared.lib;assimp-vc143-mtd.lib;xaudio2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.231.1\Lib;$(SolutionDir)vendor\glfw\lib;$(SolutionDir)vendor\assimp\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

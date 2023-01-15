@@ -161,6 +161,8 @@ static void CursorEnterCallback(GLFWwindow* window, int entered)
 // events to the application callback.
 Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
 {
+    Logger::Info("Initializing window ({}, {})", width, height);
+
     assert(width > 0 && height > 0);
 
     Window* window = new Window();
@@ -213,8 +215,6 @@ Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
     glfwSetCursorPosCallback(window->handle, CursorPosCallback);
     glfwSetCursorEnterCallback(window->handle, CursorEnterCallback);
 
-    Logger::Info("Created window ({}, {})", window->width, window->height);
-
     return window;
 }
 
@@ -256,5 +256,20 @@ void DestroyWindow(Window* window)
 void UpdateWindow(Window* window)
 {
     glfwPollEvents();
+
+
+    // TODO: Possibly implement a better solution as this will not work if 
+    // the client application requires continuous updates. For example,
+    // if networking is being used then waiting here is not possible since
+    // network updates must be sent/received.
+
+    // If the application is minimized then only wait for events and don't
+    // do anything else. This ensures the application does not waste resources
+    // performing other operations such as maths and rendering when the window
+    // is not visible.
+    while (window->minimized)
+    {
+        glfwWaitEvents();
+    }
 }
 

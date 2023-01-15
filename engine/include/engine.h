@@ -16,10 +16,11 @@
 //
 struct EngineInfo
 {
-    const char* iconPath;
-
+    const char* appName;
     int windowWidth;
     int windowHeight;
+
+    const char* iconPath;
 };
 
 

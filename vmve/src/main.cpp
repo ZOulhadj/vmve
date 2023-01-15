@@ -11,9 +11,10 @@ int main()
     // TODO: Icon needs to be bundled with the executable and this needs to be
     // the case for both the windows icon and glfw window icon
     EngineInfo info{};
-    info.iconPath = "icon.png";
+    info.appName = "VMVE";
     info.windowWidth = 1280;
     info.windowHeight = 720;
+    info.iconPath = "icon.png";
 
     Engine* engine = EngineInitialize(info);
 
@@ -25,8 +26,8 @@ int main()
     EngineEnableUIPass(engine);
 
 
-    EngineAddModel(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\sponza\\sponza.obj", true);
-    EngineAddInstance(engine, 0, 0.0f, 0.0f, 0.0f);
+    //EngineAddModel(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\sponza\\sponza.obj", true);
+    //EngineAddInstance(engine, 0, 0.0f, 0.0f, 0.0f);
 
 
     while (EngineUpdate(engine))
@@ -72,9 +73,9 @@ int main()
 
 void KeyCallback(Engine* engine, int keycode)
 {
-    // NOTE: 256 == ESCAPE
+    // NOTE: 290 == F1
 
-    if (keycode == 256)
+    if (keycode == 290)
     {
         viewportActive = !viewportActive;
 

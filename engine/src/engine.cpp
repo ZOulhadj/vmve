@@ -20,6 +20,8 @@
 #include "../src/rendering/entity.hpp"
 #include "../src/rendering/model.hpp"
 
+#include "../src/audio/audio.hpp"
+
 #include "../src/events/event.hpp"
 #include "../src/events/event_dispatcher.hpp"
 #include "../src/events/window_event.hpp"
@@ -42,7 +44,7 @@ struct Engine
     Window* window;
     VulkanRenderer* renderer;
     ImGuiContext* ui;
-
+    Audio* audio;
 
     void (*KeyCallback)(Engine* engine, int keyCode);
 
@@ -203,11 +205,8 @@ static void EventCallback(event& e);
 
 Engine* EngineInitialize(EngineInfo info)
 {
-    Logger::Info("Initializing application");
-
     auto engine = new Engine();
 
-    // Start application timer
     engine->startTime = std::chrono::high_resolution_clock::now();
 
     // Get the current path of the executable
@@ -217,10 +216,10 @@ Engine* EngineInitialize(EngineInfo info)
     GetModuleFileName(nullptr, fileName, sizeof(fileName));
     engine->execPath = std::filesystem::path(fileName).parent_path().string();
 
-    Logger::Info("Executable directory: {}", engine->execPath);
+    Logger::Info("Initializing application ({})", engine->execPath);
 
     // Initialize core systems
-    engine->window = CreateWindow("VMVE", info.windowWidth, info.windowHeight);
+    engine->window = CreateWindow(info.appName, info.windowWidth, info.windowHeight);
     if (!engine->window)
     {
         Logger::Error("Failed to create window");
@@ -239,6 +238,12 @@ Engine* EngineInitialize(EngineInfo info)
         return nullptr;
     }
 
+    engine->audio = CreateAudio();
+    if (!engine->audio)
+    {
+        Logger::Error("Failed to initialize audio");
+        return nullptr;
+    }
 
     // Mount specific VFS folders
     const std::string rootDir = "C:/Users/zakar/Projects/vmve/vmve/";
@@ -512,17 +517,6 @@ Engine* EngineInitialize(EngineInfo info)
 
 bool EngineUpdate(Engine* engine)
 {
-    UpdateWindow(engine->window);
-
-    // If the application is minimized then only wait for events and don't
-    // do anything else. This ensures the application does not waste resources
-    // performing other operations such as maths and rendering when the window
-    // is not visible.
-    while (engine->window->minimized)
-    {
-        glfwWaitEvents();
-    }
-
     // Calculate the amount that has passed since the last frame. This value
     // is then used with inputs and physics to ensure that the result is the
     // same no matter how fast the CPU is running.
@@ -669,6 +663,7 @@ void EnginePresent(Engine* engine)
         assert("Code path not expected! Must implement framebuffer resizing");
     }
 
+    UpdateWindow(engine->window);
 }
 
 void EngineTerminate(Engine* engine)
@@ -728,6 +723,7 @@ void EngineTerminate(Engine* engine)
     DestroySampler(gFramebufferSampler);
 
     // Destroy core systems
+    DestroyAudio(engine->audio);
     DestroyUI(engine->ui);
     DestroyRenderer(engine->renderer);
     DestroyWindow(engine->window);

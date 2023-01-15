@@ -30,13 +30,19 @@
 
 #if defined(_WIN32)
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <d3d12.h>
+#include <xaudio2.h>
+
+// NOTE: These must be placed after all Windows header files
 #undef far
 #undef near
 #undef CreateWindow
-//#include <d3d12.h>
 
 #endif
+
+
 
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
