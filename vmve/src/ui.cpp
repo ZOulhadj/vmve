@@ -500,17 +500,29 @@ void RenderObjectWindow(Engine* engine)
             ImGui::Text("Name: %s", EngineGetInstanceName(engine, selectedInstanceIndex));
 
 
-            float instancePos[3];
-            float instanceRot[3];
-            float instanceScale[3];
+
+
+            // TODO: At this point in time, we are getting the pointer to the start
+            // of the 3 float position, rotation and scale. Is there a better way to
+            // do this?
+            float* instancePos = nullptr;
+            float* instanceRot = nullptr;
+            float scale[3];
 
             EngineGetInstancePosition(engine, selectedInstanceIndex, instancePos);
             EngineGetInstanceRotation(engine, selectedInstanceIndex, instanceRot);
-            EngineGetInstanceScale(engine, selectedInstanceIndex, instanceScale);
-            std::cout << instancePos[0] << "\n";
+            EngineGetInstanceScale(engine, selectedInstanceIndex, scale);
             ImGui::SliderFloat3("Translation", instancePos, -50.0f, 50.0f);
             ImGui::SliderFloat3("Rotation", instanceRot, -360.0f, 360.0f);
-            ImGui::SliderFloat3("Scale", instanceScale, 0.1f, 100.0f);
+            ImGui::SliderFloat3("Scale", scale, 0.1f, 100.0f);
+
+            static bool uniformScale = true;
+            ImGui::Checkbox("Uniform scale", &uniformScale);
+
+            if (uniformScale)
+                EngineSetInstanceScale(engine, selectedInstanceIndex, scale[0]);
+            else
+                EngineSetInstanceScale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
 
             ImGui::EndChild();
         }

@@ -151,20 +151,21 @@ const char* EngineGetInstanceName(Engine* engine, int instanceIndex);
 //
 //
 //
-void EngineGetInstancePosition(Engine* engine, int instanceIndex, float* position);
+void EngineGetInstancePosition(Engine* engine, int instanceIndex, float*& position);
 
 //
 //
 //
 //
-void EngineGetInstanceRotation(Engine* engine, int instanceIndex, float* rotation);
+void EngineGetInstanceRotation(Engine* engine, int instanceIndex, float*& rotation);
 
 //
 //
 //
 //
 void EngineGetInstanceScale(Engine* engine, int instanceIndex, float* scale);
-
+void EngineSetInstanceScale(Engine* engine, int instanceIndex, float scale);
+void EngineSetInstanceScale(Engine* engine, int instanceIndex, float x, float y, float z);
 // Timing
 
 //

@@ -82,6 +82,7 @@ void main()
 
 	float shadow = ShadowCalculation(world_pos);
 
-	vec3 result = (ambient + (1.0 - shadow) * (diffuse + specular)) * albedo;
+	//vec3 result = (ambient + (1.0 - shadow) * (diffuse + specular)) * albedo;
+	vec3 result = (ambient + diffuse + specular) * albedo;
 	outFragcolor = vec4(result, 1.0);
 }

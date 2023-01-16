@@ -848,37 +848,27 @@ const char* EngineGetInstanceName(Engine* engine, int instanceIndex)
     return engine->instances[instanceIndex].name.c_str();
 }
 
-void EngineGetInstancePosition(Engine* engine, int instanceIndex, float* position)
+void EngineGetInstancePosition(Engine* engine, int instanceIndex, float*& position)
 {
     assert(instanceIndex >= 0);
 
-    Instance& instance = engine->instances[instanceIndex];
-
-    position[0] = instance.position.x;
-    position[1] = instance.position.y;
-    position[2] = instance.position.z;
+    position = &engine->instances[instanceIndex].position.x;
 }
 
-void EngineGetInstanceRotation(Engine* engine, int instanceIndex, float* rotation)
+void EngineGetInstanceRotation(Engine* engine, int instanceIndex, float*& rotation)
 {
     assert(instanceIndex >= 0);
 
-    Instance& instance = engine->instances[instanceIndex];
-
-    rotation[0] = instance.rotation.x;
-    rotation[1] = instance.rotation.y;
-    rotation[2] = instance.rotation.z;
+    rotation = &engine->instances[instanceIndex].rotation.x;
 }
 
 void EngineGetInstanceScale(Engine* engine, int instanceIndex, float* scale)
 {
     assert(instanceIndex >= 0);
 
-    Instance& instance = engine->instances[instanceIndex];
-
-    scale[0] = instance.scale.x;
-    scale[1] = instance.scale.y;
-    scale[2] = instance.scale.z;
+    scale[0] = engine->instances[instanceIndex].scale.x;
+    scale[1] = engine->instances[instanceIndex].scale.y;
+    scale[2] = engine->instances[instanceIndex].scale.z;
 }
 
 void EngineSetEnvironmentMap(const char* path)
@@ -1009,6 +999,16 @@ int EngineGetInstanceCount(Engine* engine)
 const char* EngineGetModelName(Engine* engine, int modelID)
 {
     return engine->models[modelID].name.c_str();
+}
+
+void EngineSetInstanceScale(Engine* engine, int instanceIndex, float scale)
+{
+    engine->instances[instanceIndex].scale = glm::vec3(scale);
+}
+
+void EngineSetInstanceScale(Engine* engine, int instanceIndex, float x, float y, float z)
+{
+    engine->instances[instanceIndex].scale = glm::vec3(x, y, z);
 }
 
 double EngineGetDeltaTime(Engine* engine)

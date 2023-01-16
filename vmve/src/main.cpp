@@ -26,8 +26,8 @@ int main()
     EngineEnableUIPass(engine);
 
 
-    //EngineAddModel(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\sponza\\sponza.obj", true);
-    //EngineAddInstance(engine, 0, 0.0f, 0.0f, 0.0f);
+    EngineAddModel(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\backpack\\backpack.obj", false);
+    EngineAddInstance(engine, 0, 0.0f, 0.0f, 0.0f);
 
 
     while (EngineUpdate(engine))
