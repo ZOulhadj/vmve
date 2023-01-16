@@ -40,7 +40,7 @@ struct event {
 
 
 using EventFunc = std::function<void(event&)>;
-
-#define BIND_EVENT(x) std::bind(&x, this, std::placeholders::_1)
+//void (*EventFunc)(event&);
+//#define BIND_EVENT(x) std::bind(&x, this, std::placeholders::_1)
 
 #endif

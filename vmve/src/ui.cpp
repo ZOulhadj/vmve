@@ -125,7 +125,7 @@ static void LoadModelWindow(Engine* engine, bool* open)
 }
 
 
-static void ExportModelWindow(bool* open)
+static void ExportModelWindow(Engine* engine, bool* open)
 {
     if (!*open)
         return;
@@ -140,8 +140,8 @@ static void ExportModelWindow(bool* open)
 
     ImGui::Begin("Export Model", open);
 
-    //static const char* exportPath = EngineGetExecutableDirectory(engine);
-    //std::string current_path = EngineDisplayFileExplorer(engine, exportPath);
+    static const char* exportPath = EngineGetExecutableDirectory(engine);
+    std::string current_path = EngineDisplayFileExplorer(engine, exportPath);
 
     ImGui::InputText("File name", filename, 50);
 
@@ -369,7 +369,7 @@ void RenderMainMenu(Engine* engine)
 
     AboutWindow(&aboutOpen);
     LoadModelWindow(engine, &loadOpen);
-    ExportModelWindow(&exportOpen);
+    ExportModelWindow(engine, &exportOpen);
     PerformanceProfilerWindow(&perfProfilerOpen);
     GBufferVisualiserWindow(&gBufferOpen);
 
@@ -503,10 +503,11 @@ void RenderObjectWindow(Engine* engine)
             float instancePos[3];
             float instanceRot[3];
             float instanceScale[3];
+
             EngineGetInstancePosition(engine, selectedInstanceIndex, instancePos);
             EngineGetInstanceRotation(engine, selectedInstanceIndex, instanceRot);
             EngineGetInstanceScale(engine, selectedInstanceIndex, instanceScale);
-
+            std::cout << instancePos[0] << "\n";
             ImGui::SliderFloat3("Translation", instancePos, -50.0f, 50.0f);
             ImGui::SliderFloat3("Rotation", instanceRot, -360.0f, 360.0f);
             ImGui::SliderFloat3("Scale", instanceScale, 0.1f, 100.0f);

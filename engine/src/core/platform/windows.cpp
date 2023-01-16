@@ -1,6 +1,6 @@
 #include "windows.hpp"
 
-MEMORYSTATUSEX get_memory_status()
+MEMORYSTATUSEX GetMemoryStatus()
 {
     MEMORYSTATUSEX memInfo{};
     memInfo.dwLength = sizeof(MEMORYSTATUSEX);

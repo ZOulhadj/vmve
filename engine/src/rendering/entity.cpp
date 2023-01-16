@@ -69,13 +69,13 @@ glm::vec3 GetRotFromMatrix(const Instance& e)
 }
 
 
-void RenderModel(Instance& instance, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout)
+void RenderModel(Model& model, glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout)
 {
-    for (std::size_t i = 0; i < instance.model->meshes.size(); ++i)
+    for (std::size_t i = 0; i < model.meshes.size(); ++i)
     {
-        BindDescriptorSet(cmdBuffer, pipelineLayout, instance.model->meshes[i].descriptor_set);
-        BindVertexArray(cmdBuffer, instance.model->meshes[i].vertex_array);
-        Render(cmdBuffer, pipelineLayout, instance.model->meshes[i].vertex_array.index_count, instance);
+        BindDescriptorSet(cmdBuffer, pipelineLayout, model.meshes[i].descriptor_set);
+        BindVertexArray(cmdBuffer, model.meshes[i].vertex_array);
+        Render(cmdBuffer, pipelineLayout, model.meshes[i].vertex_array.index_count, matrix);
     }
 
 }

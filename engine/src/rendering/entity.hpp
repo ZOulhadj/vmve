@@ -16,7 +16,8 @@ struct Instance
     uint32_t id;
     std::string name;
 
-    Model* model;
+    uint32_t modelIndex;
+    //Model* model;
     
     glm::vec3 position;
     glm::vec3 rotation;
@@ -35,7 +36,7 @@ glm::vec3 GetPosFromMatrix(const Instance& e);
 glm::vec3 GetScaleFromMatrix(const Instance& e);
 glm::vec3 GetRotFromMatrix(const Instance& e);
 
-void RenderModel(Instance& instance, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
+void RenderModel(Model& model, glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
 
 
 #endif

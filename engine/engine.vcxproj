@@ -14,6 +14,7 @@
     <ClCompile Include="src\audio\audio.cpp" />
     <ClCompile Include="src\core\input.cpp" />
     <ClCompile Include="src\core\platform\windows.cpp" />
+    <ClCompile Include="src\core\win32_window.cpp" />
     <ClCompile Include="src\core\window.cpp" />
     <ClCompile Include="src\engine.cpp" />
     <ClCompile Include="src\filesystem\filesystem.cpp" />
@@ -53,6 +54,7 @@
     <ClInclude Include="src\audio\audio.hpp" />
     <ClInclude Include="src\core\input.hpp" />
     <ClInclude Include="src\core\platform\windows.hpp" />
+    <ClInclude Include="src\core\win32_window.hpp" />
     <ClInclude Include="src\core\window.hpp" />
     <ClInclude Include="src\events\event.hpp" />
     <ClInclude Include="src\events\event_dispatcher.hpp" />

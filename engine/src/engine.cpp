@@ -4,6 +4,7 @@
 
 // Engine header files section
 #include "../src/core/window.hpp"
+#include "../src/core/win32_window.hpp"
 #include "../src/core/input.hpp"
 #if defined(_WIN32)
 #include "../src/core/platform/windows.hpp"
@@ -42,6 +43,7 @@
 struct Engine
 {
     Window* window;
+    Win32Window* newWindow; // TEMP
     VulkanRenderer* renderer;
     ImGuiContext* ui;
     Audio* audio;
@@ -213,7 +215,7 @@ Engine* EngineInitialize(EngineInfo info)
     // TODO: MAX_PATH is ok to use however, for a long term solution another 
     // method should used since some paths can go beyond this limit.
     wchar_t fileName[MAX_PATH];
-    GetModuleFileName(nullptr, fileName, sizeof(fileName));
+    GetModuleFileName(nullptr, fileName, sizeof(wchar_t) * MAX_PATH);
     engine->execPath = std::filesystem::path(fileName).parent_path().string();
 
     Logger::Info("Initializing application ({})", engine->execPath);
@@ -230,6 +232,15 @@ Engine* EngineInitialize(EngineInfo info)
         SetWindowIcon(engine->window, info.iconPath);
 
     engine->window->event_callback = EventCallback;
+
+#if 0
+    engine->newWindow = CreateWin32Window(info.appName, info.windowWidth, info.windowHeight);
+    if (!engine->window)
+    {
+        Logger::Error("Failed to create window");
+        return nullptr;
+    }
+#endif
 
     engine->renderer = CreateRenderer(engine->window, BufferMode::Double, VSyncMode::Enabled);
     if (!engine->renderer)
@@ -555,8 +566,8 @@ void EngineBeginRender(Engine* engine)
     // need to resize any framebuffers.
     if (!engine->swapchainReady)
     {
-        ResizeFramebuffer(uiPass, { gTempEnginePtr->window->width, gTempEnginePtr->window->height });
-        engine->swapchainReady = true;
+        ResizeFramebuffer(uiPass, { engine->window->width, engine->window->height });
+        //engine->swapchainReady = true;
     }
 }
 
@@ -591,10 +602,11 @@ void EngineRender(Engine* engine)
             Rotate(instance, instance.rotation);
             Scale(instance, instance.scale);
 
-            for (std::size_t i = 0; i < instance.model->meshes.size(); ++i)
+            const std::vector<Mesh>& meshes = engine->models[instance.modelIndex].meshes;
+            for (std::size_t i = 0; i < meshes.size(); ++i)
             {
-                BindVertexArray(offscreenCmdBuffer, instance.model->meshes[i].vertex_array);
-                Render(offscreenCmdBuffer, shadowPipelineLayout, instance.model->meshes[i].vertex_array.index_count, instance);
+                BindVertexArray(offscreenCmdBuffer, meshes[i].vertex_array);
+                Render(offscreenCmdBuffer, shadowPipelineLayout, meshes[i].vertex_array.index_count, instance.matrix);
             }
         }
 
@@ -623,7 +635,7 @@ void EngineRender(Engine* engine)
             Translate(instance, instance.position);
             Rotate(instance, instance.rotation);
             Scale(instance, instance.scale);
-            RenderModel(instance, offscreenCmdBuffer, offscreenPipelineLayout);
+            RenderModel(engine->models[instance.modelIndex], instance.matrix, offscreenCmdBuffer, offscreenPipelineLayout);
         }
         EndRenderPass(offscreenCmdBuffer);
 
@@ -655,7 +667,6 @@ void EnginePresent(Engine* engine)
         SubmitWork({ offscreenCmdBuffer, compositeCmdBuffer, uiCmdBuffer });
     else
         SubmitWork({ offscreenCmdBuffer, compositeCmdBuffer });
-
 
     if (!DisplaySwapchainImage())
     {
@@ -726,6 +737,9 @@ void EngineTerminate(Engine* engine)
     DestroyAudio(engine->audio);
     DestroyUI(engine->ui);
     DestroyRenderer(engine->renderer);
+#if 0
+    DestroyWin32Window(engine->newWindow);
+#endif
     DestroyWindow(engine->window);
 
 
@@ -786,7 +800,7 @@ void EngineAddInstance(Engine* engine, int modelID, float x, float y, float z)
     Instance instance{};
     instance.id = instanceID++;
     instance.name = engine->models[modelID].name;
-    instance.model = &engine->models[modelID];
+    instance.modelIndex = modelID;
     instance.position = glm::vec3(0.0f);
     instance.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     instance.scale = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -1014,7 +1028,7 @@ void EngineGetUptime(Engine* engine, int* hours, int* minutes, int* seconds)
 
 void EngineGetMemoryStats(Engine* engine, float* memoryUsage, unsigned int* maxMemory)
 {
-    const MEMORYSTATUSEX memoryStatus = get_memory_status();
+    const MEMORYSTATUSEX memoryStatus = GetMemoryStatus();
 
     *memoryUsage = memoryStatus.dwMemoryLoad / 100.0f;
     *maxMemory = static_cast<int>(memoryStatus.ullTotalPhys / 1'000'000'000);
@@ -1034,7 +1048,7 @@ const char* EngineDisplayFileExplorer(Engine* engine, const char* path)
 
 
     // TODO: Convert to ImGuiClipper
-    if (ImGui::BeginListBox("##empty", ImVec2(-FLT_MIN, 0)))
+    if (ImGui::BeginListBox("##empty", ImVec2(-FLT_MIN, 250)))
     {
         for (std::size_t i = 0; i < items.size(); ++i)
         {

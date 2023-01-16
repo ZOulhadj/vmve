@@ -1095,7 +1095,7 @@ bool GetNextSwapchainImage()
         nullptr,
         &currentImage);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
 #if 1
         // When resizing the swapchain, the acquired semaphore does not get
@@ -1213,9 +1213,9 @@ void BindPipeline(std::vector<VkCommandBuffer>& buffers, const Pipeline& pipelin
     vkCmdBindPipeline(buffers[gCurrentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_Pipeline);
 }
 
-void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, Instance& instance)
+void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, const glm::mat4& matrix)
 {
-    vkCmdPushConstants(buffers[gCurrentFrame], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &instance.matrix);
+    vkCmdPushConstants(buffers[gCurrentFrame], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &matrix);
     vkCmdDrawIndexed(buffers[gCurrentFrame], index_count, 1, 0, 0, 0);
 }
 

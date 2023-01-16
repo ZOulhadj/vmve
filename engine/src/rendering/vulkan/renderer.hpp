@@ -200,7 +200,7 @@ void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers,
     const std::vector<VkDescriptorSet>& descriptorSets, 
     std::vector<uint32_t> sizes);
 void BindPipeline(std::vector<VkCommandBuffer>& buffers, const Pipeline& pipeline);
-void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, Instance& instance);
+void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, const glm::mat4& matrix);
 void Render(const std::vector<VkCommandBuffer>& buffers);
 
 // Indicates to the GPU to wait for all commands to finish before continuing.
