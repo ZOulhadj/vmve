@@ -23,8 +23,7 @@ static VkInstance CreateInstance(uint32_t version,
     uint32_t layer_count = 0;
     VkCheck(vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
     std::vector<VkLayerProperties> instance_layers(layer_count);
-    VkCheck(vkEnumerateInstanceLayerProperties(&layer_count,
-                                                instance_layers.data()));
+    VkCheck(vkEnumerateInstanceLayerProperties(&layer_count, instance_layers.data()));
 
     // check if the vulkan instance supports our requested instance layers
     if (!CompareLayers(req_layers, instance_layers)) {
@@ -162,27 +161,35 @@ static VulkanDevice CreateDevice(VkInstance instance,
         }
     }
 
+    // If only one suitable GPU was found then simply use that gpu. However, 
+    // if multiple GPUs were found then we need to perform additional work
+    // to compare each GPU and figure out the best one to use.
+    GPUInfo info{};
+    std::size_t gpuIndex = 0;
+
     if (suitable_gpus.empty()) {
         Logger::Error("Failed to find GPU that supports requested features");
         return {};
+    } else if (suitable_gpus.size() == 1) {
+        info = suitable_gpus[gpuIndex];
+        device.gpu = info.gpu;
+        device.graphics_index = info.graphics_index;
+        device.present_index = info.present_index;
+    } else {
+        // TODO: There are multiple factors that need to be taken into account
+        // when choosing which GPU to use. This can include the type, speed
+        // as well as limits/types of features that is supported. The latter
+        // is just as important since we cannot use a GPU that does not support
+        // features that the engine needs.
+
+//        VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
+//        VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
+//        VK_PHYSICAL_DEVICE_TYPE_CPU
     }
 
+    Logger::Info("Selected GPU: {}", suitable_gpu_names[gpuIndex]);
 
-    // Print the number of GPUs found with their names
-    Logger::Info("Found {} suitable GPUs: ", suitable_gpus.size());
-    for (std::size_t i = 0; i < suitable_gpus.size(); ++i) {
-        Logger::Info("\t#{}: {}", i + 1, suitable_gpu_names[i]);
-    }
 
-    // todo: Here we should query for a GPU from the list of suitable GPUs.
-    const int gpu_index = 0;
-
-    Logger::Info("Selected GPU: {}", suitable_gpu_names[gpu_index]);
-
-    const GPUInfo& info = suitable_gpus[gpu_index];
-    device.gpu = info.gpu;
-    device.graphics_index = info.graphics_index;
-    device.present_index = info.present_index;
 
 
     // create a logical device from a physical device

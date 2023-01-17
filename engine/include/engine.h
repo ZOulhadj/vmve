@@ -45,6 +45,9 @@ Engine* EngineInitialize(EngineInfo info);
 // simply does nothing.
 void EngineTerminate(Engine* engine);
 
+// This should be called to change from running to a non-running state. Following
+// this call will result in the engine no longer updating and can begin to be 
+// shutdown.
 void EngineShouldTerminate(Engine* engine);
 
 // Callbacks
@@ -60,11 +63,12 @@ void RegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int
 // will be false. This function should be used as the condition in a while loop.
 bool EngineUpdate(Engine* engine);
 
+
 //
 // Obtains the next available frame in preparation for issuing rendering
 // commands to the engine. This must be the first rendering related function
 // call within the main loop.
-void EngineBeginRender(Engine* engine);
+bool EngineBeginRender(Engine* engine);
 
 //
 // 
@@ -84,7 +88,6 @@ void EnginePresent(Engine* engine);
 //
 //
 void EngineSetEnvironmentMap(const char* path);
-
 
 // Models
 

@@ -159,7 +159,7 @@ static void CursorEnterCallback(GLFWwindow* window, int entered)
 
 // Initialized the GLFW library and creates a window. Window callbacks send
 // events to the application callback.
-Window* CreateWindow(const char* name, uint32_t width, uint32_t height)
+Window* CreateWindow(const char* name, int width, int height)
 {
     Logger::Info("Initializing window ({}, {})", width, height);
 
@@ -257,7 +257,6 @@ void UpdateWindow(Window* window)
 {
     glfwPollEvents();
 
-
     // TODO: Possibly implement a better solution as this will not work if 
     // the client application requires continuous updates. For example,
     // if networking is being used then waiting here is not possible since
@@ -267,7 +266,7 @@ void UpdateWindow(Window* window)
     // do anything else. This ensures the application does not waste resources
     // performing other operations such as maths and rendering when the window
     // is not visible.
-    while (window->minimized)
+    while (window->minimized || (window->width == 0 || window->height == 0))
     {
         glfwWaitEvents();
     }

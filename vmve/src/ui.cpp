@@ -46,8 +46,8 @@ static bool window_open = true;
 
 
 // temp
-float old_viewport_width = 0;
-float old_viewport_height = 0;
+int old_viewport_width = 0;
+int old_viewport_height = 0;
 
 float resize_width = 0;
 float resize_height = 0;
@@ -72,8 +72,8 @@ bool update_swapchain_vsync = false;
 
 bool viewportActive = false;
 bool resizeViewport = false;
-float viewport_width = 0;
-float viewport_height = 0;
+int viewport_width = 0;
+int viewport_height = 0;
 
 
 
@@ -186,7 +186,7 @@ static void ExportModelWindow(Engine* engine, bool* open)
         // TODO: Encrypt data
         if (encryptionModeIndex == 0) // AES
         {
-            AES_Data data = EncryptAES("", keyIV);
+            //AES_Data data = EncryptAES("", keyIV);
         }
         else if (encryptionModeIndex == 1) // DH
         {
@@ -253,18 +253,6 @@ static void GBufferVisualiserWindow(bool* open)
     ImGui::End();
 #endif
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 void BeginDocking()
 {
@@ -815,8 +803,8 @@ void RenderViewportWindow()
     {
         static bool first_time = true;
         // If new size is different than old size we will resize all contents
-        viewport_width = ImGui::GetContentRegionAvail().x;
-        viewport_height = ImGui::GetContentRegionAvail().y;
+        viewport_width = (int)ImGui::GetContentRegionAvail().x;
+        viewport_height = (int)ImGui::GetContentRegionAvail().y;
 
         if (first_time)
         {

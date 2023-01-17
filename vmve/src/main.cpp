@@ -14,22 +14,19 @@ int main()
     info.appName = "VMVE";
     info.windowWidth = 1280;
     info.windowHeight = 720;
-    info.iconPath = "icon.png";
 
     Engine* engine = EngineInitialize(info);
 
     RegisterKeyCallback(engine, KeyCallback);
-
-
+    
     EngineCreateCamera(engine, 45.0f, 20.0f);
 
     EngineEnableUIPass(engine);
 
-
     EngineAddModel(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\backpack\\backpack.obj", false);
     EngineAddInstance(engine, 0, 0.0f, 0.0f, 0.0f);
 
-
+    
     while (EngineUpdate(engine))
     {
         // Updating
@@ -45,7 +42,7 @@ int main()
         }
 
 
-        EngineBeginRender(engine);
+        if (EngineBeginRender(engine))
         {
             // Deferred Rendering
             EngineRender(engine);
@@ -61,8 +58,10 @@ int main()
             RenderViewportWindow();
             EndDocking();
             EngineEndUIPass();
+       
+            EnginePresent(engine);
         }
-        EnginePresent(engine);
+        
     }
 
     EngineTerminate(engine);

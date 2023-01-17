@@ -13,8 +13,8 @@
 
 extern bool viewportActive;
 extern bool resizeViewport;
-extern float viewport_width;
-extern float viewport_height;
+extern int viewport_width;
+extern int viewport_height;
 
 
 

@@ -519,6 +519,7 @@ Engine* EngineInitialize(EngineInfo info)
 
 
     engine->running = true;
+    engine->swapchainReady = true;
 
     gTempEnginePtr = engine;
 
@@ -528,6 +529,8 @@ Engine* EngineInitialize(EngineInfo info)
 
 bool EngineUpdate(Engine* engine)
 {
+    UpdateWindow(engine->window);
+
     // Calculate the amount that has passed since the last frame. This value
     // is then used with inputs and physics to ensure that the result is the
     // same no matter how fast the CPU is running.
@@ -558,7 +561,8 @@ bool EngineUpdate(Engine* engine)
 
     return engine->running;
 }
-void EngineBeginRender(Engine* engine)
+
+bool EngineBeginRender(Engine* engine)
 {
     engine->swapchainReady = GetNextSwapchainImage();
 
@@ -566,16 +570,16 @@ void EngineBeginRender(Engine* engine)
     // need to resize any framebuffers.
     if (!engine->swapchainReady)
     {
+        WaitForGPU();
+
         ResizeFramebuffer(uiPass, { engine->window->width, engine->window->height });
-        //engine->swapchainReady = true;
     }
+
+    return engine->swapchainReady;
 }
 
 void EngineRender(Engine* engine)
 {
-    if (!engine->swapchainReady)
-        return;
-
     BeginCommandBuffer(offscreenCmdBuffer);
     {
         //auto skyboxCmdBuffer = BeginRenderPass2(skyboxPass);
@@ -660,9 +664,6 @@ void EngineRender(Engine* engine)
 
 void EnginePresent(Engine* engine)
 {
-    if (!engine->swapchainReady)
-        return;
-
     if (engine->uiPassEnabled)
         SubmitWork({ offscreenCmdBuffer, compositeCmdBuffer, uiCmdBuffer });
     else
@@ -674,7 +675,6 @@ void EnginePresent(Engine* engine)
         assert("Code path not expected! Must implement framebuffer resizing");
     }
 
-    UpdateWindow(engine->window);
 }
 
 void EngineTerminate(Engine* engine)
@@ -685,6 +685,7 @@ void EngineTerminate(Engine* engine)
     // Wait until all GPU commands have finished
     WaitForGPU();
 
+    // TODO: Remove viewport ui destruction outside of here
     //ImGui_ImplVulkan_RemoveTexture(skysphere_dset);
     for (auto& framebuffer : viewportUI)
         ImGui_ImplVulkan_RemoveTexture(framebuffer);

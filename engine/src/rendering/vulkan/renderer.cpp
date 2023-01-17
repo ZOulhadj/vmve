@@ -1095,7 +1095,13 @@ bool GetNextSwapchainImage()
         nullptr,
         &currentImage);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+
+    // TODO: Look into only resizing when VK_ERROR is returned. VK_SUBOPTIMAL 
+    // is when a resize may occur but the presentation engine can still 
+    // present to the surface and therefore, swapchain recreation may not be
+    // required. However, at the moment, attempting to render when the swapchain
+    // is suboptimal results in a command buffer crash.
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
 #if 1
         // When resizing the swapchain, the acquired semaphore does not get
