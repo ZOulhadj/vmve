@@ -63,7 +63,6 @@ void RegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int
 // will be false. This function should be used as the condition in a while loop.
 bool EngineUpdate(Engine* engine);
 
-
 //
 // Obtains the next available frame in preparation for issuing rendering
 // commands to the engine. This must be the first rendering related function

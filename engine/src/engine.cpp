@@ -537,18 +537,16 @@ bool EngineUpdate(Engine* engine)
     engine->deltaTime = GetDeltaTime();
 
     // Set sun view matrix
-    glm::mat4 sunProjMatrix = glm::ortho(-sunDistance / 2.0f, sunDistance / 2.0f, sunDistance / 2.0f, -sunDistance / 2.0f, shadowNear, shadowFar);
-    //sunProjMatrix[1][1] *= -1.0;
-    //sunProjMatrix[2][2] = -sunProjMatrix[2][2];
-    //sunProjMatrix[2][3] = -sunProjMatrix[2][3] + 1.0;
+    glm::mat4 sunProjMatrix = glm::ortho(-sunDistance / 2.0f, 
+                                          sunDistance / 2.0f, 
+                                          sunDistance / 2.0f, 
+                                         -sunDistance / 2.0f, 
+                                          shadowNear, shadowFar);
+
     // TODO: Construct a dummy sun "position" for the depth calculation based on the direction vector and some random distance
     scene.sunPosition = -scene.sunDirection * sunDistance;
 
-    glm::mat4 sunViewMatrix = glm::lookAt(
-        scene.sunPosition,
-        glm::vec3(0.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    );
+    glm::mat4 sunViewMatrix = glm::lookAt(scene.sunPosition, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     sunData.viewProj = sunProjMatrix * sunViewMatrix;
 
     scene.cameraPosition = glm::vec4(engine->camera.position, 0.0f);
