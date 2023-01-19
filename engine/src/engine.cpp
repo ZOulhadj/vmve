@@ -153,6 +153,7 @@ Pipeline offscreenPipeline;
 Pipeline wireframePipeline;
 Pipeline compositePipeline;
 Pipeline shadowPipeline;
+Pipeline* currentPipeline = &offscreenPipeline;
 
 std::vector<VkCommandBuffer> offscreenCmdBuffer;
 std::vector<VkCommandBuffer> compositeCmdBuffer;
@@ -527,6 +528,14 @@ Engine* EngineInitialize(EngineInfo info)
 }
 
 
+void EngineSetRenderMode(Engine* engine, int mode) {
+    if (mode == 0) {
+        currentPipeline = &offscreenPipeline;
+    } else if (mode == 1) {
+        currentPipeline = &wireframePipeline;
+    }
+}
+
 bool EngineUpdate(Engine* engine)
 {
     UpdateWindow(engine->window);
@@ -620,7 +629,7 @@ void EngineRender(Engine* engine)
         BindDescriptorSet(offscreenCmdBuffer, offscreenPipelineLayout, offscreenSets, { sizeof(ViewProjection) });
         BeginRenderPass(offscreenCmdBuffer, offscreenPass);
 
-        BindPipeline(offscreenCmdBuffer, offscreenPipeline);
+        BindPipeline(offscreenCmdBuffer, *currentPipeline);
 
         // TODO: Currently we are rendering each instance individually
         // which is a very naive. Firstly, instances should be rendered
@@ -752,7 +761,7 @@ void EngineShouldTerminate(Engine* engine)
     engine->running = false;
 }
 
-void RegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode))
+void EngineRegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode))
 {
     engine->KeyCallback = KeyCallback;
 }
@@ -1103,7 +1112,7 @@ const char* EngineGetExecutableDirectory(Engine* engine)
 void EngineSetCursorMode(Engine* engine, int cursorMode)
 {
     int mode = (cursorMode == 0) ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
-
+    engine->camera.first_mouse = true;
     glfwSetInputMode(engine->window->handle, GLFW_CURSOR, mode);
 }
 

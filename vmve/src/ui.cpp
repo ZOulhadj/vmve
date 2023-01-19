@@ -75,7 +75,62 @@ bool resizeViewport = false;
 int viewport_width = 0;
 int viewport_height = 0;
 
+enum class property_settings {
+    appearance,
+    input,
+    audio,
+};
 
+static void SettingsWindow(bool* open) {
+    if (!*open) {
+        return;
+    }
+
+    static ImVec2 buttonSize = ImVec2(-FLT_MIN, 0.0f);
+    static property_settings option = (property_settings)0;
+
+    ImGui::Begin("Settings", open);
+
+    ImGui::BeginChild("Options", ImVec2(ImGui::GetContentRegionAvail().x / 3.0f, 0), false);
+    if (ImGui::Button("Appearance", buttonSize)) option = property_settings::appearance;
+    if (ImGui::Button("Input", buttonSize)) option = property_settings::input;
+    if (ImGui::Button("Audio", buttonSize)) option = property_settings::audio;
+
+
+
+    ImGui::EndChild();
+    ImGui::SameLine();
+
+    ImGui::BeginChild("Setting Property", ImVec2(0, 0), true);
+    static int currentTheme = 0;
+    static const char* themes[3] = { "Dark", "Light", "Blue" };
+    static int currentFont = 0;
+    static const char* fonts[5] = { "Consolas", "Menlo", "Cascadia Mono", "Arial", "Sans-serif" };
+    static int main_volume = 50;
+
+    switch (option) {
+    case property_settings::appearance: 
+        ImGui::Text("Appearance");
+
+        ImGui::Combo("Theme", &currentTheme, themes, 3);
+        ImGui::Combo("Font", &currentFont, fonts, 5);
+
+        break;
+    case property_settings::input:
+        ImGui::Text("Input");
+
+        break;
+    case property_settings::audio:
+        ImGui::Text("Audio");
+
+        ImGui::SliderInt("Main volume", &main_volume, 0, 100, "%d%%");
+        break;
+    }
+
+    ImGui::EndChild();
+
+    ImGui::End();
+}
 
 static void AboutWindow(bool* open)
 {
@@ -91,6 +146,35 @@ static void AboutWindow(bool* open)
     ImGui::Text("Contact: %s", authorEmail);
     ImGui::Separator();
     ImGui::TextWrapped("Description: %s", applicationAbout);
+
+    ImGui::End();
+}
+
+static void ShortcutsWindow(bool* open)
+{
+    if (!*open)
+        return;
+
+    ImGui::Begin("Shortcuts", open);
+
+    ImGui::Text("Global shortcuts");
+
+    ImGui::Text("Load model: SHIFT + L");
+    ImGui::Text("Export model: SHIFT + E");
+    ImGui::Text("Toggle viewport: F1");
+    ImGui::Text("Toggle camera mode: C");
+    ImGui::Text("Exit application: ALT + F4");
+
+    ImGui::Separator();
+
+    ImGui::Text("Viewport shortcuts");
+
+    ImGui::Text("Camera forward: W");
+    ImGui::Text("Camera backwards: S");
+    ImGui::Text("Camera left: A");
+    ImGui::Text("Camera right: D");
+    ImGui::Text("Camera up: SPACE");
+    ImGui::Text("Camera down: SHIFT");
 
     ImGui::End();
 }
@@ -275,14 +359,13 @@ void EndDocking()
 
 void RenderMainMenu(Engine* engine)
 {
+    static bool settingsOpen = false;
     static bool aboutOpen = false;
+    static bool shortcutsOpen = false;
     static bool loadOpen = false;
     static bool exportOpen = false;
     static bool perfProfilerOpen = false;
     static bool gBufferOpen = false;
-    static bool isDark = true;
-    static bool isLight = false;
-
 
     if (ImGui::BeginMenuBar())
     {
@@ -298,29 +381,8 @@ void RenderMainMenu(Engine* engine)
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Settings"))
-        {
-            if (ImGui::BeginMenu("Theme"))
-            {
-
-
-                if (ImGui::MenuItem("Dark", "", &isDark))
-                {
-                    ImGui::StyleColorsDark();
-                    isLight = false;
-                }
-
-                if (ImGui::MenuItem("Light", "", &isLight))
-                {
-                    ImGui::StyleColorsLight();
-                    isDark = false;
-                }
-
-                ImGui::EndMenu();
-            }
-
-            ImGui::EndMenu();
-        }
+        if (ImGui::MenuItem("Settings"))
+            settingsOpen = true;
 
         if (ImGui::BeginMenu("Tools"))
         {
@@ -344,7 +406,8 @@ void RenderMainMenu(Engine* engine)
             if (ImGui::MenuItem("About"))
                 aboutOpen = true;
 
-            ImGui::MenuItem("Shortcuts");
+            if (ImGui::MenuItem("Shortcuts"))
+                shortcutsOpen = true;
 
             ImGui::EndMenu();
         }
@@ -355,12 +418,13 @@ void RenderMainMenu(Engine* engine)
     }
 
 
+    SettingsWindow(&settingsOpen);
     AboutWindow(&aboutOpen);
     LoadModelWindow(engine, &loadOpen);
     ExportModelWindow(engine, &exportOpen);
     PerformanceProfilerWindow(&perfProfilerOpen);
     GBufferVisualiserWindow(&gBufferOpen);
-
+    ShortcutsWindow(&shortcutsOpen);
 }
 
 void RenderDockspace()
@@ -556,8 +620,8 @@ void RenderGlobalWindow(Engine* engine)
             ImGui::Text("Delta time: %.4f ms/frame", EngineGetDeltaTime(engine));
             ImGui::Text("GPU: %s", "AMD GPU");
 
-            //if (ImGui::Checkbox("Wireframe", &wireframe))
-            //    wireframe ? current_pipeline = wireframePipeline : current_pipeline = geometry_pipeline;
+            if (ImGui::Checkbox("Wireframe", &wireframe))
+                EngineSetRenderMode(engine, wireframe ? 1 : 0);
 
             if (ImGui::Checkbox("VSync", &vsync))
             {

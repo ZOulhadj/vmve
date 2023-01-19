@@ -6,9 +6,9 @@
 // everything be a function. Maybe a single struct with everything combined?
 // The main problem is that I do not want to include various dependencies.
 
-
-// TODO: Append the engine name for all function calls so it acts as a namespace
-// without using namespaces directly as this should be C compatible.
+// TODO: Functions should generally not use random values as input for example
+// for "modes" such as default or wireframe rendering a better system should
+// be used.
 
 // 
 //
@@ -51,10 +51,11 @@ void EngineTerminate(Engine* engine);
 void EngineShouldTerminate(Engine* engine);
 
 // Callbacks
-void RegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode));
+void EngineRegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode));
 
 // Rendering
 
+void EngineSetRenderMode(Engine* engine, int mode);
 //
 // Updates the internal state of the engine. This is called every frame before
 // any rendering related function calls. The boolean return value returns true

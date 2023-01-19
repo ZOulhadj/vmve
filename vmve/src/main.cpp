@@ -17,7 +17,7 @@ int main()
 
     Engine* engine = EngineInitialize(info);
 
-    RegisterKeyCallback(engine, KeyCallback);
+    EngineRegisterKeyCallback(engine, KeyCallback);
     
     EngineCreateCamera(engine, 45.0f, 20.0f);
 
