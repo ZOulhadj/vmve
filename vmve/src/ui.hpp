@@ -17,16 +17,9 @@ extern int viewport_width;
 extern int viewport_height;
 
 
+extern bool firstTimeNormal;
+extern bool firstTimeFullScreen;
 
-void BeginDocking();
-void EndDocking();
-void RenderMainMenu(Engine* engine);
-void RenderDockspace();
-void RenderObjectWindow(Engine* engine);
-void RenderGlobalWindow(Engine* engine);
-void RenderConsoleWindow(Engine* engine);
-void RenderViewportWindow();
-
-
+void RenderUI(Engine* engine, bool fullscreen);
 
 #endif

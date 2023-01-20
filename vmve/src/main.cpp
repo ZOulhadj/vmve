@@ -4,7 +4,12 @@
 #include "security.hpp"
 #include "ui.hpp"
 
+#include <imgui.h>
+
 static void KeyCallback(Engine* engine, int keycode);
+
+bool notFullScreen = true;
+
 
 int main()
 {
@@ -49,14 +54,7 @@ int main()
 
             // UI Rendering
             EngineBeginUIPass();
-            BeginDocking();
-            RenderMainMenu(engine);
-            RenderDockspace();
-            RenderObjectWindow(engine);
-            RenderGlobalWindow(engine);
-            RenderConsoleWindow(engine);
-            RenderViewportWindow();
-            EndDocking();
+            RenderUI(engine, !notFullScreen);
             EngineEndUIPass();
        
             EnginePresent(engine);
@@ -73,12 +71,30 @@ int main()
 void KeyCallback(Engine* engine, int keycode)
 {
     // NOTE: 290 == F1
+    // NOTE: 258 == TAB
 
     if (keycode == 290)
     {
         viewportActive = !viewportActive;
 
         EngineSetCursorMode(engine, viewportActive);
+    }
+
+
+    if (keycode == 258) {
+        notFullScreen = !notFullScreen;
+
+        if (notFullScreen) {
+            firstTimeNormal = true;
+            firstTimeFullScreen = false;
+            viewportActive = false;
+            EngineSetCursorMode(engine, 0);
+        } else {
+            firstTimeFullScreen = true;
+            firstTimeNormal = false;
+            viewportActive = true;
+            EngineSetCursorMode(engine, 1);
+        }
     }
 }
 

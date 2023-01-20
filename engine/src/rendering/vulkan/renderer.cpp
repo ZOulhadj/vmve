@@ -91,7 +91,7 @@ static VkPresentModeKHR FindSuitablePresentMode(const std::vector<VkPresentModeK
 }
 
 
-static bool IsDepth(FramebufferAttachment& attachment)
+static bool IsDepth(const FramebufferAttachment& attachment)
 {
     const std::vector<VkFormat> formats =
     {
@@ -759,8 +759,11 @@ void EndCommandBuffer(const std::vector<VkCommandBuffer>& cmdBuffer)
 
 
 
-
-void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, const RenderPass& fb, const glm::vec4& clearColor, const glm::vec2& clearDepthStencil)
+#if 0
+void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, 
+    const RenderPass& fb, 
+    const glm::vec4& clearColor, 
+    const glm::vec2& clearDepthStencil)
 {
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -798,8 +801,12 @@ void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, const Render
 
     vkCmdBeginRenderPass(cmdBuffer[gCurrentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
+#endif
 
-void BeginRenderPass2(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass& fb, const glm::vec4& clear_color)
+void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, 
+    const RenderPass& fb,
+    const glm::vec4& clearColor, 
+    const glm::vec2& clearDepthStencil)
 {
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -816,9 +823,16 @@ void BeginRenderPass2(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass&
     vkCmdSetViewport(cmdBuffer[gCurrentFrame], 0, 1, &viewport);
     vkCmdSetScissor(cmdBuffer[gCurrentFrame], 0, 1, &scissor);
 
-    VkClearValue clear_value = { {{ clear_color.r, clear_color.g, clear_color.b, clear_color.a }} };
-    clear_value.depthStencil = { 1.0f, 0 };
-    
+    std::vector<VkClearValue> clearValues(fb.attachments.size());
+    for (std::size_t i = 0; i < clearValues.size(); ++i) {
+        if (!IsDepth(fb.attachments[i])) {
+            clearValues[i].color = { { clearColor.r, clearColor.g, clearColor.b, clearColor.a} };
+        } else {
+            clearValues[i].depthStencil = { clearDepthStencil.r, (uint32_t)clearDepthStencil.g };
+        }
+        
+    }
+
     VkRect2D render_area{};
     render_area.offset = { 0, 0 };
     render_area.extent.width = fb.width;
@@ -828,8 +842,8 @@ void BeginRenderPass2(const std::vector<VkCommandBuffer>& cmdBuffer, RenderPass&
     renderPassInfo.renderPass = fb.renderPass;
     renderPassInfo.framebuffer = fb.handle[currentImage];
     renderPassInfo.renderArea = render_area;
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clear_value;
+    renderPassInfo.clearValueCount = U32(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(cmdBuffer[gCurrentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }

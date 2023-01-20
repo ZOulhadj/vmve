@@ -90,7 +90,7 @@ ImGuiContext* CreateUI(const VulkanRenderer* renderer, VkRenderPass renderPass)
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigDockingWithShift = true;
-    //io.IniFilename = nullptr;
+    io.IniFilename = nullptr;
     io.Fonts->AddFontDefault();
 
     custom_style();

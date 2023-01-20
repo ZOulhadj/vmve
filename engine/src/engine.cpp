@@ -603,7 +603,7 @@ void EngineRender(Engine* engine)
         //EndRenderPass(skyboxCmdBuffer);
 
         BindDescriptorSet(offscreenCmdBuffer, shadowPipelineLayout, shadowSets, { sizeof(SunData) });
-        BeginRenderPass2(offscreenCmdBuffer, shadowPass);
+        BeginRenderPass(offscreenCmdBuffer, shadowPass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f });
 
         BindPipeline(offscreenCmdBuffer, shadowPipeline);
 
@@ -627,7 +627,7 @@ void EngineRender(Engine* engine)
 
 
         BindDescriptorSet(offscreenCmdBuffer, offscreenPipelineLayout, offscreenSets, { sizeof(ViewProjection) });
-        BeginRenderPass(offscreenCmdBuffer, offscreenPass);
+        BeginRenderPass(offscreenCmdBuffer, offscreenPass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f });
 
         BindPipeline(offscreenCmdBuffer, *currentPipeline);
 
@@ -657,7 +657,7 @@ void EngineRender(Engine* engine)
 
     BeginCommandBuffer(compositeCmdBuffer);
     {
-        BeginRenderPass2(compositeCmdBuffer, compositePass);
+        BeginRenderPass(compositeCmdBuffer, compositePass);
 
         BindDescriptorSet(compositeCmdBuffer, compositePipelineLayout, compositeSets, { sizeof(SunData) });
 
@@ -815,6 +815,8 @@ void EngineAddInstance(Engine* engine, int modelID, float x, float y, float z)
     instance.matrix = glm::mat4(1.0f);
 
     engine->instances.push_back(instance);
+
+    Logger::Info("Instance ({}) added", instance.id);
 }
 
 void EngineRemoveInstance(Engine* engine, int instanceID)
@@ -837,6 +839,8 @@ void EngineRemoveInstance(Engine* engine, int instanceID)
     engine->instances.erase(it);
 #else
     engine->instances.erase(engine->instances.begin() + instanceID);
+
+    Logger::Info("Instance ({}) removed", instanceID);
 #endif
 
     
@@ -977,7 +981,7 @@ void EngineEnableUIPass(Engine* engine)
 void EngineBeginUIPass()
 {
     BeginCommandBuffer(uiCmdBuffer);
-    BeginRenderPass2(uiCmdBuffer, uiPass);
+    BeginRenderPass(uiCmdBuffer, uiPass);
     BeginUI();
 }
 

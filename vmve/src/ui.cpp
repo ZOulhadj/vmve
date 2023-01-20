@@ -20,19 +20,16 @@
 
 // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 // because it would be confusing to have two docking targets within each others.
-static ImGuiWindowFlags docking_flags = ImGuiWindowFlags_MenuBar |
-ImGuiWindowFlags_NoDocking |
-ImGuiWindowFlags_NoTitleBar |
-ImGuiWindowFlags_NoCollapse |
-ImGuiWindowFlags_NoResize |
-ImGuiWindowFlags_NoMove |
-ImGuiWindowFlags_NoNavFocus |
-ImGuiWindowFlags_NoBringToFrontOnFocus;
+static ImGuiWindowFlags rootNodeFlags = ImGuiWindowFlags_MenuBar | 
+                                        ImGuiWindowFlags_NoDecoration |
+                                        ImGuiWindowFlags_NoNavFocus |
+                                        ImGuiWindowFlags_NoDocking |
+                                        ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode; // ImGuiDockNodeFlags_NoTabBar
+static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode |
+ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton; // ImGuiDockNodeFlags_NoTabBar
 
-static ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
-
+static ImGuiWindowFlags dockspaceWindowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
 
 
 
@@ -347,7 +344,7 @@ void BeginDocking()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("Editor", &editor_open, docking_flags);
+    ImGui::Begin("Editor", &editor_open, rootNodeFlags);
     ImGui::PopStyleVar(3);
 }
 
@@ -427,38 +424,10 @@ void RenderMainMenu(Engine* engine)
     ShortcutsWindow(&shortcutsOpen);
 }
 
-void RenderDockspace()
-{
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-
-    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-    if (!ImGui::DockBuilderGetNode(dockspace_id))
-    {
-        ImGui::DockBuilderRemoveNode(dockspace_id);
-        ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
-        ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
-
-        ImGuiID dock_main_id = dockspace_id;
-        ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.2f, nullptr, &dock_main_id);
-        ImGuiID dock_left_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
-        ImGuiID dock_down_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.2f, nullptr, &dock_main_id);
-
-
-        ImGui::DockBuilderDockWindow(object_window, dock_right_id);
-        ImGui::DockBuilderDockWindow(scene_window, dock_left_id);
-        ImGui::DockBuilderDockWindow(console_window, dock_down_id);
-        ImGui::DockBuilderDockWindow(viewport_window, dock_main_id);
-
-        ImGui::DockBuilderFinish(dock_main_id);
-    }
-    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-
-}
-
 void RenderObjectWindow(Engine* engine)
 {
     // Object window
-    ImGui::Begin(object_window, &window_open, window_flags);
+    ImGui::Begin(object_window, &window_open, dockspaceWindowFlags);
     {
         static int selectedInstanceIndex = 0;
         static int modelID = 0;
@@ -466,7 +435,8 @@ void RenderObjectWindow(Engine* engine)
         int modelCount = EngineGetModelCount(engine);
         int instanceCount = EngineGetInstanceCount(engine);
 
-        // TEMP: Create a list of just model names from all the models
+        // TODO: Get a contiguous list of models names for the combo box instead
+        // of recreating a temporary list each frame.
         std::vector<const char*> modelNames(modelCount);
         for (std::size_t i = 0; i < modelNames.size(); ++i)
             modelNames[i] = EngineGetModelName(engine, i);
@@ -595,7 +565,7 @@ void RenderGlobalWindow(Engine* engine)
 
     static bool skyboxWindowOpen = false;
 
-    ImGui::Begin(scene_window, &window_open, window_flags);
+    ImGui::Begin(scene_window, &window_open, dockspaceWindowFlags);
     {
         if (ImGui::CollapsingHeader("Application"))
         {
@@ -795,9 +765,11 @@ void RenderGlobalWindow(Engine* engine)
 
 void RenderConsoleWindow(Engine* engine)
 {
-    static bool auto_scroll = true;
+    static bool autoScroll = true;
+    static bool scrollCheckboxClicked = false;
+    //static bool wrap_text = false;
 
-    ImGui::Begin(console_window, &window_open, window_flags);
+    ImGui::Begin(console_window, &window_open, dockspaceWindowFlags);
     {
         if (ImGui::Button("Clear"))
             EngineClearLogs(engine);
@@ -805,7 +777,10 @@ void RenderConsoleWindow(Engine* engine)
         if (ImGui::Button("Export"))
             EngineExportLogsToFile(engine, "logs.txt");
         ImGui::SameLine();
-        ImGui::Checkbox("Auto-scroll", &auto_scroll);
+        scrollCheckboxClicked = ImGui::Checkbox("Auto-scroll", &autoScroll);
+        
+        //ImGui::SameLine();
+        //ImGui::Checkbox("Wrap text", &wrap_text);
         ImGui::Separator();
 
         ImGui::BeginChild("Logs", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
@@ -833,20 +808,32 @@ void RenderConsoleWindow(Engine* engine)
                 }
 
 
-                //ImGui::PushTextWrapPos();
+                //ImGui::PushTextWrapPos(wrap_text ? ImGui::GetContentRegionAvail().x : -1.0f);
                 ImGui::TextColored(logColor, EngineGetLog(engine, index));
                 //ImGui::PopTextWrapPos();
+
+
             }
         }
 
-        // TODO: Allow the user to disable auto scroll checkbox even if the
-        // scrollbar is at the bottom.
 
-        // Scroll to bottom of console window to view the most recent logs
-        if (auto_scroll)
+
+        bool isBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY();
+        autoScroll = isBottom;
+
+        if ((scrollCheckboxClicked && autoScroll) && isBottom) {
+            // TODO: Instead of moving slightly up so that
+            // isBottom is false. We should have a boolean
+            // that can handle this. This will ensure that
+            // we can disable auto-scroll even if we are
+            // at the bottom without moving visually.
+            ImGui::SetScrollY(ImGui::GetScrollY() - 0.001f);
+            isBottom = false;
+        }
+
+        if ((scrollCheckboxClicked && !autoScroll) || isBottom) {
             ImGui::SetScrollHereY(1.0f);
-
-        auto_scroll = (ImGui::GetScrollY() == ImGui::GetScrollMaxY());
+        }
 
         ImGui::EndChild();
     }
@@ -855,11 +842,13 @@ void RenderConsoleWindow(Engine* engine)
 
 void RenderViewportWindow()
 {
+    ImGuiWindowFlags viewportFlags = dockspaceWindowFlags;
+
     ImGuiIO& io = ImGui::GetIO();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin(viewport_window, &window_open, window_flags);
+    ImGui::Begin(viewport_window, &window_open, viewportFlags);
 
     //in_viewport = ImGui::IsWindowFocused();
 
@@ -892,3 +881,62 @@ void RenderViewportWindow()
     }
     ImGui::End();
 }
+
+
+bool firstTimeNormal = true;
+bool firstTimeFullScreen = !firstTimeNormal;
+
+void RenderUI(Engine* engine, bool fullscreen)
+{
+    BeginDocking();
+    RenderMainMenu(engine);
+
+    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+
+    if (dockspaceFlags & ImGuiDockNodeFlags_PassthruCentralNode)
+        dockspaceWindowFlags | ImGuiWindowFlags_NoBackground;
+
+    if (firstTimeNormal) {
+        ImGui::DockBuilderRemoveNodeChildNodes(dockspace_id);
+        ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->Size);
+
+        ImGuiID dock_main_id = dockspace_id;
+        ImGuiID dock_right_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.2f, nullptr, &dock_main_id);
+        ImGuiID dock_left_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, nullptr, &dock_main_id);
+        ImGuiID dock_down_id = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.4f, nullptr, &dock_main_id);
+
+        ImGui::DockBuilderDockWindow(object_window, dock_right_id);
+        ImGui::DockBuilderDockWindow(scene_window, dock_left_id);
+        ImGui::DockBuilderDockWindow(console_window, dock_down_id);
+        ImGui::DockBuilderDockWindow(viewport_window, dock_main_id);
+
+        //ImGui::DockBuilderFinish(dock_main_id);
+        std::cout << "Rebuilding dock for ui\n";
+        firstTimeNormal = false;
+    } else if (firstTimeFullScreen) {
+        ImGui::DockBuilderRemoveNodeChildNodes(dockspace_id);
+        ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->Size);
+        ImGui::DockBuilderDockWindow(viewport_window, dockspace_id);
+
+        std::cout << "Rebuilding dock for viewport\n";
+        //ImGui::DockBuilderFinish(dock_main_id);
+        firstTimeFullScreen = false;
+    }
+
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspaceFlags);
+
+
+    if (fullscreen) {
+        RenderViewportWindow();
+    } else {
+        RenderObjectWindow(engine);
+        RenderGlobalWindow(engine);
+        RenderConsoleWindow(engine);
+        RenderViewportWindow();
+    }
+
+    EndDocking();
+
+}
+
