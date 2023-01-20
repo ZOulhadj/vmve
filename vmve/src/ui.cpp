@@ -912,14 +912,12 @@ void RenderUI(Engine* engine, bool fullscreen)
         ImGui::DockBuilderDockWindow(viewport_window, dock_main_id);
 
         //ImGui::DockBuilderFinish(dock_main_id);
-        std::cout << "Rebuilding dock for ui\n";
         firstTimeNormal = false;
     } else if (firstTimeFullScreen) {
         ImGui::DockBuilderRemoveNodeChildNodes(dockspace_id);
         ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->Size);
         ImGui::DockBuilderDockWindow(viewport_window, dockspace_id);
 
-        std::cout << "Rebuilding dock for viewport\n";
         //ImGui::DockBuilderFinish(dock_main_id);
         firstTimeFullScreen = false;
     }
