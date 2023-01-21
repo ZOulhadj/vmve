@@ -21,6 +21,8 @@
 #include "../src/rendering/entity.hpp"
 #include "../src/rendering/model.hpp"
 
+#include "../src/shaders/shaders.hpp"
+
 #include "../src/audio/audio.hpp"
 
 #include "../src/events/event.hpp"
@@ -168,14 +170,7 @@ std::vector<VkDescriptorSet> specularsUI;
 std::vector<VkDescriptorSet> depthsUI;
 std::vector<VkCommandBuffer> uiCmdBuffer;
 
-
-VertexArray quad;
-ImageBuffer empty_normal_map;
-ImageBuffer empty_specular_map;
-Model sphere;
-
-Instance skyboxInstance;
-Instance modelInstance;
+//VertexArray quad;
 
 float shadowNear = 1.0f, shadowFar = 2000.0f;
 float sunDistance = 400.0f;
@@ -258,12 +253,12 @@ Engine* EngineInitialize(EngineInfo info)
     }
 
     // Mount specific VFS folders
-    const std::string rootDir = "C:/Users/zakar/Projects/vmve/vmve/";
-    const std::string rootDir1 = "C:/Users/zakar/Projects/vmve/engine/src";
-    MountPath("models", rootDir + "assets/models");
-    MountPath("textures", rootDir + "assets/textures");
-    MountPath("fonts", rootDir + "assets/fonts");
-    MountPath("shaders", rootDir1 + "/shaders");
+    //const std::string rootDir = "C:/Users/zakar/Projects/vmve/vmve/";
+    //const std::string rootDir1 = "C:/Users/zakar/Projects/vmve/engine/src";
+    //MountPath("models", rootDir + "assets/models");
+    //MountPath("textures", rootDir + "assets/textures");
+    //MountPath("fonts", rootDir + "assets/fonts");
+    //MountPath("shaders", rootDir1 + "/shaders");
 
 
     // Create rendering passes and render targets
@@ -398,19 +393,19 @@ Engine* EngineInitialize(EngineInfo info)
     vertexBinding.AddAttribute(VK_FORMAT_R32G32_SFLOAT, "UV");
     vertexBinding.AddAttribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
 
-    Shader shadowMappingVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/shadow_mapping.vert")));
-    Shader shadowMappingFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/shadow_mapping.frag")));
+    Shader shadowMappingVS = CreateVertexShader(shadowMappingVSCode);
+    Shader shadowMappingFS = CreateFragmentShader(shadowMappingFSCode);
 
-    Shader geometry_vs = CreateVertexShader(LoadFile(GetVFSPath("/shaders/deferred/geometry.vert")));
-    Shader geometry_fs = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/deferred/geometry.frag")));
-    Shader lighting_vs = CreateVertexShader(LoadFile(GetVFSPath("/shaders/deferred/lighting.vert")));
-    Shader lighting_fs = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/deferred/lighting.frag")));
+    Shader geometry_vs = CreateVertexShader(geometryVSCode);
+    Shader geometry_fs = CreateFragmentShader(geometryFSCode);
+    Shader lighting_vs = CreateVertexShader(lightingVSCode);
+    Shader lighting_fs = CreateFragmentShader(lightingFSCode);
 
-    Shader skysphereVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphere.vert")));
-    Shader skysphereFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphere.frag")));
+    //Shader skysphereVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphere.vert")));
+    //Shader skysphereFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphere.frag")));
 
-    Shader skysphereNewVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphereNew.vert")));
-    Shader skysphereNewFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphereNew.frag")));
+    //Shader skysphereNewVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphereNew.vert")));
+    //Shader skysphereNewFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphereNew.frag")));
 
     //Pipeline offscreenPipeline(offscreenPipelineLayout, offscreenPass);
     offscreenPipeline.m_Layout = offscreenPipelineLayout;
@@ -455,10 +450,10 @@ Engine* EngineInitialize(EngineInfo info)
     compositePipeline.CreatePipeline();
 
     // Delete all individual shaders since they are now part of the various pipelines
-    DestroyShader(skysphereNewFS);
-    DestroyShader(skysphereNewVS);
-    DestroyShader(skysphereFS);
-    DestroyShader(skysphereVS);
+    //DestroyShader(skysphereNewFS);
+    //DestroyShader(skysphereNewVS);
+    //DestroyShader(skysphereFS);
+    //DestroyShader(skysphereVS);
     DestroyShader(lighting_fs);
     DestroyShader(lighting_vs);
     DestroyShader(geometry_fs);
@@ -487,7 +482,7 @@ Engine* EngineInitialize(EngineInfo info)
 
 
     // create models
-    quad = CreateVertexArray(quad_vertices, quad_indices);
+    //quad = CreateVertexArray(quad_vertices, quad_indices);
 
     // TEMP: Don't want to have to manually load the model each time so I will do it
     // here instead for the time-being.
@@ -498,26 +493,6 @@ Engine* EngineInitialize(EngineInfo info)
     //    get_vfs_path("/models/backpack/backpack.obj"))
     //);
     //
-
-
-    // TODO: Load default textures here such as diffuse, normal, specular etc.
-    empty_normal_map = LoadTexture(GetVFSPath("/textures/null_normal.png"));
-    empty_specular_map = LoadTexture(GetVFSPath("/textures/null_specular.png"));
-
-
-    sphere = LoadModel(GetVFSPath("/models/sphere.obj"));
-    UploadModelToGPU(sphere, materialLayout, materialBindings, gTextureSampler);
-
-#if 0
-    Material skysphere_material;
-    skysphere_material.textures.push_back(LoadTexture(GetVFSPath("/textures/skysphere2.jpg")));
-    skysphere_material.textures.push_back(empty_normal_map);
-    skysphere_material.textures.push_back(empty_specular_map);
-    CreateMaterial(skysphere_material, bindings, material_layout, g_texture_sampler);
-#endif
-
-    //skysphere_dset = ImGui_ImplVulkan_AddTexture(g_fb_sampler, skysphere_material.textures[0].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
 
     engine->running = true;
     engine->swapchainReady = true;
@@ -697,18 +672,13 @@ void EngineTerminate(Engine* engine)
     for (auto& framebuffer : viewportUI)
         ImGui_ImplVulkan_RemoveTexture(framebuffer);
 
-    DestroyModel(sphere);
-
     for (auto& model : engine->models)
         DestroyModel(model);
-
-    DestroyImage(empty_normal_map);
-    DestroyImage(empty_specular_map);
 
     // TODO: Remove textures but not the fallback ones that these materials refer to
     //DestroyMaterial(skysphere_material);
 
-    DestroyVertexArray(quad);
+    //DestroyVertexArray(quad);
 
 
     // Destroy rendering resources

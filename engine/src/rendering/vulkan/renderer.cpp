@@ -978,7 +978,7 @@ VulkanRenderer* CreateRenderer(const Window* window, BufferMode buffering_mode, 
 #if defined(_DEBUG)
         "VK_LAYER_KHRONOS_validation",
 #endif
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(_DEBUG)
         "VK_LAYER_LUNARG_monitor"
 #endif
     };

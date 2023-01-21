@@ -51,6 +51,30 @@ static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::f
     }
 }
 
+static void create_mesh_texture(Model& model, Mesh& mesh, unsigned char* texture, const std::filesystem::path& path)
+{
+    std::vector<std::filesystem::path>& uniques = model.unique_texture_paths;
+
+    uint32_t index = 0;
+    const auto it = std::find(uniques.begin(), uniques.end(), path);
+
+    if (it == uniques.end()) {
+        ImageBuffer image = create_texture_buffer(texture, 1, 1, VK_FORMAT_R8G8B8A8_SRGB);
+        model.unique_textures.push_back(image);
+        uniques.push_back(path);
+        index = model.unique_textures.size() - 1;
+    }
+    else {
+        index = std::distance(model.unique_texture_paths.begin(), it);
+    }
+
+    // Find the index position of the current texture and
+    // add it to the list of textures for the mesh 
+    mesh.textures.push_back(index);
+
+}
+
+
 
 
 static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* scene)
@@ -136,19 +160,40 @@ static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* sce
         // TEMP: If any texture was not found then use the fallback textures
         // TODO: Instead of loading them textures again, we should use the default
         // existing textures
+
+
+        unsigned char defaultAlbedo[4];
+        defaultAlbedo[0] = (unsigned char)255;
+        defaultAlbedo[1] = (unsigned char)255;
+        defaultAlbedo[2] = (unsigned char)255;
+        defaultAlbedo[3] = (unsigned char)255;
+
+        unsigned char defaultNormal[4];
+        defaultNormal[0] = (unsigned char)128;
+        defaultNormal[1] = (unsigned char)128;
+        defaultNormal[2] = (unsigned char)255;
+        defaultNormal[3] = (unsigned char)255;
+
+        unsigned char defaultSpecular[4];
+        defaultSpecular[0] = (unsigned char)0;
+        defaultSpecular[1] = (unsigned char)0;
+        defaultSpecular[2] = (unsigned char)0;
+        defaultSpecular[3] = (unsigned char)255;
+
         if (diffuse_path.empty()) {
-            std::vector<std::filesystem::path> fallback_speculars = { GetVFSPath("/textures/null_specular.png") };
-            load_mesh_texture(model, mesh, fallback_speculars);
+            create_mesh_texture(model, mesh, defaultAlbedo, "albedo_fallback");
+            Logger::Warning("{} using fallback albedo texture.", model.name);
         }
 
         if (normal_path.empty()) {
-            std::vector<std::filesystem::path> fallback_normals = { GetVFSPath("/textures/null_normal.png") };
-            load_mesh_texture(model, mesh, fallback_normals);
+            create_mesh_texture(model, mesh, defaultNormal, "normal_fallback");
+            Logger::Warning("{} using fallback normal texture.", model.name);
+
         }
 
         if (specular_path.empty()) {
-            std::vector<std::filesystem::path> fallback_speculars = { GetVFSPath("/textures/null_specular.png") };
-            load_mesh_texture(model, mesh, fallback_speculars);
+            create_mesh_texture(model, mesh, defaultSpecular, "specular_fallback");
+            Logger::Warning("{} using fallback specular texture.", model.name);
         }
     }
  

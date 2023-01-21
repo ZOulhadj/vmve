@@ -894,7 +894,7 @@ void RenderUI(Engine* engine, bool fullscreen)
     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 
     if (dockspaceFlags & ImGuiDockNodeFlags_PassthruCentralNode)
-        dockspaceWindowFlags | ImGuiWindowFlags_NoBackground;
+        dockspaceWindowFlags |= ImGuiWindowFlags_NoBackground;
 
     if (firstTimeNormal) {
         ImGui::DockBuilderRemoveNodeChildNodes(dockspace_id);

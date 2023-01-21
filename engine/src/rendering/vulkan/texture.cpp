@@ -7,7 +7,7 @@
 
 #include "logging.hpp"
 
-static ImageBuffer create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
+ImageBuffer create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
 {
     ImageBuffer buffer{};
 

@@ -24,7 +24,7 @@ void Logger::Log(LogType type, const std::string& message)
 
     m_Logs.push_back(msg);
 
-#if defined(_DEBUG)
+#if !defined(_DEBUG)
     printf("%s\n", message.c_str());
 #endif
 }

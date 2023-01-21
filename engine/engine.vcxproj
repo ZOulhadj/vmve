@@ -80,6 +80,7 @@
     <ClInclude Include="src\rendering\vulkan\shader.hpp" />
     <ClInclude Include="src\rendering\vulkan\texture.hpp" />
     <ClInclude Include="src\rendering\vulkan\vertex_array.hpp" />
+    <ClInclude Include="src\shaders\shaders.hpp" />
     <ClInclude Include="src\time.hpp" />
     <ClInclude Include="src\types.hpp" />
     <ClInclude Include="src\ui\ui.hpp" />
@@ -138,6 +139,7 @@ _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)src/;C:\VulkanSDK\1.3.231.1\Include/;$(SolutionDir)vendor/glfw/include/;$(SolutionDir)vendor/vma/include/;$(SolutionDir)vendor/glm/;$(SolutionDir)vendor/imgui/;$(SolutionDir)vendor/stb/;$(SolutionDir)vendor/assimp/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>pch.hpp;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -148,7 +150,7 @@ _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Lib>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;shaderc_shared.lib;assimp-vc143-mtd.lib;zlibstaticd.lib;xaudio2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3_mt.lib;vulkan-1.lib;shaderc_shared.lib;assimp-vc143-mtd.lib;zlibstaticd.lib;xaudio2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.231.1\Lib;$(SolutionDir)vendor\glfw\lib\Release;$(SolutionDir)vendor\assimp\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -168,6 +170,7 @@ _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)src/;C:\VulkanSDK\1.3.231.1\Include/;$(SolutionDir)vendor/glfw/include/;$(SolutionDir)vendor/vma/include/;$(SolutionDir)vendor/glm/;$(SolutionDir)vendor/imgui/;$(SolutionDir)vendor/stb/;$(SolutionDir)vendor/assimp/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>pch.hpp;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -180,7 +183,7 @@ _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Lib>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;shaderc_shared.lib;assimp-vc143-mt.lib;zlibstatic.lib;xaudio2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3_mt.lib;vulkan-1.lib;shaderc_shared.lib;assimp-vc143-mt.lib;zlibstatic.lib;xaudio2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.231.1\Lib;$(SolutionDir)vendor\glfw\lib\Release;$(SolutionDir)vendor\assimp\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
