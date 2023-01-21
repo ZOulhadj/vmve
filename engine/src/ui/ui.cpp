@@ -9,8 +9,7 @@
 #include "logging.hpp"
 
 static void custom_style() {
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.TabRounding = 0.0f;
+    ImGuiStyle& style = ImGui::GetStyle();    
     //style.FrameRounding = 2.0f;
 }
 
@@ -91,6 +90,7 @@ ImGuiContext* CreateUI(const VulkanRenderer* renderer, VkRenderPass renderPass)
     //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigDockingWithShift = true;
     io.IniFilename = nullptr;
+    Logger::Info("{}", ImGui::GetWindowDpiScale());
     io.Fonts->AddFontDefault();
 
     custom_style();
@@ -112,7 +112,7 @@ ImGuiContext* CreateUI(const VulkanRenderer* renderer, VkRenderPass renderPass)
     init_info.ImageCount      = GetSwapchainImageCount();
     init_info.MSAASamples     = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator       = nullptr;
-    init_info.CheckVkResultFn = VkCheck;
+    //init_info.CheckVkResultFn = VkCheck;
 
     if (!ImGui_ImplVulkan_Init(&init_info, renderPass))
         return nullptr;

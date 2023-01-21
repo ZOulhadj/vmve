@@ -185,6 +185,8 @@ static VulkanDevice CreateDevice(VkInstance instance,
 //        VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
 //        VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
 //        VK_PHYSICAL_DEVICE_TYPE_CPU
+        Logger::Error("There are multiple GPUs that support Vulkan and this code path has not been implemented yet!");
+        abort();
     }
 
     Logger::Info("Selected GPU: {}", suitable_gpu_names[gpuIndex]);

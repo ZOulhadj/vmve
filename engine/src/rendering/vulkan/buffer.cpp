@@ -55,7 +55,9 @@ Buffer CreateUniformBuffer(std::size_t buffer_size)
     // Automatically align buffer to correct alignment
     const std::size_t size = frames_in_flight * pad_uniform_buffer_size(buffer_size);
 
-    return CreateBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);;
+    Buffer buffer = CreateBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    return buffer;
 }
 
 std::vector<Buffer> CreateUniformBuffers(std::size_t buffer_size)

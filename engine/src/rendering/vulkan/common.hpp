@@ -6,13 +6,21 @@ constexpr uint32_t frames_in_flight = 2;
 
 // This is a helper function used for all Vulkan related function calls that
 // return a VkResult value.
+#define VkCheck(result)                                                     \
+    if (result != VK_SUCCESS) {                                             \
+        Logger::Info("Vulkan call failed ({}:{})", __FUNCTION__, __LINE__); \
+    }                                                                       \
+
+#if 0
 static void VkCheck(VkResult result)
 {
     // todo(zak): Should we return a bool, throw, exit(), or abort()?
     if (result != VK_SUCCESS) {
+        Logger::Error("Vulkan related function call failed");
         assert(false);
     }
 }
+#endif
 
 // Helper cast function often used for Vulkan create info structs
 // that accept an uint32_t.
