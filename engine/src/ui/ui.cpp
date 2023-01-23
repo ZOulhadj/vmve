@@ -9,8 +9,9 @@
 #include "logging.hpp"
 
 static void custom_style() {
-    ImGuiStyle& style = ImGui::GetStyle();    
-    //style.FrameRounding = 2.0f;
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.FrameRounding = 0.0f;
+    style.TabRounding = 0.0f;
 }
 
 static void custom_colors() {
@@ -90,7 +91,7 @@ ImGuiContext* CreateUI(const VulkanRenderer* renderer, VkRenderPass renderPass)
     //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigDockingWithShift = true;
     io.IniFilename = nullptr;
-    Logger::Info("{}", ImGui::GetWindowDpiScale());
+
     io.Fonts->AddFontDefault();
 
     custom_style();
