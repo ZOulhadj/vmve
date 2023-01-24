@@ -20,6 +20,6 @@ extern int viewport_height;
 extern bool firstTimeNormal;
 extern bool firstTimeFullScreen;
 
-void RenderUI(Engine* engine, bool fullscreen);
+void render_ui(Engine* engine, bool fullscreen);
 
 #endif

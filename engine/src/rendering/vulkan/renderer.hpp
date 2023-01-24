@@ -2,7 +2,7 @@
 #define MYENGINE_VULKAN_RENDERER_HPP
 
 #include "core/window.hpp"
-#include "context.hpp"
+#include "vulkan_context.hpp"
 #include "buffer.hpp"
 #include "shader.hpp"
 #include "../entity.hpp"

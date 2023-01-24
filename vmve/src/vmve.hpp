@@ -14,25 +14,22 @@
 //
 
 
-struct VmveHeader
-{
+struct VMVE_Header {
     const char* version;
     int encryption_mode;
 };
 
-struct VmveData
-{
+struct VMVE_Data {
     const char* data;
 };
 
-struct Vmve
-{
-    VmveHeader header;
-    VmveData   data;
+struct VMVE {
+    VMVE_Header header;
+    VMVE_Data   data;
 };
 
-void VmveWriteFile(Vmve& file_format, const char* path);
-Vmve VmveReadFile(const char* path);
+void vmve_write_to_file(VMVE& file_format, const char* path);
+VMVE vmve_read_from_file(const char* path);
 
 
 // Data

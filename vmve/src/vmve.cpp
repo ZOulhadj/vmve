@@ -4,18 +4,16 @@
 #include <fstream>
 #include <ostream>
 
-void VmveWriteFile(Vmve& file_format, const char* path)
-{
+void vmve_write_to_file(VMVE& file_format, const char* path) {
     std::ofstream file(path, std::ios::binary);
-    file.write(reinterpret_cast<const char*>(&file_format), sizeof(Vmve));
+    file.write(reinterpret_cast<const char*>(&file_format), sizeof(VMVE));
 }
 
-Vmve VmveReadFile(const char* path)
-{
-    Vmve file_format{};
+VMVE vmve_read_from_file(const char* path) {
+    VMVE file_format{};
 
     std::ifstream file(path, std::ios::binary);
-    file.read(reinterpret_cast<char*>(&file_format), sizeof(Vmve));
+    file.read(reinterpret_cast<char*>(&file_format), sizeof(VMVE));
 
     return file_format;
 }

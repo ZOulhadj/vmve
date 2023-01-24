@@ -32,7 +32,7 @@
     <ClCompile Include="src\rendering\vertex.cpp" />
     <ClCompile Include="src\rendering\vulkan\buffer.cpp" />
     <ClCompile Include="src\rendering\vulkan\common.cpp" />
-    <ClCompile Include="src\rendering\vulkan\context.cpp" />
+    <ClCompile Include="src\rendering\vulkan\vulkan_context.cpp" />
     <ClCompile Include="src\rendering\vulkan\descriptor_sets.cpp" />
     <ClCompile Include="src\rendering\vulkan\renderer.cpp" />
     <ClCompile Include="src\rendering\vulkan\shader.cpp" />
@@ -74,7 +74,7 @@
     <ClInclude Include="src\rendering\vertex.hpp" />
     <ClInclude Include="src\rendering\vulkan\buffer.hpp" />
     <ClInclude Include="src\rendering\vulkan\common.hpp" />
-    <ClInclude Include="src\rendering\vulkan\context.hpp" />
+    <ClInclude Include="src\rendering\vulkan\vulkan_context.hpp" />
     <ClInclude Include="src\rendering\vulkan\descriptor_sets.hpp" />
     <ClInclude Include="src\rendering\vulkan\renderer.hpp" />
     <ClInclude Include="src\rendering\vulkan\shader.hpp" />

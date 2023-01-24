@@ -6,69 +6,64 @@
 
 #include <imgui.h>
 
-static void KeyCallback(Engine* engine, int keycode);
+static void key_callback(Engine* engine, int keycode);
 
 bool notFullScreen = true;
 
 
-int main()
-{
+int main() {
     // TODO: Icon needs to be bundled with the executable and this needs to be
     // the case for both the windows icon and glfw window icon
-    EngineInfo info{};
+    Engine_Info info{};
     info.appName = "VMVE";
     info.windowWidth = 1280;
     info.windowHeight = 720;
 
-    Engine* engine = EngineInitialize(info);
+    Engine* engine = engine_initialize(info);
 
-    EngineRegisterKeyCallback(engine, KeyCallback);
+    engine_register_key_callback(engine, key_callback);
     
-    EngineCreateCamera(engine, 45.0f, 20.0f);
+    engine_create_camera(engine, 45.0f, 20.0f);
 
-    EngineEnableUIPass(engine);
+    engine_enable_ui(engine);
 
     //EngineAddModel(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\backpack\\backpack.obj", false);
     //EngineAddInstance(engine, 0, 0.0f, 0.0f, 0.0f);
 
     
-    while (EngineUpdate(engine))
-    {
+    while (engine_update(engine)) {
         // Updating
-        if (viewportActive)
-        {
-            EngineUpdateInput(engine);
-            EngineUpdateCameraView(engine);
+        if (viewportActive) {
+            engine_update_input(engine);
+            engine_update_camera_view(engine);
         }
 
-        if (resizeViewport)
-        {
-            EngineUpdateCameraProjection(engine, viewport_width, viewport_height);
+        if (resizeViewport) {
+            engine_update_camera_projection(engine, viewport_width, viewport_height);
         }
 
 
-        if (EngineBeginRender(engine))
-        {
+        if (engine_begin_render(engine)) {
             // Deferred Rendering
-            EngineRender(engine);
+            engine_render(engine);
 
             // UI Rendering
-            EngineBeginUIPass();
-            RenderUI(engine, !notFullScreen);
-            EngineEndUIPass();
+            engine_begin_ui_pass();
+            render_ui(engine, !notFullScreen);
+            engine_end_ui_pass();
        
-            EnginePresent(engine);
+            engine_present(engine);
         }
         
     }
 
-    EngineTerminate(engine);
+    engine_terminate(engine);
 
     return 0;
 }
 
 
-void KeyCallback(Engine* engine, int keycode)
+void key_callback(Engine* engine, int keycode)
 {
     // NOTE: 290 == F1
     // NOTE: 258 == TAB
@@ -77,7 +72,7 @@ void KeyCallback(Engine* engine, int keycode)
     {
         viewportActive = !viewportActive;
 
-        EngineSetCursorMode(engine, viewportActive);
+        engine_set_cursor_mode(engine, viewportActive);
     }
 
 
@@ -88,12 +83,12 @@ void KeyCallback(Engine* engine, int keycode)
             firstTimeNormal = true;
             firstTimeFullScreen = false;
             viewportActive = false;
-            EngineSetCursorMode(engine, 0);
+            engine_set_cursor_mode(engine, 0);
         } else {
             firstTimeFullScreen = true;
             firstTimeNormal = false;
             viewportActive = true;
-            EngineSetCursorMode(engine, 1);
+            engine_set_cursor_mode(engine, 1);
         }
     }
 }

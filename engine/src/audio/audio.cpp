@@ -33,6 +33,9 @@ Audio* create_windows_audio() {
 }
 
 void destroy_windows_audio(Audio* audio) {
+    if (!audio)
+        return;
+
     Logger::info("Terminating audio");
 
     audio->master_voice->DestroyVoice();

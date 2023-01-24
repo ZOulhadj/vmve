@@ -1,13 +1,6 @@
 #include "common.hpp"
 
 
-// Helper cast function often used for Vulkan create info structs
-// that accept an uint32_t.
-template <typename T>
-uint32_t u32(T t) {
-    // todo(zak): check if T is a numerical value
-    return static_cast<uint32_t>(t);
-}
 
 // Compares a list of requested instance layers against the layers available
 // on the system. If all the requested layers have been found then true is
@@ -31,7 +24,7 @@ bool compare_layers(const std::vector<const char*>& requested,
 // Compares a list of requested extensions against the extensions available
 // on the system. If all the requested extensions have been found then true is
 // returned.
-static bool compare_extensions(const std::vector<const char*>& requested,
+bool compare_extensions(const std::vector<const char*>& requested,
     const std::vector<VkExtensionProperties>& extensions) {
     for (const auto& requested_name : requested) {
         const auto iter = std::find_if(extensions.begin(), extensions.end(), [=](const auto& extension) {

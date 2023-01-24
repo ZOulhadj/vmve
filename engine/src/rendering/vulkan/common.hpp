@@ -13,7 +13,10 @@ constexpr uint32_t frames_in_flight = 2;
 // Helper cast function often used for Vulkan create info structs
 // that accept an uint32_t.
 template <typename T>
-uint32_t u32(T t);
+uint32_t u32(T t) {
+    // todo(zak): check if T is a numerical value
+    return static_cast<uint32_t>(t);
+}
 
 // Compares a list of requested instance layers against the layers available
 // on the system. If all the requested layers have been found then true is

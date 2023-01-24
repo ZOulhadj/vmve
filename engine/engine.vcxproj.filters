@@ -33,7 +33,7 @@
     <ClCompile Include="src\rendering\vulkan\buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\vulkan\context.cpp">
+    <ClCompile Include="src\rendering\vulkan\vulkan_context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\vulkan\descriptor_sets.cpp">
@@ -158,7 +158,7 @@
     <ClInclude Include="src\rendering\vulkan\common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\vulkan\context.hpp">
+    <ClInclude Include="src\rendering\vulkan\vulkan_context.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\vulkan\descriptor_sets.hpp">

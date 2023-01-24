@@ -186,8 +186,8 @@ static void LoadModelWindow(Engine* engine, bool* open)
 
     ImGui::Begin("Load Model", open);
 
-    static const char* modelPath = EngineGetExecutableDirectory(engine);
-    std::string model_path = EngineDisplayFileExplorer(engine, modelPath);
+    static const char* modelPath = engine_get_executable_directory(engine);
+    std::string model_path = engine_display_file_explorer(engine, modelPath);
 
 
     ImGui::Checkbox("Flip UVs", &flip_uv);
@@ -198,7 +198,7 @@ static void LoadModelWindow(Engine* engine, bool* open)
 #if 0
         futures.push_back(std::async(std::launch::async, LoadMesh, std::ref(gModels), model_path));
 #else
-        EngineAddModel(engine, model_path.c_str(), flip_uv);
+        engine_add_model(engine, model_path.c_str(), flip_uv);
 #endif
     }
 
@@ -221,8 +221,8 @@ static void ExportModelWindow(Engine* engine, bool* open)
 
     ImGui::Begin("Export Model", open);
 
-    static const char* exportPath = EngineGetExecutableDirectory(engine);
-    std::string current_path = EngineDisplayFileExplorer(engine, exportPath);
+    static const char* exportPath = engine_get_executable_directory(engine);
+    std::string current_path = engine_display_file_explorer(engine, exportPath);
 
     ImGui::InputText("File name", filename, 50);
 
@@ -373,7 +373,7 @@ void RenderMainMenu(Engine* engine)
             exportOpen = ImGui::MenuItem("Export model");
 
             if (ImGui::MenuItem("Exit"))
-                EngineShouldTerminate(engine);
+                engine_should_terminate(engine);
 
             ImGui::EndMenu();
         }
@@ -432,25 +432,25 @@ void RenderObjectWindow(Engine* engine)
         static int selectedInstanceIndex = 0;
         static int modelID = 0;
 
-        int modelCount = EngineGetModelCount(engine);
-        int instanceCount = EngineGetInstanceCount(engine);
+        int modelCount = engine_get_model_count(engine);
+        int instanceCount = engine_get_instance_count(engine);
 
         // TODO: Get a contiguous list of models names for the combo box instead
         // of recreating a temporary list each frame.
         std::vector<const char*> modelNames(modelCount);
         for (std::size_t i = 0; i < modelNames.size(); ++i)
-            modelNames[i] = EngineGetModelName(engine, i);
+            modelNames[i] = engine_get_model_name(engine, i);
 
         ImGui::Combo("Model", &modelID, modelNames.data(), modelNames.size());
 
         ImGui::BeginDisabled(modelCount == 0);
         if (ImGui::Button("Remove model"))
-            EngineRemoveModel(engine, modelID);
+            engine_remove_model(engine, modelID);
         ImGui::EndDisabled();
 
         ImGui::BeginDisabled(modelCount == 0);
         if (ImGui::Button("Add instance"))
-            EngineAddInstance(engine, modelID, 0.0f, 0.0f, 0.0f);
+            engine_add_instance(engine, modelID, 0.0f, 0.0f, 0.0f);
         ImGui::EndDisabled();
 
         ImGui::SameLine();
@@ -458,7 +458,7 @@ void RenderObjectWindow(Engine* engine)
         ImGui::BeginDisabled(instanceCount == 0);
         if (ImGui::Button("Remove instance"))
         {
-            EngineRemoveInstance(engine, selectedInstanceIndex);
+            engine_remove_instance(engine, selectedInstanceIndex);
 
             // NOTE: should not go below 0
 
@@ -487,13 +487,13 @@ void RenderObjectWindow(Engine* engine)
             ImGui::TableHeadersRow();
 
             ImGuiListClipper clipper;
-            clipper.Begin(EngineGetInstanceCount(engine));
+            clipper.Begin(engine_get_instance_count(engine));
             while (clipper.Step())
             {
                 for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
                 {
                     char label[32];
-                    sprintf(label, "%04d", EngineGetInstanceID(engine, i));
+                    sprintf(label, "%04d", engine_get_instance_id(engine, i));
 
                     bool isCurrentlySelected = (selectedInstanceIndex == i);
 
@@ -505,7 +505,7 @@ void RenderObjectWindow(Engine* engine)
                         selectedInstanceIndex = i;
 
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(EngineGetInstanceName(engine, i));
+                    ImGui::TextUnformatted(engine_get_instance_name(engine, i));
 
                     ImGui::PopID();
                 }
@@ -514,12 +514,12 @@ void RenderObjectWindow(Engine* engine)
         }
 
 
-        if (EngineGetInstanceCount(engine) > 0)
+        if (engine_get_instance_count(engine) > 0)
         {
             ImGui::BeginChild("Object Properties");
 
-            ImGui::Text("ID: %04d", EngineGetInstanceID(engine, selectedInstanceIndex));
-            ImGui::Text("Name: %s", EngineGetInstanceName(engine, selectedInstanceIndex));
+            ImGui::Text("ID: %04d", engine_get_instance_id(engine, selectedInstanceIndex));
+            ImGui::Text("Name: %s", engine_get_instance_name(engine, selectedInstanceIndex));
 
 
 
@@ -531,9 +531,9 @@ void RenderObjectWindow(Engine* engine)
             float* instanceRot = nullptr;
             float scale[3];
 
-            EngineGetInstancePosition(engine, selectedInstanceIndex, instancePos);
-            EngineGetInstanceRotation(engine, selectedInstanceIndex, instanceRot);
-            EngineGetInstanceScale(engine, selectedInstanceIndex, scale);
+            engine_get_instance_position(engine, selectedInstanceIndex, instancePos);
+            engine_get_instance_rotation(engine, selectedInstanceIndex, instanceRot);
+            engine_get_instance_scale(engine, selectedInstanceIndex, scale);
             ImGui::SliderFloat3("Translation", instancePos, -50.0f, 50.0f);
             ImGui::SliderFloat3("Rotation", instanceRot, -360.0f, 360.0f);
             ImGui::SliderFloat3("Scale", scale, 0.1f, 100.0f);
@@ -542,9 +542,9 @@ void RenderObjectWindow(Engine* engine)
             ImGui::Checkbox("Uniform scale", &uniformScale);
 
             if (uniformScale)
-                EngineSetInstanceScale(engine, selectedInstanceIndex, scale[0]);
+                engine_set_instance_scale(engine, selectedInstanceIndex, scale[0]);
             else
-                EngineSetInstanceScale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
+                engine_set_instance_scale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
 
             ImGui::EndChild();
         }
@@ -570,11 +570,11 @@ void RenderGlobalWindow(Engine* engine)
         if (ImGui::CollapsingHeader("Application"))
         {
             int hours, minutes, seconds;
-            EngineGetUptime(engine, &hours, &minutes, &seconds);
+            engine_get_uptime(engine, &hours, &minutes, &seconds);
 
             float memoryUsage;
             unsigned int maxMemory;
-            EngineGetMemoryStats(engine, &memoryUsage, &maxMemory);
+            engine_get_memory_status(engine, &memoryUsage, &maxMemory);
 
             ImGui::Text("Uptime: %d:%d:%d", hours, minutes, seconds);
 
@@ -587,11 +587,11 @@ void RenderGlobalWindow(Engine* engine)
         if (ImGui::CollapsingHeader("Renderer"))
         {
             ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::Text("Delta time: %.4f ms/frame", EngineGetDeltaTime(engine));
+            ImGui::Text("Delta time: %.4f ms/frame", engine_get_delta_time(engine));
             ImGui::Text("GPU: %s", "AMD GPU");
 
             if (ImGui::Checkbox("Wireframe", &wireframe))
-                EngineSetRenderMode(engine, wireframe ? 1 : 0);
+                engine_set_render_mode(engine, wireframe ? 1 : 0);
 
             if (ImGui::Checkbox("VSync", &vsync))
             {
@@ -629,13 +629,13 @@ void RenderGlobalWindow(Engine* engine)
             float cameraPosX, cameraPosY, cameraPosZ;
             float cameraFrontX, cameraFrontY, cameraFrontZ;
 
-            float* cameraFOV = EngineGetCameraFOV(engine);
-            float* cameraSpeed = EngineGetCameraSpeed(engine);
-            float* cameraNearPlane = EngineGetCameraNear(engine);
-            float* cameraFarPlane = EngineGetCameraFar(engine);
+            float* cameraFOV = engine_get_camera_fov(engine);
+            float* cameraSpeed = engine_get_camera_speed(engine);
+            float* cameraNearPlane = engine_get_camera_near(engine);
+            float* cameraFarPlane = engine_get_camera_far(engine);
 
-            EngineGetCameraPosition(engine, &cameraPosX, &cameraPosY, &cameraPosZ);
-            EngineGetCameraFrontVector(engine, &cameraFrontX, &cameraFrontY, &cameraFrontZ);
+            engine_get_camera_position(engine, &cameraPosX, &cameraPosY, &cameraPosZ);
+            engine_get_camera_front_vector(engine, &cameraFrontX, &cameraFrontY, &cameraFrontZ);
 
 #if 0
             if (ImGui::RadioButton("Perspective", engine->camera.projection == CameraProjection::Perspective))
@@ -741,8 +741,8 @@ void RenderGlobalWindow(Engine* engine)
         {
             ImGui::Begin("Load Skybox", &skyboxWindowOpen);
 
-            static const char* textureDirectory = EngineGetExecutableDirectory(engine);
-            std::string path = EngineDisplayFileExplorer(engine, textureDirectory);
+            static const char* textureDirectory = engine_get_executable_directory(engine);
+            std::string path = engine_display_file_explorer(engine, textureDirectory);
 
             if (ImGui::Button("Load"))
             {
@@ -772,10 +772,10 @@ void RenderConsoleWindow(Engine* engine)
     ImGui::Begin(console_window, &window_open, dockspaceWindowFlags);
     {
         if (ImGui::Button("Clear"))
-            EngineClearLogs(engine);
+            engine_clear_logs(engine);
         ImGui::SameLine();
         if (ImGui::Button("Export"))
-            EngineExportLogsToFile(engine, "logs.txt");
+            engine_export_logs_to_file(engine, "logs.txt");
         ImGui::SameLine();
         scrollCheckboxClicked = ImGui::Checkbox("Auto-scroll", &autoScroll);
         
@@ -786,12 +786,12 @@ void RenderConsoleWindow(Engine* engine)
         ImGui::BeginChild("Logs", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
         ImGuiListClipper clipper;
-        clipper.Begin(EngineGetLogCount(engine));
+        clipper.Begin(engine_get_log_count(engine));
         while (clipper.Step())
         {
             for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++)
             {
-                const int logType = EngineGetLogType(engine, index);
+                const int logType = engine_get_log_type(engine, index);
 
                 ImVec4 logColor = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
                 switch (logType)
@@ -809,7 +809,7 @@ void RenderConsoleWindow(Engine* engine)
 
 
                 //ImGui::PushTextWrapPos(wrap_text ? ImGui::GetContentRegionAvail().x : -1.0f);
-                ImGui::TextColored(logColor, EngineGetLog(engine, index));
+                ImGui::TextColored(logColor, engine_get_log(engine, index));
                 //ImGui::PopTextWrapPos();
 
 
@@ -877,7 +877,7 @@ void RenderViewportWindow()
 
         // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
         // when the viewport window resizes.
-        EngineRenderViewportUI(viewport_width, viewport_height);
+        engine_render_viewport_ui(viewport_width, viewport_height);
     }
     ImGui::End();
 }
@@ -886,7 +886,7 @@ void RenderViewportWindow()
 bool firstTimeNormal = true;
 bool firstTimeFullScreen = !firstTimeNormal;
 
-void RenderUI(Engine* engine, bool fullscreen)
+void render_ui(Engine* engine, bool fullscreen)
 {
     BeginDocking();
     RenderMainMenu(engine);
