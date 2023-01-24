@@ -6,6 +6,7 @@
 
 struct Vulkan_Device {
     VkPhysicalDevice gpu;
+    std::string gpu_name;
     VkDevice device;
 
     VkQueue graphics_queue;

@@ -2,6 +2,29 @@
 
 #include "rendering/vulkan/renderer.hpp"
 
+/*
+     matrix to position, rotation and scale
+
+
+
+      matrix_t mat = *(matrix_t*)matrix;
+
+      scale[0] = mat.v.right.Length();
+      scale[1] = mat.v.up.Length();
+      scale[2] = mat.v.dir.Length();
+
+      mat.OrthoNormalize();
+
+      rotation[0] = RAD2DEG * atan2f(mat.m[1][2], mat.m[2][2]);
+      rotation[1] = RAD2DEG * atan2f(-mat.m[0][2], sqrtf(mat.m[1][2] * mat.m[1][2] + mat.m[2][2] * mat.m[2][2]));
+      rotation[2] = RAD2DEG * atan2f(mat.m[0][1], mat.m[0][0]);
+
+      translation[0] = mat.v.position.x;
+      translation[1] = mat.v.position.y;
+      translation[2] = mat.v.position.z;
+
+*/
+
 void translate_entity(Entity& e, const glm::vec3& position) {
     // todo: temp matrix reset
     e.matrix = glm::mat4(1.0f);
@@ -12,12 +35,16 @@ void translate_entity(Entity& e, const glm::vec3& position) {
 
 void rotate_entity(Entity& e, float deg, const glm::vec3& axis) {
     e.matrix = glm::rotate(e.matrix, glm::radians(deg), axis);
+    
+    e.rotation = axis * deg;
 }
 
 void rotate_entity(Entity& e, const glm::vec3& axis) {
     e.matrix = glm::rotate(e.matrix, glm::radians(axis.x), glm::vec3(1.0f, 0.0f, 0.0f));
     e.matrix = glm::rotate(e.matrix, glm::radians(axis.y), glm::vec3(0.0f, 1.0f, 0.0f));
     e.matrix = glm::rotate(e.matrix, glm::radians(axis.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    e.rotation = axis;
 }
 
 void scale_entity(Entity& e, float scale) {

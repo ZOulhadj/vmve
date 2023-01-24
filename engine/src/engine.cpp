@@ -804,16 +804,42 @@ const char* engine_get_instance_name(Engine* engine, int instanceIndex) {
     return engine->instances[instanceIndex].name.c_str();
 }
 
+void engine_get_instance_matrix(Engine* engine, int instanceIndex, float*& matrix)
+{
+    assert(instanceIndex >= 0);
+
+    matrix = &engine->instances[instanceIndex].matrix[0][0];
+}
+
 void engine_get_instance_position(Engine* engine, int instanceIndex, float*& position) {
     assert(instanceIndex >= 0);
 
     position = &engine->instances[instanceIndex].position.x;
 }
 
+void engine_set_instance_position(Engine* engine, int instanceIndex, float x, float y, float z)
+{
+    assert(instanceIndex >= 0);
+
+    engine->instances[instanceIndex].position.x = x;
+    engine->instances[instanceIndex].position.y = y;
+    engine->instances[instanceIndex].position.z = z;
+}
+
+
 void engine_get_instance_rotation(Engine* engine, int instanceIndex, float*& rotation) {
     assert(instanceIndex >= 0);
 
     rotation = &engine->instances[instanceIndex].rotation.x;
+}
+
+void engine_set_instance_rotation(Engine* engine, int instanceIndex, float x, float y, float z)
+{
+    assert(instanceIndex >= 0);
+
+    engine->instances[instanceIndex].rotation.x = x;
+    engine->instances[instanceIndex].rotation.y = y;
+    engine->instances[instanceIndex].rotation.z = z;
 }
 
 void engine_get_instance_scale(Engine* engine, int instanceIndex, float* scale) {
@@ -844,6 +870,17 @@ void engine_update_camera_view(Engine* engine) {
 
 void engine_update_camera_projection(Engine* engine, int width, int height) {
     update_projection(engine->camera, width, height);
+}
+
+
+float* engine_get_camera_view(Engine* engine)
+{
+    return glm::value_ptr(engine->camera.viewProj.view);
+}
+
+float* engine_get_camera_projection(Engine* engine)
+{
+    return glm::value_ptr(engine->camera.viewProj.proj);
 }
 
 void engine_get_camera_position(Engine* engine, float* x, float* y, float* z) {
@@ -946,6 +983,9 @@ double engine_get_delta_time(Engine* engine) {
     return engine->deltaTime;
 }
 
+const char* engine_get_gpu_name(Engine* engine) {
+    return engine->renderer->ctx.device.gpu_name.c_str();
+}
 
 void engine_get_uptime(Engine* engine, int* hours, int* minutes, int* seconds) {
     const auto [h, m, s] = get_duration(engine->startTime);

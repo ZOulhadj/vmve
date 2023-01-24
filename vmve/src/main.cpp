@@ -5,6 +5,7 @@
 #include "ui.hpp"
 
 #include <imgui.h>
+#include <ImGuizmo.h>
 
 static void key_callback(Engine* engine, int keycode);
 
@@ -27,8 +28,8 @@ int main() {
 
     engine_enable_ui(engine);
 
-    //EngineAddModel(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\backpack\\backpack.obj", false);
-    //EngineAddInstance(engine, 0, 0.0f, 0.0f, 0.0f);
+    engine_add_model(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\backpack\\backpack.obj", false);
+    engine_add_instance(engine, 0, 0.0f, 0.0f, 0.0f);
 
     
     while (engine_update(engine)) {
@@ -65,10 +66,17 @@ int main() {
 
 void key_callback(Engine* engine, int keycode)
 {
+#define KEY_F1 290
+#define KEY_TAB 258
+#define KEY_E 69
+#define KEY_T 84
+#define KEY_R 82
+#define KEY_S 83
+
     // NOTE: 290 == F1
     // NOTE: 258 == TAB
-
-    if (keycode == 290)
+    // NOTE: 69 == E
+    if (keycode == KEY_F1)
     {
         viewportActive = !viewportActive;
 
@@ -76,7 +84,7 @@ void key_callback(Engine* engine, int keycode)
     }
 
 
-    if (keycode == 258) {
+    if (keycode == KEY_TAB) {
         notFullScreen = !notFullScreen;
 
         if (notFullScreen) {
@@ -91,6 +99,23 @@ void key_callback(Engine* engine, int keycode)
             engine_set_cursor_mode(engine, 1);
         }
     }
+
+    if (keycode == KEY_E) {
+        object_edit_mode = !object_edit_mode;
+    }
+
+    if (keycode == KEY_T) {
+        guizmo_operation = ImGuizmo::OPERATION::TRANSLATE;
+    }
+
+    if (keycode == KEY_R) {
+        guizmo_operation = ImGuizmo::OPERATION::ROTATE;
+    }
+    if (keycode == KEY_S) {
+        guizmo_operation = ImGuizmo::OPERATION::SCALE;
+    }
+
+
 }
 
 

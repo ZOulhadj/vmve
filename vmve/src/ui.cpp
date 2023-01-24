@@ -4,7 +4,7 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h> // Docking API
 #include <imgui.h>
-
+#include <ImGuizmo.h>
 
 #include <filesystem>
 #include <array>
@@ -71,6 +71,13 @@ bool viewportActive = false;
 bool resizeViewport = false;
 int viewport_width = 0;
 int viewport_height = 0;
+
+
+bool firstTimeNormal = true;
+bool firstTimeFullScreen = !firstTimeNormal;
+bool object_edit_mode = false;
+int selectedInstanceIndex = 0;
+int guizmo_operation = -1;
 
 enum class property_settings {
     appearance,
@@ -429,7 +436,6 @@ void RenderObjectWindow(Engine* engine)
     // Object window
     ImGui::Begin(object_window, &window_open, dockspaceWindowFlags);
     {
-        static int selectedInstanceIndex = 0;
         static int modelID = 0;
 
         int modelCount = engine_get_model_count(engine);
@@ -588,7 +594,9 @@ void RenderGlobalWindow(Engine* engine)
         {
             ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::Text("Delta time: %.4f ms/frame", engine_get_delta_time(engine));
-            ImGui::Text("GPU: %s", "AMD GPU");
+
+            static const char* gpu_name = engine_get_gpu_name(engine);
+            ImGui::Text("GPU: %s", gpu_name);
 
             if (ImGui::Checkbox("Wireframe", &wireframe))
                 engine_set_render_mode(engine, wireframe ? 1 : 0);
@@ -602,9 +610,10 @@ void RenderGlobalWindow(Engine* engine)
             static std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
             ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
         }
-#if 0
+
         if (ImGui::CollapsingHeader("Environment"))
         {
+#if 0
             // todo: Maybe we could use std::chrono for the time here?
             ImGui::SliderInt("Time of day", &timeOfDay, 0.0f, 23.0f, "%d:00");
             ImGui::SliderFloat("Temperature", &temperature, -20.0f, 50.0f, "%.1f C");
@@ -622,8 +631,9 @@ void RenderGlobalWindow(Engine* engine)
             //ImGui::SameLine();
             //if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
             //    skyboxWindowOpen = true;
-        }
 #endif
+        }
+
         if (ImGui::CollapsingHeader("Camera"))
         {
             float cameraPosX, cameraPosY, cameraPosZ;
@@ -840,7 +850,7 @@ void RenderConsoleWindow(Engine* engine)
     ImGui::End();
 }
 
-void RenderViewportWindow()
+void RenderViewportWindow(Engine* engine)
 {
     ImGuiWindowFlags viewportFlags = dockspaceWindowFlags;
 
@@ -878,13 +888,71 @@ void RenderViewportWindow()
         // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
         // when the viewport window resizes.
         engine_render_viewport_ui(viewport_width, viewport_height);
+
+
+
+        // todo(zak): move this into its own function
+        float* view = engine_get_camera_view(engine);
+        float* proj = engine_get_camera_projection(engine);
+        proj[5] *= -1.0f;
+
+        if (object_edit_mode) {
+            if (engine_get_instance_count(engine) > 0 && guizmo_operation != -1) {
+                ImGuiIO& io = ImGui::GetIO();
+
+                float* matrix = nullptr;
+                engine_get_instance_matrix(engine, selectedInstanceIndex, matrix);
+
+                //ImGuizmo::Enable(true);
+                ImGuizmo::SetDrawlist();
+                ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, viewport_width, viewport_height);
+                //ImGuizmo::SetOrthographic(false);
+
+                //ImGuizmo::SetID(0);
+  
+                ImGuizmo::Manipulate(view, proj, (ImGuizmo::OPERATION)guizmo_operation, ImGuizmo::MODE::WORLD, matrix);
+
+
+                if (ImGuizmo::IsUsing()) {
+                    float rotation[3];
+                    float translate[3];
+                    float scale[3];
+
+                    float* current_rotation = nullptr;
+                    engine_get_instance_rotation(engine, selectedInstanceIndex, current_rotation);
+                    
+                    ImGuizmo::DecomposeMatrixToComponents(matrix, translate, rotation, scale);
+
+                    float rotation_delta[3];
+                    rotation_delta[0] = rotation[0] - current_rotation[0];
+                    rotation_delta[1] = rotation[1] - current_rotation[1];
+                    rotation_delta[2] = rotation[2] - current_rotation[2];
+
+
+                    // set
+                    current_rotation[0] += rotation_delta[0];
+                    current_rotation[1] += rotation_delta[1];
+                    current_rotation[2] += rotation_delta[2];
+
+                    engine_set_instance_position(engine, selectedInstanceIndex, translate[0], translate[1], translate[2]);
+                    engine_set_instance_scale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
+
+
+
+
+                }
+            }
+        }
+
+
+        proj[5] *= -1.0f;
+
+
     }
     ImGui::End();
 }
 
 
-bool firstTimeNormal = true;
-bool firstTimeFullScreen = !firstTimeNormal;
 
 void render_ui(Engine* engine, bool fullscreen)
 {
@@ -926,12 +994,12 @@ void render_ui(Engine* engine, bool fullscreen)
 
 
     if (fullscreen) {
-        RenderViewportWindow();
+        RenderViewportWindow(engine);
     } else {
         RenderObjectWindow(engine);
         RenderGlobalWindow(engine);
         RenderConsoleWindow(engine);
-        RenderViewportWindow();
+        RenderViewportWindow(engine);
     }
 
     EndDocking();

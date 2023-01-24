@@ -150,18 +150,20 @@ int engine_get_instance_id(Engine* engine, int instanceIndex);
 //
 const char* engine_get_instance_name(Engine* engine, int instanceIndex);
 
+
+void engine_get_instance_matrix(Engine* engine, int instanceIndex, float*& matrix);
 //
 //
 //
 //
 void engine_get_instance_position(Engine* engine, int instanceIndex, float*& position);
-
+void engine_set_instance_position(Engine* engine, int instanceIndex, float x, float y, float z);
 //
 //
 //
 //
 void engine_get_instance_rotation(Engine* engine, int instanceIndex, float*& rotation);
-
+void engine_set_instance_rotation(Engine* engine, int instanceIndex, float x, float y, float z);
 //
 //
 //
@@ -177,6 +179,8 @@ void engine_set_instance_scale(Engine* engine, int instanceIndex, float x, float
 //
 double engine_get_delta_time(Engine* engine);
 
+
+const char* engine_get_gpu_name(Engine* engine);
 //
 //
 //
@@ -239,6 +243,10 @@ void engine_update_camera_view(Engine* engine);
 //
 //
 void engine_update_camera_projection(Engine* engine, int width, int height);
+
+
+float* engine_get_camera_view(Engine* engine);
+float* engine_get_camera_projection(Engine* engine);
 
 //
 //

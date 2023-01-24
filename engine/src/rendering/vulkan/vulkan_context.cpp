@@ -169,6 +169,7 @@ static Vulkan_Device create_device(VkInstance instance,
     } else if (suitable_gpus.size() == 1) {
         info = suitable_gpus[gpuIndex];
         device.gpu = info.gpu;
+        device.gpu_name = suitable_gpu_names[gpuIndex];
         device.graphics_index = info.graphics_index;
         device.present_index = info.present_index;
     } else {
