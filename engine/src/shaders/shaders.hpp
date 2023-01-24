@@ -199,7 +199,7 @@ void main()
 
 
 	//////////////// DIFFUSE ////////////////
-	vec3 light_dir = normalize(scene.sunPosition - world_pos);
+	vec3 light_dir = normalize(-scene.sunDirection);
 	float diffuse_factor = max(dot(light_dir, normal), 0.0);
 	vec3 diffuse = diffuse_factor * lightColor;
 
