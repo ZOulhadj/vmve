@@ -3,16 +3,15 @@
 
 #include "logging.hpp"
 
-static LRESULT CALLBACK Win32WindowCallback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK win32_window_callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-Win32Window* CreateWin32Window(const char* title, int width, int height)
-{
-    Win32Window* window = reinterpret_cast<Win32Window*>(malloc(sizeof(Win32Window)));
+Win32_Window* create_win32_window(const char* title, int width, int height) {
+    Win32_Window* window = reinterpret_cast<Win32_Window*>(malloc(sizeof(Win32_Window)));
 
     WNDCLASSEXA wndClass = {};
     wndClass.cbSize = sizeof(WNDCLASSEX);
     wndClass.style = CS_HREDRAW | CS_VREDRAW;
-    wndClass.lpfnWndProc = Win32WindowCallback;
+    wndClass.lpfnWndProc = win32_window_callback;
     wndClass.cbClsExtra = 0;
     wndClass.cbWndExtra = 0;
     wndClass.hInstance = GetModuleHandleA(0);
@@ -22,9 +21,8 @@ Win32Window* CreateWin32Window(const char* title, int width, int height)
     wndClass.lpszClassName = title;
     wndClass.hIconSm = nullptr;
 
-    if (!RegisterClassExA(&wndClass))
-    {
-        Logger::Error("Failed to register win32 window class");
+    if (!RegisterClassExA(&wndClass)) {
+        Logger::error("Failed to register win32 window class");
         return nullptr;
     }
 
@@ -43,9 +41,8 @@ Win32Window* CreateWin32Window(const char* title, int width, int height)
         nullptr
     );
 
-    if (!window->handle)
-    {
-        Logger::Error("Failed to create win32 window");
+    if (!window->handle) {
+        Logger::error("Failed to create win32 window");
         return nullptr;
     }
 
@@ -58,19 +55,16 @@ Win32Window* CreateWin32Window(const char* title, int width, int height)
     return window;
 }
 
-void DestroyWin32Window(Win32Window* window)
-{
+void destroy_win32_window(Win32_Window* window) {
     free(window);
 }
 
-LRESULT CALLBACK Win32WindowCallback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
+LRESULT CALLBACK win32_window_callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     LRESULT result = 0;
 
-    Win32Window* window = reinterpret_cast<Win32Window*>(GetWindowLongPtrA(hWnd, GWLP_USERDATA));
+    Win32_Window* window = reinterpret_cast<Win32_Window*>(GetWindowLongPtrA(hWnd, GWLP_USERDATA));
 
-    switch (uMsg)
-    {
+    switch (uMsg) {
     case WM_CREATE:
         break;
     case WM_SIZE:

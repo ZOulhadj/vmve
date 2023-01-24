@@ -76,9 +76,8 @@ static void custom_colors() {
 }
 
 
-ImGuiContext* CreateUI(const VulkanRenderer* renderer, VkRenderPass renderPass)
-{
-    Logger::Info("Initializing user interface");
+ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPass) {
+    Logger::info("Initializing user interface");
 
     ImGuiContext* context{};
 
@@ -110,7 +109,7 @@ ImGuiContext* CreateUI(const VulkanRenderer* renderer, VkRenderPass renderPass)
     init_info.DescriptorPool  = renderer->descriptor_pool;
     init_info.Subpass         = 0;
     init_info.MinImageCount   = 2;
-    init_info.ImageCount      = GetSwapchainImageCount();
+    init_info.ImageCount      = get_swapchain_image_count();
     init_info.MSAASamples     = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator       = nullptr;
     //init_info.CheckVkResultFn = VkCheck;
@@ -120,20 +119,19 @@ ImGuiContext* CreateUI(const VulkanRenderer* renderer, VkRenderPass renderPass)
 
 
     // Submit ImGui fonts to the GPU in order to be used during rendering.
-    SubmitToGPU([&] { ImGui_ImplVulkan_CreateFontsTexture(renderer->submit.CmdBuffer); });
+    submit_to_gpu([&] { ImGui_ImplVulkan_CreateFontsTexture(renderer->submit.CmdBuffer); });
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 
     return context;
 }
 
-void DestroyUI(ImGuiContext* context)
-{
+void destroy_ui(ImGuiContext* context) {
     if (!context)
         return;
 
 
-    Logger::Info("Terminating user interface");
+    Logger::info("Terminating user interface");
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -141,8 +139,7 @@ void DestroyUI(ImGuiContext* context)
     ImGui::DestroyContext(context);
 }
 
-void BeginUI()
-{
+void begin_ui() {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -150,8 +147,7 @@ void BeginUI()
     ImGuizmo::BeginFrame();
 }
 
-void EndUI(std::vector<VkCommandBuffer>& buffers)
-{
+void end_ui(std::vector<VkCommandBuffer>& buffers) {
     ImGui::EndFrame();
 
     ImGui::Render();
@@ -159,16 +155,14 @@ void EndUI(std::vector<VkCommandBuffer>& buffers)
     ImGui::RenderPlatformWindowsDefault();
 
 
-    const uint32_t current_frame = GetFrameIndex();
+    const uint32_t current_frame = get_frame_index();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffers[current_frame]);
 }
 
 
 
-void RecreateUITexture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler, bool depth)
-{
-    for (std::size_t i = 0; i < texture_id.size(); ++i)
-    {
+void recreate_ui_texture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler, bool depth) {
+    for (std::size_t i = 0; i < texture_id.size(); ++i) {
         ImGui_ImplVulkan_RemoveTexture(texture_id[i]);
         texture_id[i] = ImGui_ImplVulkan_AddTexture(sampler, view, depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }

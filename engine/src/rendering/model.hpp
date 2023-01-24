@@ -33,13 +33,13 @@ struct Mesh {
     // A list of indices so we know we textures this mesh uses
     std::vector<uint32_t> textures;
 
-    VertexArray vertex_array;
+    Vertex_Array vertex_array;
     VkDescriptorSet descriptor_set;
 };
 
-struct MeshTexture {
+struct Mesh_Texture {
     std::filesystem::path path;
-    ImageBuffer texture;
+    Image_Buffer texture;
 };
 
 struct Model {
@@ -47,7 +47,7 @@ struct Model {
 
     // A list of all the unique textures
     std::vector<std::filesystem::path> unique_texture_paths;
-    std::vector<ImageBuffer> unique_textures;
+    std::vector<Image_Buffer> unique_textures;
 
     //std::vector<mesh_texture_t> unique_textures;
     
@@ -56,10 +56,10 @@ struct Model {
     std::string name;
 };
 
-Model LoadModel(const std::filesystem::path& path, bool flipUVs = true);
-void DestroyModel(Model& model);
+Model load_model(const std::filesystem::path& path, bool flipUVs = true);
+void destroy_model(Model& model);
 
 
-void UploadModelToGPU(Model& model, VkDescriptorSetLayout layout,
+void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout,
     std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler);
 #endif

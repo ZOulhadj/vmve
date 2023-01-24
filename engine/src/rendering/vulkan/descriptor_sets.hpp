@@ -4,19 +4,19 @@
 #include "buffer.hpp"
 
 
-VkDescriptorPool CreateDescriptorPool();
+VkDescriptorPool create_descriptor_pool();
 
-VkDescriptorSetLayout CreateDescriptorLayout(std::vector<VkDescriptorSetLayoutBinding> bindings);
-void DestroyDescriptorLayout(VkDescriptorSetLayout layout);
+VkDescriptorSetLayout create_descriptor_layout(std::vector<VkDescriptorSetLayoutBinding> bindings);
+void destroy_descriptor_layout(VkDescriptorSetLayout layout);
 
-VkDescriptorSet AllocateDescriptorSet(VkDescriptorSetLayout layout);
-std::vector<VkDescriptorSet> AllocateDescriptorSets(VkDescriptorSetLayout layout);
+VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout);
+std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout);
 
-void UpdateBinding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, Buffer& buffer, std::size_t size);
-void UpdateBinding(VkDescriptorSet descriptor_set, const VkDescriptorSetLayoutBinding& binding, ImageBuffer& buffer, VkImageLayout layout, VkSampler sampler);
-void UpdateBinding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, ImageBuffer& buffer, VkImageLayout layout, VkSampler sampler);
-void UpdateBinding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, std::vector<ImageBuffer>& buffer, VkImageLayout layout, VkSampler sampler);
+void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, Buffer& buffer, std::size_t size);
+void update_binding(VkDescriptorSet descriptor_set, const VkDescriptorSetLayoutBinding& binding, Image_Buffer& buffer, VkImageLayout layout, VkSampler sampler);
+void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, Image_Buffer& buffer, VkImageLayout layout, VkSampler sampler);
+void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, const VkDescriptorSetLayoutBinding& binding, std::vector<Image_Buffer>& buffer, VkImageLayout layout, VkSampler sampler);
 
-void BindDescriptorSet(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, VkDescriptorSet descriptor_set);
+void bind_descriptor_set(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, VkDescriptorSet descriptor_set);
 
 #endif

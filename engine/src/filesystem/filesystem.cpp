@@ -1,30 +1,27 @@
 #include "filesystem.hpp"
 
 
-std::vector<DirectoryItem> GetDirectoryItems(const std::string& directory)
-{
-    std::vector<DirectoryItem> items;
+std::vector<Directory_Item> get_directory_items(const std::string& directory) {
+    std::vector<Directory_Item> items;
 
     std::filesystem::path current_path(directory);
 
-    if (current_path.has_parent_path())
-    {
-        DirectoryItem item{};
+    if (current_path.has_parent_path()) {
+        Directory_Item item{};
 
         // TODO: Check if this creates a copy of the string or if the string
         // becomes invalid after std::filesystem::path goes out of scope.
         item.path = current_path.parent_path().string();
         item.name = "..";
-        item.type = ItemType::Directory;
+        item.type = Item_Type::folder;
         item.size = 0;
 
         items.push_back(item);
     }
 
 
-    for (const auto& entry : std::filesystem::directory_iterator(directory))
-    {
-        DirectoryItem item{};
+    for (const auto& entry : std::filesystem::directory_iterator(directory)) {
+        Directory_Item item{};
 
         current_path = entry.path();
 
@@ -35,14 +32,11 @@ std::vector<DirectoryItem> GetDirectoryItems(const std::string& directory)
         // cannot be called on a directory as this results in an exception.
         // Therefore, we need to check if the current entry is a directory or
         // file and set the file size accordingly.
-        if (entry.is_directory())
-        {
-            item.type = ItemType::Directory;
+        if (entry.is_directory()) {
+            item.type = Item_Type::folder;
             item.size = 0;
-        }
-        else
-        {
-            item.type = ItemType::File;
+        } else {
+            item.type = Item_Type::file;
             item.size = entry.file_size();
         }
 

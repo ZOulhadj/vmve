@@ -2,51 +2,48 @@
 #define MY_ENGINE_LOGGING_HPP
 
 
-enum class LogType
-{
-    Info = 0,
-    Warning,
-    Error
+enum class Log_Type {
+    info = 0,
+    warning,
+    error
 };
 
-struct LogMessage
-{
-    LogType type;
+struct Log_Message {
+    Log_Type type;
     std::string message;
 };
 
-class Logger
-{
+class Logger {
 public:
     template <typename... Args>
-    static void Info(std::string_view fmt, Args&&... args)
+    static void info(std::string_view fmt, Args&&... args)
     {
-        Log(LogType::Info, "[INFO]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
+        log(Log_Type::info, "[INFO]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
     }
 
     template <typename... Args>
-    static void Warning(std::string_view fmt, Args&&... args)
+    static void warning(std::string_view fmt, Args&&... args)
     {
-        Log(LogType::Warning, "[WARN]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
+        log(Log_Type::warning, "[WARN]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
     }
 
     template <typename... Args>
-    static void Error(std::string_view fmt, Args&&... args)
+    static void error(std::string_view fmt, Args&&... args)
     {
-        Log(LogType::Error, "[ERROR]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
+        log(Log_Type::error, "[ERROR]: " + std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)));
     }
 
-    static std::vector<LogMessage>& GetLogs();
-    static std::size_t GetLogLimit();
+    static std::vector<Log_Message>& get_logs();
+    static std::size_t get_log_limit();
 
-    static void ClearLogs();
+    static void clear_logs();
 private:
-    static void CheckLogLimit();
-    static void Log(LogType type, const std::string& message);
+    static void check_log_limit();
+    static void log(Log_Type type, const std::string& message);
 private:
     static const std::size_t m_LogLimit = 10'000;
 
-    static std::vector<LogMessage> m_Logs;
+    static std::vector<Log_Message> m_Logs;
 };
 
 #endif

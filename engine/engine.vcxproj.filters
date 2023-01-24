@@ -117,6 +117,9 @@
     <ClCompile Include="src\core\win32_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\rendering\vulkan\common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\platform\windows.hpp">
@@ -138,9 +141,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\events\mouse_event.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\events\ui_event.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\events\window_event.hpp">

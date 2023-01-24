@@ -2,68 +2,56 @@
 #define MYENGINE_VULKAN_RENDERER_HPP
 
 #include "core/window.hpp"
-
-
 #include "context.hpp"
 #include "buffer.hpp"
-
 #include "shader.hpp"
-
 #include "../entity.hpp"
-
-
 #include "logging.hpp"
 
-enum class BufferMode {
+enum class Buffer_Mode {
     Double,
     Triple
 };
 
-enum class VSyncMode {
-    Disabled = 0,
-    Enabled  = 1,
-    Enabled_Mailbox = 2
+enum class VSync_Mode {
+    disabled = 0,
+    enabled  = 1,
+    adaptive = 2
 };
 
-struct Swapchain
-{
+struct Swapchain {
     VkSwapchainKHR handle;
 
-    std::vector<ImageBuffer> images;
+    std::vector<Image_Buffer> images;
 };
 
-struct Frame
-{
+struct Frame {
     // CPU -> GPU sync
-    VkFence submitFence;
+    VkFence submit_fence;
 
     // Frame -> Frame sync (GPU)
-    VkSemaphore imageReadySemaphore;
-    VkSemaphore imageCompleteSemaphore;
+    VkSemaphore image_ready_semaphore;
+    VkSemaphore image_complete_semaphore;
 
-
-
-    VkSemaphore offscreenSemaphore;
-    VkSemaphore deferredSemaphore;
+    VkSemaphore offscreen_semaphore;
+    VkSemaphore composite_semaphore;
 };
 
-struct FramebufferAttachment
-{
+struct Framebuffer_Attachment {
     // TEMP: Can this be a single image instead of multiple frames?
-    std::vector<ImageBuffer> image;
+    std::vector<Image_Buffer> image;
     VkImageUsageFlags usage;
 };
 
 
-struct RenderPass
-{
+struct Render_Pass {
     std::vector<VkFramebuffer> handle;
-    std::vector<FramebufferAttachment> attachments;
+    std::vector<Framebuffer_Attachment> attachments;
 
     uint32_t width;
     uint32_t height;
 
-    VkRenderPass renderPass;
+    VkRenderPass render_pass;
 
     // temp
     bool is_ui;
@@ -71,50 +59,47 @@ struct RenderPass
 
 // TODO: Add support for adding specific offsets
 template<typename T>
-struct VertexBinding
+struct Vertex_Binding
 {
-    VertexBinding(VkVertexInputRate rate)
-        : inputRate(rate), bindingSize(0), maxBindingSize(sizeof(T))
+    Vertex_Binding(VkVertexInputRate rate)
+        : input_rate(rate), current_bytes(0), max_bytes(sizeof(T))
     {}
 
     // TODO: Make use of actual type instead of a VkFormat
-    void AddAttribute(VkFormat format, std::string_view = nullptr)
-    {
-        bindingSize += FormatToSize(format);
+    void add_attribute(VkFormat format, std::string_view = nullptr) {
+        current_bytes += format_to_bytes(format);
 
-        if (bindingSize > maxBindingSize)
-        {
-            Logger::Error("Total attribute size is larger than binding size");
+        if (current_bytes > max_bytes) {
+            Logger::error("Total attribute size is larger than binding size");
             return;
         }
 
         attributes.push_back(format);
     }
 
-    VkVertexInputRate inputRate;
-    std::size_t bindingSize;
-    std::size_t maxBindingSize;
+    VkVertexInputRate input_rate;
+    std::size_t current_bytes;
+    std::size_t max_bytes;
     std::vector<VkFormat> attributes;
 };
 
 // Set... Functions are required
 // Enable... Functions are optional
-struct Pipeline
-{
-    void EnableVertexBinding(const VertexBinding<Vertex>& binding);
-    void SetShaderPipeline(std::vector<Shader> shaders);
-    void SetInputAssembly(VkPrimitiveTopology topology, bool primitiveRestart = false);
-    void SetRasterization(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace);
-    void EnableDepthStencil(VkCompareOp compare);
-    void EnableMultisampling(VkSampleCountFlagBits samples);
-    void SetColorBlend(uint32_t blendCount); // temp
+struct Pipeline {
+    void enable_vertex_binding(const Vertex_Binding<Vertex>& binding);
+    void set_shader_pipeline(std::vector<Shader> shaders);
+    void set_input_assembly(VkPrimitiveTopology topology, bool primitiveRestart = false);
+    void set_rasterization(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace);
+    void enable_depth_stencil(VkCompareOp compare);
+    void enable_multisampling(VkSampleCountFlagBits samples);
+    void set_color_blend(uint32_t blend_count); // temp
 
-    void CreatePipeline();
+    void create_pipeline();
 
 
     VkPipelineLayout m_Layout;
     VkPipeline m_Pipeline;
-    RenderPass* m_RenderPass;
+    Render_Pass* m_RenderPass;
 
     // temp
     std::vector<VkVertexInputBindingDescription> bindingDescriptions;
@@ -130,91 +115,82 @@ struct Pipeline
     VkPipelineColorBlendStateCreateInfo m_BlendInfo;
 };
 
-struct UploadContext
-{
+struct Upload_Context {
     VkFence         Fence;
     VkCommandPool   CmdPool;
     VkCommandBuffer CmdBuffer;
 };
 
-struct VulkanRenderer
-{
-    RendererContext ctx;
+struct Vulkan_Renderer {
+    Vulkan_Context ctx;
 
-    UploadContext submit;
-    ShaderCompiler compiler;
+    Upload_Context submit;
+    Shader_Compiler compiler;
 
     VkDescriptorPool descriptor_pool;
 
     VkDebugUtilsMessengerEXT messenger;
 };
 
-VulkanRenderer* CreateRenderer(const Window* window, BufferMode buffering_mode, VSyncMode sync_mode);
-void DestroyRenderer(VulkanRenderer* renderer);
+Vulkan_Renderer* create_vulkan_renderer(const Window* window, Buffer_Mode buffering_mode, VSync_Mode sync_mode);
+void destroy_vulkan_renderer(Vulkan_Renderer* renderer);
 
-VulkanRenderer* GetRenderer();
-RendererContext& GetRendererContext();
-uint32_t GetFrameIndex();
-uint32_t GetSwapchainFrameIndex();
-uint32_t GetSwapchainImageCount();
-
-
-void RecreateSwapchain(BufferMode bufferMode, VSyncMode vsync);
-
-void AddFramebufferAttachment(RenderPass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
-
-void CreateRenderPass(RenderPass& rp);
-void CreateRenderPass2(RenderPass& fb, bool ui = false);
-void DestroyRenderPass(RenderPass& fb);
-
-void ResizeFramebuffer(RenderPass& fb, VkExtent2D extent);
+Vulkan_Renderer* get_vulkan_renderer();
+Vulkan_Context& get_vulkan_context();
+uint32_t get_frame_index(); // in order
+uint32_t get_swapchain_frame_index(); // out of order
+uint32_t get_swapchain_image_count();
 
 
-std::vector<VkCommandBuffer> CreateCommandBuffer();
+void recreate_swapchain(Buffer_Mode buffer_mode, VSync_Mode vsync);
+
+void add_framebuffer_attachment(Render_Pass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
+
+void create_render_pass(Render_Pass& rp);
+void create_render_pass_2(Render_Pass& fb, bool ui = false);
+void destroy_render_pass(Render_Pass& fb);
+
+void resize_framebuffer(Render_Pass& fb, VkExtent2D extent);
 
 
-void BeginCommandBuffer(const std::vector<VkCommandBuffer>& cmdBuffer);
-void EndCommandBuffer(const std::vector<VkCommandBuffer>& cmdBuffer);
+std::vector<VkCommandBuffer> create_command_buffers();
 
-#if 0
-void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, 
-    const RenderPass& fb, 
-    const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
-    const glm::vec2& clearDepthStencil = glm::vec2(1.0f, 0.0f));
-#endif
 
-void BeginRenderPass(const std::vector<VkCommandBuffer>& cmdBuffer, 
-    const RenderPass& fb,
+void begin_command_buffer(const std::vector<VkCommandBuffer>& cmd_buffer);
+void end_command_buffer(const std::vector<VkCommandBuffer>& cmd_buffer);
+
+void begin_render_pass(const std::vector<VkCommandBuffer>& cmd_buffer, 
+    const Render_Pass& fb,
     const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
     const glm::vec2& clearDepthStencil = glm::vec2(0.0f, 0.0f));
-void EndRenderPass(std::vector<VkCommandBuffer>& buffers);
+void end_render_pass(std::vector<VkCommandBuffer>& buffers);
 
-VkPipelineLayout CreatePipelineLayout(const std::vector<VkDescriptorSetLayout>& descriptor_sets,
+VkPipelineLayout create_pipeline_layout(const std::vector<VkDescriptorSetLayout>& descriptor_sets,
                                         std::size_t push_constant_size = 0,
                                         VkShaderStageFlags push_constant_shader_stages = 0);
-void DestroyPipeline(VkPipeline pipeline);
-void DestroyPipelineLayout(VkPipelineLayout layout);
+void destroy_pipeline(VkPipeline pipeline);
+void destroy_pipeline_layout(VkPipelineLayout layout);
 
-bool GetNextSwapchainImage();
-void SubmitWork(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers);
-bool DisplaySwapchainImage();
+bool get_next_swapchain_image();
+void submit_gpu_work(const std::vector<std::vector<VkCommandBuffer>>& cmd_buffers);
+bool present_swapchain_image();
 
-void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets);
-void BindDescriptorSet(std::vector<VkCommandBuffer>& buffers, 
+void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets);
+void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, 
     VkPipelineLayout layout, 
     const std::vector<VkDescriptorSet>& descriptorSets, 
     std::vector<uint32_t> sizes);
-void BindPipeline(std::vector<VkCommandBuffer>& buffers, const Pipeline& pipeline);
-void Render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, const glm::mat4& matrix);
-void Render(const std::vector<VkCommandBuffer>& buffers);
+void bind_pipeline(std::vector<VkCommandBuffer>& buffers, const Pipeline& pipeline);
+void render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, const glm::mat4& matrix);
+void render(const std::vector<VkCommandBuffer>& buffers);
 
 // Indicates to the GPU to wait for all commands to finish before continuing.
 // Often used when create or destroying resources in device local memory.
-void WaitForGPU();
+void wait_for_gpu();
 
-const auto AttachmentsToImages = [](const std::vector<FramebufferAttachment>& attachments, uint32_t index)
+const auto attachments_to_images = [](const std::vector<Framebuffer_Attachment>& attachments, uint32_t index)
 {
-    std::vector<ImageBuffer> images(attachments[index].image.size());
+    std::vector<Image_Buffer> images(attachments[index].image.size());
 
     for (std::size_t i = 0; i < images.size(); ++i) {
         images[i] = attachments[index].image[i];

@@ -4,8 +4,7 @@
 
 #include "core/window.hpp"
 
-struct VulkanDevice
-{
+struct Vulkan_Device {
     VkPhysicalDevice gpu;
     VkDevice device;
 
@@ -16,23 +15,22 @@ struct VulkanDevice
     uint32_t present_index;
 };
 
-struct RendererContext
-{
+struct Vulkan_Context {
     const Window* window;
 
     VkInstance      instance;
     VkSurfaceKHR    surface;
-    VulkanDevice        device;
+    Vulkan_Device        device;
     VmaAllocator    allocator;
 };
 
-RendererContext CreateRendererContext(uint32_t version,
+Vulkan_Context create_vulkan_context(uint32_t version,
                                            const std::vector<const char*>& requested_layers,
                                            const std::vector<const char*>& requested_extensions,
                                            const std::vector<const char*>& requested_device_extensions,
                                            const VkPhysicalDeviceFeatures& requested_gpu_features,
                                            const Window* window);
-void DestroyRendererContext(RendererContext& rc);
+void destroy_vulkan_context(Vulkan_Context& rc);
 
 
 #endif

@@ -14,7 +14,7 @@
 //
 //
 //
-struct EngineInfo
+struct Engine_Info
 {
     const char* appName;
     int windowWidth;
@@ -36,50 +36,50 @@ struct Engine;
 // This is the first function that must be called. It initializes all systems
 // such as the window, renderer, audio etc. Takes an EngineInfo as a parameter
 // which provides the required information the engine needs to initialize.
-Engine* EngineInitialize(EngineInfo info);
+Engine* engine_initialize(Engine_Info info);
 
 //
 // The final engine related function call that will terminate all sub-systems
 // and free all engine managed memory. Engine* should be a valid pointer 
 // created by the EngineInitialize function. If NULL is passed then the function
 // simply does nothing.
-void EngineTerminate(Engine* engine);
+void engine_terminate(Engine* engine);
 
 // This should be called to change from running to a non-running state. Following
 // this call will result in the engine no longer updating and can begin to be 
 // shutdown.
-void EngineShouldTerminate(Engine* engine);
+void engine_should_terminate(Engine* engine);
 
 // Callbacks
-void EngineRegisterKeyCallback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode));
+void engine_register_key_callback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode));
 
 // Rendering
 
-void EngineSetRenderMode(Engine* engine, int mode);
+void engine_set_render_mode(Engine* engine, int mode);
 //
 // Updates the internal state of the engine. This is called every frame before
 // any rendering related function calls. The boolean return value returns true
 // if the engine is running as normal. On the other hand, if the engine is no
 // longer running i.e has been instructed to shutdown then the return value
 // will be false. This function should be used as the condition in a while loop.
-bool EngineUpdate(Engine* engine);
+bool engine_update(Engine* engine);
 
 //
 // Obtains the next available frame in preparation for issuing rendering
 // commands to the engine. This must be the first rendering related function
 // call within the main loop.
-bool EngineBeginRender(Engine* engine);
+bool engine_begin_render(Engine* engine);
 
 //
 // 
 //
 //
-void EngineRender(Engine* engine);
+void engine_render(Engine* engine);
 
 //
 // Executes all the rendering commands issued for the current frame and then
 // presents the results onto the screen.
-void EnginePresent(Engine* engine);
+void engine_present(Engine* engine);
 
 // Environment
 
@@ -87,7 +87,7 @@ void EnginePresent(Engine* engine);
 //
 //
 //
-void EngineSetEnvironmentMap(const char* path);
+void engine_set_environment_map(const char* path);
 
 // Models
 
@@ -95,25 +95,25 @@ void EngineSetEnvironmentMap(const char* path);
 // Loads a model and all associated resources.
 //
 //
-void EngineAddModel(Engine* engine, const char* path, bool flipUVs);
+void engine_add_model(Engine* engine, const char* path, bool flipUVs);
 
 //
 // Removes a model by deallocating all resources a model.
 //
 //
-void EngineRemoveModel(Engine* engine, int modelID);
+void engine_remove_model(Engine* engine, int modelID);
 
 //
 //
 //
 //
-int EngineGetModelCount(Engine* engine);
+int engine_get_model_count(Engine* engine);
 
 //
 //
 //
 //
-const char* EngineGetModelName(Engine* engine, int modelID);
+const char* engine_get_model_name(Engine* engine, int modelID);
 
 // Instances
 
@@ -121,25 +121,25 @@ const char* EngineGetModelName(Engine* engine, int modelID);
 //
 //
 //
-int EngineGetInstanceCount(Engine* engine);
+int engine_get_instance_count(Engine* engine);
 
 //
 //
 //
 //
-void EngineAddInstance(Engine* engine, int modelID, float x, float y, float z);
+void engine_add_instance(Engine* engine, int modelID, float x, float y, float z);
 
 //
 //
 //
 //
-void EngineRemoveInstance(Engine* engine, int instanceID);
+void engine_remove_instance(Engine* engine, int instanceID);
 
 //
 //
 //
 //
-int EngineGetInstanceID(Engine* engine, int instanceIndex);
+int engine_get_instance_id(Engine* engine, int instanceIndex);
 
 
 
@@ -148,40 +148,40 @@ int EngineGetInstanceID(Engine* engine, int instanceIndex);
 //
 //
 //
-const char* EngineGetInstanceName(Engine* engine, int instanceIndex);
+const char* engine_get_instance_name(Engine* engine, int instanceIndex);
 
 //
 //
 //
 //
-void EngineGetInstancePosition(Engine* engine, int instanceIndex, float*& position);
+void engine_get_instance_position(Engine* engine, int instanceIndex, float*& position);
 
 //
 //
 //
 //
-void EngineGetInstanceRotation(Engine* engine, int instanceIndex, float*& rotation);
+void engine_get_instance_rotation(Engine* engine, int instanceIndex, float*& rotation);
 
 //
 //
 //
 //
-void EngineGetInstanceScale(Engine* engine, int instanceIndex, float* scale);
-void EngineSetInstanceScale(Engine* engine, int instanceIndex, float scale);
-void EngineSetInstanceScale(Engine* engine, int instanceIndex, float x, float y, float z);
+void engine_get_instance_scale(Engine* engine, int instanceIndex, float* scale);
+void engine_set_instance_scale(Engine* engine, int instanceIndex, float scale);
+void engine_set_instance_scale(Engine* engine, int instanceIndex, float x, float y, float z);
 // Timing
 
 //
 //
 //
 //
-double EngineGetDeltaTime(Engine* engine);
+double engine_get_delta_time(Engine* engine);
 
 //
 //
 //
 //
-void EngineGetUptime(Engine* engine, int* hours, int* minutes, int* seconds);
+void engine_get_uptime(Engine* engine, int* hours, int* minutes, int* seconds);
 
 
 // Memory
@@ -190,7 +190,7 @@ void EngineGetUptime(Engine* engine, int* hours, int* minutes, int* seconds);
 //
 //
 //
-void EngineGetMemoryStats(Engine* engine, float* memoryUsage, unsigned int* maxMemory);
+void engine_get_memory_status(Engine* engine, float* memoryUsage, unsigned int* maxMemory);
 
 // Filesystem
 
@@ -198,13 +198,13 @@ void EngineGetMemoryStats(Engine* engine, float* memoryUsage, unsigned int* maxM
 //
 //
 //
-const char* EngineDisplayFileExplorer(Engine* engine, const char* path); // TEMP: Must be moved to VMVE
+const char* engine_display_file_explorer(Engine* engine, const char* path); // TEMP: Must be moved to VMVE
 
 //
 //
 //
 //
-const char* EngineGetExecutableDirectory(Engine* engine);
+const char* engine_get_executable_directory(Engine* engine);
 
 // Input
 
@@ -212,13 +212,13 @@ const char* EngineGetExecutableDirectory(Engine* engine);
 //
 //
 //
-void EngineSetCursorMode(Engine* engine, int cursorMode);
+void engine_set_cursor_mode(Engine* engine, int cursorMode);
 
 //
 //
 //
 //
-void EngineUpdateInput(Engine* engine);
+void engine_update_input(Engine* engine);
 
 // Camera
 
@@ -226,61 +226,61 @@ void EngineUpdateInput(Engine* engine);
 // Initializes a camera.
 //
 //
-void EngineCreateCamera(Engine* engine, float fovy, float speed);
+void engine_create_camera(Engine* engine, float fovy, float speed);
 
 //
 //
 //
 //
-void EngineUpdateCameraView(Engine* engine);
+void engine_update_camera_view(Engine* engine);
 
 //
 //
 //
 //
-void EngineUpdateCameraProjection(Engine* engine, int width, int height);
+void engine_update_camera_projection(Engine* engine, int width, int height);
 
 //
 //
 //
 //
-void EngineGetCameraPosition(Engine* engine, float* x, float* y, float* z);
+void engine_get_camera_position(Engine* engine, float* x, float* y, float* z);
 
 //
 //
 //
 //
-void EngineGetCameraFrontVector(Engine* engine, float* x, float* y, float* z);
+void engine_get_camera_front_vector(Engine* engine, float* x, float* y, float* z);
 
 //
 //
 //
 //
-float* EngineGetCameraFOV(Engine* engine);
+float* engine_get_camera_fov(Engine* engine);
 
 //
 //
 //
 //
-float* EngineGetCameraSpeed(Engine* engine);
+float* engine_get_camera_speed(Engine* engine);
 
 //
 //
 //
 //
-float* EngineGetCameraNear(Engine* engine);
+float* engine_get_camera_near(Engine* engine);
 
 //
 //
 //
 //
-float* EngineGetCameraFar(Engine* engine);
+float* engine_get_camera_far(Engine* engine);
 
 //
 //
 //
 //
-void EngineSetCameraPosition(Engine* engine, float x, float y, float z);
+void engine_set_camera_position(Engine* engine, float x, float y, float z);
 
 // Logs
 
@@ -288,31 +288,31 @@ void EngineSetCameraPosition(Engine* engine, float x, float y, float z);
 //
 //
 //
-void EngineClearLogs(Engine* engine);
+void engine_clear_logs(Engine* engine);
 
 //
 //
 //
 //
-void EngineExportLogsToFile(Engine* engine, const char* path);
+void engine_export_logs_to_file(Engine* engine, const char* path);
 
 //
 //
 //
 //
-int EngineGetLogCount(Engine* engine);
+int engine_get_log_count(Engine* engine);
 
 //
 //
 //
 //
-int EngineGetLogType(Engine* engine, int logIndex);
+int engine_get_log_type(Engine* engine, int logIndex);
 
 //
 //
 //
 //
-const char* EngineGetLog(Engine* engine, int logIndex);
+const char* engine_get_log(Engine* engine, int logIndex);
 
 
 // UI
@@ -321,25 +321,25 @@ const char* EngineGetLog(Engine* engine, int logIndex);
 //
 //
 //
-void EngineEnableUIPass(Engine* engine);
+void engine_enable_ui(Engine* engine);
 
 //
 //
 //
 //
-void EngineBeginUIPass();
+void engine_begin_ui_pass();
 
 //
 //
 //
 //
-void EngineEndUIPass();
+void engine_end_ui_pass();
 
 //
 //
 //
 //
-void EngineRenderViewportUI(int width, int height);
+void engine_render_viewport_ui(int width, int height);
 
 
 #endif

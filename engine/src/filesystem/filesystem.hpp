@@ -2,22 +2,20 @@
 #define MYENGINE_FILESYSTEM_HPP
 
 
-enum class ItemType
-{
-    Unknown,
-    File,
-    Directory,
+enum class Item_Type {
+    unknown,
+    file,
+    folder,
 };
 
-struct DirectoryItem
-{
-    ItemType type;
+struct Directory_Item {
+    Item_Type type;
 
     std::string name;
     std::string path;
     std::size_t size;
 };
 
-std::vector<DirectoryItem> GetDirectoryItems(const std::string& directory);
+std::vector<Directory_Item> get_directory_items(const std::string& directory);
 
 #endif

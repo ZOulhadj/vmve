@@ -1,7 +1,8 @@
 #ifndef MYENGINE_EVENT_HPP
 #define MYENGINE_EVENT_HPP
 
-enum class event_type {
+
+enum class Event_Type {
     none = 0,
 
     key_pressed,
@@ -27,19 +28,23 @@ enum class event_type {
 };
 
 
-#define EVENT_CLASS_TYPE(type) static event_type get_static_type() { return event_type::type; } \
-event_type get_type() const override { return get_static_type(); }                           \
+
+
+#define EVENT_CLASS_TYPE(type) static Event_Type get_static_type() { return Event_Type::type; } \
+Event_Type get_type() const override { return get_static_type(); }                           \
 const char* get_name() const override { return #type; }
 
-struct event {
-    virtual event_type get_type() const = 0;
+
+struct Basic_Event {
+    virtual Event_Type get_type() const = 0;
     virtual const char* get_name() const = 0;
 
     bool Handled = false;
 };
 
 
-using EventFunc = std::function<void(event&)>;
+
+using Event_Func = std::function<void(Basic_Event&)>;
 //void (*EventFunc)(event&);
 //#define BIND_EVENT(x) std::bind(&x, this, std::placeholders::_1)
 

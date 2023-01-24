@@ -1,16 +1,14 @@
 #include "camera.hpp"
 
-static FrustumPlane CreateFrustum(const glm::vec3& normal, const glm::vec3& point)
-{
-    FrustumPlane plane;
+static Frustum_Plane CreateFrustum(const glm::vec3& normal, const glm::vec3& point) {
+    Frustum_Plane plane;
     plane.normal = glm::normalize(normal);
     plane.distance_from_origin = glm::dot(plane.normal, point);
 
     return plane;
 }
 
-Frustum CreateCameraFrustum(const Camera& cam)
-{
+Frustum create_camera_frustum(const Camera& cam) {
     // NOTE: The camera frustum can also be extracted from the MVP
     // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf    
     
@@ -35,8 +33,11 @@ Frustum CreateCameraFrustum(const Camera& cam)
     return frustum;
 }
 
-static Camera CreateCamera(CameraType type, CameraProjection projection, const glm::vec3& pos, float speed, float fov)
-{
+static Camera create_camera(Camera_Type type, 
+    Camera_Projection projection, 
+    const glm::vec3& pos, 
+    float speed,
+    float fov) {
     Camera cam{};
 
     cam.position    = pos;
@@ -51,24 +52,18 @@ static Camera CreateCamera(CameraType type, CameraProjection projection, const g
     cam.near        = 0.1f;
     cam.far = 2000.0f;
 
-    if (type == CameraType::FirstPerson)
-    {
+    if (type == Camera_Type::first_person) {
         cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) * 
                                            glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
-    }
-    else if (type == CameraType::LookAt)
-    {
+    } else if (type == Camera_Type::look_at) {
         cam.viewProj.view = glm::lookAt(cam.position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
 
-    if (projection == CameraProjection::Perspective)
-    {
+    if (projection == Camera_Projection::perspective) {
         cam.viewProj.proj = glm::perspective(glm::radians(fov), cam.width / cam.height, cam.near, cam.far);
         //cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
-    }
-    else if (projection == CameraProjection::Orthographic)
-    {
+    } else if (projection == Camera_Projection::orthographic) {
         cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.near, cam.far);
     }
 
@@ -80,16 +75,14 @@ static Camera CreateCamera(CameraType type, CameraProjection projection, const g
 }
 
 
-Camera CreatePerspectiveCamera(CameraType type, const glm::vec3& position, float fov, float speed)
-{
-    return CreateCamera(type, CameraProjection::Perspective, position, speed, fov);
+Camera create_perspective_camera(Camera_Type type, const glm::vec3& position, float fov, float speed) {
+    return create_camera(type, Camera_Projection::perspective, position, speed, fov);
 }
 
 
-Camera CreateOrthographicCamera(CameraType type, const glm::vec3& position, float speed)
-{
+Camera create_orthographic_camera(Camera_Type type, const glm::vec3& position, float speed) {
     // Note that an orthographic camera does not use FOV
-    return CreateCamera(type, CameraProjection::Orthographic, position, speed, 0.0f);
+    return create_camera(type, Camera_Projection::orthographic, position, speed, 0.0f);
 }
 
 // Reversed Z infinite perspective
@@ -136,8 +129,7 @@ Camera CreateOrthographicCamera(CameraType type, const glm::vec3& position, floa
 //    return cam;
 //}
 
-void UpdateCamera(Camera& camera, const glm::vec2& cursor_pos)
-{
+void update_camera(Camera& camera, const glm::vec2& cursor_pos) {
     // todo(zak): Need to fix unwanted roll when rotating
     static float last_x = 1280.0f / 2.0f;
     static float last_y = 720.0f / 2.0f;
@@ -182,14 +174,10 @@ void UpdateCamera(Camera& camera, const glm::vec2& cursor_pos)
     camera.roll      = 0.0f;
 }
 
-void UpdateProjection(Camera& cam)
-{
-    if (cam.projection == CameraProjection::Perspective)
-    {
+void update_projection(Camera& cam) {
+    if (cam.projection == Camera_Projection::perspective) {
         cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), cam.width / cam.height, cam.near, cam.far);
-    }
-    else if (cam.projection == CameraProjection::Orthographic)
-    {
+    } else if (cam.projection == Camera_Projection::orthographic) {
         cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.near, cam.far);
     }
 
@@ -197,10 +185,9 @@ void UpdateProjection(Camera& cam)
     cam.viewProj.proj[1][1] *= -1.0;
 }
 
-void UpdateProjection(Camera& camera, uint32_t width, uint32_t height)
-{
+void update_projection(Camera& camera, uint32_t width, uint32_t height) {
     camera.width = width;
     camera.height = height;
 
-    UpdateProjection(camera);
+    update_projection(camera);
 }

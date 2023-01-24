@@ -6,17 +6,17 @@
 #include "events/event.hpp"
 
 struct GUI {
-    EventFunc eventCallback;
+    Event_Func eventCallback;
 };
 
 
-ImGuiContext* CreateUI(const VulkanRenderer* renderer, VkRenderPass renderPass);
-void DestroyUI(ImGuiContext* context);
+ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPass);
+void destroy_ui(ImGuiContext* context);
 
-void BeginUI();
-void EndUI(std::vector<VkCommandBuffer>& buffers);
+void begin_ui();
+void end_ui(std::vector<VkCommandBuffer>& buffers);
 
-void RecreateUITexture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler, bool depth = false);
+void recreate_ui_texture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler, bool depth = false);
 
 
 

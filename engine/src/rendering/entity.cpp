@@ -2,8 +2,7 @@
 
 #include "rendering/vulkan/renderer.hpp"
 
-void Translate(Instance& e, const glm::vec3& position)
-{
+void translate_entity(Entity& e, const glm::vec3& position) {
     // todo: temp matrix reset
     e.matrix = glm::mat4(1.0f);
     e.matrix = glm::translate(e.matrix, position);
@@ -11,35 +10,29 @@ void Translate(Instance& e, const glm::vec3& position)
     e.position = position;
 }
 
-void Rotate(Instance& e, float deg, const glm::vec3& axis)
-{
+void rotate_entity(Entity& e, float deg, const glm::vec3& axis) {
     e.matrix = glm::rotate(e.matrix, glm::radians(deg), axis);
 }
 
-void Rotate(Instance& e, const glm::vec3& axis)
-{
+void rotate_entity(Entity& e, const glm::vec3& axis) {
     e.matrix = glm::rotate(e.matrix, glm::radians(axis.x), glm::vec3(1.0f, 0.0f, 0.0f));
     e.matrix = glm::rotate(e.matrix, glm::radians(axis.y), glm::vec3(0.0f, 1.0f, 0.0f));
     e.matrix = glm::rotate(e.matrix, glm::radians(axis.z), glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
-void Scale(Instance& e, float scale)
-{
+void scale_entity(Entity& e, float scale) {
     e.matrix = glm::scale(e.matrix, glm::vec3(scale));
 }
 
-void Scale(Instance& e, const glm::vec3& axis)
-{
+void scale_entity(Entity& e, const glm::vec3& axis) {
     e.matrix = glm::scale(e.matrix, axis);
 }
 
-glm::vec3 GetPosFromMatrix(const Instance& e)
-{
+glm::vec3 get_entity_position(const Entity& e) {
     return { e.matrix[3].x, e.matrix[3].y, e.matrix[3].z };
 }
 
-glm::vec3 GetScaleFromMatrix(const Instance& e)
-{
+glm::vec3 get_entity_scale(const Entity& e) {
     //const float x1 = glm::pow(e.matrix[0].x, 2);
     //const float x2 = glm::pow(e.matrix[0].y, 2);
     //const float x3 = glm::pow(e.matrix[0].z, 2);
@@ -61,21 +54,22 @@ glm::vec3 GetScaleFromMatrix(const Instance& e)
     return glm::vec3(0.0f);
 }
 
-glm::vec3 GetRotFromMatrix(const Instance& e)
-{
+glm::vec3 get_entity_rotation(const Entity& e) {
     /*return { e.matrix[0].x, e.matrix[1].y, e.matrix[2].z };*/
 
     return glm::vec3(0.0f);
 }
 
 
-void RenderModel(Model& model, glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout)
-{
-    for (std::size_t i = 0; i < model.meshes.size(); ++i)
-    {
-        BindDescriptorSet(cmdBuffer, pipelineLayout, model.meshes[i].descriptor_set);
-        BindVertexArray(cmdBuffer, model.meshes[i].vertex_array);
-        Render(cmdBuffer, pipelineLayout, model.meshes[i].vertex_array.index_count, matrix);
+void render_model(Model& model, 
+    glm::mat4& matrix, 
+    const std::vector<VkCommandBuffer>& cmdBuffer,
+    VkPipelineLayout pipelineLayout) {
+
+    for (std::size_t i = 0; i < model.meshes.size(); ++i){
+        bind_descriptor_set(cmdBuffer, pipelineLayout, model.meshes[i].descriptor_set);
+        bind_vertex_array(cmdBuffer, model.meshes[i].vertex_array);
+        render(cmdBuffer, pipelineLayout, model.meshes[i].vertex_array.index_count, matrix);
     }
 
 }

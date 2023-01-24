@@ -13,7 +13,7 @@ struct Duration
 using typedef_clock      = std::chrono::high_resolution_clock;
 using typedef_time_point = typedef_clock::time_point;
 
-Duration GetDuration(typedef_time_point start, typedef_time_point end = typedef_clock::now());
+Duration get_duration(typedef_time_point start, typedef_time_point end = typedef_clock::now());
 
 
 class Timer
@@ -21,17 +21,17 @@ class Timer
 public:
     Timer();
 
-    float ElapsedMillis();
+    float elapsed_millis();
 private:
     std::chrono::time_point<std::chrono::high_resolution_clock> m_StartTime;
 };
 
 
-class ScopedTimer
+class Scoped_Timer
 {
 public:
-    ScopedTimer(const std::string& name);
-    ~ScopedTimer();
+    Scoped_Timer(const std::string& name);
+    ~Scoped_Timer();
 
 
 private:

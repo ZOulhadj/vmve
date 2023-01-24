@@ -31,6 +31,7 @@
     <ClCompile Include="src\rendering\model.cpp" />
     <ClCompile Include="src\rendering\vertex.cpp" />
     <ClCompile Include="src\rendering\vulkan\buffer.cpp" />
+    <ClCompile Include="src\rendering\vulkan\common.cpp" />
     <ClCompile Include="src\rendering\vulkan\context.cpp" />
     <ClCompile Include="src\rendering\vulkan\descriptor_sets.cpp" />
     <ClCompile Include="src\rendering\vulkan\renderer.cpp" />
@@ -60,7 +61,6 @@
     <ClInclude Include="src\events\event_dispatcher.hpp" />
     <ClInclude Include="src\events\key_event.hpp" />
     <ClInclude Include="src\events\mouse_event.hpp" />
-    <ClInclude Include="src\events\ui_event.hpp" />
     <ClInclude Include="src\events\window_event.hpp" />
     <ClInclude Include="src\filesystem\filesystem.hpp" />
     <ClInclude Include="src\filesystem\vfs.hpp" />

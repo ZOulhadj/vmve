@@ -1,6 +1,6 @@
 #include "vfs.hpp"
 
-VFS& VFS::Get()
+VFS& VFS::get()
 {
     static VFS instance;
 
@@ -8,17 +8,17 @@ VFS& VFS::Get()
 }
 
 
-void VFS::Mount(const std::string& virtual_path, const std::filesystem::path& real_path)
+void VFS::mount(const std::string& virtual_path, const std::filesystem::path& real_path)
 {
-    _mount_points[virtual_path].push_back(real_path);
+    mount_points[virtual_path].push_back(real_path);
 }
 
-void VFS::UnMount(const std::string& virtual_path)
+void VFS::unmount(const std::string& virtual_path)
 {
-    _mount_points[virtual_path].clear();
+    mount_points[virtual_path].clear();
 }
 
-std::filesystem::path VFS::GetPath(const std::string& virtual_path)
+std::filesystem::path VFS::get_path(const std::string& virtual_path)
 {
 
     std::string full_path = virtual_path;
@@ -55,7 +55,7 @@ std::filesystem::path VFS::GetPath(const std::string& virtual_path)
 
     // Check if virtual mount point exists or if any real paths are mounted to
     // the virtual mount point.
-    if (_mount_points.find(mount_point) == _mount_points.end() || _mount_points[mount_point].empty()) {
+    if (mount_points.find(mount_point) == mount_points.end() || mount_points[mount_point].empty()) {
         throw std::runtime_error("Virtual mount point not found!");
     }
 
@@ -63,7 +63,7 @@ std::filesystem::path VFS::GetPath(const std::string& virtual_path)
     // If multiple real paths exist for the mount point then for each one check
     // if the file exists.
     std::string file_path;
-    for (const std::filesystem::path& real_path : _mount_points[mount_point]) {
+    for (const std::filesystem::path& real_path : mount_points[mount_point]) {
         std::filesystem::path path(real_path.string() + remaining_path);
 
         // todo: This only checks for the first file which is found and
@@ -85,12 +85,12 @@ std::filesystem::path VFS::GetPath(const std::string& virtual_path)
 }
 
 
-void MountPath(const std::string& virtual_path, const std::filesystem::path& real_path)
+void mount_path(const std::string& virtual_path, const std::filesystem::path& real_path)
 {
-    VFS::Get().Mount(virtual_path, real_path);
+    VFS::get().mount(virtual_path, real_path);
 }
 
-std::filesystem::path GetVFSPath(const std::string& virtual_path)
+std::filesystem::path get_vfs_path(const std::string& virtual_path)
 {
-    return VFS::Get().GetPath(virtual_path);
+    return VFS::get().get_path(virtual_path);
 }

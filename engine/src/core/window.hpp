@@ -5,15 +5,14 @@
 #include "events/event.hpp"
 
 
-struct Window
-{
+struct Window {
     GLFWwindow* handle;
     const char* name;
     uint32_t    width;
     uint32_t    height;
     bool        minimized;
 
-    EventFunc  event_callback;
+    Event_Func  event_callback;
 };
 
 ///
@@ -25,20 +24,20 @@ struct Window
 /// @param width  The window in pixels of the current window
 /// @param height The height in pixels of the current window
 ///
-Window* CreateWindow(const char* name, int width, int height);
+Window* create_window(const char* name, int width, int height);
 
 
 ///
 /// Sets an icon for the specified window handle.
 /// 
-void SetWindowIcon(const Window* window, const std::filesystem::path& iconPath);
+void set_window_icon(const Window* window, const std::filesystem::path& iconPath);
 
 ///
 /// Destroys the window and terminates the GLFW library.
 ///
 /// @param window A valid pointer to a window structure to free resources.
 ///
-void DestroyWindow(Window* window);
+void destroy_window(Window* window);
 
 ///
 /// Updates a window by polling for any new events since the last window update
@@ -46,7 +45,7 @@ void DestroyWindow(Window* window);
 ///
 /// @param window A valid pointer to a window structure to update.
 ///
-void UpdateWindow(Window* window);
+void update_window(Window* window);
 
 
 

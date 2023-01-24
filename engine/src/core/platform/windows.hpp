@@ -1,6 +1,6 @@
 #ifndef MY_ENGINE_WINDOWS_HPP
 #define MY_ENGINE_WINDOWS_HPP
 
-MEMORYSTATUSEX GetMemoryStatus();
+MEMORYSTATUSEX get_windows_memory_status();
 
 #endif

@@ -1,7 +1,6 @@
 #include "utility.hpp"
 
-std::string LoadFile(const std::filesystem::path& path)
-{
+std::string load_file(const std::filesystem::path& path) {
     std::ifstream file(path.string());
     std::stringstream buffer;
     buffer << file.rdbuf();
@@ -9,9 +8,7 @@ std::string LoadFile(const std::filesystem::path& path)
     return buffer.str();
 }
 
-double GetDeltaTime()
-{
-
+double get_delta_time() {
 
 #define CHRONO 1
 #if CHRONO
@@ -30,11 +27,10 @@ double GetDeltaTime()
     return delta_time;
 }
 
-glm::vec2 WorldToScreen(Window* window,
+glm::vec2 world_to_screen(Window* window,
                           Camera& camera,
                           const glm::vec3& position,
-                          const glm::vec2& offset)
-{
+                          const glm::vec2& offset) {
     const glm::vec2 windowSize = glm::vec2(window->width, window->height);
 
     const glm::vec4 clip   = camera.viewProj.proj * camera.viewProj.view * glm::vec4(position, 1.0);

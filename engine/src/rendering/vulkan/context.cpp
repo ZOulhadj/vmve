@@ -4,11 +4,10 @@
 
 #include "logging.hpp"
 
-static VkInstance CreateInstance(uint32_t version,
+static VkInstance create_instance(uint32_t version,
                                   const char* app_name,
                                   const std::vector<const char*>& req_layers,
-                                  const std::vector<const char*>& req_extensions)
-{
+                                  const std::vector<const char*>& req_extensions) {
     VkInstance instance{};
 
     // create vulkan instance
@@ -21,28 +20,28 @@ static VkInstance CreateInstance(uint32_t version,
 
     // get instance layers
     uint32_t layer_count = 0;
-    VkCheck(vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
+    vk_check(vkEnumerateInstanceLayerProperties(&layer_count, nullptr));
     std::vector<VkLayerProperties> instance_layers(layer_count);
-    VkCheck(vkEnumerateInstanceLayerProperties(&layer_count, instance_layers.data()));
+    vk_check(vkEnumerateInstanceLayerProperties(&layer_count, instance_layers.data()));
 
     // check if the vulkan instance supports our requested instance layers
-    if (!CompareLayers(req_layers, instance_layers)) {
-        Logger::Error("One or more requested Vulkan instance layers are not supported");
+    if (!compare_layers(req_layers, instance_layers)) {
+        Logger::error("One or more requested Vulkan instance layers are not supported");
         return nullptr;
     }
 
 
     // get instance layers
     uint32_t extension_count = 0;
-    VkCheck(vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+    vk_check(vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
     std::vector<VkExtensionProperties> instance_extensions(extension_count);
-    VkCheck(vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, instance_extensions.data()));
+    vk_check(vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, instance_extensions.data()));
 
     // check if instance supports all requested extensions
     // note that there is no need to check the extensions returned by glfw as
     // this is already queried.
-    if (!CompareExtensions(req_extensions, instance_extensions)) {
-        Logger::Error("One or more requested Vulkan instance extensions are not supported");
+    if (!compare_extensions(req_extensions, instance_extensions)) {
+        Logger::error("One or more requested Vulkan instance extensions are not supported");
         return nullptr;
     }
 
@@ -58,48 +57,45 @@ static VkInstance CreateInstance(uint32_t version,
 
     VkInstanceCreateInfo instance_info{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
     instance_info.pApplicationInfo = &app_info;
-    instance_info.enabledLayerCount = U32(req_layers.size());
+    instance_info.enabledLayerCount = u32(req_layers.size());
     instance_info.ppEnabledLayerNames = req_layers.data();
-    instance_info.enabledExtensionCount = U32(requested_extensions.size());
+    instance_info.enabledExtensionCount = u32(requested_extensions.size());
     instance_info.ppEnabledExtensionNames = requested_extensions.data();
 
-    VkCheck(vkCreateInstance(&instance_info, nullptr, &instance));
+    vk_check(vkCreateInstance(&instance_info, nullptr, &instance));
 
     return instance;
 }
 
 
-static VkSurfaceKHR CreateSurface(VkInstance instance, GLFWwindow* window)
-{
+static VkSurfaceKHR create_surface(VkInstance instance, GLFWwindow* window) {
     VkSurfaceKHR surface{};
 
-    VkCheck(glfwCreateWindowSurface(instance, window, nullptr, &surface));
+    vk_check(glfwCreateWindowSurface(instance, window, nullptr, &surface));
 
     return surface;
 }
 
-static VulkanDevice CreateDevice(VkInstance instance,
+static Vulkan_Device create_device(VkInstance instance,
                               VkSurfaceKHR surface,
                               VkPhysicalDeviceFeatures features,
-                              const std::vector<const char*>& extensions)
-{
-    struct GPUInfo
-    {
+                              const std::vector<const char*>& extensions) {
+    struct GPUInfo {
         VkPhysicalDevice gpu;
         uint32_t graphics_index, present_index;
     };
 
-    VulkanDevice device{};
+    Vulkan_Device device{};
 
     // query for physical device
     uint32_t gpu_count = 0;
-    VkCheck(vkEnumeratePhysicalDevices(instance, &gpu_count, nullptr));
+    vk_check(vkEnumeratePhysicalDevices(instance, &gpu_count, nullptr));
     std::vector<VkPhysicalDevice> gpus(gpu_count);
-    VkCheck(vkEnumeratePhysicalDevices(instance, &gpu_count, gpus.data()));
+    vk_check(vkEnumeratePhysicalDevices(instance, &gpu_count, gpus.data()));
 
     // Check if there are any GPU's on the system that even support Vulkan
     if (gpus.empty()) {
-        Logger::Error("Failed to find any GPU that supports Vulkan");
+        Logger::error("Failed to find any GPU that supports Vulkan");
         return {};
     }
 
@@ -117,7 +113,7 @@ static VulkanDevice CreateDevice(VkInstance instance,
         VkPhysicalDeviceProperties gpu_properties{};
         vkGetPhysicalDeviceProperties(gpus[i], &gpu_properties);
 
-        features_supported = HasRequiredFeatures(gpus[i], features);
+        features_supported = has_required_features(gpus[i], features);
 
         // Queue families are a group of queues that together perform specific
         // tasks on a physical GPU. For instance, all rendering related tasks will
@@ -139,7 +135,7 @@ static VulkanDevice CreateDevice(VkInstance instance,
                 graphics_queue_index = i;
 
             // Check if the current queue can support our newly created surface.
-            VkCheck(vkGetPhysicalDeviceSurfaceSupportKHR(gpus[i], j, surface,
+            vk_check(vkGetPhysicalDeviceSurfaceSupportKHR(gpus[i], j, surface,
                                                           &surface_supported));
 
             if (surface_supported)
@@ -168,7 +164,7 @@ static VulkanDevice CreateDevice(VkInstance instance,
     std::size_t gpuIndex = 0;
 
     if (suitable_gpus.empty()) {
-        Logger::Error("Failed to find GPU that supports requested features");
+        Logger::error("Failed to find GPU that supports requested features");
         return {};
     } else if (suitable_gpus.size() == 1) {
         info = suitable_gpus[gpuIndex];
@@ -185,11 +181,11 @@ static VulkanDevice CreateDevice(VkInstance instance,
 //        VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
 //        VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
 //        VK_PHYSICAL_DEVICE_TYPE_CPU
-        Logger::Error("There are multiple GPUs that support Vulkan and this code path has not been implemented yet!");
+        Logger::error("There are multiple GPUs that support Vulkan and this code path has not been implemented yet!");
         abort();
     }
 
-    Logger::Info("Selected GPU: {}", suitable_gpu_names[gpuIndex]);
+    Logger::info("Selected GPU: {}", suitable_gpu_names[gpuIndex]);
 
 
 
@@ -210,10 +206,10 @@ static VulkanDevice CreateDevice(VkInstance instance,
 
 
     uint32_t property_count = 0;
-    VkCheck(vkEnumerateDeviceExtensionProperties(device.gpu, nullptr,
+    vk_check(vkEnumerateDeviceExtensionProperties(device.gpu, nullptr,
                                                   &property_count, nullptr));
     std::vector<VkExtensionProperties> device_properties(property_count);
-    VkCheck(vkEnumerateDeviceExtensionProperties(device.gpu, nullptr,
+    vk_check(vkEnumerateDeviceExtensionProperties(device.gpu, nullptr,
                                                   &property_count,
                                                   device_properties.data()));
 
@@ -223,21 +219,21 @@ static VulkanDevice CreateDevice(VkInstance instance,
     // then the device extension "VK_KHR_portability_subset" must be returned
     // when querying for device extensions. If found, we must ensure that this
     // extension is enabled.
-    if (HasExtensions("VK_KHR_portability_subset", device_properties)) {
-        Logger::Warning("Using {} extension", "VK_KHR_portability_subset");
+    if (has_extensions("VK_KHR_portability_subset", device_properties)) {
+        Logger::warning("Using {} extension", "VK_KHR_portability_subset");
 
         device_extensions.push_back("VK_KHR_portability_subset");
     }
 
 
     VkDeviceCreateInfo device_info{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-    device_info.queueCreateInfoCount = U32(queue_infos.size());
+    device_info.queueCreateInfoCount = u32(queue_infos.size());
     device_info.pQueueCreateInfos = queue_infos.data();
-    device_info.enabledExtensionCount = U32(device_extensions.size());
+    device_info.enabledExtensionCount = u32(device_extensions.size());
     device_info.ppEnabledExtensionNames = device_extensions.data();
     device_info.pEnabledFeatures = &features;
 
-    VkCheck(vkCreateDevice(device.gpu, &device_info, nullptr, &device.device));
+    vk_check(vkCreateDevice(device.gpu, &device_info, nullptr, &device.device));
 
     vkGetDeviceQueue(device.device, device.graphics_index, 0, &device.graphics_queue);
     vkGetDeviceQueue(device.device, device.present_index, 0, &device.present_queue);
@@ -245,8 +241,7 @@ static VulkanDevice CreateDevice(VkInstance instance,
     return device;
 }
 
-static VmaAllocator CreateAllocator(VkInstance instance, uint32_t version, VulkanDevice& device)
-{
+static VmaAllocator create_allocator(VkInstance instance, uint32_t version, Vulkan_Device& device) {
     VmaAllocator allocator{};
 
     VmaAllocatorCreateInfo allocator_info{};
@@ -255,7 +250,7 @@ static VmaAllocator CreateAllocator(VkInstance instance, uint32_t version, Vulka
     allocator_info.physicalDevice   = device.gpu;
     allocator_info.device           = device.device;
 
-    VkCheck(vmaCreateAllocator(&allocator_info, &allocator));
+    vk_check(vmaCreateAllocator(&allocator_info, &allocator));
 
     return allocator;
 }
@@ -265,32 +260,30 @@ static VmaAllocator CreateAllocator(VkInstance instance, uint32_t version, Vulka
 // Creates the base renderer context. This context is the core of the renderer
 // and handles all creation/destruction of Vulkan resources. This function must
 // be the first renderer function to be called.
-RendererContext CreateRendererContext(uint32_t version,
+Vulkan_Context create_vulkan_context(uint32_t version,
                                            const std::vector<const char*>& requested_layers,
                                            const std::vector<const char*>& requested_extensions,
                                            const std::vector<const char*>& requested_device_extensions,
                                            const VkPhysicalDeviceFeatures& requested_gpu_features,
-                                           const Window* window)
-{
+                                           const Window* window) {
 
-    RendererContext context{};
+    Vulkan_Context context{};
 
     context.window    = window;
 
-    context.instance  = CreateInstance(version, window->name, requested_layers, requested_extensions);
+    context.instance  = create_instance(version, window->name, requested_layers, requested_extensions);
 
-    context.surface   = CreateSurface(context.instance, window->handle);
-    context.device    = CreateDevice(context.instance, context.surface,
+    context.surface   = create_surface(context.instance, window->handle);
+    context.device    = create_device(context.instance, context.surface,
                                        requested_gpu_features, requested_device_extensions);
-    context.allocator = CreateAllocator(context.instance, version,
+    context.allocator = create_allocator(context.instance, version,
                                           context.device);
 
     return context;
 }
 
 // Deallocates/frees memory allocated by the renderer context.
-void DestroyRendererContext(RendererContext& rc)
-{
+void destroy_vulkan_context(Vulkan_Context& rc) {
     vmaDestroyAllocator(rc.allocator);
     vkDestroyDevice(rc.device.device, nullptr);
     vkDestroySurfaceKHR(rc.instance, rc.surface, nullptr);

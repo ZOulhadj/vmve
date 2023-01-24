@@ -7,7 +7,7 @@
 #include "rendering/vulkan/texture.hpp"
 #include "model.hpp"
 
-struct Instance
+struct Entity
 {  
     // TODO: Some of these member variables a here as we need to be able
     // to individually work with an instance. In the future, once instanced
@@ -27,16 +27,18 @@ struct Instance
     glm::mat4 matrix = glm::mat4(1.0f);
 };
 
-void Translate(Instance& e, const glm::vec3& position);
-void Rotate(Instance& e, float deg, const glm::vec3& axis);
-void Rotate(Instance& e, const glm::vec3& axis);
-void Scale(Instance& e, float scale);
-void Scale(Instance& e, const glm::vec3& axis);
-glm::vec3 GetPosFromMatrix(const Instance& e);
-glm::vec3 GetScaleFromMatrix(const Instance& e);
-glm::vec3 GetRotFromMatrix(const Instance& e);
+void translate_entity(Entity& e, const glm::vec3& position);
+void rotate_entity(Entity& e, float deg, const glm::vec3& axis);
+void rotate_entity(Entity& e, const glm::vec3& axis);
+void scale_entity(Entity& e, float scale);
+void scale_entity(Entity& e, const glm::vec3& axis);
+glm::vec3 get_entity_position(const Entity& e);
+glm::vec3 get_entity_scale(const Entity& e);
+glm::vec3 get_entity_rotation(const Entity& e);
 
-void RenderModel(Model& model, glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
+
+// todo(zak): move this to either model.cpp or renderer.cpp
+void render_model(Model& model, glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
 
 
 #endif

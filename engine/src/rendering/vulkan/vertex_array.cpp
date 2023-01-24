@@ -3,26 +3,25 @@
 
 #include "renderer.hpp"
 
-VertexArray CreateVertexArray(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
-{
-    VertexArray vertexArray{};
+Vertex_Array create_vertex_array(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
+    Vertex_Array vertexArray{};
 
-    const VulkanRenderer* renderer = GetRenderer();
+    const Vulkan_Renderer* renderer = get_vulkan_renderer();
 
     const uint32_t vertices_size = vertices.size() * sizeof(Vertex);
     const uint32_t indices_size = indices.size() * sizeof(uint32_t);
 
     // Create a temporary "staging" buffer that will be used to copy the data
     // from CPU memory over to GPU memory.
-    Buffer vertexStagingBuffer = CreateStagingBuffer((void*)vertices.data(), vertices_size);
-    Buffer indexStagingBuffer  = CreateStagingBuffer((void*)indices.data(), indices_size);
+    Buffer vertexStagingBuffer = create_staging_buffer((void*)vertices.data(), vertices_size);
+    Buffer indexStagingBuffer  = create_staging_buffer((void*)indices.data(), indices_size);
 
-    vertexArray.vertex_buffer = CreateGPUBuffer(vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vertexArray.index_buffer  = CreateGPUBuffer(indices_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    vertexArray.vertex_buffer = create_gpu_buffer(vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vertexArray.index_buffer  = create_gpu_buffer(indices_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     vertexArray.index_count   = indices.size(); // todo: Maybe be unsafe for a hard coded type.
 
     // Upload data to the GPU
-    SubmitToGPU([&] {
+    submit_to_gpu([&] {
         VkBufferCopy vertex_copy_info{}, index_copy_info{};
         vertex_copy_info.size = vertices_size;
         index_copy_info.size  = indices_size;
@@ -37,20 +36,19 @@ VertexArray CreateVertexArray(const std::vector<Vertex>& vertices, const std::ve
 
 
     // We can now free the staging buffer memory as it is no longer required
-    DestroyBuffer(indexStagingBuffer);
-    DestroyBuffer(vertexStagingBuffer);
+    destroy_buffer(indexStagingBuffer);
+    destroy_buffer(vertexStagingBuffer);
 
     return vertexArray;
 }
 
-void DestroyVertexArray(VertexArray& vertexArray) {
-    DestroyBuffer(vertexArray.index_buffer);
-    DestroyBuffer(vertexArray.vertex_buffer);
+void destroy_vertex_array(Vertex_Array& vertexArray) {
+    destroy_buffer(vertexArray.index_buffer);
+    destroy_buffer(vertexArray.vertex_buffer);
 }
 
-void BindVertexArray(const std::vector<VkCommandBuffer>& buffers, const VertexArray& vertexArray) {
-
-    uint32_t current_frame = GetFrameIndex();
+void bind_vertex_array(const std::vector<VkCommandBuffer>& buffers, const Vertex_Array& vertexArray) {
+    uint32_t current_frame = get_frame_index();
 
     const VkDeviceSize offset{ 0 };
     vkCmdBindVertexBuffers(buffers[current_frame], 0, 1, &vertexArray.vertex_buffer.buffer, &offset);

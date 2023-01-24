@@ -1,10 +1,9 @@
 #include "logging.hpp"
 
 
-std::vector<LogMessage> Logger::m_Logs;
+std::vector<Log_Message> Logger::m_Logs;
 
-void Logger::CheckLogLimit()
-{
+void Logger::check_log_limit() {
     if (m_Logs.size() < m_LogLimit)
         return;
 
@@ -14,11 +13,10 @@ void Logger::CheckLogLimit()
     m_Logs.erase(m_Logs.begin());
 }
 
-void Logger::Log(LogType type, const std::string& message)
-{
-    CheckLogLimit();
+void Logger::log(Log_Type type, const std::string& message) {
+    check_log_limit();
 
-    LogMessage msg{};
+    Log_Message msg{};
     msg.type    = type;
     msg.message = message;
 
@@ -29,17 +27,14 @@ void Logger::Log(LogType type, const std::string& message)
 #endif
 }
 
-std::vector<LogMessage>& Logger::GetLogs()
-{
+std::vector<Log_Message>& Logger::get_logs() {
     return m_Logs;
 }
 
-std::size_t Logger::GetLogLimit()
-{
+std::size_t Logger::get_log_limit() {
     return m_LogLimit;
 }
 
-void Logger::ClearLogs()
-{
+void Logger::clear_logs() {
     m_Logs.clear();
 }

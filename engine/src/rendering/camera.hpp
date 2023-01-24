@@ -2,39 +2,39 @@
 #define MY_ENGINE_QUATERNION_CAMERA_HPP
 
 
-struct FrustumPlane {
+struct Frustum_Plane {
     glm::vec3 normal;
     float distance_from_origin;
 };
 
 struct Frustum {
-    FrustumPlane top;
-    FrustumPlane bottom;
-    FrustumPlane left;
-    FrustumPlane right;
-    FrustumPlane near;
-    FrustumPlane far;
+    Frustum_Plane top;
+    Frustum_Plane bottom;
+    Frustum_Plane left;
+    Frustum_Plane right;
+    Frustum_Plane near;
+    Frustum_Plane far;
 };
 
 
-enum class CameraProjection {
-    Perspective,
-    Orthographic
+enum class Camera_Projection {
+    perspective,
+    orthographic
 };
 
-enum class CameraType {
-    FirstPerson,
-    LookAt
+enum class Camera_Type {
+    first_person,
+    look_at
 };
 
-struct ViewProjection {
+struct View_Projection {
     glm::mat4 view;
     glm::mat4 proj;
 };
 
 struct Camera {
-    CameraType type;
-    CameraProjection projection;
+    Camera_Type type;
+    Camera_Projection projection;
 
 
     glm::vec3 position;
@@ -58,21 +58,21 @@ struct Camera {
     float near;
     float far;
 
-    ViewProjection viewProj;
+    View_Projection viewProj;
 
     bool first_mouse;
 };
 
 
-Frustum CreateCameraFrustum(const Camera& camera);
+Frustum create_camera_frustum(const Camera& camera);
 
-Camera CreatePerspectiveCamera(CameraType type, const glm::vec3& position, float fov, float speed);
-Camera CreateOrthographicCamera(CameraType type, const glm::vec3& position, float speed);
+Camera create_perspective_camera(Camera_Type type, const glm::vec3& position, float fov, float speed);
+Camera create_orthographic_camera(Camera_Type type, const glm::vec3& position, float speed);
 
 //Camera CreateCamera(const glm::vec3& position, float fov, float speed);
-void UpdateCamera(Camera& camera, const glm::vec2& cursor_pos);
-void UpdateProjection(Camera& cam);
-void UpdateProjection(Camera& camera, uint32_t width, uint32_t height);
+void update_camera(Camera& camera, const glm::vec2& cursor_pos);
+void update_projection(Camera& cam);
+void update_projection(Camera& camera, uint32_t width, uint32_t height);
 
 
 #endif

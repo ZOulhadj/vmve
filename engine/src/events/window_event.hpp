@@ -3,36 +3,36 @@
 
 #include "event.hpp"
 
-struct window_closed_event : public event {
+struct Window_Closed_Event : public Basic_Event {
     EVENT_CLASS_TYPE(window_closed);
 };
 
-struct window_focused_event : public event {
+struct Window_Focused_Event : public Basic_Event {
     EVENT_CLASS_TYPE(window_focused);
 };
 
-struct window_lost_focus_event : public event {
+struct Window_Lost_Focus_Event : public Basic_Event {
     EVENT_CLASS_TYPE(window_lost_focus);
 };
 
-struct window_maximized_event : public event {
+struct Window_Maximized_Event : public Basic_Event {
     EVENT_CLASS_TYPE(window_maximized);
 };
 
-struct window_restored_event : public event {
+struct Window_Restored_Event : public Basic_Event {
     EVENT_CLASS_TYPE(window_restored);
 };
 
-struct window_minimized_event : public event {
+struct Window_Minimized_Event : public Basic_Event {
     EVENT_CLASS_TYPE(window_minimized);
 };
 
-struct window_not_minimized_event : public event {
+struct Window_Not_Minimized_Event : public Basic_Event {
     EVENT_CLASS_TYPE(window_not_minimized);
 };
 
-struct window_resized_event : public event {
-    window_resized_event(uint32_t width, uint32_t height)
+struct Window_Resized_Event : public Basic_Event {
+    Window_Resized_Event(uint32_t width, uint32_t height)
         : m_Width(width), m_Height(height)
     {}
 
@@ -45,8 +45,8 @@ private:
     uint32_t m_Height;
 };
 
-struct window_dropped_callback : public event {
-    window_dropped_callback(const std::vector<std::string>& paths)
+struct Window_Dropped_Event : public Basic_Event {
+    Window_Dropped_Event(const std::vector<std::string>& paths)
         : m_Paths(paths)
     {}
 
