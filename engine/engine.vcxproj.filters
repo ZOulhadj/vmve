@@ -30,25 +30,25 @@
     <ClCompile Include="src\filesystem\vfs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\vulkan\buffer.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\vulkan\vulkan_context.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\vulkan_context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\vulkan\descriptor_sets.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\descriptor_sets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\vulkan\renderer.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\vulkan\shader.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\vulkan\texture.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\vulkan\vertex_array.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\vertex_array.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\camera.cpp">
@@ -108,7 +108,7 @@
     <ClCompile Include="vendor\imgui\imgui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\directx\d3d_context.cpp">
+    <ClCompile Include="src\rendering\api\directx\d3d_context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\audio\audio.cpp">
@@ -117,7 +117,7 @@
     <ClCompile Include="src\core\win32_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\vulkan\common.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -152,28 +152,28 @@
     <ClInclude Include="src\filesystem\vfs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\vulkan\buffer.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\buffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\vulkan\common.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\vulkan\vulkan_context.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\vulkan_context.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\vulkan\descriptor_sets.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\descriptor_sets.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\vulkan\renderer.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\vulkan\shader.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\shader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\vulkan\texture.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\texture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\vulkan\vertex_array.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\vertex_array.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\camera.hpp">
@@ -212,7 +212,7 @@
     <ClInclude Include="include\engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\directx\d3d_context.hpp">
+    <ClInclude Include="src\rendering\api\directx\d3d_context.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\audio\audio.hpp">
@@ -222,6 +222,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\shaders\shaders.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\primitives\cube.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

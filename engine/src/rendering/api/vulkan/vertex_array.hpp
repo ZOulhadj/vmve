@@ -3,7 +3,7 @@
 
 
 #include "buffer.hpp"
-#include "../vertex.hpp"
+#include "rendering/vertex.hpp"
 
 struct Vertex_Array {
     Buffer   vertex_buffer;

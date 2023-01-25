@@ -10,7 +10,7 @@
 #include <array>
 #include <vector>
 #include <string>
-
+#include <fstream>
 
 #include "security.hpp"
 
@@ -79,11 +79,22 @@ bool object_edit_mode = false;
 int selectedInstanceIndex = 0;
 int guizmo_operation = -1;
 
-enum class property_settings {
+enum class Property_Settings {
     appearance,
     input,
     audio,
 };
+
+static void set_next_window_in_center() {
+    const ImVec2 settings_window_size = ImVec2(ImGui::GetWindowSize().x / 2.0f, ImGui::GetWindowSize().y / 2.0f);
+    const ImVec2 window_center = ImVec2(
+        (ImGui::GetWindowSize().x / 2.0f) - settings_window_size.x / 2,
+        (ImGui::GetWindowSize().y / 2.0f) - settings_window_size.y / 2
+    );
+
+    ImGui::SetNextWindowSize(settings_window_size);
+    ImGui::SetNextWindowPos(window_center);
+}
 
 static void SettingsWindow(bool* open) {
     if (!*open) {
@@ -91,14 +102,15 @@ static void SettingsWindow(bool* open) {
     }
 
     static ImVec2 buttonSize = ImVec2(-FLT_MIN, 0.0f);
-    static property_settings option = (property_settings)0;
+    static Property_Settings option = (Property_Settings)0;
 
-    ImGui::Begin("Settings", open);
+    set_next_window_in_center();
+    ImGui::Begin("Settings", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     ImGui::BeginChild("Options", ImVec2(ImGui::GetContentRegionAvail().x / 3.0f, 0), false);
-    if (ImGui::Button("Appearance", buttonSize)) option = property_settings::appearance;
-    if (ImGui::Button("Input", buttonSize)) option = property_settings::input;
-    if (ImGui::Button("Audio", buttonSize)) option = property_settings::audio;
+    if (ImGui::Button("Appearance", buttonSize)) option = Property_Settings::appearance;
+    if (ImGui::Button("Input", buttonSize)) option = Property_Settings::input;
+    if (ImGui::Button("Audio", buttonSize)) option = Property_Settings::audio;
 
 
 
@@ -113,18 +125,18 @@ static void SettingsWindow(bool* open) {
     static int main_volume = 50;
 
     switch (option) {
-    case property_settings::appearance: 
+    case Property_Settings::appearance: 
         ImGui::Text("Appearance");
 
         ImGui::Combo("Theme", &currentTheme, themes, 3);
         ImGui::Combo("Font", &currentFont, fonts, 5);
 
         break;
-    case property_settings::input:
+    case Property_Settings::input:
         ImGui::Text("Input");
 
         break;
-    case property_settings::audio:
+    case Property_Settings::audio:
         ImGui::Text("Audio");
 
         ImGui::SliderInt("Main volume", &main_volume, 0, 100, "%d%%");
@@ -141,7 +153,9 @@ static void AboutWindow(bool* open)
     if (!*open)
         return;
 
-    ImGui::Begin("About", open);
+    set_next_window_in_center();
+
+    ImGui::Begin("About", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     ImGui::Text("Build version: %s", buildVersion);
     ImGui::Text("Build date: %s", buildDate);
@@ -159,7 +173,8 @@ static void ShortcutsWindow(bool* open)
     if (!*open)
         return;
 
-    ImGui::Begin("Shortcuts", open);
+    set_next_window_in_center();
+    ImGui::Begin("Shortcuts", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     ImGui::Text("Global shortcuts");
 
@@ -191,7 +206,9 @@ static void LoadModelWindow(Engine* engine, bool* open)
 
     static bool flip_uv = false;
 
-    ImGui::Begin("Load Model", open);
+    set_next_window_in_center();
+
+    ImGui::Begin("Load Model", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     static const char* modelPath = engine_get_executable_directory(engine);
     std::string model_path = engine_display_file_explorer(engine, modelPath);
@@ -201,7 +218,10 @@ static void LoadModelWindow(Engine* engine, bool* open)
 
     if (ImGui::Button("Load"))
     {
-
+        // todo(zak): Check if extension is .vmve
+        // if so then parse the file and ensure that format is correct and ready to be loaded
+        // decrypt file contents
+        // load file
 #if 0
         futures.push_back(std::async(std::launch::async, LoadMesh, std::ref(gModels), model_path));
 #else
@@ -225,8 +245,11 @@ static void ExportModelWindow(Engine* engine, bool* open)
     static KeyIV keyIV;
     static KeyIVString keyIVString;
     static char filename[50];
+    static std::string file_contents = "This is some file contents that I am writing to and this is some more text\n";
 
-    ImGui::Begin("Export Model", open);
+    set_next_window_in_center();
+
+    ImGui::Begin("Export Model", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     static const char* exportPath = engine_get_executable_directory(engine);
     std::string current_path = engine_display_file_explorer(engine, exportPath);
@@ -269,8 +292,14 @@ static void ExportModelWindow(Engine* engine, bool* open)
         }
     }
 
+    static bool successfully_exported = false;
     if (ImGui::Button("Export"))
     {
+        std::ofstream exportFile(filename);
+        exportFile << file_contents;
+
+        successfully_exported = true;
+
         // TODO: Encrypt data
         if (encryptionModeIndex == 0) // AES
         {
@@ -282,6 +311,11 @@ static void ExportModelWindow(Engine* engine, bool* open)
         }
     }
 
+
+    if (successfully_exported)
+        ImGui::Text("A total of %d bytes has been written to %s", file_contents.size(), filename);
+
+
     ImGui::End();
 
 }
@@ -292,6 +326,7 @@ static void PerformanceProfilerWindow(bool* open)
     if (!*open)
         return;
 
+    
     ImGui::Begin("Performance Profiler", open);
 
     if (ImGui::CollapsingHeader("CPU Timers"))

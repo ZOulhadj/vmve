@@ -24,12 +24,12 @@ int main() {
 
     engine_register_key_callback(engine, key_callback);
     
-    engine_create_camera(engine, 45.0f, 20.0f);
+    engine_create_camera(engine, 60.0f, 50.0f);
 
     engine_enable_ui(engine);
 
-    engine_add_model(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\backpack\\backpack.obj", false);
-    engine_add_instance(engine, 0, 0.0f, 0.0f, 0.0f);
+    //engine_add_model(engine, "C:\\Users\\zakar\\Projects\\vmve\\vmve\\assets\\models\\backpack\\backpack.obj", false);
+    //engine_add_instance(engine, 0, 0.0f, 0.0f, 0.0f);
 
     
     while (engine_update(engine)) {
@@ -64,9 +64,20 @@ int main() {
 }
 
 
-void key_callback(Engine* engine, int keycode)
-{
+void key_callback(Engine* engine, int keycode) {
+
 #define KEY_F1 290
+#define KEY_F2 291
+#define KEY_F3 292
+#define KEY_F4 293
+#define KEY_F5 294
+#define KEY_F6 295
+#define KEY_F7 296
+#define KEY_F8 297
+#define KEY_F9 298
+#define KEY_F10 299
+#define KEY_F11 300
+#define KEY_F12 301
 #define KEY_TAB 258
 #define KEY_E 69
 #define KEY_T 84
@@ -76,17 +87,17 @@ void key_callback(Engine* engine, int keycode)
     // NOTE: 290 == F1
     // NOTE: 258 == TAB
     // NOTE: 69 == E
-    if (keycode == KEY_F1)
-    {
+    if (keycode == KEY_F1) {
         viewportActive = !viewportActive;
 
         engine_set_cursor_mode(engine, viewportActive);
     }
 
 
-    if (keycode == KEY_TAB) {
+    if (keycode == KEY_F2) {
         notFullScreen = !notFullScreen;
 
+#if 0
         if (notFullScreen) {
             firstTimeNormal = true;
             firstTimeFullScreen = false;
@@ -98,6 +109,7 @@ void key_callback(Engine* engine, int keycode)
             viewportActive = true;
             engine_set_cursor_mode(engine, 1);
         }
+#endif
     }
 
     if (keycode == KEY_E) {

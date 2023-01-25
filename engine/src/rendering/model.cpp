@@ -1,7 +1,7 @@
 #include "model.hpp"
 
-#include "rendering/vertex.hpp"
-#include "rendering/vulkan/texture.hpp"
+#include "vertex.hpp"
+#include "api/vulkan/texture.hpp"
 #include "filesystem/vfs.hpp"
 #include "logging.hpp"
 

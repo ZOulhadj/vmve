@@ -5,7 +5,7 @@
 #include "vulkan_context.hpp"
 #include "buffer.hpp"
 #include "shader.hpp"
-#include "../entity.hpp"
+#include "rendering/entity.hpp"
 #include "logging.hpp"
 
 enum class Buffer_Mode {

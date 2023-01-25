@@ -2,24 +2,8 @@
 #define MY_ENGINE_MODEL_HPP
 
 
-#include "rendering/vulkan/vertex_array.hpp"
+#include "api/vulkan/vertex_array.hpp"
 #include "material.hpp"
-
-
-// A model may consist of multiple meshes. An example can be seen below,
-// 
-// Model: Car
-//      Mesh: Body
-//      Mesh: Windows
-//      Mesh: Wheels
-//      Mesh: Trunk
-//
-// etc.
-// 
-// Therefore, when loading a model we must parse potentially multiple sub-meshes
-// and combine everything into a model.
-
-
 
 // One material per mesh
 

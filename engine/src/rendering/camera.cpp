@@ -51,17 +51,18 @@ static Camera create_camera(Camera_Type type,
     cam.fov         = fov;
     cam.near        = 0.1f;
     cam.far = 2000.0f;
+    cam.type = type;
 
-    if (type == Camera_Type::first_person) {
+    if (cam.type == Camera_Type::first_person) {
         cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) * 
                                            glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
-    } else if (type == Camera_Type::look_at) {
+    } else if (cam.type == Camera_Type::look_at) {
         cam.viewProj.view = glm::lookAt(cam.position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
 
     if (projection == Camera_Projection::perspective) {
-        cam.viewProj.proj = glm::perspective(glm::radians(fov), cam.width / cam.height, cam.near, cam.far);
+        cam.viewProj.proj = glm::perspective(glm::radians(fov), (float)cam.width / cam.height, cam.near, cam.far);
         //cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
     } else if (projection == Camera_Projection::orthographic) {
         cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.near, cam.far);
@@ -151,32 +152,37 @@ void update_camera(Camera& camera, const glm::vec2& cursor_pos) {
     camera.up_vector    = glm::conjugate(camera.orientation) * glm::vec3(0.0f, 1.0f, 0.0f);
     camera.right_vector = glm::conjugate(camera.orientation) * glm::vec3(1.0f, 0.0f, 0.0f);
 
-    // Create each of the orientations based on mouse offset and roll offset.
-    //
-    // This code snippet below locks the yaw to world coordinates.
-    const glm::quat pitch = glm::angleAxis(glm::radians(yoffset),  glm::vec3(1.0f, 0.0f, 0.0f));
+    if (camera.type == Camera_Type::first_person) {
+        // Create each of the orientations based on mouse offset and roll offset.
+        //
+        // This code snippet below locks the yaw to world coordinates.
+        const glm::quat pitch = glm::angleAxis(glm::radians(yoffset), glm::vec3(1.0f, 0.0f, 0.0f));
 #define LOCK_YAW
 #if defined(LOCK_YAW)
-    const glm::quat yaw = glm::angleAxis(glm::radians(xoffset), camera.orientation * glm::vec3(0.0f, 1.0f, 0.0f));
+        const glm::quat yaw = glm::angleAxis(glm::radians(xoffset), camera.orientation * glm::vec3(0.0f, 1.0f, 0.0f));
 #else
-    const glm::quat yaw   = glm::angleAxis(glm::radians(xoffset),  glm::vec3(0.0f, 1.0f, 0.0f));
+        const glm::quat yaw = glm::angleAxis(glm::radians(xoffset), glm::vec3(0.0f, 1.0f, 0.0f));
 #endif
-    const glm::quat roll  = glm::angleAxis(glm::radians(camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
+        const glm::quat roll = glm::angleAxis(glm::radians(camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
 
-    // Update the camera orientation based on pitch, yaw and roll
-    camera.orientation = (pitch * yaw * roll) * camera.orientation;
+        // Update the camera orientation based on pitch, yaw and roll
+        camera.orientation = (pitch * yaw * roll) * camera.orientation;
 
-    // Create the view and projection matrices
-    camera.viewProj.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
-    //camera.viewProj.proj[1][1] = -1.0;
+        // Create the view and projection matrices
+        camera.viewProj.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
+        //camera.viewProj.proj[1][1] = -1.0;
 
-    // Build final camera transform matrix
-    camera.roll      = 0.0f;
+        // Build final camera transform matrix
+        camera.roll = 0.0f;
+    } else if (camera.type == Camera_Type::look_at) {
+        camera.viewProj.view = glm::lookAt(camera.position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    }
 }
+
 
 void update_projection(Camera& cam) {
     if (cam.projection == Camera_Projection::perspective) {
-        cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), cam.width / cam.height, cam.near, cam.far);
+        cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), (float)cam.width / cam.height, cam.near, cam.far);
     } else if (cam.projection == Camera_Projection::orthographic) {
         cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.near, cam.far);
     }

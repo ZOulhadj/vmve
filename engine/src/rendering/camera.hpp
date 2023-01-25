@@ -46,8 +46,8 @@ struct Camera {
 
 
     //float aspect_ratio;
-    float width;
-    float height;
+    uint32_t width;
+    uint32_t height;
 
 
     float speed;

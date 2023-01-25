@@ -3,8 +3,8 @@
 
 
 
-#include "rendering/vulkan/vertex_array.hpp"
-#include "rendering/vulkan/texture.hpp"
+#include "api/vulkan/vertex_array.hpp"
+#include "api/vulkan/texture.hpp"
 #include "model.hpp"
 
 struct Entity

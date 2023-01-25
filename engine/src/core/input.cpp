@@ -1,6 +1,6 @@
 #include "input.hpp"
 
-#include "rendering/vulkan/renderer.hpp"
+#include "rendering/api/vulkan/renderer.hpp"
 
 bool is_key_down(int keycode) {
     // HACK: The renderer has a pointer to the window which we can use for now.

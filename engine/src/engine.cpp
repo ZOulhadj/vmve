@@ -10,11 +10,11 @@
 #include "../src/core/platform/windows.hpp"
 #endif
 
-#include "../src/rendering/vulkan/common.hpp"
-#include "../src/rendering/vulkan/renderer.hpp"
-#include "../src/rendering/vulkan/buffer.hpp"
-#include "../src/rendering/vulkan/texture.hpp"
-#include "../src/rendering/vulkan/descriptor_sets.hpp"
+#include "../src/rendering/api/vulkan/common.hpp"
+#include "../src/rendering/api/vulkan/renderer.hpp"
+#include "../src/rendering/api/vulkan/buffer.hpp"
+#include "../src/rendering/api/vulkan/texture.hpp"
+#include "../src/rendering/api/vulkan/descriptor_sets.hpp"
 #include "../src/rendering/vertex.hpp"
 #include "../src/rendering/material.hpp"
 #include "../src/rendering/camera.hpp"
@@ -857,7 +857,7 @@ void engine_set_environment_map(const char* path) {
 }
 
 void engine_create_camera(Engine* engine, float fovy, float speed) {
-    engine->camera = create_perspective_camera(Camera_Type::first_person, { 0.0f, 0.0f, 0.0f }, fovy, speed);
+    engine->camera = create_perspective_camera(Camera_Type::first_person, { 0.0f, 0.0f, -2.0f }, fovy, speed);    
 }
 
 void engine_update_input(Engine* engine) {
