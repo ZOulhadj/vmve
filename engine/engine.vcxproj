@@ -86,6 +86,7 @@
     <ClInclude Include="src\types.hpp" />
     <ClInclude Include="src\ui\ui.hpp" />
     <ClInclude Include="src\utility.hpp" />
+    <ClInclude Include="vendor\volk\volk.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

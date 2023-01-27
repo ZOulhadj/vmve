@@ -227,5 +227,8 @@
     <ClInclude Include="src\rendering\primitives\cube.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="vendor\volk\volk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

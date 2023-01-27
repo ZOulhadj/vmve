@@ -269,12 +269,6 @@ static VmaAllocator create_allocator(VkInstance instance, uint32_t version, Vulk
     vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2;
     vma_vulkan_func.vkGetDeviceBufferMemoryRequirements = vkGetDeviceBufferMemoryRequirements;
     vma_vulkan_func.vkGetDeviceImageMemoryRequirements = vkGetDeviceImageMemoryRequirements;
-    
-
-
-
-
-
 
 
     VmaAllocatorCreateInfo allocator_info{};
