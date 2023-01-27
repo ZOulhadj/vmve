@@ -236,8 +236,6 @@ static Vulkan_Device create_device(VkInstance instance,
 
     vk_check(vkCreateDevice(device.gpu, &device_info, nullptr, &device.device));
 
-    vkGetDeviceQueue(device.device, device.graphics_index, 0, &device.graphics_queue);
-    vkGetDeviceQueue(device.device, device.present_index, 0, &device.present_queue);
 
     return device;
 }
@@ -245,11 +243,46 @@ static Vulkan_Device create_device(VkInstance instance,
 static VmaAllocator create_allocator(VkInstance instance, uint32_t version, Vulkan_Device& device) {
     VmaAllocator allocator{};
 
+
+    VmaVulkanFunctions vma_vulkan_func{};
+    vma_vulkan_func.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+    vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+    vma_vulkan_func.vkAllocateMemory = vkAllocateMemory;
+    vma_vulkan_func.vkFreeMemory = vkFreeMemory;
+    vma_vulkan_func.vkMapMemory = vkMapMemory;
+    vma_vulkan_func.vkUnmapMemory = vkUnmapMemory;
+    vma_vulkan_func.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+    vma_vulkan_func.vkInvalidateMappedMemoryRanges = vkInvalidateMappedMemoryRanges;
+    vma_vulkan_func.vkBindBufferMemory = vkBindBufferMemory;
+    vma_vulkan_func.vkBindImageMemory = vkBindImageMemory;
+    vma_vulkan_func.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+    vma_vulkan_func.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+    vma_vulkan_func.vkCreateBuffer = vkCreateBuffer;
+    vma_vulkan_func.vkDestroyBuffer = vkDestroyBuffer;
+    vma_vulkan_func.vkCreateImage = vkCreateImage;
+    vma_vulkan_func.vkDestroyImage = vkDestroyImage;
+    vma_vulkan_func.vkCmdCopyBuffer = vkCmdCopyBuffer;
+    vma_vulkan_func.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2;
+    vma_vulkan_func.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2;
+    vma_vulkan_func.vkBindBufferMemory2KHR = vkBindBufferMemory2;
+    vma_vulkan_func.vkBindImageMemory2KHR = vkBindImageMemory2;
+    vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2;
+    vma_vulkan_func.vkGetDeviceBufferMemoryRequirements = vkGetDeviceBufferMemoryRequirements;
+    vma_vulkan_func.vkGetDeviceImageMemoryRequirements = vkGetDeviceImageMemoryRequirements;
+    
+
+
+
+
+
+
+
     VmaAllocatorCreateInfo allocator_info{};
     allocator_info.vulkanApiVersion = version;
     allocator_info.instance         = instance;
     allocator_info.physicalDevice   = device.gpu;
     allocator_info.device           = device.device;
+    allocator_info.pVulkanFunctions = &vma_vulkan_func;
 
     vk_check(vmaCreateAllocator(&allocator_info, &allocator));
 
@@ -270,13 +303,39 @@ Vulkan_Context create_vulkan_context(uint32_t version,
 
     Vulkan_Context context{};
 
-    context.window    = window;
 
+    if (volkInitialize() != VK_SUCCESS) {
+        Logger::error("Failed to load Vulkan loader. Is Vulkan installed on this system?");
+
+        return {};
+    }
+
+
+    context.window    = window;
     context.instance  = create_instance(version, window->name, requested_layers, requested_extensions);
+
+    volkLoadInstanceOnly(context.instance);
+
 
     context.surface   = create_surface(context.instance, window->handle);
     context.device    = create_device(context.instance, context.surface,
                                        requested_gpu_features, requested_device_extensions);
+
+    volkLoadDevice(context.device.device);
+
+    vkGetDeviceQueue(
+        context.device.device, 
+        context.device.graphics_index, 
+        0, 
+        &context.device.graphics_queue
+    );
+    vkGetDeviceQueue(
+        context.device.device, 
+        context.device.present_index, 
+        0, 
+        &context.device.present_queue
+    );
+
     context.allocator = create_allocator(context.instance, version,
                                           context.device);
 

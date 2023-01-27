@@ -99,6 +99,11 @@ ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPas
     if (!ImGui_ImplGlfw_InitForVulkan(renderer->ctx.window->handle, true))
         return nullptr;
 
+    // Set function pointers for when dynamically linking to vulkan
+    ImGui_ImplVulkan_LoadFunctions([](const char* function_name, void*) { 
+        return vkGetInstanceProcAddr(volkGetLoadedInstance(), function_name);
+    });
+
     ImGui_ImplVulkan_InitInfo init_info{};
     init_info.Instance        = renderer->ctx.instance;
     init_info.PhysicalDevice  = renderer->ctx.device.gpu;
@@ -116,7 +121,6 @@ ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPas
 
     if (!ImGui_ImplVulkan_Init(&init_info, renderPass))
         return nullptr;
-
 
     // Submit ImGui fonts to the GPU in order to be used during rendering.
     submit_to_gpu([&] { ImGui_ImplVulkan_CreateFontsTexture(renderer->submit.CmdBuffer); });

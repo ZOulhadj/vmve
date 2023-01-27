@@ -38,13 +38,17 @@
 // NOTE: These must be placed after all Windows header files
 #undef far
 #undef near
-#undef CreateWindow
 
 #endif
 
 
+// ensures that external code that calls vulkan.h does not give us symbol
+// conflicts.
+#define VK_NO_PROTOTYPES
+#include <volk.h>
 
-#include <vulkan/vulkan.h>
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
 #include <vk_mem_alloc.h>
 #include <shaderc/shaderc.h>
 
