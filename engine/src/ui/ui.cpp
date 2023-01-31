@@ -1,5 +1,6 @@
 #include "ui.hpp"
 
+#include "compressed_fonts.hpp"
 #include "rendering/api/vulkan/common.hpp"
 
 
@@ -91,7 +92,8 @@ ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPas
     io.ConfigDockingWithShift = true;
     io.IniFilename = nullptr;
 
-    io.Fonts->AddFontDefault();
+    //io.Fonts->AddFontDefault();
+    io.Fonts->AddFontFromMemoryCompressedBase85TTF(get_open_sans_compressed_ttf(), 18);
 
     custom_style();
     custom_colors();

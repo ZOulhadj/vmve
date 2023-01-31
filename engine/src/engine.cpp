@@ -503,9 +503,8 @@ void engine_set_render_mode(Engine* engine, int mode) {
     }
 }
 
-bool engine_update(Engine* engine) {
-    update_window(engine->window);
-
+bool engine_update(Engine* engine)
+{
     // Calculate the amount that has passed since the last frame. This value
     // is then used with inputs and physics to ensure that the result is the
     // same no matter how fast the CPU is running.
@@ -535,7 +534,8 @@ bool engine_update(Engine* engine) {
     return engine->running;
 }
 
-bool engine_begin_render(Engine* engine) {
+bool engine_begin_render(Engine* engine)
+{
     engine->swapchainReady = get_next_swapchain_image();
 
     // If the swapchain is not ready the swapchain will be resized and then we
@@ -549,7 +549,8 @@ bool engine_begin_render(Engine* engine) {
     return engine->swapchainReady;
 }
 
-void engine_render(Engine* engine) {
+void engine_render(Engine* engine)
+{
     begin_command_buffer(offscreenCmdBuffer);
     {
         //auto skyboxCmdBuffer = BeginRenderPass2(skyboxPass);
@@ -629,7 +630,8 @@ void engine_render(Engine* engine) {
 
 }
 
-void engine_present(Engine* engine) {
+void engine_present(Engine* engine)
+{
     if (engine->uiPassEnabled)
         submit_gpu_work({ offscreenCmdBuffer, compositeCmdBuffer, uiCmdBuffer });
     else
@@ -640,6 +642,7 @@ void engine_present(Engine* engine) {
         assert("Code path not expected! Must implement framebuffer resizing");
     }
 
+    update_window(engine->window);
 }
 
 void engine_terminate(Engine* engine) {
