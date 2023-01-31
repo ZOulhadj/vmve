@@ -39,6 +39,7 @@
     <ClCompile Include="src\rendering\api\vulkan\texture.cpp" />
     <ClCompile Include="src\rendering\api\vulkan\vertex_array.cpp" />
     <ClCompile Include="src\time.cpp" />
+    <ClCompile Include="src\ui\compressed_fonts.cpp" />
     <ClCompile Include="src\ui\ui.cpp" />
     <ClCompile Include="src\utility.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
@@ -84,6 +85,7 @@
     <ClInclude Include="src\shaders\shaders.hpp" />
     <ClInclude Include="src\time.hpp" />
     <ClInclude Include="src\types.hpp" />
+    <ClInclude Include="src\ui\compressed_fonts.hpp" />
     <ClInclude Include="src\ui\ui.hpp" />
     <ClInclude Include="src\utility.hpp" />
     <ClInclude Include="vendor\volk\volk.h" />
