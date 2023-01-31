@@ -10,19 +10,6 @@
 // for "modes" such as default or wireframe rendering a better system should
 // be used.
 
-// 
-//
-//
-//
-struct Engine_Info
-{
-    const char* appName;
-    int windowWidth;
-    int windowHeight;
-
-    const char* iconPath;
-};
-
 
 //
 //
@@ -36,7 +23,7 @@ struct Engine;
 // This is the first function that must be called. It initializes all systems
 // such as the window, renderer, audio etc. Takes an EngineInfo as a parameter
 // which provides the required information the engine needs to initialize.
-Engine* engine_initialize(Engine_Info info);
+Engine* engine_initialize(const char* name, int width, int height);
 
 //
 // The final engine related function call that will terminate all sub-systems
@@ -49,6 +36,8 @@ void engine_terminate(Engine* engine);
 // this call will result in the engine no longer updating and can begin to be 
 // shutdown.
 void engine_should_terminate(Engine* engine);
+
+void engine_set_window_icon(Engine* engine, unsigned char* data, int width, int height);
 
 // Callbacks
 void engine_register_key_callback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode));

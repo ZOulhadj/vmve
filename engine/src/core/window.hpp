@@ -28,9 +28,14 @@ Window* create_window(const char* name, int width, int height);
 
 
 ///
-/// Sets an icon for the specified window handle.
+/// Loads an image to be used as an icon for the specified window handle.
 /// 
 void set_window_icon(const Window* window, const std::filesystem::path& iconPath);
+
+///
+/// Uses the data from an array as the icon for the specified window handle.
+/// 
+void set_window_icon(const Window* window, unsigned char* data, int width, int height);
 
 ///
 /// Destroys the window and terminates the GLFW library.

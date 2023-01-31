@@ -197,7 +197,8 @@ static void update_input(Camera& camera, double deltaTime) {
 
 static void event_callback(Basic_Event& e);
 
-Engine* engine_initialize(Engine_Info info) {
+Engine* engine_initialize(const char* name, int width, int height)
+{
     auto engine = new Engine();
 
     engine->startTime = std::chrono::high_resolution_clock::now();
@@ -212,14 +213,11 @@ Engine* engine_initialize(Engine_Info info) {
     Logger::info("Initializing application ({})", engine->execPath);
 
     // Initialize core systems
-    engine->window = create_window(info.appName, info.windowWidth, info.windowHeight);
+    engine->window = create_window(name, width, height);
     if (!engine->window) {
         Logger::error("Failed to create window");
         return nullptr;
     }
-
-    if (info.iconPath)
-        set_window_icon(engine->window, info.iconPath);
 
     engine->window->event_callback = event_callback;
 
@@ -645,7 +643,8 @@ void engine_present(Engine* engine)
     update_window(engine->window);
 }
 
-void engine_terminate(Engine* engine) {
+void engine_terminate(Engine* engine)
+{
     Logger::info("Terminating application");
 
 
@@ -711,8 +710,14 @@ void engine_terminate(Engine* engine) {
     delete engine;
 }
 
-void engine_should_terminate(Engine* engine) {
+void engine_should_terminate(Engine* engine)
+{
     engine->running = false;
+}
+
+void engine_set_window_icon(Engine* engine, unsigned char* data, int width, int height)
+{
+    set_window_icon(engine->window, data, width, height);
 }
 
 void engine_register_key_callback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode)) {

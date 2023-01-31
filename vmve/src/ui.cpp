@@ -648,6 +648,9 @@ void RenderGlobalWindow(Engine* engine)
 
         if (ImGui::CollapsingHeader("Environment"))
         {
+            float sun_direction[3];
+
+            //ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.sunDirection), -1.0f, 1.0f);
 #if 0
             // todo: Maybe we could use std::chrono for the time here?
             ImGui::SliderInt("Time of day", &timeOfDay, 0.0f, 23.0f, "%d:00");
@@ -657,7 +660,7 @@ void RenderGlobalWindow(Engine* engine)
             ImGui::SliderFloat("Ambient", &scene.ambientSpecular.x, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular strength", &scene.ambientSpecular.y, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
-            ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.sunDirection), -1.0f, 1.0f);
+
             ImGui::SliderFloat("Shadow map distance", &sunDistance, 1.0f, 2000.0f);
             ImGui::SliderFloat("Shadow near", &shadowNear, 0.1f, 1.0f);
             ImGui::SliderFloat("Shadow far", &shadowFar, 5.0f, 2000.0f);
