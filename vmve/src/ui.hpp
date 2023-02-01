@@ -4,8 +4,8 @@
 
 #include <engine.h>
 
-extern bool viewportActive;
-extern bool resizeViewport;
+extern bool viewport_active;
+extern bool should_resize_viewport;
 extern int viewport_width;
 extern int viewport_height;
 

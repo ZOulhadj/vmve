@@ -47,7 +47,7 @@ struct Engine {
     ImGuiContext* ui;
     Audio* audio;
 
-    void (*KeyCallback)(Engine* engine, int keyCode);
+    engine_callbacks callbacks;
 
     std::string execPath;
     bool running;
@@ -174,7 +174,8 @@ float sunDistance = 400.0f;
 
 
 
-static void update_input(Camera& camera, double deltaTime) {
+static void update_input(Camera& camera, double deltaTime)
+{
     float dt = camera.speed * (float)deltaTime;
     if (is_key_down(GLFW_KEY_W))
         camera.position += camera.front_vector * dt;
@@ -493,7 +494,8 @@ Engine* engine_initialize(const char* name, int width, int height)
 }
 
 
-void engine_set_render_mode(Engine* engine, int mode) {
+void engine_set_render_mode(Engine* engine, int mode)
+{
     if (mode == 0) {
         currentPipeline = &offscreenPipeline;
     } else if (mode == 1) {
@@ -720,8 +722,9 @@ void engine_set_window_icon(Engine* engine, unsigned char* data, int width, int 
     set_window_icon(engine->window, data, width, height);
 }
 
-void engine_register_key_callback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode)) {
-    engine->KeyCallback = KeyCallback;
+void engine_set_callbacks(Engine* engine, engine_callbacks callbacks)
+{
+    engine->callbacks = callbacks;
 }
 
 void engine_add_model(Engine* engine, const char* path, bool flipUVs) {
@@ -1099,7 +1102,10 @@ const char* engine_get_log(Engine* engine, int logIndex) {
 
 // TODO: Event system stuff
 static bool press(Key_Pressed_Event& e) {
-    gTempEnginePtr->KeyCallback(gTempEnginePtr, e.get_key_code());
+    if (!gTempEnginePtr->callbacks.key_callback)
+        return false;
+
+    gTempEnginePtr->callbacks.key_callback(gTempEnginePtr, e.get_key_code());
 
     return true;
 }
@@ -1109,19 +1115,27 @@ static bool mouse_button_press(Mouse_Button_Pressed_Event& e) {
     return true;
 }
 
-static bool mouse_button_release(Mouse_Button_Released_Event& e) {
+static bool mouse_button_release(Mouse_Button_Released_Event& e)
+{
 
     return true;
 }
 
-static bool mouse_moved(Mouse_Moved_Event& e) {
+static bool mouse_moved(Mouse_Moved_Event& e)
+{
     //update_camera_view(camera, event.GetX(), event.GetY());
 
     return true;
 }
 
 
-static bool resize(Window_Resized_Event& e) {
+static bool resize(Window_Resized_Event& e)
+{
+    if (!gTempEnginePtr->callbacks.resize_callback)
+        return false;
+
+    gTempEnginePtr->callbacks.resize_callback(gTempEnginePtr, e.get_width(), e.get_height());
+
     return true;
 }
 

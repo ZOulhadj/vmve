@@ -17,6 +17,14 @@
 //
 struct Engine;
 
+
+struct engine_callbacks
+{
+    void (*key_callback)(Engine* engine, int keycode);
+    void (*resize_callback)(Engine* engine, int width, int height);
+};
+
+
 // Core
 
 //
@@ -39,8 +47,8 @@ void engine_should_terminate(Engine* engine);
 
 void engine_set_window_icon(Engine* engine, unsigned char* data, int width, int height);
 
-// Callbacks
-void engine_register_key_callback(Engine* engine, void (*KeyCallback)(Engine* engine, int keycode));
+
+void engine_set_callbacks(Engine* engine, engine_callbacks callbacks);
 
 // Rendering
 

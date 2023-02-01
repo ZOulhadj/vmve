@@ -67,8 +67,8 @@ int renderMode = 0;
 bool vsync = true;
 bool update_swapchain_vsync = false;
 
-bool viewportActive = false;
-bool resizeViewport = false;
+bool viewport_active = false;
+bool should_resize_viewport = false;
 int viewport_width = 0;
 int viewport_height = 0;
 
@@ -177,23 +177,28 @@ static void ShortcutsWindow(bool* open)
     ImGui::Begin("Shortcuts", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     ImGui::Text("Global shortcuts");
-
-    ImGui::Text("Load model: SHIFT + L");
-    ImGui::Text("Export model: SHIFT + E");
+    ImGui::Text("Load model: Left Ctrl + L");
+    ImGui::Text("Export model: Left Ctrl + E");
     ImGui::Text("Toggle viewport: F1");
-    ImGui::Text("Toggle camera mode: C");
-    ImGui::Text("Exit application: ALT + F4");
+    ImGui::Text("Toggle fullscreen: F2");
 
     ImGui::Separator();
 
     ImGui::Text("Viewport shortcuts");
-
+    ImGui::Text("Toggle gimbal: Left Ctrl + G");
     ImGui::Text("Camera forward: W");
     ImGui::Text("Camera backwards: S");
     ImGui::Text("Camera left: A");
     ImGui::Text("Camera right: D");
     ImGui::Text("Camera up: SPACE");
     ImGui::Text("Camera down: SHIFT");
+
+    ImGui::Separator();
+
+    ImGui::Text("Gimbal shortcuts");
+    ImGui::Text("Move: M");
+    ImGui::Text("Rotate: R");
+    ImGui::Text("Scale: S");
 
     ImGui::End();
 }
@@ -746,7 +751,7 @@ void RenderGlobalWindow(Engine* engine)
 
 
 
-        ImGui::Text("Viewport mode: %s", viewportActive ? "Enabled" : "Disabled");
+        ImGui::Text("Viewport mode: %s", viewport_active ? "Enabled" : "Disabled");
 
 
         if (edit_shaders) {
@@ -922,7 +927,7 @@ void RenderViewportWindow(Engine* engine)
             old_viewport_width = viewport_width;
             old_viewport_height = viewport_height;
 
-            resizeViewport = true;
+            should_resize_viewport = true;
         }
 
         // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
