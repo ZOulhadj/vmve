@@ -1,10 +1,17 @@
 build/
-docs/
 out/
-cmake-build-debug/
-cmake-build-release/
-.idea/
 .vs/
 
-CMakeSettings.json
+# Build directories
+engine/build
+vmve/build
+
+# Project vendor files
+engine/vendor/
+vmve/vendor/
+
 imgui.ini
+
+# NOTE: Is produced because of a bug in Visual Studio and should be fixed
+# in the February 2023 patch.
+*/JSON
