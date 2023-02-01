@@ -646,12 +646,13 @@ void RenderGlobalWindow(Engine* engine)
             ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
         }
 
+#if 0
         if (ImGui::CollapsingHeader("Environment"))
         {
             float sun_direction[3];
 
             //ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.sunDirection), -1.0f, 1.0f);
-#if 0
+
             // todo: Maybe we could use std::chrono for the time here?
             ImGui::SliderInt("Time of day", &timeOfDay, 0.0f, 23.0f, "%d:00");
             ImGui::SliderFloat("Temperature", &temperature, -20.0f, 50.0f, "%.1f C");
@@ -669,8 +670,9 @@ void RenderGlobalWindow(Engine* engine)
             //ImGui::SameLine();
             //if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
             //    skyboxWindowOpen = true;
-#endif
+
         }
+#endif
 
         if (ImGui::CollapsingHeader("Camera"))
         {

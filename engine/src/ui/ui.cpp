@@ -9,13 +9,15 @@
 
 #include "logging.hpp"
 
-static void custom_style() {
+static void configure_styling()
+{
     ImGuiStyle& style = ImGui::GetStyle();
     style.FrameRounding = 0.0f;
     style.TabRounding = 0.0f;
 }
 
-static void custom_colors() {
+static void configure_colors()
+{
     ImVec4* colors = ImGui::GetStyle().Colors;
 
     colors[ImGuiCol_Text]                   = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
@@ -25,7 +27,7 @@ static void custom_colors() {
     colors[ImGuiCol_PopupBg]                = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
     colors[ImGuiCol_Border]                 = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
     colors[ImGuiCol_BorderShadow]           = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_FrameBg]                = ImVec4(0.16f, 0.29f, 0.48f, 0.54f);
+    colors[ImGuiCol_FrameBg]                = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
     colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
     colors[ImGuiCol_FrameBgActive]          = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
     colors[ImGuiCol_TitleBg]                = ImVec4(0.01f, 0.01f, 0.01f, 1.00f);
@@ -52,8 +54,8 @@ static void custom_colors() {
     colors[ImGuiCol_ResizeGripHovered]      = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
     colors[ImGuiCol_ResizeGripActive]       = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
     colors[ImGuiCol_Tab]                    = ImVec4(0.00f, 0.00f, 0.00f, 0.86f);
-    colors[ImGuiCol_TabHovered]             = ImVec4(0.64f, 0.00f, 0.00f, 0.62f);
-    colors[ImGuiCol_TabActive]              = ImVec4(0.64f, 0.00f, 0.00f, 1.00f);
+    colors[ImGuiCol_TabHovered]             = ImVec4(0.0f, 0.346f, 0.126f, 1.0f);
+    colors[ImGuiCol_TabActive]              = ImVec4(0.0f, 0.346f, 0.126f, 1.0f);
     colors[ImGuiCol_TabUnfocused]           = ImVec4(0.07f, 0.10f, 0.15f, 0.97f);
     colors[ImGuiCol_TabUnfocusedActive]     = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
     colors[ImGuiCol_DockingPreview]         = ImVec4(0.26f, 0.59f, 0.98f, 0.70f);
@@ -77,7 +79,8 @@ static void custom_colors() {
 }
 
 
-ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPass) {
+ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPass)
+{
     Logger::info("Initializing user interface");
 
     ImGuiContext* context{};
@@ -95,8 +98,8 @@ ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPas
     //io.Fonts->AddFontDefault();
     io.Fonts->AddFontFromMemoryCompressedBase85TTF(get_open_sans_compressed_ttf(), 18);
 
-    custom_style();
-    custom_colors();
+    configure_styling();
+    configure_colors();
 
     if (!ImGui_ImplGlfw_InitForVulkan(renderer->ctx.window->handle, true))
         return nullptr;
@@ -132,7 +135,8 @@ ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPas
     return context;
 }
 
-void destroy_ui(ImGuiContext* context) {
+void destroy_ui(ImGuiContext* context)
+{
     if (!context)
         return;
 
@@ -145,7 +149,8 @@ void destroy_ui(ImGuiContext* context) {
     ImGui::DestroyContext(context);
 }
 
-void begin_ui() {
+void begin_ui()
+{
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -153,7 +158,8 @@ void begin_ui() {
     ImGuizmo::BeginFrame();
 }
 
-void end_ui(std::vector<VkCommandBuffer>& buffers) {
+void end_ui(std::vector<VkCommandBuffer>& buffers)
+{
     ImGui::EndFrame();
 
     ImGui::Render();
@@ -167,7 +173,8 @@ void end_ui(std::vector<VkCommandBuffer>& buffers) {
 
 
 
-void recreate_ui_texture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler, bool depth) {
+void recreate_ui_texture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler, bool depth)
+{
     for (std::size_t i = 0; i < texture_id.size(); ++i) {
         ImGui_ImplVulkan_RemoveTexture(texture_id[i]);
         texture_id[i] = ImGui_ImplVulkan_AddTexture(sampler, view, depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
