@@ -167,34 +167,8 @@ std::vector<VkDescriptorSet> specularsUI;
 std::vector<VkDescriptorSet> depthsUI;
 std::vector<VkCommandBuffer> uiCmdBuffer;
 
-//VertexArray quad;
-
 float shadowNear = 1.0f, shadowFar = 2000.0f;
 float sunDistance = 400.0f;
-
-
-
-static void update_input(Camera& camera, double deltaTime)
-{
-    float dt = camera.speed * (float)deltaTime;
-    if (is_key_down(GLFW_KEY_W))
-        camera.position += camera.front_vector * dt;
-    if (is_key_down(GLFW_KEY_S))
-        camera.position -= camera.front_vector * dt;
-    if (is_key_down(GLFW_KEY_A))
-        camera.position -= camera.right_vector * dt;
-    if (is_key_down(GLFW_KEY_D))
-        camera.position += camera.right_vector * dt;
-    if (is_key_down(GLFW_KEY_SPACE))
-        camera.position += camera.up_vector * dt;
-    if (is_key_down(GLFW_KEY_LEFT_CONTROL) || is_key_down(GLFW_KEY_CAPS_LOCK))
-        camera.position -= camera.up_vector * dt;
-    /*if (is_key_down(GLFW_KEY_Q))
-        camera.roll -= camera.roll_speed * deltaTime;
-    if (is_key_down(GLFW_KEY_E))
-        camera.roll += camera.roll_speed * deltaTime;*/
-}
-
 
 static void event_callback(Basic_Event& e);
 
@@ -649,23 +623,14 @@ void engine_terminate(Engine* engine)
 {
     Logger::info("Terminating application");
 
-
     // Wait until all GPU commands have finished
     wait_for_gpu();
 
-    // TODO: Remove viewport ui destruction outside of here
-    //ImGui_ImplVulkan_RemoveTexture(skysphere_dset);
     for (auto& framebuffer : viewportUI)
         ImGui_ImplVulkan_RemoveTexture(framebuffer);
 
     for (auto& model : engine->models)
         destroy_model(model);
-
-    // TODO: Remove textures but not the fallback ones that these materials refer to
-    //DestroyMaterial(skysphere_material);
-
-    //DestroyVertexArray(quad);
-
 
     // Destroy rendering resources
     destroy_buffer(engine->cameraBuffer);
@@ -1013,7 +978,8 @@ void engine_get_memory_status(Engine* engine, float* memoryUsage, unsigned int* 
     *maxMemory = static_cast<int>(memoryStatus.ullTotalPhys / 1'000'000'000);
 }
 
-const char* engine_display_file_explorer(Engine* engine, const char* path) {
+const char* engine_display_file_explorer(Engine* engine, const char* path)
+{
     // TODO: Clean up this function and ensure that no bugs exist
     static std::string current_dir = path;
     static std::string fullPath;
@@ -1067,7 +1033,8 @@ const char* engine_display_file_explorer(Engine* engine, const char* path) {
     return fullPath.c_str();
 }
 
-const char* engine_get_executable_directory(Engine* engine) {
+const char* engine_get_executable_directory(Engine* engine)
+{
     return engine->execPath.c_str();
 }
 
