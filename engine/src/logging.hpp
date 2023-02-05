@@ -13,7 +13,7 @@ struct Log_Message {
     std::string message;
 };
 
-class Logger {
+class logger {
 public:
     template <typename... Args>
     static void info(std::string_view fmt, Args&&... args)
@@ -45,5 +45,6 @@ private:
 
     static std::vector<Log_Message> m_Logs;
 };
+
 
 #endif

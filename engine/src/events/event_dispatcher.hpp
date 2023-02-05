@@ -4,7 +4,7 @@
 #include "event.hpp"
 
 struct Event_Dispatcher {
-    Event_Dispatcher(Basic_Event& e)
+    Event_Dispatcher(basic_event& e)
         : m_Event(e)
     {}
 
@@ -19,7 +19,7 @@ struct Event_Dispatcher {
     }
 
 private:
-    Basic_Event& m_Event;
+    basic_event& m_Event;
 };
 
 #endif

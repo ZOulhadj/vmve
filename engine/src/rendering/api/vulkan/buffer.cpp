@@ -5,12 +5,13 @@
 
 
 
-std::size_t pad_uniform_buffer_size(std::size_t original_size) {
+std::size_t pad_uniform_buffer_size(std::size_t original_size)
+{
     const Vulkan_Context& context = get_vulkan_context();
 
     // Get GPU minimum uniform buffer alignment
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(context.device.gpu, &properties);
+    vkGetPhysicalDeviceProperties(context.device->gpu, &properties);
 
     std::size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
     std::size_t alignedSize = original_size;
@@ -185,15 +186,15 @@ void submit_to_gpu(const std::function<void()>& submit_func) {
     end_info.pCommandBuffers = &renderer->submit.CmdBuffer;
 
     // Tell the GPU to now execute the previously recorded command
-    vk_check(vkQueueSubmit(renderer->ctx.device.graphics_queue, 1, &end_info,
+    vk_check(vkQueueSubmit(renderer->ctx.device->graphics_queue, 1, &end_info,
                            renderer->submit.Fence));
 
-    vk_check(vkWaitForFences(renderer->ctx.device.device, 1, &renderer->submit.Fence, true,
+    vk_check(vkWaitForFences(renderer->ctx.device->device, 1, &renderer->submit.Fence, true,
                              UINT64_MAX));
-    vk_check(vkResetFences(renderer->ctx.device.device, 1, &renderer->submit.Fence));
+    vk_check(vkResetFences(renderer->ctx.device->device, 1, &renderer->submit.Fence));
 
     // Reset the command buffers inside the command pool
-    vk_check(vkResetCommandPool(renderer->ctx.device.device, renderer->submit.CmdPool, 0));
+    vk_check(vkResetCommandPool(renderer->ctx.device->device, renderer->submit.CmdPool, 0));
 }
 
 
@@ -239,7 +240,7 @@ VkImageView create_image_views(VkImage image, VkFormat format, VkImageUsageFlags
     imageViewInfo.subresourceRange.baseArrayLayer = 0;
     imageViewInfo.subresourceRange.layerCount = 1;
 
-    vk_check(vkCreateImageView(rc.device.device, &imageViewInfo, nullptr,
+    vk_check(vkCreateImageView(rc.device->device, &imageViewInfo, nullptr,
                                &view));
 
     return view;
@@ -286,14 +287,16 @@ Image_Buffer create_depth_image(VkExtent2D size) {
     return create_image(size, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
-void destroy_image(Image_Buffer& image) {
+void destroy_image(Image_Buffer& image)
+{
     const Vulkan_Context& rc = get_vulkan_context();
 
-    vkDestroyImageView(rc.device.device, image.view, nullptr);
+    vkDestroyImageView(rc.device->device, image.view, nullptr);
     vmaDestroyImage(rc.allocator, image.handle, image.allocation);
 }
 
-void destroy_images(std::vector<Image_Buffer>& images) {
+void destroy_images(std::vector<Image_Buffer>& images)
+{
     for (auto& image : images) {
         destroy_image(image);
     }

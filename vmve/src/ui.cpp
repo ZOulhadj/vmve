@@ -921,8 +921,7 @@ void RenderViewportWindow(Engine* engine)
             first_time = false;
         }
 
-        if (viewport_width != old_viewport_width &&
-            viewport_height != old_viewport_height)
+        if (viewport_width != old_viewport_width && viewport_height != old_viewport_height)
         {
             old_viewport_width = viewport_width;
             old_viewport_height = viewport_height;
@@ -939,6 +938,8 @@ void RenderViewportWindow(Engine* engine)
         // todo(zak): move this into its own function
         float* view = engine_get_camera_view(engine);
         float* proj = engine_get_camera_projection(engine);
+
+        // note: proj[5] == proj[1][1]
         proj[5] *= -1.0f;
 
         if (object_edit_mode) {

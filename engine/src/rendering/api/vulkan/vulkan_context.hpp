@@ -21,16 +21,16 @@ struct Vulkan_Context {
 
     VkInstance      instance;
     VkSurfaceKHR    surface;
-    Vulkan_Device        device;
+    Vulkan_Device*  device;
     VmaAllocator    allocator;
 };
 
-Vulkan_Context create_vulkan_context(uint32_t version,
-                                           const std::vector<const char*>& requested_layers,
-                                           const std::vector<const char*>& requested_extensions,
-                                           const std::vector<const char*>& requested_device_extensions,
-                                           const VkPhysicalDeviceFeatures& requested_gpu_features,
-                                           const Window* window);
+
+bool create_vulkan_context(Vulkan_Context& context, const std::vector<const char*>& requested_layers,
+                                                   const std::vector<const char*>& requested_extensions,
+                                                   const std::vector<const char*>& requested_device_extensions,
+                                                   const VkPhysicalDeviceFeatures& requested_gpu_features,
+                                                   const Window* window);
 void destroy_vulkan_context(Vulkan_Context& rc);
 
 

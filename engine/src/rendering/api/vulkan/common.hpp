@@ -5,9 +5,9 @@
 // todo(zak): move this variable into the renderer
 constexpr uint32_t frames_in_flight = 2;
 
-#define vk_check(result)                                                     \
-    if (result != VK_SUCCESS) {                                             \
-        Logger::info("Vulkan call failed ({}:{})", __FUNCTION__, __LINE__); \
+#define vk_check(function)                                                  \
+    if (function != VK_SUCCESS) {                                           \
+        logger::info("Vulkan call failed ({}:{})", __FUNCTION__, __LINE__); \
     }                                                                       \
 
 // Helper cast function often used for Vulkan create info structs

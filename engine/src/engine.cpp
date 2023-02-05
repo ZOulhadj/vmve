@@ -170,51 +170,41 @@ std::vector<VkCommandBuffer> uiCmdBuffer;
 float shadowNear = 1.0f, shadowFar = 2000.0f;
 float sunDistance = 400.0f;
 
-static void event_callback(Basic_Event& e);
+static void event_callback(basic_event& e);
 
-Engine* engine_initialize(const char* name, int width, int height)
+bool engine_initialize(Engine*& out_engine, const char* name, int width, int height)
 {
-    auto engine = new Engine();
+    out_engine = new Engine();
 
-    engine->startTime = std::chrono::high_resolution_clock::now();
+    out_engine->startTime = std::chrono::high_resolution_clock::now();
 
     // Get the current path of the executable
     // TODO: MAX_PATH is ok to use however, for a long term solution another 
     // method should used since some paths can go beyond this limit.
     wchar_t fileName[MAX_PATH];
     GetModuleFileName(nullptr, fileName, sizeof(wchar_t) * MAX_PATH);
-    engine->execPath = std::filesystem::path(fileName).parent_path().string();
+    out_engine->execPath = std::filesystem::path(fileName).parent_path().string();
 
-    Logger::info("Initializing application ({})", engine->execPath);
+    logger::info("Initializing application ({})", out_engine->execPath);
 
     // Initialize core systems
-    engine->window = create_window(name, width, height);
-    if (!engine->window) {
-        Logger::error("Failed to create window");
-        return nullptr;
+    bool window_initialized = create_window(out_engine->window, name, width, height);
+    if (!window_initialized) {
+        logger::error("Failed to create window");
+        return false;
+    }
+    out_engine->window->event_callback = event_callback;
+
+    bool renderer_initialized = create_vulkan_renderer(out_engine->renderer, out_engine->window, Buffer_Mode::Double, VSync_Mode::enabled);
+    if (!renderer_initialized) {
+        logger::error("Failed to create renderer");
+        return false;
     }
 
-    engine->window->event_callback = event_callback;
-
-#if 0
-    engine->newWindow = CreateWin32Window(info.appName, info.windowWidth, info.windowHeight);
-    if (!engine->window)
-    {
-        Logger::Error("Failed to create window");
-        return nullptr;
-    }
-#endif
-
-    engine->renderer = create_vulkan_renderer(engine->window, Buffer_Mode::Double, VSync_Mode::enabled);
-    if (!engine->renderer) {
-        Logger::error("Failed to create renderer");
-        return nullptr;
-    }
-
-    engine->audio = create_windows_audio();
-    if (!engine->audio) {
-        Logger::error("Failed to initialize audio");
-        return nullptr;
+    bool audio_initialized = create_windows_audio(out_engine->audio);
+    if (!audio_initialized) {
+        logger::error("Failed to initialize audio");
+        return false;
     }
 
     // Mount specific VFS folders
@@ -254,9 +244,9 @@ Engine* engine_initialize(const char* name, int width, int height)
 
 
 
-    engine->sunBuffer = create_uniform_buffer(sizeof(Sun_Data));
-    engine->cameraBuffer = create_uniform_buffer(sizeof(View_Projection));
-    engine->sceneBuffer = create_uniform_buffer(sizeof(Sandbox_Scene));
+    out_engine->sunBuffer = create_uniform_buffer(sizeof(Sun_Data));
+    out_engine->cameraBuffer = create_uniform_buffer(sizeof(View_Projection));
+    out_engine->sceneBuffer = create_uniform_buffer(sizeof(Sandbox_Scene));
 
     std::vector<VkDescriptorSetLayoutBinding> shadowBindings
     {
@@ -265,7 +255,7 @@ Engine* engine_initialize(const char* name, int width, int height)
   
     shadowLayout = create_descriptor_layout(shadowBindings);
     shadowSets = allocate_descriptor_sets(shadowLayout);
-    update_binding(shadowSets, shadowBindings[0], engine->sunBuffer, sizeof(Sun_Data));
+    update_binding(shadowSets, shadowBindings[0], out_engine->sunBuffer, sizeof(Sun_Data));
 
 
     std::vector<VkDescriptorSetLayoutBinding> skyboxBindings
@@ -277,7 +267,7 @@ Engine* engine_initialize(const char* name, int width, int height)
     skyboxLayout = create_descriptor_layout(skyboxBindings);
     skyboxSets = allocate_descriptor_sets(skyboxLayout);
     skyboxDepths = attachments_to_images(skyboxPass.attachments, 0);
-    update_binding(skyboxSets, skyboxBindings[0], engine->cameraBuffer, sizeof(View_Projection));
+    update_binding(skyboxSets, skyboxBindings[0], out_engine->cameraBuffer, sizeof(View_Projection));
     update_binding(skyboxSets, skyboxBindings[1], skyboxDepths, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
 
 
@@ -289,7 +279,7 @@ Engine* engine_initialize(const char* name, int width, int height)
     };
     offscreenLayout = create_descriptor_layout(offscreenBindings);
     offscreenSets = allocate_descriptor_sets(offscreenLayout);
-    update_binding(offscreenSets, offscreenBindings[0], engine->cameraBuffer, sizeof(View_Projection));
+    update_binding(offscreenSets, offscreenBindings[0], out_engine->cameraBuffer, sizeof(View_Projection));
 
     //////////////////////////////////////////////////////////////////////////
     std::vector<VkDescriptorSetLayoutBinding> compositeBindings
@@ -319,8 +309,8 @@ Engine* engine_initialize(const char* name, int width, int height)
     update_binding(compositeSets, compositeBindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
     update_binding(compositeSets, compositeBindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, gFramebufferSampler);
     update_binding(compositeSets, compositeBindings[5], shadow_depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    update_binding(compositeSets, compositeBindings[6], engine->sunBuffer, sizeof(Sun_Data));
-    update_binding(compositeSets, compositeBindings[7], engine->sceneBuffer, sizeof(Sandbox_Scene));
+    update_binding(compositeSets, compositeBindings[6], out_engine->sunBuffer, sizeof(Sun_Data));
+    update_binding(compositeSets, compositeBindings[7], out_engine->sceneBuffer, sizeof(Sandbox_Scene));
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -459,12 +449,12 @@ Engine* engine_initialize(const char* name, int width, int height)
     //);
     //
 
-    engine->running = true;
-    engine->swapchainReady = true;
+    out_engine->running = true;
+    out_engine->swapchainReady = true;
 
-    gTempEnginePtr = engine;
+    gTempEnginePtr = out_engine;
 
-    return engine;
+    return true;
 }
 
 
@@ -621,7 +611,9 @@ void engine_present(Engine* engine)
 
 void engine_terminate(Engine* engine)
 {
-    Logger::info("Terminating application");
+    logger::info("Terminating application");
+
+    assert(engine);
 
     // Wait until all GPU commands have finished
     wait_for_gpu();
@@ -666,9 +658,6 @@ void engine_terminate(Engine* engine)
     destroy_windows_audio(engine->audio);
     destroy_ui(engine->ui);
     destroy_vulkan_renderer(engine->renderer);
-#if 0
-    DestroyWin32Window(engine->newWindow);
-#endif
     destroy_window(engine->window);
 
 
@@ -676,6 +665,19 @@ void engine_terminate(Engine* engine)
 
     delete engine;
 }
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// All the functions below are defined in engine.h which provides the engine 
+// API to the client application.
+//////////////////////////////////////////////////////////////////////////////
+
 
 void engine_should_terminate(Engine* engine)
 {
@@ -693,7 +695,7 @@ void engine_set_callbacks(Engine* engine, engine_callbacks callbacks)
 }
 
 void engine_add_model(Engine* engine, const char* path, bool flipUVs) {
-    Logger::info("Loading mesh {}", path);
+    logger::info("Loading mesh {}", path);
 
     Model model = load_model(path, flipUVs);
     upload_model_to_gpu(model, materialLayout, materialBindings, gTextureSampler);
@@ -701,7 +703,7 @@ void engine_add_model(Engine* engine, const char* path, bool flipUVs) {
     //std::lock_guard<std::mutex> lock(model_mutex);
     engine->models.push_back(model);
 
-    Logger::info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path);
+    logger::info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path);
 }
 
 void engine_remove_model(Engine* engine, int modelID) {
@@ -739,7 +741,7 @@ void engine_add_instance(Engine* engine, int modelID, float x, float y, float z)
 
     engine->instances.push_back(instance);
 
-    Logger::info("Instance ({}) added", instance.id);
+    logger::info("Instance ({}) added", instance.id);
 }
 
 void engine_remove_instance(Engine* engine, int instanceID) {
@@ -754,7 +756,7 @@ void engine_remove_instance(Engine* engine, int instanceID) {
 
     if (it == engine->instances.end())
     {
-        Logger::warning("Unable to find instance with ID of {} to remove", instanceID);
+        logger::warning("Unable to find instance with ID of {} to remove", instanceID);
         return;
     }
 
@@ -762,7 +764,7 @@ void engine_remove_instance(Engine* engine, int instanceID) {
 #else
     engine->instances.erase(engine->instances.begin() + instanceID);
 
-    Logger::info("Instance ({}) removed", instanceID);
+    logger::info("Instance ({}) removed", instanceID);
 #endif
 
     
@@ -959,11 +961,13 @@ double engine_get_delta_time(Engine* engine) {
     return engine->deltaTime;
 }
 
-const char* engine_get_gpu_name(Engine* engine) {
-    return engine->renderer->ctx.device.gpu_name.c_str();
+const char* engine_get_gpu_name(Engine* engine)
+{
+    return engine->renderer->ctx.device->gpu_name.c_str();
 }
 
-void engine_get_uptime(Engine* engine, int* hours, int* minutes, int* seconds) {
+void engine_get_uptime(Engine* engine, int* hours, int* minutes, int* seconds)
+{
     const auto [h, m, s] = get_duration(engine->startTime);
 
     *hours = h;
@@ -971,7 +975,8 @@ void engine_get_uptime(Engine* engine, int* hours, int* minutes, int* seconds) {
     *seconds = s;
 }
 
-void engine_get_memory_status(Engine* engine, float* memoryUsage, unsigned int* maxMemory) {
+void engine_get_memory_status(Engine* engine, float* memoryUsage, unsigned int* maxMemory)
+{
     const MEMORYSTATUSEX memoryStatus = get_windows_memory_status();
 
     *memoryUsage = memoryStatus.dwMemoryLoad / 100.0f;
@@ -1045,26 +1050,26 @@ void engine_set_cursor_mode(Engine* engine, int cursorMode) {
 }
 
 void engine_clear_logs(Engine* engine) {
-    Logger::clear_logs();
+    logger::clear_logs();
 }
 
 void engine_export_logs_to_file(Engine* engine, const char* path) {
     std::ofstream output(path);
 
-    for (auto& message : Logger::get_logs())
+    for (auto& message : logger::get_logs())
         output << message.message << "\n";
 }
 
 int engine_get_log_count(Engine* engine) {
-    return static_cast<int>(Logger::get_logs().size());
+    return static_cast<int>(logger::get_logs().size());
 }
 
 int engine_get_log_type(Engine* engine, int logIndex) {
-    return static_cast<int>(Logger::get_logs()[logIndex].type);
+    return static_cast<int>(logger::get_logs()[logIndex].type);
 }
 
 const char* engine_get_log(Engine* engine, int logIndex) {
-    return Logger::get_logs()[logIndex].message.c_str();
+    return logger::get_logs()[logIndex].message.c_str();
 }
 
 // TODO: Event system stuff
@@ -1123,7 +1128,7 @@ static bool not_minimized_window(Window_Not_Minimized_Event& e) {
     return true;
 }
 
-static void event_callback(Basic_Event& e) {
+static void event_callback(basic_event& e) {
     Event_Dispatcher dispatcher(e);
 
     dispatcher.dispatch<Key_Pressed_Event>(press);

@@ -14,7 +14,7 @@ static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial
         aiString ai_path;
 
         if (material->GetTexture(type, i, &ai_path) == aiReturn_FAILURE) {
-            Logger::error("Failed to load texture: {}", ai_path.C_Str());
+            logger::error("Failed to load texture: {}", ai_path.C_Str());
             return {};
         }
 
@@ -185,18 +185,18 @@ static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* sce
 
         if (diffuse_path.empty()) {
             create_fallback_mesh_texture(model, mesh, defaultAlbedo, "albedo_fallback");
-            Logger::warning("{} using fallback albedo texture.", model.name);
+            logger::warning("{} using fallback albedo texture.", model.name);
         }
 
         if (normal_path.empty()) {
             create_fallback_mesh_texture(model, mesh, defaultNormal, "normal_fallback");
-            Logger::warning("{} using fallback normal texture.", model.name);
+            logger::warning("{} using fallback normal texture.", model.name);
 
         }
 
         if (specular_path.empty()) {
             create_fallback_mesh_texture(model, mesh, defaultSpecular, "specular_fallback");
-            Logger::warning("{} using fallback specular texture.", model.name);
+            logger::warning("{} using fallback specular texture.", model.name);
         }
     }
  
@@ -240,7 +240,7 @@ Model load_model(const std::filesystem::path& path, bool flipUVs) {
     const aiScene* scene = importer.ReadFile(path.string(), flags);
 
     if (!scene) {
-        Logger::error("Failed to load model at path: {}", path.string());
+        logger::error("Failed to load model at path: {}", path.string());
         return {};
     }
 

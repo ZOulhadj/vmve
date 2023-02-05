@@ -35,7 +35,7 @@ Event_Type get_type() const override { return get_static_type(); }              
 const char* get_name() const override { return #type; }
 
 
-struct Basic_Event {
+struct basic_event {
     virtual Event_Type get_type() const = 0;
     virtual const char* get_name() const = 0;
 
@@ -44,7 +44,7 @@ struct Basic_Event {
 
 
 
-using Event_Func = std::function<void(Basic_Event&)>;
+using Event_Func = std::function<void(basic_event&)>;
 //void (*EventFunc)(event&);
 //#define BIND_EVENT(x) std::bind(&x, this, std::placeholders::_1)
 

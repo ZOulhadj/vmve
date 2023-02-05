@@ -72,7 +72,7 @@ static Shader create_shader(VkShaderStageFlagBits type, const std::string& code)
     status = shaderc_result_get_compilation_status(result);
 
     if (status != shaderc_compilation_status_success) {
-        Logger::error("Failed to compile shader {}", shaderc_result_get_error_message(result));
+        logger::error("Failed to compile shader {}", shaderc_result_get_error_message(result));
         return {};
     }
 
@@ -81,7 +81,7 @@ static Shader create_shader(VkShaderStageFlagBits type, const std::string& code)
     module_info.codeSize = u32(shaderc_result_get_length(result));
     module_info.pCode    = reinterpret_cast<const uint32_t*>(shaderc_result_get_bytes(result));
 
-    vk_check(vkCreateShaderModule(renderer->ctx.device.device, &module_info, nullptr,
+    vk_check(vkCreateShaderModule(renderer->ctx.device->device, &module_info, nullptr,
                                   &shader.handle));
     shader.type = type;
 
@@ -89,10 +89,11 @@ static Shader create_shader(VkShaderStageFlagBits type, const std::string& code)
 }
 
 
-void destroy_shader(Shader& shader) {
+void destroy_shader(Shader& shader)
+{
     const Vulkan_Context& rc = get_vulkan_context();
 
-    vkDestroyShaderModule(rc.device.device, shader.handle, nullptr);
+    vkDestroyShaderModule(rc.device->device, shader.handle, nullptr);
 }
 
 Shader create_vertex_shader(const std::string& code)

@@ -30,5 +30,5 @@ Scoped_Timer::Scoped_Timer(const std::string& name)
 Scoped_Timer::~Scoped_Timer() {
     const float duration = m_Timer.elapsed_millis();
 
-    Logger::info("[TIMER] {} - {}ms", m_Name, duration);
+    logger::info("[TIMER] {} - {}ms", m_Name, duration);
 }

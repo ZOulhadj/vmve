@@ -9,7 +9,7 @@
 
 
 static void glfw_error_callback(int code, const char* description) {
-    Logger::error("GLFW error ({} : {})", code, description);
+    logger::error("GLFW error ({} : {})", code, description);
 }
 
 static void window_close_callback(GLFWwindow* window) {
@@ -146,62 +146,60 @@ static void window_cursor_enter_callback(GLFWwindow* window, int entered) {
 
 // Initialized the GLFW library and creates a window. Window callbacks send
 // events to the application callback.
-Window* create_window(const char* name, int width, int height) {
-    Logger::info("Initializing window ({}, {})", width, height);
+bool create_window(Window*& out_window, const char* name, int width, int height)
+{
+    logger::info("Initializing window ({}, {})", width, height);
 
     assert(width > 0 && height > 0);
 
-    Window* window = new Window();
+    out_window = new Window();
+
+
 
     glfwSetErrorCallback(glfw_error_callback);
 
     if (!glfwInit()) {
-        Logger::error("Failed to initialize GLFW");
+        logger::error("Failed to initialize GLFW");
 
-        delete window;
-
-        return nullptr;
+        return false;
     }
-
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, true);
 
-    window->handle = glfwCreateWindow(width, height, name, nullptr, nullptr);
-    window->name   = name;
-    window->width  = width;
-    window->height = height;
+    out_window->handle = glfwCreateWindow(width, height, name, nullptr, nullptr);
+    out_window->name   = name;
+    out_window->width  = width;
+    out_window->height = height;
 
-    if (!window->handle) {
-        Logger::error("Failed to create GLFW window");   
+    if (!out_window->handle) {
+        logger::error("Failed to create GLFW window");   
         
         glfwTerminate();
 
-        delete window;
-
-        return nullptr;
+        return false;
     }
 
     //glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // window callbacks
-    glfwSetWindowUserPointer(window->handle, window);
-    glfwSetWindowCloseCallback(window->handle, window_close_callback);
-    glfwSetWindowFocusCallback(window->handle, window_focus_callback);
-    glfwSetWindowMaximizeCallback(window->handle, window_maximized_callback);
-    glfwSetWindowIconifyCallback(window->handle, window_minimized_callback);
-    glfwSetWindowSizeCallback(window->handle, window_resize_callback);
-    glfwSetFramebufferSizeCallback(window->handle, window_framebuffer_resize_callback);
-    glfwSetDropCallback(window->handle, window_drop_callback);
+    glfwSetWindowUserPointer(out_window->handle, out_window);
+    glfwSetWindowCloseCallback(out_window->handle, window_close_callback);
+    glfwSetWindowFocusCallback(out_window->handle, window_focus_callback);
+    glfwSetWindowMaximizeCallback(out_window->handle, window_maximized_callback);
+    glfwSetWindowIconifyCallback(out_window->handle, window_minimized_callback);
+    glfwSetWindowSizeCallback(out_window->handle, window_resize_callback);
+    glfwSetFramebufferSizeCallback(out_window->handle, window_framebuffer_resize_callback);
+    glfwSetDropCallback(out_window->handle, window_drop_callback);
 
     // input callbacks
-    glfwSetKeyCallback(window->handle, window_key_callback);
-    glfwSetMouseButtonCallback(window->handle, window_mouse_button_callback);
-    glfwSetScrollCallback(window->handle, window_mouse_scroll_callback);
-    glfwSetCursorPosCallback(window->handle, window_cursor_position_callback);
-    glfwSetCursorEnterCallback(window->handle, window_cursor_enter_callback);
+    glfwSetKeyCallback(out_window->handle, window_key_callback);
+    glfwSetMouseButtonCallback(out_window->handle, window_mouse_button_callback);
+    glfwSetScrollCallback(out_window->handle, window_mouse_scroll_callback);
+    glfwSetCursorPosCallback(out_window->handle, window_cursor_position_callback);
+    glfwSetCursorEnterCallback(out_window->handle, window_cursor_enter_callback);
 
-    return window;
+    return true;
 }
 
 void set_window_icon(const Window* window, const std::filesystem::path& iconPath)
@@ -210,7 +208,7 @@ void set_window_icon(const Window* window, const std::filesystem::path& iconPath
     images[0].pixels = stbi_load(iconPath.string().c_str(), &images[0].width, &images[0].height, 0, STBI_rgb_alpha);
 
     if (!images[0].pixels) {
-        Logger::error("Failed to load window icon {}", iconPath.string());
+        logger::error("Failed to load window icon {}", iconPath.string());
 
         stbi_image_free(images[0].pixels);
         return;
@@ -237,7 +235,7 @@ void destroy_window(Window* window)
     if (!window)
         return;
 
-    Logger::info("Destroying window");
+    logger::info("Destroying window");
 
     glfwDestroyWindow(window->handle);
     glfwTerminate();

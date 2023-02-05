@@ -70,7 +70,7 @@ struct Vertex_Binding
         current_bytes += format_to_bytes(format);
 
         if (current_bytes > max_bytes) {
-            Logger::error("Total attribute size is larger than binding size");
+            logger::error("Total attribute size is larger than binding size");
             return;
         }
 
@@ -132,7 +132,7 @@ struct Vulkan_Renderer {
     VkDebugUtilsMessengerEXT messenger;
 };
 
-Vulkan_Renderer* create_vulkan_renderer(const Window* window, Buffer_Mode buffering_mode, VSync_Mode sync_mode);
+bool create_vulkan_renderer(Vulkan_Renderer*& out_renderer, const Window* window, Buffer_Mode buffering_mode, VSync_Mode sync_mode);
 void destroy_vulkan_renderer(Vulkan_Renderer* renderer);
 
 Vulkan_Renderer* get_vulkan_renderer();

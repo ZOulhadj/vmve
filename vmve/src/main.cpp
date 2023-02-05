@@ -16,7 +16,18 @@ bool notFullScreen = true;
 
 int main()
 {
-    Engine* engine = engine_initialize("VMVE", 1280, 720);
+    Engine* engine = nullptr;
+
+
+    bool engine_initialized = engine_initialize(engine, "VMVE", 1280, 720);
+    if (!engine_initialized) {
+        engine_export_logs_to_file(engine, "vmve_crash_log.txt");
+        engine_terminate(engine);
+
+        return -1;
+    }
+
+
 
     // Set application icon
     int icon_width, icon_height;
@@ -45,6 +56,8 @@ int main()
         // projection to take into account the new dimensions.
         if (should_resize_viewport) {
             engine_update_camera_projection(engine, viewport_width, viewport_height);
+
+            should_resize_viewport = false;
         }
 
 

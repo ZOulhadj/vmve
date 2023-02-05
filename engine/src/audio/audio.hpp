@@ -8,7 +8,7 @@ struct Audio {
 };
 
 
-Audio* create_windows_audio();
+bool create_windows_audio(Audio*& out_audio);
 void destroy_windows_audio(Audio* audio);
 
 #endif

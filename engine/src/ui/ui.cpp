@@ -81,7 +81,7 @@ static void configure_colors()
 
 ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPass)
 {
-    Logger::info("Initializing user interface");
+    logger::info("Initializing user interface");
 
     ImGuiContext* context{};
 
@@ -111,10 +111,10 @@ ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPas
 
     ImGui_ImplVulkan_InitInfo init_info{};
     init_info.Instance        = renderer->ctx.instance;
-    init_info.PhysicalDevice  = renderer->ctx.device.gpu;
-    init_info.Device          = renderer->ctx.device.device;
-    init_info.QueueFamily     = renderer->ctx.device.graphics_index;
-    init_info.Queue           = renderer->ctx.device.graphics_queue;
+    init_info.PhysicalDevice  = renderer->ctx.device->gpu;
+    init_info.Device          = renderer->ctx.device->device;
+    init_info.QueueFamily     = renderer->ctx.device->graphics_index;
+    init_info.Queue           = renderer->ctx.device->graphics_queue;
     init_info.PipelineCache   = nullptr;
     init_info.DescriptorPool  = renderer->descriptor_pool;
     init_info.Subpass         = 0;
@@ -141,7 +141,7 @@ void destroy_ui(ImGuiContext* context)
         return;
 
 
-    Logger::info("Terminating user interface");
+    logger::info("Terminating user interface");
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();

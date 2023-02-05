@@ -31,7 +31,7 @@ struct engine_callbacks
 // This is the first function that must be called. It initializes all systems
 // such as the window, renderer, audio etc. Takes an EngineInfo as a parameter
 // which provides the required information the engine needs to initialize.
-Engine* engine_initialize(const char* name, int width, int height);
+bool engine_initialize(Engine*& out_engine, const char* name, int width, int height);
 
 //
 // The final engine related function call that will terminate all sub-systems
@@ -44,6 +44,7 @@ void engine_terminate(Engine* engine);
 // this call will result in the engine no longer updating and can begin to be 
 // shutdown.
 void engine_should_terminate(Engine* engine);
+
 
 void engine_set_window_icon(Engine* engine, unsigned char* data, int width, int height);
 

@@ -30,12 +30,13 @@ VkDescriptorPool create_descriptor_pool() {
     pool_info.pPoolSizes = pool_sizes.data();
     pool_info.maxSets = pool_info.poolSizeCount * max_sizes;
 
-    vk_check(vkCreateDescriptorPool(rc.device.device, &pool_info, nullptr, &pool));
+    vk_check(vkCreateDescriptorPool(rc.device->device, &pool_info, nullptr, &pool));
 
     return pool;
 }
 
-VkDescriptorSetLayout create_descriptor_layout(std::vector<VkDescriptorSetLayoutBinding> bindings) {
+VkDescriptorSetLayout create_descriptor_layout(std::vector<VkDescriptorSetLayoutBinding> bindings)
+{
     const Vulkan_Context& rc = get_vulkan_context();
 
     VkDescriptorSetLayout layout{};
@@ -43,15 +44,16 @@ VkDescriptorSetLayout create_descriptor_layout(std::vector<VkDescriptorSetLayout
     VkDescriptorSetLayoutCreateInfo info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
     info.bindingCount = u32(bindings.size());
     info.pBindings = bindings.data();
-    vk_check(vkCreateDescriptorSetLayout(rc.device.device, &info, nullptr, &layout));
+    vk_check(vkCreateDescriptorSetLayout(rc.device->device, &info, nullptr, &layout));
 
     return layout;
 }
 
-void destroy_descriptor_layout(VkDescriptorSetLayout layout) {
+void destroy_descriptor_layout(VkDescriptorSetLayout layout)
+{
     const Vulkan_Context& rc = get_vulkan_context();
 
-    vkDestroyDescriptorSetLayout(rc.device.device, layout, nullptr);
+    vkDestroyDescriptorSetLayout(rc.device->device, layout, nullptr);
 }
 
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout) {
@@ -64,7 +66,7 @@ VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout) {
     allocate_info.descriptorPool = r->descriptor_pool;
     allocate_info.descriptorSetCount = 1;
     allocate_info.pSetLayouts = &layout;
-    vk_check(vkAllocateDescriptorSets(rc.device.device, &allocate_info, &descriptor_sets));
+    vk_check(vkAllocateDescriptorSets(rc.device->device, &allocate_info, &descriptor_sets));
 
     return descriptor_sets;
 }
@@ -82,7 +84,7 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layo
     allocate_info.descriptorPool = r->descriptor_pool;
     allocate_info.descriptorSetCount = u32(layouts.size());
     allocate_info.pSetLayouts = layouts.data();
-    vk_check(vkAllocateDescriptorSets(rc.device.device, &allocate_info, descriptor_sets.data()));
+    vk_check(vkAllocateDescriptorSets(rc.device->device, &allocate_info, descriptor_sets.data()));
 
     return descriptor_sets;
 }
@@ -90,7 +92,8 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layo
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
     const VkDescriptorSetLayoutBinding& binding,
     Buffer& buffer,
-    std::size_t size) {
+    std::size_t size)
+{
     const Vulkan_Context& rc = get_vulkan_context();
 
     for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
@@ -107,7 +110,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
         write.descriptorType = binding.descriptorType;
         write.pBufferInfo = &sceneInfo;
 
-        vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
+        vkUpdateDescriptorSets(rc.device->device, 1, &write, 0, nullptr);
     }
 }
 
@@ -116,7 +119,8 @@ void update_binding(VkDescriptorSet descriptor_set,
     const VkDescriptorSetLayoutBinding& binding,
     Image_Buffer& buffer,
     VkImageLayout layout,
-    VkSampler sampler) {
+    VkSampler sampler)
+{
     const Vulkan_Context& rc = get_vulkan_context();
 
     VkDescriptorImageInfo buffer_info{};
@@ -131,7 +135,7 @@ void update_binding(VkDescriptorSet descriptor_set,
     write.descriptorType = binding.descriptorType;
     write.pImageInfo = &buffer_info;
 
-    vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
+    vkUpdateDescriptorSets(rc.device->device, 1, &write, 0, nullptr);
 }
 
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
@@ -154,7 +158,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
         write.descriptorType = binding.descriptorType;
         write.pImageInfo = &buffer_info;
 
-        vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
+        vkUpdateDescriptorSets(rc.device->device, 1, &write, 0, nullptr);
     }
 }
 
@@ -162,7 +166,8 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
                     const VkDescriptorSetLayoutBinding& binding,
                     std::vector<Image_Buffer>& buffer, 
                     VkImageLayout layout, 
-                    VkSampler sampler) {
+                    VkSampler sampler)
+{
     const Vulkan_Context& rc = get_vulkan_context();
 
     for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
@@ -178,13 +183,14 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
         write.descriptorType = binding.descriptorType;
         write.pImageInfo = &buffer_info;
 
-        vkUpdateDescriptorSets(rc.device.device, 1, &write, 0, nullptr);
+        vkUpdateDescriptorSets(rc.device->device, 1, &write, 0, nullptr);
     }
 }
 
 void bind_descriptor_set(const std::vector<VkCommandBuffer>& buffers, 
                          VkPipelineLayout layout,
-                         VkDescriptorSet descriptor_set) {
+                         VkDescriptorSet descriptor_set)
+{
 
     uint32_t current_frame = get_frame_index();
     vkCmdBindDescriptorSets(buffers[current_frame],

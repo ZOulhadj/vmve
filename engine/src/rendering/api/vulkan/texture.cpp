@@ -97,7 +97,7 @@ Image_Buffer load_texture(const std::filesystem::path& path, bool flip_y, VkForm
     stbi_set_flip_vertically_on_load(flip_y);
     unsigned char* texture = stbi_load(path.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
-        Logger::error("Failed to load texture at path: {}", path.string().c_str());
+        logger::error("Failed to load texture at path: {}", path.string().c_str());
 
         stbi_image_free(texture);
 
@@ -122,13 +122,13 @@ VkSampler create_image_sampler(VkFilter filtering, const uint32_t anisotropic_le
 
     // get the maximum supported anisotropic filtering level
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(rc.device.gpu, &properties);
+    vkGetPhysicalDeviceProperties(rc.device->gpu, &properties);
 
     uint32_t ansi_level = anisotropic_level;
     if (anisotropic_level > properties.limits.maxSamplerAnisotropy) {
         ansi_level = properties.limits.maxSamplerAnisotropy;
 
-        Logger::warning("Anisotropic level of {} not supported. Using the maximum level of {} instead", anisotropic_level, ansi_level);
+        logger::warning("Anisotropic level of {} not supported. Using the maximum level of {} instead", anisotropic_level, ansi_level);
     }
 
     VkSamplerCreateInfo sampler_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
@@ -148,7 +148,7 @@ VkSampler create_image_sampler(VkFilter filtering, const uint32_t anisotropic_le
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    vk_check(vkCreateSampler(rc.device.device, &sampler_info, nullptr,
+    vk_check(vkCreateSampler(rc.device->device, &sampler_info, nullptr,
                              &sampler));
 
     return sampler;
@@ -158,6 +158,6 @@ void destroy_image_sampler(VkSampler sampler) {
     const Vulkan_Context& rc = get_vulkan_context();
 
     if (sampler) {
-        vkDestroySampler(rc.device.device, sampler, nullptr);
+        vkDestroySampler(rc.device->device, sampler, nullptr);
     }
 }

@@ -3,7 +3,7 @@
 
 #include "event.hpp"
 
-struct Key_Event : public Basic_Event {
+struct Key_Event : public basic_event {
     int get_key_code() const { return m_KeyCode; }
 
 protected:

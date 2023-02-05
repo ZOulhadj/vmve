@@ -3,7 +3,7 @@
 
 #include "event.hpp"
 
-struct Mouse_Button_Event : public Basic_Event {
+struct Mouse_Button_Event : public basic_event {
     int get_button_code() const { return m_ButtonCode; }
 
 protected:
@@ -32,7 +32,7 @@ struct Mouse_Button_Released_Event : public Mouse_Button_Event {
 };
 
 
-struct Mouse_Moved_Event : public Basic_Event {
+struct Mouse_Moved_Event : public basic_event {
     Mouse_Moved_Event(double x, double y)
         : m_XPos(x), m_YPos(y)
     {}
@@ -47,19 +47,19 @@ private:
     double m_YPos;
 };
 
-struct Mouse_Entered_Event : public Basic_Event {
+struct Mouse_Entered_Event : public basic_event {
     EVENT_CLASS_TYPE(mouse_entered);
 };
 
-struct Mouse_Left_Event : public Basic_Event {
+struct Mouse_Left_Event : public basic_event {
     EVENT_CLASS_TYPE(mouse_left);
 };
 
-struct Mouse_Scrolled_Up_Event : public Basic_Event {
+struct Mouse_Scrolled_Up_Event : public basic_event {
     EVENT_CLASS_TYPE(mouse_scrolled_up);
 };
 
-struct Mouse_Scrolled_Down_Event : public Basic_Event {
+struct Mouse_Scrolled_Down_Event : public basic_event {
     EVENT_CLASS_TYPE(mouse_scrolled_down);
 };
 
