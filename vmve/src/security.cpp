@@ -2,11 +2,11 @@
 
 #include <cassert>
 
-KeyIV GenerateKeyIV(unsigned char keyLength)
+key_iv generate_key_iv(unsigned char keyLength)
 {
     assert(keyLength == 16 || keyLength == 32);
 
-    KeyIV keyIV{};
+    key_iv keyIV{};
 
     CryptoPP::AutoSeededRandomPool randomPool;
 
@@ -21,9 +21,9 @@ KeyIV GenerateKeyIV(unsigned char keyLength)
     return keyIV;
 }
 
-KeyIVString KeyIVToHex(KeyIV& keyIV)
+key_iv_string key_iv_to_hex(key_iv& keyIV)
 {
-    KeyIVString strings{};
+    key_iv_string strings{};
 
     CryptoPP::HexEncoder keyHexEncoder;
     keyHexEncoder.Put(keyIV.key, sizeof(CryptoPP::byte) * keyIV.key.size());
@@ -45,9 +45,9 @@ KeyIVString KeyIVToHex(KeyIV& keyIV)
 }
 
 
-AES_Data EncryptAES(const std::string& text, KeyIV& keyIV)
+encrypted_data encrypt_aes(const std::string& text, key_iv& keyIV)
 {
-    AES_Data data{};
+    encrypted_data data{};
 
     data.keyIV = keyIV;
 
@@ -63,11 +63,11 @@ AES_Data EncryptAES(const std::string& text, KeyIV& keyIV)
 }
 
 
-AES_Data EncryptAES(const std::string& text, unsigned char keyLength)
+encrypted_data encrypt_aes(const std::string& text, unsigned char keyLength)
 {
-    AES_Data data{};
+    encrypted_data data{};
 
-    data.keyIV = GenerateKeyIV(keyLength);
+    data.keyIV = generate_key_iv(keyLength);
 
     // Set key and IV to encryption mode
     CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
@@ -80,7 +80,7 @@ AES_Data EncryptAES(const std::string& text, unsigned char keyLength)
     return data;
 }
 
-std::string DecrptAES(const AES_Data& data)
+std::string decrypt_aes(const encrypted_data& data)
 {
     std::string text;
 
@@ -92,5 +92,15 @@ std::string DecrptAES(const AES_Data& data)
     CryptoPP::StringSource s(data.data.data(), true, new CryptoPP::StreamTransformationFilter(decryption, new CryptoPP::StringSink(text)));
 
     return text;
+}
+
+encrypted_data encrypt_dh(const std::string& text, key_iv& keys)
+{
+    return {};
+}
+
+std::string decrypt_dh(const encrypted_data& data)
+{
+    return "";
 }
 

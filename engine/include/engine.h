@@ -93,7 +93,10 @@ void engine_set_environment_map(const char* path);
 // Loads a model and all associated resources.
 //
 //
-void engine_add_model(Engine* engine, const char* path, bool flipUVs);
+void engine_load_model(Engine* engine, const char* path, bool flipUVs);
+
+void engine_add_model(Engine* engine, const char* data, int size, bool flipUVs);
+
 
 //
 // Removes a model by deallocating all resources a model.

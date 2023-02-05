@@ -3,7 +3,8 @@
 
 #include "renderer.hpp"
 
-Vertex_Array create_vertex_array(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
+Vertex_Array create_vertex_array(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
+{
     Vertex_Array vertexArray{};
 
     const Vulkan_Renderer* renderer = get_vulkan_renderer();

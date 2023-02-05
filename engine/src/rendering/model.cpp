@@ -7,7 +7,8 @@
 
 static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial* material, 
                                                    aiTextureType type, 
-                                                   const std::filesystem::path& model_path) {
+                                                   const std::filesystem::path& model_path)
+{
     std::vector<std::filesystem::path> paths;
 
     for (std::size_t i = 0; i < material->GetTextureCount(type); ++i) {
@@ -27,7 +28,8 @@ static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial
     return paths;
 }
 
-static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::filesystem::path>& paths) {
+static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::filesystem::path>& paths)
+{
     std::vector<std::filesystem::path>& uniques = model.unique_texture_paths;
 
     for (std::size_t i = 0; i < paths.size(); ++i) {
@@ -52,7 +54,8 @@ static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::f
 static void create_fallback_mesh_texture(Model& model, 
     Mesh& mesh, 
     unsigned char* texture,
-    const std::filesystem::path& path) {
+    const std::filesystem::path& path)
+{
 
     std::vector<std::filesystem::path>& uniques = model.unique_texture_paths;
 
@@ -78,7 +81,8 @@ static void create_fallback_mesh_texture(Model& model,
 
 
 
-static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* scene) {
+static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* scene)
+{
     Mesh mesh{};
 
     mesh.name = ai_mesh->mName.C_Str();
@@ -203,7 +207,8 @@ static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* sce
     return mesh;
 }
 
-static void process_node(Model& model, aiNode* node, const aiScene* scene) {
+static void process_node(Model& model, aiNode* node, const aiScene* scene)
+{
     // process the current nodes meshes if they exist
     for (std::size_t i = 0; i < node->mNumMeshes; ++i) {
         const aiMesh* assimp_mesh = scene->mMeshes[node->mMeshes[i]];
@@ -218,12 +223,11 @@ static void process_node(Model& model, aiNode* node, const aiScene* scene) {
     }
 }
 
-
-Model load_model(const std::filesystem::path& path, bool flipUVs) {
-    Model model{};
+bool load_model(Model& model, const std::filesystem::path& path, bool flipUVs)
+{
+    logger::info("Loading mesh {}", path.string());
 
     Assimp::Importer importer;
-
 
     unsigned int flags = aiProcessPreset_TargetRealtime_Fast |
         aiProcess_FlipWindingOrder |
@@ -233,37 +237,76 @@ Model load_model(const std::filesystem::path& path, bool flipUVs) {
         aiProcess_OptimizeGraph |
         aiProcess_ImproveCacheLocality;
 
-
     if (flipUVs)
         flags |= aiProcess_FlipUVs;
 
     const aiScene* scene = importer.ReadFile(path.string(), flags);
 
     if (!scene) {
-        logger::error("Failed to load model at path: {}", path.string());
-        return {};
+        return false;
     }
-
    
+
+    // Start processing from the root scene node
+    process_node(model, scene->mRootNode, scene);
+
     // TEMP: Set model original path so that textures know where
     // they should load the files from
     model.path = path.string();
     model.name = path.filename().string();
 
+    logger::info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path.string());
+
+    return true;
+}
+
+bool create_model(Model& model, const char* data, std::size_t len, bool flipUVs /*= true*/)
+{
+    logger::info("Creating mesh");
+
+    Assimp::Importer importer;
+
+    unsigned int flags = aiProcessPreset_TargetRealtime_Fast |
+        aiProcess_FlipWindingOrder |
+        aiProcess_MakeLeftHanded |
+        aiProcess_GenBoundingBoxes |
+        aiProcess_OptimizeMeshes |
+        aiProcess_OptimizeGraph |
+        aiProcess_ImproveCacheLocality;
+
+    if (flipUVs)
+        flags |= aiProcess_FlipUVs;
+
+    const aiScene* scene = importer.ReadFileFromMemory(data, len, flags);
+
+    if (!scene) {
+        return false;
+    }
+
+
     // Start processing from the root scene node
     process_node(model, scene->mRootNode, scene);
 
-    return model;
+    // TEMP: Set model original path so that textures know where
+    // they should load the files from
+    //model.path = path.string();
+    //model.name = path.filename().string();
+
+    logger::info("Successfully created model from memory");
+
+    return true;
 }
 
-void destroy_model(Model& model) {
+void destroy_model(Model& model)
+{
     destroy_images(model.unique_textures);
     for (auto& mesh : model.meshes) {
         destroy_vertex_array(mesh.vertex_array);
     }
 }
 
-void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler) {
+void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler)
+{
 
     // At this point, the model has been fully loaded onto the CPU and now we 
     // need to transfer this data onto the GPU.

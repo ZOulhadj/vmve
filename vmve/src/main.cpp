@@ -18,7 +18,6 @@ int main()
 {
     Engine* engine = nullptr;
 
-
     bool engine_initialized = engine_initialize(engine, "VMVE", 1280, 720);
     if (!engine_initialized) {
         engine_export_logs_to_file(engine, "vmve_crash_log.txt");
@@ -26,8 +25,6 @@ int main()
 
         return -1;
     }
-
-
 
     // Set application icon
     int icon_width, icon_height;

@@ -93,7 +93,8 @@ void set_buffer_data(Buffer& buffer, void* data) {
 }
 
 
-void set_buffer_data(Buffer& buffer, void* data, std::size_t size) {
+void set_buffer_data(Buffer& buffer, void* data, std::size_t size)
+{
     const Vulkan_Context& rc = get_vulkan_context();
     const uint32_t current_frame = get_frame_index();
 
@@ -107,7 +108,8 @@ void set_buffer_data(Buffer& buffer, void* data, std::size_t size) {
 // Creates and fills a buffer that is CPU accessible. A staging
 // buffer is most often used as a temporary buffer when copying
 // data from the CPU to the GPU.
-Buffer create_staging_buffer(void* data, uint32_t size) {
+Buffer create_staging_buffer(void* data, uint32_t size)
+{
     Buffer buffer{};
 
     const Vulkan_Context& rc = get_vulkan_context();

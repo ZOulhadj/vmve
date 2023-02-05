@@ -13,7 +13,7 @@
 #include <fstream>
 
 #include "security.hpp"
-
+#include "vmve.hpp"
 
 
 
@@ -208,8 +208,8 @@ static void LoadModelWindow(Engine* engine, bool* open)
     if (!*open)
         return;
 
-
     static bool flip_uv = false;
+    static bool vmve_format = false;
 
     set_next_window_in_center();
 
@@ -218,11 +218,11 @@ static void LoadModelWindow(Engine* engine, bool* open)
     static const char* modelPath = engine_get_executable_directory(engine);
     std::string model_path = engine_display_file_explorer(engine, modelPath);
 
-
     ImGui::Checkbox("Flip UVs", &flip_uv);
+    ImGui::SameLine();
+    ImGui::Checkbox("VMVE model", &vmve_format);
 
-    if (ImGui::Button("Load"))
-    {
+    if (ImGui::Button("Load")) {
         // todo(zak): Check if extension is .vmve
         // if so then parse the file and ensure that format is correct and ready to be loaded
         // decrypt file contents
@@ -230,7 +230,17 @@ static void LoadModelWindow(Engine* engine, bool* open)
 #if 0
         futures.push_back(std::async(std::launch::async, LoadMesh, std::ref(gModels), model_path));
 #else
-        engine_add_model(engine, model_path.c_str(), flip_uv);
+        if (vmve_format) {
+            std::string raw_data;
+            bool file_read = vmve_read_from_file(model_path.c_str(), raw_data);
+            if (file_read)
+                engine_add_model(engine, raw_data.c_str(), raw_data.size(), flip_uv);
+        } else {
+            engine_load_model(engine, model_path.c_str(), flip_uv);
+        }
+
+
+
 #endif
     }
 
@@ -247,8 +257,8 @@ static void ExportModelWindow(Engine* engine, bool* open)
     static int encryptionModeIndex = 0;
     static std::array<unsigned char, 2> keyLengthsBytes = { 32, 16 };
     static int keyLengthIndex = 0;
-    static KeyIV keyIV;
-    static KeyIVString keyIVString;
+    static key_iv keyIV;
+    static key_iv_string keyIVString;
     static char filename[50];
     static std::string file_contents = "This is some file contents that I am writing to and this is some more text\n";
 
@@ -263,8 +273,7 @@ static void ExportModelWindow(Engine* engine, bool* open)
 
     ImGui::Checkbox("Encryption", &useEncryption);
 
-    if (useEncryption)
-    {
+    if (useEncryption) {
         static std::array<const char*, 4> encryptionModes = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
         static std::array<const char*, 2> keyLengths = { "256 bits", "128 bit" };
 
@@ -274,21 +283,18 @@ static void ExportModelWindow(Engine* engine, bool* open)
         ImGui::Combo("Encryption method", &encryptionModeIndex, encryptionModes.data(), encryptionModes.size());
         ImGui::Combo("Key length", &keyLengthIndex, keyLengths.data(), keyLengths.size());
 
-        if (ImGui::Button("Generate Key/IV"))
-        {
-            keyIV = GenerateKeyIV(keyLengthsBytes[keyLengthIndex]);
-            keyIVString = KeyIVToHex(keyIV);
+        if (ImGui::Button("Generate Key/IV")) {
+            keyIV = generate_key_iv(keyLengthsBytes[keyLengthIndex]);
+            keyIVString = key_iv_to_hex(keyIV);
 
             isKeyGenerated = true;
         }
 
-        if (isKeyGenerated)
-        {
+        if (isKeyGenerated) {
             ImGui::Text("Key: %s", keyIVString.key.c_str());
             ImGui::Text("IV: %s", keyIVString.iv.c_str());
 
-            if (ImGui::Button("Copy to clipboard"))
-            {
+            if (ImGui::Button("Copy to clipboard")) {
                 std::string clipboard = "Key: " + keyIVString.key + "\n" +
                     "IV: " + keyIVString.iv;
 
@@ -298,20 +304,16 @@ static void ExportModelWindow(Engine* engine, bool* open)
     }
 
     static bool successfully_exported = false;
-    if (ImGui::Button("Export"))
-    {
+    if (ImGui::Button("Export")) {
         std::ofstream exportFile(filename);
         exportFile << file_contents;
 
         successfully_exported = true;
 
         // TODO: Encrypt data
-        if (encryptionModeIndex == 0) // AES
-        {
+        if (encryptionModeIndex == 0) { // AES 
             //AES_Data data = EncryptAES("", keyIV);
-        }
-        else if (encryptionModeIndex == 1) // DH
-        {
+        } else if (encryptionModeIndex == 1) { // DH
 
         }
     }

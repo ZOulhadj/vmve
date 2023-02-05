@@ -7,12 +7,12 @@
 
 // One material per mesh
 
-struct Mesh {
+struct Mesh
+{
     std::string name;
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-
     
     // A list of indices so we know we textures this mesh uses
     std::vector<uint32_t> textures;
@@ -21,26 +21,26 @@ struct Mesh {
     VkDescriptorSet descriptor_set;
 };
 
-struct Mesh_Texture {
+struct Mesh_Texture
+{
     std::filesystem::path path;
     Image_Buffer texture;
 };
 
-struct Model {
+struct Model
+{
     std::string path;
 
     // A list of all the unique textures
     std::vector<std::filesystem::path> unique_texture_paths;
     std::vector<Image_Buffer> unique_textures;
 
-    //std::vector<mesh_texture_t> unique_textures;
-    
     std::vector<Mesh> meshes;
-
     std::string name;
 };
 
-Model load_model(const std::filesystem::path& path, bool flipUVs = true);
+bool load_model(Model& model, const std::filesystem::path& path, bool flipUVs = true);
+bool create_model(Model& model, const char* data, std::size_t len, bool flipUVs = true);
 void destroy_model(Model& model);
 
 

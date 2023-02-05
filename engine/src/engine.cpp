@@ -185,7 +185,7 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
     GetModuleFileName(nullptr, fileName, sizeof(wchar_t) * MAX_PATH);
     out_engine->execPath = std::filesystem::path(fileName).parent_path().string();
 
-    logger::info("Initializing application ({})", out_engine->execPath);
+    logger::info("Initializing engine ({})", out_engine->execPath);
 
     // Initialize core systems
     bool window_initialized = create_window(out_engine->window, name, width, height);
@@ -454,6 +454,8 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
 
     gTempEnginePtr = out_engine;
 
+    logger::info("Successfully initialized engine");
+
     return true;
 }
 
@@ -694,16 +696,33 @@ void engine_set_callbacks(Engine* engine, engine_callbacks callbacks)
     engine->callbacks = callbacks;
 }
 
-void engine_add_model(Engine* engine, const char* path, bool flipUVs) {
-    logger::info("Loading mesh {}", path);
+void engine_load_model(Engine* engine, const char* path, bool flipUVs)
+{
+    Model model{};
 
-    Model model = load_model(path, flipUVs);
+    // todo: continue from here
+    bool model_loaded = load_model(model, path, flipUVs);
+    if (!model_loaded) {
+        logger::error("Failed to load model: {}", model.path.c_str());
+        return;
+    }
+
     upload_model_to_gpu(model, materialLayout, materialBindings, gTextureSampler);
-
-    //std::lock_guard<std::mutex> lock(model_mutex);
     engine->models.push_back(model);
+}
 
-    logger::info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path);
+void engine_add_model(Engine* engine, const char* data, int size, bool flipUVs)
+{
+    Model model;
+
+    bool model_created = create_model(model, data, size, flipUVs);
+    if (!model_created) {
+        logger::error("Failed to create model from memory");
+        return;
+    }
+
+    upload_model_to_gpu(model, materialLayout, materialBindings, gTextureSampler);
+    engine->models.push_back(model);
 }
 
 void engine_remove_model(Engine* engine, int modelID) {

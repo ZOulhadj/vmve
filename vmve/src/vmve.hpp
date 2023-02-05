@@ -13,24 +13,30 @@
 // +-------------------------------+
 //
 
+#include <string>
 
-struct VMVE_Header {
+
+#include "security.hpp"
+
+enum class vmve_encryption_mode
+{
+    aes
+};
+
+struct vmve_header
+{
     const char* version;
-    int encryption_mode;
+    vmve_encryption_mode encryption_mode;
 };
 
-struct VMVE_Data {
-    const char* data;
+struct vmve_file_format
+{
+    vmve_header header;
+    encrypted_data data;
 };
 
-struct VMVE {
-    VMVE_Header header;
-    VMVE_Data   data;
-};
-
-void vmve_write_to_file(VMVE& file_format, const char* path);
-VMVE vmve_read_from_file(const char* path);
-
+void vmve_write_to_file(vmve_file_format& file_format, const char* path);
+bool vmve_read_from_file(const char* path, std::string& out_data);
 
 // Data
 
