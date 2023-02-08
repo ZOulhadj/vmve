@@ -292,7 +292,7 @@ static void set_next_window_in_center()
     ImGui::SetNextWindowPos(window_center);
 }
 
-static void SettingsWindow(bool* open) {
+static void settings_window(bool* open) {
     if (!*open) {
         return;
     }
@@ -332,11 +332,97 @@ static void SettingsWindow(bool* open) {
         }
 
         break;
-    case setting_options::input:
+    case setting_options::input: {
         ImGui::Text("Input");
 
+
+        // Options
+        static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | 
+                                       ImGuiTableFlags_NoBordersInBody | 
+                                       ImGuiTableFlags_ScrollY;
+
+        const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
+        const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
+        const ImVec2 button_size = ImVec2(-FLT_MIN, 0.0f);
+        if (ImGui::BeginTable("Shortcuts", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f))
+        {
+            ImGui::TableSetupColumn("Actions");
+            ImGui::TableSetupColumn("Shortcuts");
+            ImGui::TableSetupScrollFreeze(0, 1);
+            ImGui::TableHeadersRow();
+
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Load model");
+            ImGui::TableNextColumn();
+            ImGui::Button("Ctrl + L", button_size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Export model");
+            ImGui::TableNextColumn();
+            ImGui::Button("Ctrl + E", button_size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Toggle viewport");
+            ImGui::TableNextColumn();
+            ImGui::Button("F1", button_size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Maximize viewport");
+            ImGui::TableNextColumn();
+            ImGui::Button("F2", button_size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Toggle guizmo");
+            ImGui::TableNextColumn();
+            ImGui::Button("E", button_size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Camera forward");
+            ImGui::TableNextColumn();
+            ImGui::Button("W", button_size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Camera backwards");
+            ImGui::TableNextColumn();
+            ImGui::Button("S", button_size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Camera left");
+            ImGui::TableNextColumn();
+            ImGui::Button("A", button_size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Camera right");
+            ImGui::TableNextColumn();
+            ImGui::Button("D", button_size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Camera up");
+            ImGui::TableNextColumn();
+            ImGui::Button("Space", button_size);
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Camera down");
+            ImGui::TableNextColumn();
+            ImGui::Button("Left Ctrl", button_size);
+
+            ImGui::EndTable();
+        }
+
         break;
-    case setting_options::audio:
+    } case setting_options::audio:
         ImGui::Text("Audio");
 
         ImGui::SliderInt("Main volume", &main_volume, 0, 100, "%d%%");
@@ -348,7 +434,7 @@ static void SettingsWindow(bool* open) {
     ImGui::End();
 }
 
-static void AboutWindow(bool* open)
+static void about_window(bool* open)
 {
     if (!*open)
         return;
@@ -368,42 +454,7 @@ static void AboutWindow(bool* open)
     ImGui::End();
 }
 
-static void ShortcutsWindow(bool* open)
-{
-    if (!*open)
-        return;
-
-    set_next_window_in_center();
-    ImGui::Begin("Shortcuts", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-
-    ImGui::Text("Global shortcuts");
-    ImGui::Text("Load model: Left Ctrl + L");
-    ImGui::Text("Export model: Left Ctrl + E");
-    ImGui::Text("Toggle viewport: F1");
-    ImGui::Text("Toggle fullscreen: F2");
-
-    ImGui::Separator();
-
-    ImGui::Text("Viewport shortcuts");
-    ImGui::Text("Toggle gimbal: Left Ctrl + G");
-    ImGui::Text("Camera forward: W");
-    ImGui::Text("Camera backwards: S");
-    ImGui::Text("Camera left: A");
-    ImGui::Text("Camera right: D");
-    ImGui::Text("Camera up: SPACE");
-    ImGui::Text("Camera down: SHIFT");
-
-    ImGui::Separator();
-
-    ImGui::Text("Gimbal shortcuts");
-    ImGui::Text("Move: M");
-    ImGui::Text("Rotate: R");
-    ImGui::Text("Scale: S");
-
-    ImGui::End();
-}
-
-static void LoadModelWindow(Engine* engine, bool* open)
+static void load_model_window(Engine* engine, bool* open)
 {
     if (!*open)
         return;
@@ -447,8 +498,7 @@ static void LoadModelWindow(Engine* engine, bool* open)
     ImGui::End();
 }
 
-
-static void ExportModelWindow(Engine* engine, bool* open)
+static void vmve_creator_window(Engine* engine, bool* open)
 {
     if (!*open)
         return;
@@ -462,9 +512,11 @@ static void ExportModelWindow(Engine* engine, bool* open)
     static char filename[50];
     static std::string file_contents = "This is some file contents that I am writing to and this is some more text\n";
 
-    set_next_window_in_center();
 
-    ImGui::Begin("Export Model", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+
+    set_next_window_in_center();
+    ImGui::Begin("Convert model file", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+
 
     static const char* exportPath = engine_get_executable_directory(engine);
     std::string current_path = engine_display_file_explorer(engine, exportPath);
@@ -513,7 +565,8 @@ static void ExportModelWindow(Engine* engine, bool* open)
         // TODO: Encrypt data
         if (encryptionModeIndex == 0) { // AES 
             //AES_Data data = EncryptAES("", keyIV);
-        } else if (encryptionModeIndex == 1) { // DH
+        }
+        else if (encryptionModeIndex == 1) { // DH
 
         }
     }
@@ -523,26 +576,11 @@ static void ExportModelWindow(Engine* engine, bool* open)
         ImGui::Text("A total of %d bytes has been written to %s", file_contents.size(), filename);
 
 
-    ImGui::End();
-
-}
-
-static void vmve_creator_window(Engine* engine, bool* open)
-{
-    if (!*open)
-        return;
-
-    set_next_window_in_center();
-
-    ImGui::Begin("Convert model file", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-
-
-
 
     ImGui::End();
 }
 
-static void PerformanceProfilerWindow(bool* open)
+static void perf_window(bool* open)
 {
     if (!*open)
         return;
@@ -566,7 +604,7 @@ static void PerformanceProfilerWindow(bool* open)
 }
 
 
-static void GBufferVisualiserWindow(bool* open)
+static void gbuffer_visualizer_window(bool* open)
 {
     if (!*open)
         return;
@@ -621,9 +659,7 @@ void RenderMainMenu(Engine* engine)
 {
     static bool settingsOpen = false;
     static bool aboutOpen = false;
-    static bool shortcutsOpen = false;
     static bool loadOpen = false;
-    static bool exportOpen = false;
     static bool creator_open = false;
     static bool perfProfilerOpen = false;
     static bool gBufferOpen = false;
@@ -634,7 +670,6 @@ void RenderMainMenu(Engine* engine)
         {
 
             loadOpen = ImGui::MenuItem("Load model");
-            exportOpen = ImGui::MenuItem("Export model");
             creator_open = ImGui::MenuItem("VMVE creator");
 
 
@@ -669,8 +704,6 @@ void RenderMainMenu(Engine* engine)
             if (ImGui::MenuItem("About"))
                 aboutOpen = true;
 
-            if (ImGui::MenuItem("Shortcuts"))
-                shortcutsOpen = true;
 
             ImGui::EndMenu();
         }
@@ -681,14 +714,12 @@ void RenderMainMenu(Engine* engine)
     }
 
 
-    SettingsWindow(&settingsOpen);
-    AboutWindow(&aboutOpen);
-    LoadModelWindow(engine, &loadOpen);
-    ExportModelWindow(engine, &exportOpen);
+    settings_window(&settingsOpen);
+    about_window(&aboutOpen);
+    load_model_window(engine, &loadOpen);
     vmve_creator_window(engine, &creator_open);
-    PerformanceProfilerWindow(&perfProfilerOpen);
-    GBufferVisualiserWindow(&gBufferOpen);
-    ShortcutsWindow(&shortcutsOpen);
+    perf_window(&perfProfilerOpen);
+    gbuffer_visualizer_window(&gBufferOpen);
 }
 
 void RenderObjectWindow(Engine* engine)
