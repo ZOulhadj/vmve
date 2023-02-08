@@ -4,7 +4,7 @@
 
 bool create_windows_audio(Audio*& out_audio)
 {
-    logger::info("Initializing audio");
+    print_log("Initializing audio\n");
 
     out_audio = new Audio();
 
@@ -13,20 +13,22 @@ bool create_windows_audio(Audio*& out_audio)
 
     hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (FAILED(hr)) {
-        logger::error("Failed to initialize COM");
+        print_log("Failed to initialize audio COM\n");
 
         return false;
     }
 
     hr = XAudio2Create(&out_audio->ix_audio, 0, XAUDIO2_USE_DEFAULT_PROCESSOR);
     if (FAILED(hr)) {
-        logger::error("Failed to create xaudio2");
+        print_log("Failed to create xaudio2\n");
+
         return false;
     }
 
     hr = out_audio->ix_audio->CreateMasteringVoice(&out_audio->master_voice);
     if (FAILED(hr)) {
-        logger::error("Failed to create mastering voice");
+        print_log("Failed to create mastering voice\n");
+
         return false;
     }
 
@@ -38,7 +40,7 @@ void destroy_windows_audio(Audio* audio)
     if (!audio)
         return;
 
-    logger::info("Terminating audio");
+    print_log("Terminating audio\n");
 
     audio->master_voice->DestroyVoice();
     audio->ix_audio->Release();

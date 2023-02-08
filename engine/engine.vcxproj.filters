@@ -72,9 +72,6 @@
     <ClCompile Include="src\engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\logging.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -120,7 +117,7 @@
     <ClCompile Include="src\rendering\api\vulkan\common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ui\compressed_fonts.cpp">
+    <ClCompile Include="src\logging.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -197,16 +194,10 @@
     <ClInclude Include="src\ui\ui.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\logging.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\pch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\time.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\types.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\utility.hpp">
@@ -233,7 +224,7 @@
     <ClInclude Include="vendor\volk\volk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ui\compressed_fonts.hpp">
+    <ClInclude Include="src\logging.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

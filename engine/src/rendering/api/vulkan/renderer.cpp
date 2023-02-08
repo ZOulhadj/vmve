@@ -185,7 +185,7 @@ static Swapchain create_swapchain() {
         //
         // Also, since all color images have the same format there will be a format for
         // each image and a swapchain global format for them.
-        Image_Buffer& image = swapchain.images[i];
+        vulkan_image_buffer& image = swapchain.images[i];
 
         image.handle = color_images[i];
         image.view   = create_image_views(image.handle, swapchain_info.imageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -874,9 +874,15 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
 
 bool create_vulkan_renderer(Vulkan_Renderer*& out_renderer, const Window* window, Buffer_Mode buffering_mode, VSync_Mode sync_mode)
 {
-    logger::info("Initializing Vulkan renderer");
+    print_log("Initializing Vulkan renderer\n");
 
     out_renderer = new Vulkan_Renderer();
+
+
+
+
+    // NOTE: layers and extensions lists are non-const as the renderer might add
+    // additional layers/extensions based on system configuration.
 
     const std::vector<const char*> layers {
 #if defined(_DEBUG)
@@ -887,17 +893,20 @@ bool create_vulkan_renderer(Vulkan_Renderer*& out_renderer, const Window* window
 #endif
     };
 
+
+    std::vector<const char*> extensions;
+
     // TODO: Find out why simply using the validation extension const char* 
     // does not work but wrapping it in a std::string does.
     bool using_validation_layers = false;
     if (std::find(layers.begin(), layers.end(), std::string("VK_LAYER_KHRONOS_validation")) != layers.end())
         using_validation_layers = true;
 
-    std::vector<const char*> extensions;
-    std::vector<const char*> device_extensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
     if (using_validation_layers)
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+
+    std::vector<const char*> device_extensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 
     VkPhysicalDeviceFeatures features{};
@@ -906,7 +915,8 @@ bool create_vulkan_renderer(Vulkan_Renderer*& out_renderer, const Window* window
 
     int context_initialized = create_vulkan_context(out_renderer->ctx, layers, extensions, device_extensions, features, window);
     if (!context_initialized) {
-        logger::error("Failed to initialize Vulkan context");
+        print_log("Failed to initialize Vulkan context\n");
+
         return false;
     }
 
@@ -920,7 +930,7 @@ bool create_vulkan_renderer(Vulkan_Renderer*& out_renderer, const Window* window
         out_renderer->messenger = create_debug_callback(debug_callback);
 
         if (!out_renderer->messenger) {
-            logger::error("Failed to create Vulkan debug callback");
+            print_log("Failed to create Vulkan debug callback\n");
             return false;
         }
     }
@@ -946,7 +956,7 @@ bool create_vulkan_renderer(Vulkan_Renderer*& out_renderer, const Window* window
 
 void destroy_vulkan_renderer(Vulkan_Renderer* renderer)
 {
-    logger::info("Terminating Vulkan renderer");
+    print_log("Terminating Vulkan renderer\n");
 
     destroy_command_pool();
     vkDestroyDescriptorPool(renderer->ctx.device->device, renderer->descriptor_pool, nullptr);
@@ -989,10 +999,7 @@ void recreate_swapchain(Buffer_Mode bufferMode, VSync_Mode vsync)
     g_buffering = bufferMode;
     g_vsync = vsync;
 
-    logger::info("Swapchain being resized ({}, {})", 
-        g_rc->window->width, 
-        g_rc->window->height
-    );
+    print_log("Swapchain resized %u, %u\n", g_rc->window->width, g_rc->window->height);
 
     destroy_swapchain(g_swapchain);
     g_swapchain = create_swapchain();
@@ -1149,11 +1156,11 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
                                const VkDebugUtilsMessengerCallbackDataEXT*  pCallbackData,
                                void*                                        pUserData) {
     if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-        logger::info("{}", pCallbackData->pMessage);
+        print_log("%s\n", pCallbackData->pMessage);
     } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        logger::warning("{}", pCallbackData->pMessage);
+        print_log("%s\n", pCallbackData->pMessage);
     } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        logger::error("{}", pCallbackData->pMessage);
+        print_log("%s\n", pCallbackData->pMessage);
     }
 
     return VK_FALSE;

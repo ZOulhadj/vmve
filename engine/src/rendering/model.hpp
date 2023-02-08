@@ -24,7 +24,7 @@ struct Mesh
 struct Mesh_Texture
 {
     std::filesystem::path path;
-    Image_Buffer texture;
+    vulkan_image_buffer texture;
 };
 
 struct Model
@@ -33,7 +33,7 @@ struct Model
 
     // A list of all the unique textures
     std::vector<std::filesystem::path> unique_texture_paths;
-    std::vector<Image_Buffer> unique_textures;
+    std::vector<vulkan_image_buffer> unique_textures;
 
     std::vector<Mesh> meshes;
     std::string name;

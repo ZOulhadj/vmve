@@ -94,7 +94,8 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\misc.cpp" />
     <ClCompile Include="src\security.cpp" />
-    <ClCompile Include="src\ui.cpp" />
+    <ClCompile Include="src\ui\ui.cpp" />
+    <ClCompile Include="src\ui\ui_fonts.cpp" />
     <ClCompile Include="src\vmve.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
     <ClCompile Include="vendor\imgui\ImGuizmo.cpp" />
@@ -106,7 +107,8 @@
   <ItemGroup>
     <ClInclude Include="src\misc.hpp" />
     <ClInclude Include="src\security.hpp" />
-    <ClInclude Include="src\ui.hpp" />
+    <ClInclude Include="src\ui\ui.hpp" />
+    <ClInclude Include="src\ui\ui_fonts.hpp" />
     <ClInclude Include="src\vmve.hpp" />
     <ClInclude Include="vendor\imgui\imconfig.h" />
     <ClInclude Include="vendor\imgui\imgui.h" />

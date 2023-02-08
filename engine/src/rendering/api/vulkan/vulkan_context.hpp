@@ -25,9 +25,8 @@ struct Vulkan_Context {
     VmaAllocator    allocator;
 };
 
-
 bool create_vulkan_context(Vulkan_Context& context, const std::vector<const char*>& requested_layers,
-                                                   const std::vector<const char*>& requested_extensions,
+                                                   std::vector<const char*>& requested_extensions,
                                                    const std::vector<const char*>& requested_device_extensions,
                                                    const VkPhysicalDeviceFeatures& requested_gpu_features,
                                                    const Window* window);

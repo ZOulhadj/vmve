@@ -5,15 +5,16 @@
 
 #include "renderer.hpp"
 
-#include "logging.hpp"
+//#include "logging.hpp"
 
-Image_Buffer create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format) {
-    Image_Buffer buffer{};
+vulkan_image_buffer create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
+{
+    vulkan_image_buffer buffer{};
 
     const Vulkan_Renderer* renderer = get_vulkan_renderer();
 
     // We do "* 4" because each pixel has four channels red, green, blue and alpha
-    Buffer staging_buffer = create_staging_buffer(texture, (width * height) * 4);
+    vulkan_buffer staging_buffer = create_staging_buffer(texture, (width * height) * 4);
 
     buffer = create_image({width, height}, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
@@ -89,15 +90,15 @@ Image_Buffer create_texture_buffer(unsigned char* texture, uint32_t width, uint3
 
 
 
-Image_Buffer load_texture(const std::filesystem::path& path, bool flip_y, VkFormat format) {
-    Image_Buffer buffer{};
+vulkan_image_buffer load_texture(const std::filesystem::path& path, bool flip_y, VkFormat format) {
+    vulkan_image_buffer buffer{};
 
     // Load the texture from the file system.
     int width, height, channels;
     stbi_set_flip_vertically_on_load(flip_y);
     unsigned char* texture = stbi_load(path.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
     if (!texture) {
-        logger::error("Failed to load texture at path: {}", path.string().c_str());
+        print_log("Failed to load texture at path: %s\n", path.string().c_str());
 
         stbi_image_free(texture);
 
@@ -128,7 +129,7 @@ VkSampler create_image_sampler(VkFilter filtering, const uint32_t anisotropic_le
     if (anisotropic_level > properties.limits.maxSamplerAnisotropy) {
         ansi_level = properties.limits.maxSamplerAnisotropy;
 
-        logger::warning("Anisotropic level of {} not supported. Using the maximum level of {} instead", anisotropic_level, ansi_level);
+        print_log("Anisotropic level of %u not supported. Using the maximum level of %u instead.\n", anisotropic_level, ansi_level);
     }
 
     VkSamplerCreateInfo sampler_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };

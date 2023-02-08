@@ -1,5 +1,4 @@
-#include "compressed_fonts.hpp"
-
+#include "ui_fonts.hpp"
 
 const char open_sans_regular_compressed_data_base85[201650 + 1] =
 "7])#######2Pc7('/###I),##d-LhLjKI##4%1S:`*]n8)K.v5*8_c)iZ;99=$$$$c(m]4pKdp/(RdL<snZo'oI,hLNDnx4Uu/>8Q7oo^eFb3hB4JYc'Tx-3l_wgd2Tf._r+&sAqV,-G"
@@ -2941,3 +2940,4 @@ const char* get_open_sans_bold_compressed_ttf()
     return open_sans_bold_compressed_data_base85;
 }
 
+#include "ui_fonts.hpp"

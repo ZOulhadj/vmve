@@ -315,12 +315,6 @@ int engine_get_log_count(Engine* engine);
 //
 //
 //
-int engine_get_log_type(Engine* engine, int logIndex);
-
-//
-//
-//
-//
 const char* engine_get_log(Engine* engine, int logIndex);
 
 
@@ -331,6 +325,8 @@ const char* engine_get_log(Engine* engine, int logIndex);
 //
 //
 void engine_enable_ui(Engine* engine);
+
+void engine_set_ui_font_texture(Engine* engine);
 
 //
 //

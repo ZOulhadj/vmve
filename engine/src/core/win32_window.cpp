@@ -22,7 +22,7 @@ Win32_Window* create_win32_window(const char* title, int width, int height) {
     wndClass.hIconSm = nullptr;
 
     if (!RegisterClassExA(&wndClass)) {
-        logger::error("Failed to register win32 window class");
+        print_log("Failed to register win32 window class.\n");
         return nullptr;
     }
 
@@ -42,7 +42,7 @@ Win32_Window* create_win32_window(const char* title, int width, int height) {
     );
 
     if (!window->handle) {
-        logger::error("Failed to create win32 window");
+        print_log("Failed to create win32 window.\n");
         return nullptr;
     }
 

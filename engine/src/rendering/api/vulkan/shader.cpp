@@ -3,7 +3,7 @@
 #include "common.hpp"
 #include "renderer.hpp"
 
-#include "logging.hpp"
+//#include "logging.hpp"
 
 static shaderc_shader_kind vulkan_to_shaderc_type(VkShaderStageFlagBits type) {
     switch (type) {
@@ -72,7 +72,7 @@ static Shader create_shader(VkShaderStageFlagBits type, const std::string& code)
     status = shaderc_result_get_compilation_status(result);
 
     if (status != shaderc_compilation_status_success) {
-        logger::error("Failed to compile shader {}", shaderc_result_get_error_message(result));
+        print_log("Failed to compile shader %s\n.", shaderc_result_get_error_message(result));
         return {};
     }
 

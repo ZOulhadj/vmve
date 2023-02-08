@@ -40,7 +40,8 @@
 #include "../src/logging.hpp"
 #include "../src/time.hpp"
 
-struct Engine {
+struct Engine
+{
     Window* window;
     Win32_Window* newWindow; // TEMP
     Vulkan_Renderer* renderer;
@@ -55,9 +56,9 @@ struct Engine {
     double deltaTime;
 
     // Resources
-    Buffer sceneBuffer;
-    Buffer sunBuffer;
-    Buffer cameraBuffer;
+    vulkan_buffer sceneBuffer;
+    vulkan_buffer sunBuffer;
+    vulkan_buffer cameraBuffer;
 
 
     // Scene information
@@ -121,7 +122,7 @@ std::vector<VkDescriptorSet> shadowSets;
 
 VkDescriptorSetLayout skyboxLayout;
 std::vector<VkDescriptorSet> skyboxSets;
-std::vector<Image_Buffer> skyboxDepths;
+std::vector<vulkan_image_buffer> skyboxDepths;
 
 VkDescriptorSetLayout offscreenLayout;
 std::vector<VkDescriptorSet> offscreenSets;
@@ -129,14 +130,14 @@ std::vector<VkDescriptorSet> offscreenSets;
 
 VkDescriptorSetLayout compositeLayout;
 std::vector<VkDescriptorSet> compositeSets;
-std::vector<Image_Buffer> viewport;
+std::vector<vulkan_image_buffer> viewport;
 
-std::vector<Image_Buffer> positions;
-std::vector<Image_Buffer> normals;
-std::vector<Image_Buffer> colors;
-std::vector<Image_Buffer> speculars;
-std::vector<Image_Buffer> depths;
-std::vector<Image_Buffer> shadow_depths;
+std::vector<vulkan_image_buffer> positions;
+std::vector<vulkan_image_buffer> normals;
+std::vector<vulkan_image_buffer> colors;
+std::vector<vulkan_image_buffer> speculars;
+std::vector<vulkan_image_buffer> depths;
+std::vector<vulkan_image_buffer> shadow_depths;
 
 std::vector<VkDescriptorSetLayoutBinding> materialBindings;
 VkDescriptorSetLayout materialLayout;
@@ -185,25 +186,25 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
     GetModuleFileName(nullptr, fileName, sizeof(wchar_t) * MAX_PATH);
     out_engine->execPath = std::filesystem::path(fileName).parent_path().string();
 
-    logger::info("Initializing engine ({})", out_engine->execPath);
+    print_log("Initializing engine (%s)\n", out_engine->execPath.c_str());
 
     // Initialize core systems
     bool window_initialized = create_window(out_engine->window, name, width, height);
     if (!window_initialized) {
-        logger::error("Failed to create window");
+        print_log("Failed to create window.\n");
         return false;
     }
     out_engine->window->event_callback = event_callback;
 
     bool renderer_initialized = create_vulkan_renderer(out_engine->renderer, out_engine->window, Buffer_Mode::Double, VSync_Mode::enabled);
     if (!renderer_initialized) {
-        logger::error("Failed to create renderer");
+        print_log("Failed to create renderer.\n");
         return false;
     }
 
     bool audio_initialized = create_windows_audio(out_engine->audio);
     if (!audio_initialized) {
-        logger::error("Failed to initialize audio");
+        print_log("Failed to initialize audio.\n");
         return false;
     }
 
@@ -454,7 +455,7 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
 
     gTempEnginePtr = out_engine;
 
-    logger::info("Successfully initialized engine");
+    print_log("Successfully initialized engine.\n");
 
     return true;
 }
@@ -613,7 +614,7 @@ void engine_present(Engine* engine)
 
 void engine_terminate(Engine* engine)
 {
-    logger::info("Terminating application");
+    print_log("Terminating application.\n");
 
     assert(engine);
 
@@ -703,7 +704,7 @@ void engine_load_model(Engine* engine, const char* path, bool flipUVs)
     // todo: continue from here
     bool model_loaded = load_model(model, path, flipUVs);
     if (!model_loaded) {
-        logger::error("Failed to load model: {}", model.path.c_str());
+        print_log("Failed to load model: %s\n", model.path.c_str());
         return;
     }
 
@@ -717,7 +718,7 @@ void engine_add_model(Engine* engine, const char* data, int size, bool flipUVs)
 
     bool model_created = create_model(model, data, size, flipUVs);
     if (!model_created) {
-        logger::error("Failed to create model from memory");
+        print_log("Failed to create model from memory.\n");
         return;
     }
 
@@ -760,7 +761,7 @@ void engine_add_instance(Engine* engine, int modelID, float x, float y, float z)
 
     engine->instances.push_back(instance);
 
-    logger::info("Instance ({}) added", instance.id);
+    print_log("Instance (%d) added.\n", instance.id);
 }
 
 void engine_remove_instance(Engine* engine, int instanceID) {
@@ -783,7 +784,7 @@ void engine_remove_instance(Engine* engine, int instanceID) {
 #else
     engine->instances.erase(engine->instances.begin() + instanceID);
 
-    logger::info("Instance ({}) removed", instanceID);
+    print_log("Instance (%d) removed.\n", instanceID);
 #endif
 
     
@@ -912,17 +913,13 @@ void engine_set_camera_position(Engine* engine, float x, float y, float z) {
     engine->camera.position = glm::vec3(x, y, z);
 }
 
-void engine_enable_ui(Engine* engine) {
+void engine_enable_ui(Engine* engine)
+{
+    add_framebuffer_attachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
+    create_render_pass_2(uiPass, true);
+
+    engine->ui = create_ui(engine->renderer, uiPass.render_pass);
     engine->uiPassEnabled = true;
-
-
-    {
-        add_framebuffer_attachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
-        create_render_pass_2(uiPass, true);
-    }
-
-    engine->ui = create_gui(engine->renderer, uiPass.render_pass);
-
 
     for (std::size_t i = 0; i < get_swapchain_image_count(); ++i)
         viewportUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, viewport[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
@@ -939,28 +936,38 @@ void engine_enable_ui(Engine* engine) {
     uiCmdBuffer = create_command_buffers();
 }
 
-void engine_begin_ui_pass() {
+void engine_set_ui_font_texture(Engine* engine)
+{
+    create_font_textures(engine->renderer);
+}
+
+void engine_begin_ui_pass()
+{
     begin_command_buffer(uiCmdBuffer);
     begin_render_pass(uiCmdBuffer, uiPass);
     begin_ui();
 }
 
-void engine_end_ui_pass() {
+void engine_end_ui_pass()
+{
     end_ui(uiCmdBuffer);
     end_render_pass(uiCmdBuffer);
     end_command_buffer(uiCmdBuffer);
 }
 
-void engine_render_viewport_ui(int width, int height) {
+void engine_render_viewport_ui(int width, int height)
+{
     const uint32_t currentImage = get_swapchain_frame_index();
     ImGui::Image(viewportUI[currentImage], ImVec2((float)width, (float)height));
 }
 
-int engine_get_model_count(Engine* engine) {
+int engine_get_model_count(Engine* engine)
+{
     return static_cast<int>(engine->models.size());
 }
 
-int engine_get_instance_count(Engine* engine) {
+int engine_get_instance_count(Engine* engine)
+{
     return static_cast<int>(engine->instances.size());
 }
 
@@ -1062,37 +1069,41 @@ const char* engine_get_executable_directory(Engine* engine)
     return engine->execPath.c_str();
 }
 
-void engine_set_cursor_mode(Engine* engine, int cursorMode) {
+void engine_set_cursor_mode(Engine* engine, int cursorMode)
+{
     int mode = (cursorMode == 0) ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
     engine->camera.first_mouse = true;
     glfwSetInputMode(engine->window->handle, GLFW_CURSOR, mode);
 }
 
-void engine_clear_logs(Engine* engine) {
-    logger::clear_logs();
+void engine_clear_logs(Engine* engine)
+{
+    clear_logs();
 }
 
-void engine_export_logs_to_file(Engine* engine, const char* path) {
+void engine_export_logs_to_file(Engine* engine, const char* path)
+{
     std::ofstream output(path);
 
-    for (auto& message : logger::get_logs())
-        output << message.message << "\n";
+    for (auto& message : get_logs())
+        output << message << "\n";
 }
 
-int engine_get_log_count(Engine* engine) {
-    return static_cast<int>(logger::get_logs().size());
+int engine_get_log_count(Engine* engine)
+{
+    return get_log_count();
 }
 
-int engine_get_log_type(Engine* engine, int logIndex) {
-    return static_cast<int>(logger::get_logs()[logIndex].type);
-}
-
-const char* engine_get_log(Engine* engine, int logIndex) {
-    return logger::get_logs()[logIndex].message.c_str();
+const char* engine_get_log(Engine* engine, int logIndex)
+{
+    const std::vector<std::string>& logs = get_logs();
+    
+    return logs[logIndex].c_str();
 }
 
 // TODO: Event system stuff
-static bool press(Key_Pressed_Event& e) {
+static bool press(Key_Pressed_Event& e)
+{
     if (!gTempEnginePtr->callbacks.key_callback)
         return false;
 

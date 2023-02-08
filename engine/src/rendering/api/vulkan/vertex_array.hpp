@@ -6,8 +6,8 @@
 #include "rendering/vertex.hpp"
 
 struct Vertex_Array {
-    Buffer   vertex_buffer;
-    Buffer   index_buffer;
+    vulkan_buffer   vertex_buffer;
+    vulkan_buffer   index_buffer;
     uint32_t index_count;
 };
 

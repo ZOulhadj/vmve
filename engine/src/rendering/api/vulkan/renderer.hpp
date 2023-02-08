@@ -8,7 +8,8 @@
 #include "rendering/entity.hpp"
 #include "logging.hpp"
 
-enum class Buffer_Mode {
+enum class Buffer_Mode
+{
     Double,
     Triple
 };
@@ -22,7 +23,7 @@ enum class VSync_Mode {
 struct Swapchain {
     VkSwapchainKHR handle;
 
-    std::vector<Image_Buffer> images;
+    std::vector<vulkan_image_buffer> images;
 };
 
 struct Frame {
@@ -39,7 +40,7 @@ struct Frame {
 
 struct Framebuffer_Attachment {
     // TEMP: Can this be a single image instead of multiple frames?
-    std::vector<Image_Buffer> image;
+    std::vector<vulkan_image_buffer> image;
     VkImageUsageFlags usage;
 };
 
@@ -66,11 +67,12 @@ struct Vertex_Binding
     {}
 
     // TODO: Make use of actual type instead of a VkFormat
-    void add_attribute(VkFormat format, std::string_view = nullptr) {
+    void add_attribute(VkFormat format, std::string_view = nullptr)
+    {
         current_bytes += format_to_bytes(format);
 
         if (current_bytes > max_bytes) {
-            logger::error("Total attribute size is larger than binding size");
+            print_log("Total attribute size is larger than binding size.\n");
             return;
         }
 
@@ -190,7 +192,7 @@ void wait_for_gpu();
 
 const auto attachments_to_images = [](const std::vector<Framebuffer_Attachment>& attachments, uint32_t index)
 {
-    std::vector<Image_Buffer> images(attachments[index].image.size());
+    std::vector<vulkan_image_buffer> images(attachments[index].image.size());
 
     for (std::size_t i = 0; i < images.size(); ++i) {
         images[i] = attachments[index].image[i];

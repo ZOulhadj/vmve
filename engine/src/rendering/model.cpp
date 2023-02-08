@@ -15,7 +15,7 @@ static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial
         aiString ai_path;
 
         if (material->GetTexture(type, i, &ai_path) == aiReturn_FAILURE) {
-            logger::error("Failed to load texture: {}", ai_path.C_Str());
+            print_log("Failed to load texture: %s\n", ai_path.C_Str());
             return {};
         }
 
@@ -37,7 +37,7 @@ static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::f
         const auto it = std::find(uniques.begin(), uniques.end(), paths[i]);
         
         if (it == uniques.end()) {
-            Image_Buffer texture = load_texture(paths[i].string());
+            vulkan_image_buffer texture = load_texture(paths[i].string());
             model.unique_textures.push_back(texture);
             uniques.push_back(paths[i]);
             index = model.unique_textures.size() - 1;
@@ -63,7 +63,7 @@ static void create_fallback_mesh_texture(Model& model,
     const auto it = std::find(uniques.begin(), uniques.end(), path);
 
     if (it == uniques.end()) {
-        Image_Buffer image = create_texture_buffer(texture, 1, 1, VK_FORMAT_R8G8B8A8_SRGB);
+        vulkan_image_buffer image = create_texture_buffer(texture, 1, 1, VK_FORMAT_R8G8B8A8_SRGB);
         model.unique_textures.push_back(image);
         uniques.push_back(path);
         index = model.unique_textures.size() - 1;
@@ -189,18 +189,17 @@ static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* sce
 
         if (diffuse_path.empty()) {
             create_fallback_mesh_texture(model, mesh, defaultAlbedo, "albedo_fallback");
-            logger::warning("{} using fallback albedo texture.", model.name);
+            print_log("%s using fallback albedo texture.\n", model.name.c_str());
         }
 
         if (normal_path.empty()) {
             create_fallback_mesh_texture(model, mesh, defaultNormal, "normal_fallback");
-            logger::warning("{} using fallback normal texture.", model.name);
-
+            print_log("%s using fallback normal texture.\n", model.name.c_str());
         }
 
         if (specular_path.empty()) {
             create_fallback_mesh_texture(model, mesh, defaultSpecular, "specular_fallback");
-            logger::warning("{} using fallback specular texture.", model.name);
+            print_log("%s using fallback specular texture.\n", model.name.c_str());
         }
     }
  
@@ -225,7 +224,7 @@ static void process_node(Model& model, aiNode* node, const aiScene* scene)
 
 bool load_model(Model& model, const std::filesystem::path& path, bool flipUVs)
 {
-    logger::info("Loading mesh {}", path.string());
+    print_log("Loading mesh %s\n", path.string().c_str());
 
     Assimp::Importer importer;
 
@@ -247,22 +246,22 @@ bool load_model(Model& model, const std::filesystem::path& path, bool flipUVs)
     }
    
 
-    // Start processing from the root scene node
-    process_node(model, scene->mRootNode, scene);
-
     // TEMP: Set model original path so that textures know where
     // they should load the files from
     model.path = path.string();
     model.name = path.filename().string();
 
-    logger::info("Successfully loaded model with {} meshes at path {}", model.meshes.size(), path.string());
+    // Start processing from the root scene node
+    process_node(model, scene->mRootNode, scene);
+
+    print_log("Successfully loaded model with %llu meshes at path %s\n", model.meshes.size(), path.string().c_str());
 
     return true;
 }
 
 bool create_model(Model& model, const char* data, std::size_t len, bool flipUVs /*= true*/)
 {
-    logger::info("Creating mesh");
+    print_log("Creating mesh\n");
 
     Assimp::Importer importer;
 
@@ -292,7 +291,7 @@ bool create_model(Model& model, const char* data, std::size_t len, bool flipUVs 
     //model.path = path.string();
     //model.name = path.filename().string();
 
-    logger::info("Successfully created model from memory");
+    print_log("Successfully created model from memory\n");
 
     return true;
 }

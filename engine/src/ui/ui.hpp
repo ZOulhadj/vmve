@@ -10,7 +10,8 @@ struct GUI {
 };
 
 
-ImGuiContext* create_gui(const Vulkan_Renderer* renderer, VkRenderPass renderPass);
+ImGuiContext* create_ui(const Vulkan_Renderer* renderer, VkRenderPass renderPass);
+void create_font_textures(const Vulkan_Renderer* renderer);
 void destroy_ui(ImGuiContext* context);
 
 void begin_ui();

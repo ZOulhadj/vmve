@@ -15,6 +15,7 @@ extern bool firstTimeFullScreen;
 extern bool object_edit_mode;
 extern int guizmo_operation;
 
+void configure_ui(Engine* engine);
 void render_ui(Engine* engine, bool fullscreen);
 
 #endif

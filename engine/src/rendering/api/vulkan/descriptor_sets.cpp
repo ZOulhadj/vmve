@@ -3,7 +3,8 @@
 #include "renderer.hpp"
 #include "logging.hpp"
 
-VkDescriptorPool create_descriptor_pool() {
+VkDescriptorPool create_descriptor_pool()
+{
     const Vulkan_Context& rc = get_vulkan_context();
 
     VkDescriptorPool pool{};
@@ -91,7 +92,7 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layo
 
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
     const VkDescriptorSetLayoutBinding& binding,
-    Buffer& buffer,
+    vulkan_buffer& buffer,
     std::size_t size)
 {
     const Vulkan_Context& rc = get_vulkan_context();
@@ -117,7 +118,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
 
 void update_binding(VkDescriptorSet descriptor_set,
     const VkDescriptorSetLayoutBinding& binding,
-    Image_Buffer& buffer,
+    vulkan_image_buffer& buffer,
     VkImageLayout layout,
     VkSampler sampler)
 {
@@ -140,7 +141,7 @@ void update_binding(VkDescriptorSet descriptor_set,
 
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
     const VkDescriptorSetLayoutBinding& binding,
-    Image_Buffer& buffer,
+    vulkan_image_buffer& buffer,
     VkImageLayout layout,
     VkSampler sampler) {
     const Vulkan_Context& rc = get_vulkan_context();
@@ -164,7 +165,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
 
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, 
                     const VkDescriptorSetLayoutBinding& binding,
-                    std::vector<Image_Buffer>& buffer, 
+                    std::vector<vulkan_image_buffer>& buffer, 
                     VkImageLayout layout, 
                     VkSampler sampler)
 {

@@ -2,7 +2,7 @@
 
 #include "vmve.hpp"
 #include "security.hpp"
-#include "ui.hpp"
+#include "ui/ui.hpp"
 #include "misc.hpp"
 
 #include <imgui.h>
@@ -37,8 +37,12 @@ int main()
     callbacks.resize_callback = resize_callback;
     engine_set_callbacks(engine, callbacks);
 
-    // Configure engine properties
+    
     engine_enable_ui(engine);
+    configure_ui(engine);
+
+
+    // Configure engine properties
     engine_create_camera(engine, 60.0f, 50.0f);
 
 
