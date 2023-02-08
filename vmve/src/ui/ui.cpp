@@ -1120,7 +1120,12 @@ void RenderViewportWindow(Engine* engine)
             first_time = false;
         }
 
-        if (viewport_width != old_viewport_width && viewport_height != old_viewport_height)
+
+        // If at any point the viewport dimensions are different than the previous frames 
+        // viewport size then update the viewport values and flag the main loop to update
+        // the resize_viewport variable.
+        if (viewport_width != old_viewport_width || 
+            viewport_height != old_viewport_height)
         {
             old_viewport_width = viewport_width;
             old_viewport_height = viewport_height;
@@ -1131,8 +1136,6 @@ void RenderViewportWindow(Engine* engine)
         // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
         // when the viewport window resizes.
         engine_render_viewport_ui(viewport_width, viewport_height);
-
-
 
         // todo(zak): move this into its own function
         float* view = engine_get_camera_view(engine);
@@ -1164,27 +1167,25 @@ void RenderViewportWindow(Engine* engine)
                     float scale[3];
 
                     float* current_rotation = nullptr;
+
                     engine_get_instance_rotation(engine, selectedInstanceIndex, current_rotation);
                     
                     ImGuizmo::DecomposeMatrixToComponents(matrix, translate, rotation, scale);
 
-                    float rotation_delta[3];
+                    // TODO: rotation bug causes continuous rotations.
+                    float rotation_delta[3]{};
                     rotation_delta[0] = rotation[0] - current_rotation[0];
                     rotation_delta[1] = rotation[1] - current_rotation[1];
                     rotation_delta[2] = rotation[2] - current_rotation[2];
 
-
                     // set
+
                     current_rotation[0] += rotation_delta[0];
                     current_rotation[1] += rotation_delta[1];
                     current_rotation[2] += rotation_delta[2];
 
                     engine_set_instance_position(engine, selectedInstanceIndex, translate[0], translate[1], translate[2]);
                     engine_set_instance_scale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
-
-
-
-
                 }
             }
         }
