@@ -34,6 +34,7 @@
 #include <windows.h>
 #include <d3d12.h>
 #include <xaudio2.h>
+#include <x3daudio.h>
 
 // NOTE: These must be placed after all Windows header files
 #undef far

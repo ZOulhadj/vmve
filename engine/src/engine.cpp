@@ -46,7 +46,10 @@ struct Engine
     Win32_Window* newWindow; // TEMP
     Vulkan_Renderer* renderer;
     ImGuiContext* ui;
-    Audio* audio;
+
+    main_audio audio;
+    IXAudio2SourceVoice* example_audio;
+    audio_3d object_audio;
 
     engine_callbacks callbacks;
 
@@ -450,6 +453,10 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
     //);
     //
 
+
+    //create_3d_audio(out_engine->audio, out_engine->object_audio, "C:\\Users\\zakar\\Downloads\\true_colors.wav");
+    //play_audio(out_engine->object_audio.source_voice);
+
     out_engine->running = true;
     out_engine->swapchainReady = true;
 
@@ -496,6 +503,10 @@ bool engine_update(Engine* engine)
     set_buffer_data(engine->sunBuffer, &sunData, sizeof(Sun_Data));
     set_buffer_data(engine->cameraBuffer, &engine->camera.viewProj, sizeof(View_Projection));
     set_buffer_data(engine->sceneBuffer, &scene);
+
+
+    // update sound
+    //update_3d_audio(engine->audio, engine->object_audio, engine->camera);
 
 
     return engine->running;
@@ -1105,32 +1116,31 @@ const char* engine_get_log(Engine* engine, int logIndex)
 
 void engine_set_master_volume(Engine* engine, int master_volume)
 {
-    set_master_audio_volume(engine->audio->master_voice, master_volume);
+    set_master_audio_volume(engine->audio.master_voice, master_volume);
 }
 
-IXAudio2SourceVoice* source;
 int engine_play_audio(Engine* engine, const char* path)
 {
-    create_audio_source(engine->audio, source, path);
-    play_audio(source);
+    create_audio_source(engine->audio, engine->example_audio, path);
+    play_audio(engine->example_audio);
 
     return 0;
 }
 
 void engine_pause_audio(Engine* engine, int audio_id)
 {
-
+    stop_audio(engine->example_audio);
 }
 
 void engine_stop_audio(Engine* engine, int audio_id)
 {
-    stop_audio(source);
-    destroy_audio_source(source);
+    stop_audio(engine->example_audio);
+    destroy_audio_source(engine->example_audio);
 }
 
 void engine_set_audio_volume(Engine* engine, int audio_volume)
 {
-    set_audio_volume(source, audio_volume);
+    set_audio_volume(engine->example_audio, audio_volume);
 }
 
 

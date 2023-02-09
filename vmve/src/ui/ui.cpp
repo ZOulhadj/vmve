@@ -1008,7 +1008,7 @@ void RenderGlobalWindow(Engine* engine)
             if (ImGui::Button("Stop"))
                 engine_stop_audio(engine, 0);
             ImGui::SameLine();
-            ImGui::InputText("", audio_path, 256);
+            ImGui::InputText("Audio Path", audio_path, 256);
             if (ImGui::SliderInt("Volume", &audio_volume, 0, 100, "%d%%"))
                 engine_set_audio_volume(engine, audio_volume);
         }

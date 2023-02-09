@@ -87,11 +87,9 @@ static HRESULT read_chunk_data(HANDLE hFile, void* buffer, DWORD buffersize, DWO
 
 
 
-bool create_windows_audio(Audio*& out_audio)
+bool create_windows_audio(main_audio& out_audio)
 {
     print_log("Initializing audio\n");
-
-    out_audio = new Audio();
 
     // Initialize COM
     HRESULT hr = S_OK;
@@ -103,14 +101,14 @@ bool create_windows_audio(Audio*& out_audio)
         return false;
     }
 
-    hr = XAudio2Create(&out_audio->ix_audio, 0, XAUDIO2_USE_DEFAULT_PROCESSOR);
+    hr = XAudio2Create(&out_audio.ix_audio, 0, XAUDIO2_USE_DEFAULT_PROCESSOR);
     if (FAILED(hr)) {
         print_log("Failed to create xaudio2\n");
 
         return false;
     }
 
-    hr = out_audio->ix_audio->CreateMasteringVoice(&out_audio->master_voice);
+    hr = out_audio.ix_audio->CreateMasteringVoice(&out_audio.master_voice);
     if (FAILED(hr)) {
         print_log("Failed to create mastering voice\n");
 
@@ -120,19 +118,14 @@ bool create_windows_audio(Audio*& out_audio)
     return true;
 }
 
-void destroy_windows_audio(Audio* audio)
+void destroy_windows_audio(main_audio& audio)
 {
-    if (!audio)
-        return;
-
     print_log("Terminating audio\n");
 
-    audio->master_voice->DestroyVoice();
-    audio->ix_audio->Release();
+    audio.master_voice->DestroyVoice();
+    audio.ix_audio->Release();
 
     CoUninitialize();
-
-    delete audio;
 }
 
 
@@ -143,7 +136,7 @@ void set_master_audio_volume(IXAudio2MasteringVoice* master_voice, int master_vo
     master_voice->SetVolume(actual_vol);
 }
 
-bool create_audio_source(Audio* audio, IXAudio2SourceVoice*& out_source, const char* path)
+bool create_audio_source(main_audio& audio, IXAudio2SourceVoice*& out_source, const char* path)
 {
     HRESULT hr = S_OK;
 
@@ -164,8 +157,11 @@ bool create_audio_source(Audio* audio, IXAudio2SourceVoice*& out_source, const c
         0,
         NULL);
 
-    if (INVALID_HANDLE_VALUE == hFile)
+    if (INVALID_HANDLE_VALUE == hFile) {
+        print_log("Failed to load audio file at path %s.\n", path);
         return HRESULT_FROM_WIN32(GetLastError());
+    }
+        
 
     if (INVALID_SET_FILE_POINTER == SetFilePointer(hFile, 0, NULL, FILE_BEGIN))
         return HRESULT_FROM_WIN32(GetLastError());
@@ -194,7 +190,7 @@ bool create_audio_source(Audio* audio, IXAudio2SourceVoice*& out_source, const c
     buffer.pAudioData = pDataBuffer;  //buffer containing audio data
     buffer.Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
 
-    hr = audio->ix_audio->CreateSourceVoice(&out_source, (WAVEFORMATEX*)&wfx);
+    hr = audio.ix_audio->CreateSourceVoice(&out_source, &wfx.Format);
     if (FAILED(hr)) 
         return hr;
 
@@ -207,18 +203,12 @@ bool create_audio_source(Audio* audio, IXAudio2SourceVoice*& out_source, const c
 
 void destroy_audio_source(IXAudio2SourceVoice* source_voice)
 {
-    if (!source_voice)
-        return;
-
     source_voice->DestroyVoice();
 }
 
 
 void play_audio(IXAudio2SourceVoice* source_voice)
 {
-    if (!source_voice)
-        return;
-
     HRESULT hr = source_voice->Start(0);
     if (FAILED(hr))
         print_log("Failed to start audio.\n");
@@ -228,9 +218,6 @@ void play_audio(IXAudio2SourceVoice* source_voice)
 
 void stop_audio(IXAudio2SourceVoice* source_voice)
 {
-    if (!source_voice)
-        return;
-
     HRESULT hr = source_voice->Stop();
     if (FAILED(hr))
         print_log("Failed to stop audio.\n");
@@ -240,10 +227,92 @@ void stop_audio(IXAudio2SourceVoice* source_voice)
 
 void set_audio_volume(IXAudio2SourceVoice* source_voice, int audio_volume)
 {
-    if (!source_voice)
-        return;
-
     const float actual_vol = audio_volume / 100.0f;
 
     source_voice->SetVolume(actual_vol);
+}
+
+void create_3d_audio(main_audio& main, audio_3d& audio, const char* path, float speed_of_sound)
+{
+    HRESULT hr = S_OK;
+
+    // Create sound source
+    create_audio_source(main, audio.source_voice, path);
+
+    DWORD dwChannelMask;
+    main.master_voice->GetChannelMask(&dwChannelMask);
+
+
+    hr = X3DAudioInitialize(dwChannelMask, speed_of_sound, audio.instance);
+    if (FAILED(hr)) {
+        print_log("Failed to initialize X3D Audio.\n");
+        return;
+    }
+
+    XAUDIO2_VOICE_DETAILS voice_details{};
+    main.master_voice->GetVoiceDetails(&voice_details);
+
+    FLOAT32* matrix = new FLOAT32[voice_details.InputChannels];
+    audio.dsp_settings.SrcChannelCount = 1;
+    audio.dsp_settings.DstChannelCount = voice_details.InputChannels;
+    audio.dsp_settings.pMatrixCoefficients = matrix;
+}
+
+void destroy_3d_audio(audio_3d& audio)
+{
+    delete[] audio.dsp_settings.pMatrixCoefficients;
+
+    destroy_audio_source(audio.source_voice);
+}
+
+void update_3d_audio(main_audio& main, audio_3d& audio, const Camera& camera)
+{
+    // TODO: https://github.com/microsoft/Xbox-ATG-Samples/blob/main/UWPSamples/Audio/SimplePlay3DSoundUWP/SimplePlay3DSound.cpp
+
+    X3DAUDIO_LISTENER listener{};
+    listener.OrientFront = X3DAUDIO_VECTOR(camera.front_vector.x, camera.front_vector.y, camera.front_vector.z);
+    listener.OrientTop = X3DAUDIO_VECTOR(camera.up_vector.x, camera.up_vector.y, camera.up_vector.z);
+    listener.Position = X3DAUDIO_VECTOR(camera.position.x, camera.position.y, camera.position.z);
+    //listener.Velocity = X3DAUDIO_VECTOR(20.0f, 0.0f, 20.0f);
+
+    X3DAUDIO_EMITTER emitter{};
+    emitter.ChannelCount = 1;
+    emitter.DopplerScaler = 1.0f;
+    emitter.CurveDistanceScaler = emitter.DopplerScaler;
+    emitter.OrientFront = X3DAUDIO_VECTOR(0.0f, 0.0f, 1.0f);
+    emitter.OrientTop = X3DAUDIO_VECTOR(0.0f, 1.0f, 0.0f);
+    emitter.Position = X3DAUDIO_VECTOR(glm::sin(glfwGetTime()) * 100.0f, 0.0f, glm::cos(glfwGetTime()) * 100.0f);
+    //emitter.Velocity = X3DAUDIO_VECTOR(glm::sin(glfwGetTime()) * 100.0f, 0.0f, glm::cos(glfwGetTime()) * 100.0f);
+
+    int flags = X3DAUDIO_CALCULATE_MATRIX | X3DAUDIO_CALCULATE_DOPPLER | X3DAUDIO_CALCULATE_LPF_DIRECT | X3DAUDIO_CALCULATE_REVERB;
+    X3DAudioCalculate(audio.instance, &listener, &emitter, flags, &audio.dsp_settings);
+
+
+    audio.source_voice->SetOutputMatrix(
+        main.master_voice, 
+        1, 
+        audio.dsp_settings.DstChannelCount, 
+        audio.dsp_settings.pMatrixCoefficients
+    );
+
+    audio.source_voice->SetFrequencyRatio(audio.dsp_settings.DopplerFactor);
+
+#if 0
+    audio.source_voice->SetOutputMatrix(
+        submix, 
+        1, 
+        1, 
+        &audio.dsp_settings.ReverbLevel
+    );
+#endif
+
+
+    XAUDIO2_FILTER_PARAMETERS FilterParameters { 
+        LowPassFilter, 
+        2.0f * sinf(X3DAUDIO_PI / 6.0f * audio.dsp_settings.LPFDirectCoefficient), 
+        1.0f 
+    };
+
+    audio.source_voice->SetFilterParameters(&FilterParameters);
+
 }
