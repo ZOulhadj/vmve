@@ -1,5 +1,7 @@
 === 0.0.2 ===
+- Added XAudio2 audio support (Only WAV is supported for now).
 - Functions return boolean values based on if a system has been initialized instead of returning a pointer to that value.
      This allows for easier detection of errors. Also, if a system was only able to initialize half way then we still
      have a valid object pointer but we return false. This allows us to check against this value and free any resources
      allocated by that object.
+
