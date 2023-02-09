@@ -79,6 +79,10 @@ void engine_render(Engine* engine);
 // presents the results onto the screen.
 void engine_present(Engine* engine);
 
+
+
+
+
 // Environment
 
 //
@@ -346,5 +350,15 @@ void engine_end_ui_pass();
 //
 void engine_render_viewport_ui(int width, int height);
 
+
+
+
+
+// Audio
+void engine_set_master_volume(Engine* engine, int master_volume);
+int engine_play_audio(Engine* engine, const char* path);
+void engine_pause_audio(Engine* engine, int audio_id);
+void engine_stop_audio(Engine* engine, int audio_id);
+void engine_set_audio_volume(Engine* engine, int audio_volume);
 
 #endif

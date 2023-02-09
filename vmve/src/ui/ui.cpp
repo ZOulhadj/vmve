@@ -292,10 +292,10 @@ static void set_next_window_in_center()
     ImGui::SetNextWindowPos(window_center);
 }
 
-static void settings_window(bool* open) {
-    if (!*open) {
+static void settings_window(Engine* engine, bool* open)
+{
+    if (!*open)
         return;
-    }
 
     static ImVec2 buttonSize = ImVec2(-FLT_MIN, 0.0f);
     static setting_options option = (setting_options)0;
@@ -425,7 +425,8 @@ static void settings_window(bool* open) {
     } case setting_options::audio:
         ImGui::Text("Audio");
 
-        ImGui::SliderInt("Main volume", &main_volume, 0, 100, "%d%%");
+        if (ImGui::SliderInt("Main volume", &main_volume, 0, 100, "%d%%"))
+            engine_set_master_volume(engine, main_volume);
         break;
     }
 
@@ -714,7 +715,7 @@ void RenderMainMenu(Engine* engine)
     }
 
 
-    settings_window(&settingsOpen);
+    settings_window(engine, &settingsOpen);
     about_window(&aboutOpen);
     load_model_window(engine, &loadOpen);
     vmve_creator_window(engine, &creator_open);
@@ -930,8 +931,7 @@ void RenderGlobalWindow(Engine* engine)
         }
 #endif
 
-        if (ImGui::CollapsingHeader("Camera"))
-        {
+        if (ImGui::CollapsingHeader("Camera")) {
             float cameraPosX, cameraPosY, cameraPosZ;
             float cameraFrontX, cameraFrontY, cameraFrontZ;
 
@@ -994,6 +994,23 @@ void RenderGlobalWindow(Engine* engine)
             ImGui::SliderFloat("Near plane", cameraNearPlane, 0.1f, 10.0f, "%.1f m");
             ImGui::SliderFloat("Far plane", cameraFarPlane, 10.0f, 2000.0f, "%.1f m");
             ImGui::Checkbox("Lock frustum", &lock_camera_frustum);
+        }
+
+        if (ImGui::CollapsingHeader("Audio")) {
+            static char audio_path[256];
+            static int audio_volume = 50;
+            // TODO: disable buttons if not a valid audio path
+            if (ImGui::Button("Play"))
+                engine_play_audio(engine, audio_path);
+            ImGui::SameLine();
+            ImGui::Button("Pause");
+            ImGui::SameLine();
+            if (ImGui::Button("Stop"))
+                engine_stop_audio(engine, 0);
+            ImGui::SameLine();
+            ImGui::InputText("", audio_path, 256);
+            if (ImGui::SliderInt("Volume", &audio_volume, 0, 100, "%d%%"))
+                engine_set_audio_volume(engine, audio_volume);
         }
 
         static bool edit_shaders = false;
