@@ -97,6 +97,7 @@ static Vulkan_Device* create_device(VkInstance instance,
 
     struct GPUInfo {
         VkPhysicalDevice gpu;
+        VkPhysicalDeviceProperties properties;
         uint32_t graphics_index, present_index;
     };
 
@@ -115,7 +116,7 @@ static Vulkan_Device* create_device(VkInstance instance,
     print_log("Found a total of %u device(s) that support Vulkan on the system.\n", gpu_count);
 
     std::vector<GPUInfo> suitable_gpus;
-    std::vector<const char*> suitable_gpu_names;
+    std::vector<std::string> suitable_gpu_names;
 
     for (std::size_t i = 0; i < gpus.size(); ++i) {
         // Base gpu requirements
@@ -179,6 +180,7 @@ static Vulkan_Device* create_device(VkInstance instance,
         // current GPU to a list of potential suitable GPUs.
         GPUInfo info{};
         info.gpu = gpus[i];
+        info.properties = gpu_properties;
         info.graphics_index = graphics_queue_index.value();
         info.present_index = present_queue_index.value();
 
@@ -189,16 +191,14 @@ static Vulkan_Device* create_device(VkInstance instance,
     // If only one suitable GPU was found then simply use that gpu. However, 
     // if multiple GPUs were found then we need to perform additional work
     // to compare each GPU and figure out the best one to use.
-    GPUInfo info{};
-    std::size_t gpuIndex = 0;
-
     if (suitable_gpus.empty()) {
         print_log("Failed to find any GPU that supports requested features.\n");
         return nullptr;
     } else if (suitable_gpus.size() == 1) {
-        info = suitable_gpus[gpuIndex];
+        const GPUInfo& info = suitable_gpus[0];
+
         device->gpu = info.gpu;
-        device->gpu_name = suitable_gpu_names[gpuIndex];
+        device->gpu_name = suitable_gpu_names[0];
         device->graphics_index = info.graphics_index;
         device->present_index = info.present_index;
     } else {
@@ -208,17 +208,23 @@ static Vulkan_Device* create_device(VkInstance instance,
         // is just as important since we cannot use a GPU that does not support
         // features that the engine needs.
 
-//        VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
-//        VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU,
-//        VK_PHYSICAL_DEVICE_TYPE_CPU
-        print_log("There are multiple GPUs that support Vulkan and this code path has not been implemented yet!\n");
-        abort();
+        // TODO: Need to handle case where there might be multiple Vulkan supported GPUs
+        // and that none of them are discrete.
+        for (std::size_t i = 0; i < suitable_gpus.size(); ++i) {
+            if (suitable_gpus[i].properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+                const GPUInfo& info = suitable_gpus[i];
+
+                device->gpu = info.gpu;
+                device->gpu_name = suitable_gpu_names[i];
+                device->graphics_index = info.graphics_index;
+                device->present_index = info.present_index;
+                
+                break;
+            }
+        }
     }
 
-    print_log("Selected GPU: %s\n", suitable_gpu_names[gpuIndex]);
-
-
-
+    print_log("Selected GPU: %s\n", device->gpu_name.c_str());
 
     // create a logical device from a physical device
     std::vector<VkDeviceQueueCreateInfo> queue_infos{};

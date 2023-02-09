@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\platform\windows.cpp">
+    <ClCompile Include="src\core\platform\win32_memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\input.cpp">
@@ -108,10 +108,10 @@
     <ClCompile Include="src\rendering\api\directx\d3d_context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\audio\audio.cpp">
+    <ClCompile Include="src\core\platform\win32_audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\win32_window.cpp">
+    <ClCompile Include="src\core\platform\win32_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\api\vulkan\common.cpp">
@@ -122,7 +122,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\platform\windows.hpp">
+    <ClInclude Include="src\core\platform\win32_memory.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\core\input.hpp">
@@ -209,13 +209,13 @@
     <ClInclude Include="src\rendering\api\directx\d3d_context.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\audio\audio.hpp">
+    <ClInclude Include="src\core\platform\win32_audio.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\win32_window.hpp">
+    <ClInclude Include="src\core\platform\win32_window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\shaders\shaders.hpp">
+    <ClInclude Include="src\rendering\shaders\shaders.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\primitives\cube.hpp">

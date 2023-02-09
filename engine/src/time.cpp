@@ -12,28 +12,3 @@ Duration get_duration(typedef_time_point start, typedef_time_point end /*= clock
 
     return { hours, minutes, seconds };
 }
-
-Timer::Timer()
-{
-    m_StartTime = std::chrono::high_resolution_clock::now();
-}
-
-float Timer::elapsed_millis()
-{
-    using namespace std::chrono;
-
-    return duration_cast<milliseconds>(high_resolution_clock::now() - m_StartTime).count();
-}
-
-Scoped_Timer::Scoped_Timer(const std::string& name)
-    : m_Name(name)
-{
-
-}
-
-Scoped_Timer::~Scoped_Timer()
-{
-    const float duration = m_Timer.elapsed_millis();
-
-    print_log("[TIMER] %s - %f", m_Name, duration);
-}

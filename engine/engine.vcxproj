@@ -11,10 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\audio\audio.cpp" />
+    <ClCompile Include="src\core\platform\win32_audio.cpp" />
     <ClCompile Include="src\core\input.cpp" />
-    <ClCompile Include="src\core\platform\windows.cpp" />
-    <ClCompile Include="src\core\win32_window.cpp" />
+    <ClCompile Include="src\core\platform\win32_memory.cpp" />
+    <ClCompile Include="src\core\platform\win32_window.cpp" />
     <ClCompile Include="src\core\window.cpp" />
     <ClCompile Include="src\engine.cpp" />
     <ClCompile Include="src\filesystem\filesystem.cpp" />
@@ -52,10 +52,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\engine.h" />
-    <ClInclude Include="src\audio\audio.hpp" />
+    <ClInclude Include="src\core\platform\win32_audio.hpp" />
     <ClInclude Include="src\core\input.hpp" />
-    <ClInclude Include="src\core\platform\windows.hpp" />
-    <ClInclude Include="src\core\win32_window.hpp" />
+    <ClInclude Include="src\core\platform\win32_memory.hpp" />
+    <ClInclude Include="src\core\platform\win32_window.hpp" />
     <ClInclude Include="src\core\window.hpp" />
     <ClInclude Include="src\events\event.hpp" />
     <ClInclude Include="src\events\event_dispatcher.hpp" />
@@ -81,7 +81,7 @@
     <ClInclude Include="src\rendering\api\vulkan\shader.hpp" />
     <ClInclude Include="src\rendering\api\vulkan\texture.hpp" />
     <ClInclude Include="src\rendering\api\vulkan\vertex_array.hpp" />
-    <ClInclude Include="src\shaders\shaders.hpp" />
+    <ClInclude Include="src\rendering\shaders\shaders.hpp" />
     <ClInclude Include="src\time.hpp" />
     <ClInclude Include="src\ui\ui.hpp" />
     <ClInclude Include="src\utility.hpp" />

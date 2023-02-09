@@ -4,11 +4,12 @@
 
 // Engine header files section
 #include "../src/core/window.hpp"
-#include "../src/core/win32_window.hpp"
+#include "../src/core/window.hpp"
 #include "../src/core/input.hpp"
 #if defined(_WIN32)
-#include "../src/core/platform/windows.hpp"
+#include "../src/core/platform/win32_window.hpp"
 #endif
+#include "../src/core/platform/win32_memory.hpp"
 
 #include "../src/rendering/api/vulkan/common.hpp"
 #include "../src/rendering/api/vulkan/renderer.hpp"
@@ -21,9 +22,9 @@
 #include "../src/rendering/entity.hpp"
 #include "../src/rendering/model.hpp"
 
-#include "../src/shaders/shaders.hpp"
+#include "../src/rendering/shaders/shaders.hpp"
 
-#include "../src/audio/audio.hpp"
+#include "../src/core/platform/win32_audio.hpp"
 
 #include "../src/events/event.hpp"
 #include "../src/events/event_dispatcher.hpp"
@@ -43,7 +44,7 @@
 struct Engine
 {
     Window* window;
-    Win32_Window* newWindow; // TEMP
+    win32_window* newWindow; // TEMP
     Vulkan_Renderer* renderer;
     ImGuiContext* ui;
 

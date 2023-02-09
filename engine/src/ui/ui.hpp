@@ -5,7 +5,8 @@
 #include "rendering/api/vulkan/renderer.hpp"
 #include "events/event.hpp"
 
-struct GUI {
+struct GUI
+{
     Event_Func eventCallback;
 };
 

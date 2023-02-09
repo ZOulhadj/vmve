@@ -5,8 +5,9 @@
 
 static LRESULT CALLBACK win32_window_callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-Win32_Window* create_win32_window(const char* title, int width, int height) {
-    Win32_Window* window = reinterpret_cast<Win32_Window*>(malloc(sizeof(Win32_Window)));
+win32_window* create_win32_window(const char* title, int width, int height)
+{
+    win32_window* window = reinterpret_cast<win32_window*>(malloc(sizeof(win32_window)));
 
     WNDCLASSEXA wndClass = {};
     wndClass.cbSize = sizeof(WNDCLASSEX);
@@ -55,14 +56,16 @@ Win32_Window* create_win32_window(const char* title, int width, int height) {
     return window;
 }
 
-void destroy_win32_window(Win32_Window* window) {
+void destroy_win32_window(win32_window* window)
+{
     free(window);
 }
 
-LRESULT CALLBACK win32_window_callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK win32_window_callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
     LRESULT result = 0;
 
-    Win32_Window* window = reinterpret_cast<Win32_Window*>(GetWindowLongPtrA(hWnd, GWLP_USERDATA));
+    win32_window* window = reinterpret_cast<win32_window*>(GetWindowLongPtrA(hWnd, GWLP_USERDATA));
 
     switch (uMsg) {
     case WM_CREATE:
