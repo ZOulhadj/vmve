@@ -1,11 +1,11 @@
-#include "window.hpp"
+#include "window.h"
 
-#include "events/window_event.hpp"
-#include "events/key_event.hpp"
-#include "events/mouse_event.hpp"
+#include "events/window_event.h"
+#include "events/key_event.h"
+#include "events/mouse_event.h"
 
 
-#include "logging.hpp"
+#include "logging.h"
 
 
 static void glfw_error_callback(int code, const char* description)
@@ -81,13 +81,7 @@ static void window_drop_callback(GLFWwindow* window, int path_count, const char*
 {
     Window* ptr = (Window*)glfwGetWindowUserPointer(window);
 
-    // todo: should this be handled in the event?
-    std::vector<std::string> paths(path_count);
-    for (std::size_t i = 0; i < paths.size(); ++i) {
-        paths[i] = in_paths[i];
-    }
-
-    Window_Dropped_Event e(paths);
+    Window_Dropped_Event e(path_count, in_paths);
     ptr->event_callback(e);
 }
 

@@ -2,8 +2,8 @@
 #define MY_ENGINE_UTILITY_HPP
 
 
-#include "core/window.hpp"
-#include "rendering/camera.hpp"
+#include "core/window.h"
+#include "rendering/camera.h"
 
 // Loads a plain text file from the filesystem.
 std::string load_file(const std::filesystem::path& path);

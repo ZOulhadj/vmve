@@ -3,9 +3,9 @@
 
 
 
-#include "api/vulkan/vertex_array.hpp"
-#include "api/vulkan/texture.hpp"
-#include "model.hpp"
+#include "api/vulkan/vertex_array.h"
+#include "api/vulkan/texture.h"
+#include "model.h"
 
 struct Entity
 {  

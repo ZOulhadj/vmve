@@ -2,8 +2,8 @@
 #define MY_ENGINE_VERTEX_ARRAY_HPP
 
 
-#include "buffer.hpp"
-#include "rendering/vertex.hpp"
+#include "buffer.h"
+#include "rendering/vertex.h"
 
 struct Vertex_Array {
     vulkan_buffer   vertex_buffer;

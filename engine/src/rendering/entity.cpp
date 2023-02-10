@@ -1,6 +1,6 @@
-#include "entity.hpp"
+#include "entity.h"
 
-#include "api/vulkan/renderer.hpp"
+#include "api/vulkan/renderer.h"
 
 /*
      matrix to position, rotation and scale

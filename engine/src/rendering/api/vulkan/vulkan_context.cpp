@@ -1,8 +1,8 @@
-#include "vulkan_context.hpp"
+#include "vulkan_context.h"
 
-#include "common.hpp"
+#include "common.h"
 
-#include "logging.hpp"
+#include "logging.h"
 
 static VkInstance create_instance(uint32_t version,
                                   const char* app_name,

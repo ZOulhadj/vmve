@@ -1,7 +1,7 @@
-#include "buffer.hpp"
+#include "buffer.h"
 
-#include "common.hpp"
-#include "renderer.hpp"
+#include "common.h"
+#include "renderer.h"
 
 
 

@@ -1,4 +1,4 @@
-#include "win32_memory.hpp"
+#include "win32_memory.h"
 
 MEMORYSTATUSEX get_windows_memory_status()
 {

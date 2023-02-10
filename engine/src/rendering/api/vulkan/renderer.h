@@ -1,12 +1,12 @@
 #ifndef MYENGINE_VULKAN_RENDERER_HPP
 #define MYENGINE_VULKAN_RENDERER_HPP
 
-#include "core/window.hpp"
-#include "vulkan_context.hpp"
-#include "buffer.hpp"
-#include "shader.hpp"
-#include "rendering/entity.hpp"
-#include "logging.hpp"
+#include "core/window.h"
+#include "vulkan_context.h"
+#include "buffer.h"
+#include "shader.h"
+#include "rendering/entity.h"
+#include "logging.h"
 
 enum class Buffer_Mode
 {

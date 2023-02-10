@@ -1,7 +1,7 @@
-#include "win32_window.hpp"
+#include "win32_window.h"
 
 
-#include "logging.hpp"
+#include "logging.h"
 
 static LRESULT CALLBACK win32_window_callback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 

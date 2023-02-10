@@ -3,7 +3,7 @@
 #define MY_ENGINE_TEXTURE_HPP
 
 
-#include "buffer.hpp"
+#include "buffer.h"
 
 
 vulkan_image_buffer create_texture_buffer(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format);

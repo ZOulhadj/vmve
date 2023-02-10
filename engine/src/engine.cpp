@@ -1,50 +1,46 @@
 #include "../include/engine.h"
 
-
-
-// Engine header files section
-#include "../src/core/window.hpp"
-#include "../src/core/window.hpp"
-#include "../src/core/input.hpp"
+#include "../src/core/window.h"
+#include "../src/core/window.h"
+#include "../src/core/input.h"
 #if defined(_WIN32)
-#include "../src/core/platform/win32_window.hpp"
+#include "../src/core/platform/win32_window.h"
 #endif
-#include "../src/core/platform/win32_memory.hpp"
+#include "../src/core/platform/win32_memory.h"
 
-#include "../src/rendering/api/vulkan/common.hpp"
-#include "../src/rendering/api/vulkan/renderer.hpp"
-#include "../src/rendering/api/vulkan/buffer.hpp"
-#include "../src/rendering/api/vulkan/texture.hpp"
-#include "../src/rendering/api/vulkan/descriptor_sets.hpp"
-#include "../src/rendering/vertex.hpp"
-#include "../src/rendering/material.hpp"
-#include "../src/rendering/camera.hpp"
-#include "../src/rendering/entity.hpp"
-#include "../src/rendering/model.hpp"
+#include "../src/rendering/api/vulkan/common.h"
+#include "../src/rendering/api/vulkan/renderer.h"
+#include "../src/rendering/api/vulkan/buffer.h"
+#include "../src/rendering/api/vulkan/texture.h"
+#include "../src/rendering/api/vulkan/descriptor_sets.h"
+#include "../src/rendering/vertex.h"
+#include "../src/rendering/material.h"
+#include "../src/rendering/camera.h"
+#include "../src/rendering/entity.h"
+#include "../src/rendering/model.h"
 
-#include "../src/rendering/shaders/shaders.hpp"
+#include "../src/rendering/shaders/shaders.h"
 
-#include "../src/core/platform/win32_audio.hpp"
+#include "../src/core/platform/win32_audio.h"
 
-#include "../src/events/event.hpp"
-#include "../src/events/event_dispatcher.hpp"
-#include "../src/events/window_event.hpp"
-#include "../src/events/key_event.hpp"
-#include "../src/events/mouse_event.hpp"
+#include "../src/events/event.h"
+#include "../src/events/event_dispatcher.h"
+#include "../src/events/window_event.h"
+#include "../src/events/key_event.h"
+#include "../src/events/mouse_event.h"
 
-#include "../src/filesystem/vfs.hpp"
-#include "../src/filesystem/filesystem.hpp"
+#include "../src/filesystem/vfs.h"
+#include "../src/filesystem/filesystem.h"
 
-#include "../src/ui/ui.hpp"
+#include "../src/ui/ui.h"
 
-#include "../src/utility.hpp"
-#include "../src/logging.hpp"
-#include "../src/time.hpp"
+#include "../src/utility.h"
+#include "../src/logging.h"
 
-struct Engine
+struct my_engine
 {
     Window* window;
-    win32_window* newWindow; // TEMP
+    win32_window* new_window; // TEMP
     Vulkan_Renderer* renderer;
     ImGuiContext* ui;
 
@@ -56,13 +52,13 @@ struct Engine
 
     std::string execPath;
     bool running;
-    std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
     double deltaTime;
 
     // Resources
-    vulkan_buffer sceneBuffer;
-    vulkan_buffer sunBuffer;
-    vulkan_buffer cameraBuffer;
+    vulkan_buffer scene_buffer;
+    vulkan_buffer sun_buffer;
+    vulkan_buffer camera_buffer;
 
 
     // Scene information
@@ -70,16 +66,16 @@ struct Engine
 
 
     std::vector<Model> models;
-    std::vector<Entity> instances;
+    std::vector<Entity> entities;
 
 
-    bool swapchainReady;
-    bool uiPassEnabled;
+    bool swapchain_ready;
+    bool ui_pass_enabled;
 };
 
 // Just here for the time being as events don't have direct access to the engine
 // pointer.
-static Engine* gTempEnginePtr = nullptr;
+static my_engine* g_engine_ptr = nullptr;
 
 //
 // Global scene information that will be accessed by the shaders to perform
@@ -90,35 +86,35 @@ static Engine* gTempEnginePtr = nullptr;
 //
 // Padding is equally important and hence the usage of the "alignas" keyword.
 //
-struct Sandbox_Scene
+struct scene_props
 {
     // ambient Strength, specular strength, specular shininess, empty
-    glm::vec4 ambientSpecular = glm::vec4(0.05f, 1.0f, 16.0f, 0.0f);
-    glm::vec4 cameraPosition = glm::vec4(0.0f, 2.0f, -5.0f, 0.0f);
+    glm::vec4 ambient_spec = glm::vec4(0.05f, 1.0f, 16.0f, 0.0f);
+    glm::vec4 camera_pos = glm::vec4(0.0f, 2.0f, -5.0f, 0.0f);
 
-    glm::vec3 sunDirection = glm::vec3(0.01f, -1.0f, 0.01f);
-    glm::vec3 sunPosition = glm::vec3(0.01f, 200.0f, 0.01f);
+    glm::vec3 sun_dir = glm::vec3(0.01f, -1.0f, 0.01f);
+    glm::vec3 sun_pos = glm::vec3(0.01f, 200.0f, 0.01f);
 } scene;
 
 
-struct Sun_Data
+struct sun_data
 {
-    glm::mat4 viewProj;
+    glm::mat4 view_proj;
 } sunData;
 
 
-static VkExtent2D shadowMapSize = { 2048, 2048 };
+static VkExtent2D shadow_map_size = { 2048, 2048 };
 
 // Default framebuffer at startup
-static VkExtent2D framebufferSize = { 1280, 720 };
+static VkExtent2D framebuffer_size = { 1280, 720 };
 
-VkSampler gFramebufferSampler;
-VkSampler gTextureSampler;
+VkSampler g_framebuffer_sampler;
+VkSampler g_texture_sampler;
 
-Render_Pass shadowPass{};
-Render_Pass skyboxPass{};
-Render_Pass offscreenPass{};
-Render_Pass compositePass{};
+Render_Pass shadow_pass{};
+Render_Pass skybox_pass{};
+Render_Pass offscreen_pass{};
+Render_Pass composite_pass{};
 
 VkDescriptorSetLayout shadowLayout;
 std::vector<VkDescriptorSet> shadowSets;
@@ -177,17 +173,17 @@ float sunDistance = 400.0f;
 
 static void event_callback(basic_event& e);
 
-bool engine_initialize(Engine*& out_engine, const char* name, int width, int height)
+bool engine_initialize(my_engine*& out_engine, const char* name, int width, int height)
 {
-    out_engine = new Engine();
+    out_engine = new my_engine();
 
-    out_engine->startTime = std::chrono::high_resolution_clock::now();
+    out_engine->start_time = std::chrono::high_resolution_clock::now();
 
     // Get the current path of the executable
     // TODO: MAX_PATH is ok to use however, for a long term solution another 
     // method should used since some paths can go beyond this limit.
-    wchar_t fileName[MAX_PATH];
-    GetModuleFileName(nullptr, fileName, sizeof(wchar_t) * MAX_PATH);
+    char fileName[MAX_PATH];
+    GetModuleFileNameA(nullptr, fileName, sizeof(char) * MAX_PATH);
     out_engine->execPath = std::filesystem::path(fileName).parent_path().string();
 
     print_log("Initializing engine (%s)\n", out_engine->execPath.c_str());
@@ -222,36 +218,36 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
 
 
     // Create rendering passes and render targets
-    gFramebufferSampler = create_image_sampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
-    gTextureSampler = create_image_sampler(VK_FILTER_LINEAR);
+    g_framebuffer_sampler = create_image_sampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
+    g_texture_sampler = create_image_sampler(VK_FILTER_LINEAR);
 
     {
-        add_framebuffer_attachment(shadowPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, shadowMapSize);
-        create_render_pass_2(shadowPass);
+        add_framebuffer_attachment(shadow_pass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, shadow_map_size);
+        create_render_pass_2(shadow_pass);
     }
     {
-        add_framebuffer_attachment(skyboxPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
-        create_render_pass_2(skyboxPass);
+        add_framebuffer_attachment(skybox_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
+        create_render_pass_2(skybox_pass);
     }
     {    
-        add_framebuffer_attachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, framebufferSize);
-        add_framebuffer_attachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, framebufferSize);
-        add_framebuffer_attachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
-        add_framebuffer_attachment(offscreenPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8_SRGB, framebufferSize);
-        add_framebuffer_attachment(offscreenPass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, framebufferSize);
-        create_render_pass(offscreenPass);
+        add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, framebuffer_size);
+        add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, framebuffer_size);
+        add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
+        add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8_SRGB, framebuffer_size);
+        add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, framebuffer_size);
+        create_render_pass(offscreen_pass);
     }
     {
-        add_framebuffer_attachment(compositePass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
-        create_render_pass_2(compositePass);
-        viewport = attachments_to_images(compositePass.attachments, 0);
+        add_framebuffer_attachment(composite_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
+        create_render_pass_2(composite_pass);
+        viewport = attachments_to_images(composite_pass.attachments, 0);
     }
 
 
 
-    out_engine->sunBuffer = create_uniform_buffer(sizeof(Sun_Data));
-    out_engine->cameraBuffer = create_uniform_buffer(sizeof(View_Projection));
-    out_engine->sceneBuffer = create_uniform_buffer(sizeof(Sandbox_Scene));
+    out_engine->sun_buffer = create_uniform_buffer(sizeof(sun_data));
+    out_engine->camera_buffer = create_uniform_buffer(sizeof(View_Projection));
+    out_engine->scene_buffer = create_uniform_buffer(sizeof(scene_props));
 
     std::vector<VkDescriptorSetLayoutBinding> shadowBindings
     {
@@ -260,7 +256,7 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
   
     shadowLayout = create_descriptor_layout(shadowBindings);
     shadowSets = allocate_descriptor_sets(shadowLayout);
-    update_binding(shadowSets, shadowBindings[0], out_engine->sunBuffer, sizeof(Sun_Data));
+    update_binding(shadowSets, shadowBindings[0], out_engine->sun_buffer, sizeof(sun_data));
 
 
     std::vector<VkDescriptorSetLayoutBinding> skyboxBindings
@@ -271,9 +267,9 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
 
     skyboxLayout = create_descriptor_layout(skyboxBindings);
     skyboxSets = allocate_descriptor_sets(skyboxLayout);
-    skyboxDepths = attachments_to_images(skyboxPass.attachments, 0);
-    update_binding(skyboxSets, skyboxBindings[0], out_engine->cameraBuffer, sizeof(View_Projection));
-    update_binding(skyboxSets, skyboxBindings[1], skyboxDepths, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
+    skyboxDepths = attachments_to_images(skybox_pass.attachments, 0);
+    update_binding(skyboxSets, skyboxBindings[0], out_engine->camera_buffer, sizeof(View_Projection));
+    update_binding(skyboxSets, skyboxBindings[1], skyboxDepths, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
 
 
 
@@ -284,7 +280,7 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
     };
     offscreenLayout = create_descriptor_layout(offscreenBindings);
     offscreenSets = allocate_descriptor_sets(offscreenLayout);
-    update_binding(offscreenSets, offscreenBindings[0], out_engine->cameraBuffer, sizeof(View_Projection));
+    update_binding(offscreenSets, offscreenBindings[0], out_engine->camera_buffer, sizeof(View_Projection));
 
     //////////////////////////////////////////////////////////////////////////
     std::vector<VkDescriptorSetLayoutBinding> compositeBindings
@@ -302,20 +298,20 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
     compositeLayout = create_descriptor_layout(compositeBindings);
     compositeSets = allocate_descriptor_sets(compositeLayout);
     // Convert render target attachments into flat arrays for descriptor binding
-    positions = attachments_to_images(offscreenPass.attachments, 0);
-    normals = attachments_to_images(offscreenPass.attachments, 1);
-    colors = attachments_to_images(offscreenPass.attachments, 2);
-    speculars = attachments_to_images(offscreenPass.attachments, 3);
-    depths = attachments_to_images(offscreenPass.attachments, 4);
-    shadow_depths = attachments_to_images(shadowPass.attachments, 0);
-    update_binding(compositeSets, compositeBindings[0], positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    update_binding(compositeSets, compositeBindings[1], normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    update_binding(compositeSets, compositeBindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    update_binding(compositeSets, compositeBindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    update_binding(compositeSets, compositeBindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    update_binding(compositeSets, compositeBindings[5], shadow_depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    update_binding(compositeSets, compositeBindings[6], out_engine->sunBuffer, sizeof(Sun_Data));
-    update_binding(compositeSets, compositeBindings[7], out_engine->sceneBuffer, sizeof(Sandbox_Scene));
+    positions = attachments_to_images(offscreen_pass.attachments, 0);
+    normals = attachments_to_images(offscreen_pass.attachments, 1);
+    colors = attachments_to_images(offscreen_pass.attachments, 2);
+    speculars = attachments_to_images(offscreen_pass.attachments, 3);
+    depths = attachments_to_images(offscreen_pass.attachments, 4);
+    shadow_depths = attachments_to_images(shadow_pass.attachments, 0);
+    update_binding(compositeSets, compositeBindings[0], positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(compositeSets, compositeBindings[1], normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(compositeSets, compositeBindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(compositeSets, compositeBindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(compositeSets, compositeBindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(compositeSets, compositeBindings[5], shadow_depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(compositeSets, compositeBindings[6], out_engine->sun_buffer, sizeof(sun_data));
+    update_binding(compositeSets, compositeBindings[7], out_engine->scene_buffer, sizeof(scene_props));
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -369,7 +365,7 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
 
     //Pipeline offscreenPipeline(offscreenPipelineLayout, offscreenPass);
     offscreenPipeline.m_Layout = offscreenPipelineLayout;
-    offscreenPipeline.m_RenderPass = &offscreenPass;
+    offscreenPipeline.m_RenderPass = &offscreen_pass;
     offscreenPipeline.enable_vertex_binding(vertexBinding);
     offscreenPipeline.set_shader_pipeline({ geometry_vs, geometry_fs });
     offscreenPipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
@@ -380,7 +376,7 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
 
     //Pipeline wireframePipeline(offscreenPipelineLayout, offscreenPass);
     wireframePipeline.m_Layout = offscreenPipelineLayout;
-    wireframePipeline.m_RenderPass = &offscreenPass;
+    wireframePipeline.m_RenderPass = &offscreen_pass;
     wireframePipeline.enable_vertex_binding(vertexBinding);
     wireframePipeline.set_shader_pipeline({ geometry_vs, geometry_fs });
     wireframePipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
@@ -391,7 +387,7 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
 
     //Pipeline shadowPipeline(shadowPipelineLayout, shadowPass);
     shadowPipeline.m_Layout = shadowPipelineLayout;
-    shadowPipeline.m_RenderPass = &shadowPass;
+    shadowPipeline.m_RenderPass = &shadow_pass;
     shadowPipeline.enable_vertex_binding(vertexBinding);
     shadowPipeline.set_shader_pipeline({ shadowMappingVS, shadowMappingFS });
     shadowPipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
@@ -402,7 +398,7 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
 
     //Pipeline compositePipeline(compositePipelineLayout, compositePass);
     compositePipeline.m_Layout = compositePipelineLayout;
-    compositePipeline.m_RenderPass = &compositePass;
+    compositePipeline.m_RenderPass = &composite_pass;
     compositePipeline.set_shader_pipeline({ lighting_vs, lighting_fs });
     compositePipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     compositePipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
@@ -459,9 +455,9 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
     //play_audio(out_engine->object_audio.source_voice);
 
     out_engine->running = true;
-    out_engine->swapchainReady = true;
+    out_engine->swapchain_ready = true;
 
-    gTempEnginePtr = out_engine;
+    g_engine_ptr = out_engine;
 
     print_log("Successfully initialized engine.\n");
 
@@ -469,7 +465,7 @@ bool engine_initialize(Engine*& out_engine, const char* name, int width, int hei
 }
 
 
-void engine_set_render_mode(Engine* engine, int mode)
+void engine_set_render_mode(my_engine* engine, int mode)
 {
     if (mode == 0) {
         currentPipeline = &offscreenPipeline;
@@ -478,7 +474,7 @@ void engine_set_render_mode(Engine* engine, int mode)
     }
 }
 
-bool engine_update(Engine* engine)
+bool engine_update(my_engine* engine)
 {
     // Calculate the amount that has passed since the last frame. This value
     // is then used with inputs and physics to ensure that the result is the
@@ -493,17 +489,17 @@ bool engine_update(Engine* engine)
                                           shadowNear, shadowFar);
 
     // TODO: Construct a dummy sun "position" for the depth calculation based on the direction vector and some random distance
-    scene.sunPosition = -scene.sunDirection * sunDistance;
+    scene.sun_pos = -scene.sun_dir * sunDistance;
 
-    glm::mat4 sunViewMatrix = glm::lookAt(scene.sunPosition, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    sunData.viewProj = sunProjMatrix * sunViewMatrix;
+    glm::mat4 sunViewMatrix = glm::lookAt(scene.sun_pos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    sunData.view_proj = sunProjMatrix * sunViewMatrix;
 
-    scene.cameraPosition = glm::vec4(engine->camera.position, 0.0f);
+    scene.camera_pos = glm::vec4(engine->camera.position, 0.0f);
 
     // copy data into uniform buffer
-    set_buffer_data(engine->sunBuffer, &sunData, sizeof(Sun_Data));
-    set_buffer_data(engine->cameraBuffer, &engine->camera.viewProj, sizeof(View_Projection));
-    set_buffer_data(engine->sceneBuffer, &scene);
+    set_buffer_data(engine->sun_buffer, &sunData, sizeof(sun_data));
+    set_buffer_data(engine->camera_buffer, &engine->camera.viewProj, sizeof(View_Projection));
+    set_buffer_data(engine->scene_buffer, &scene);
 
 
     // update sound
@@ -513,22 +509,22 @@ bool engine_update(Engine* engine)
     return engine->running;
 }
 
-bool engine_begin_render(Engine* engine)
+bool engine_begin_render(my_engine* engine)
 {
-    engine->swapchainReady = get_next_swapchain_image();
+    engine->swapchain_ready = get_next_swapchain_image();
 
     // If the swapchain is not ready the swapchain will be resized and then we
     // need to resize any framebuffers.
-    if (!engine->swapchainReady) {
+    if (!engine->swapchain_ready) {
         wait_for_gpu();
 
         resize_framebuffer(uiPass, { engine->window->width, engine->window->height });
     }
 
-    return engine->swapchainReady;
+    return engine->swapchain_ready;
 }
 
-void engine_render(Engine* engine)
+void engine_render(my_engine* engine)
 {
     begin_command_buffer(offscreenCmdBuffer);
     {
@@ -545,20 +541,20 @@ void engine_render(Engine* engine)
 
         //EndRenderPass(skyboxCmdBuffer);
 
-        bind_descriptor_set(offscreenCmdBuffer, shadowPipelineLayout, shadowSets, { sizeof(Sun_Data) });
-        begin_render_pass(offscreenCmdBuffer, shadowPass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f });
+        bind_descriptor_set(offscreenCmdBuffer, shadowPipelineLayout, shadowSets, { sizeof(sun_data) });
+        begin_render_pass(offscreenCmdBuffer, shadow_pass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f });
 
         bind_pipeline(offscreenCmdBuffer, shadowPipeline);
 
-        for (auto& instance : engine->instances) {
-            translate_entity(instance, instance.position);
-            rotate_entity(instance, instance.rotation);
-            scale_entity(instance, instance.scale);
+        for (auto& entity : engine->entities) {
+            translate_entity(entity, entity.position);
+            rotate_entity(entity, entity.rotation);
+            scale_entity(entity, entity.scale);
 
-            const std::vector<Mesh>& meshes = engine->models[instance.modelIndex].meshes;
+            const std::vector<Mesh>& meshes = engine->models[entity.modelIndex].meshes;
             for (std::size_t i = 0; i < meshes.size(); ++i) {
                 bind_vertex_array(offscreenCmdBuffer, meshes[i].vertex_array);
-                render(offscreenCmdBuffer, shadowPipelineLayout, meshes[i].vertex_array.index_count, instance.matrix);
+                render(offscreenCmdBuffer, shadowPipelineLayout, meshes[i].vertex_array.index_count, entity.matrix);
             }
         }
 
@@ -568,7 +564,7 @@ void engine_render(Engine* engine)
 
 
         bind_descriptor_set(offscreenCmdBuffer, offscreenPipelineLayout, offscreenSets, { sizeof(View_Projection) });
-        begin_render_pass(offscreenCmdBuffer, offscreenPass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f });
+        begin_render_pass(offscreenCmdBuffer, offscreen_pass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f });
 
         bind_pipeline(offscreenCmdBuffer, *currentPipeline);
 
@@ -580,8 +576,8 @@ void engine_render(Engine* engine)
         //
         // A proper solution should be designed and implemented in the
         // near future.
-        for (std::size_t i = 0; i < engine->instances.size(); ++i) {
-            Entity& instance = engine->instances[i];
+        for (std::size_t i = 0; i < engine->entities.size(); ++i) {
+            Entity& instance = engine->entities[i];
 
             translate_entity(instance, instance.position);
             rotate_entity(instance, instance.rotation);
@@ -597,9 +593,9 @@ void engine_render(Engine* engine)
 
     begin_command_buffer(compositeCmdBuffer);
     {
-        begin_render_pass(compositeCmdBuffer, compositePass);
+        begin_render_pass(compositeCmdBuffer, composite_pass);
 
-        bind_descriptor_set(compositeCmdBuffer, compositePipelineLayout, compositeSets, { sizeof(Sun_Data) });
+        bind_descriptor_set(compositeCmdBuffer, compositePipelineLayout, compositeSets, { sizeof(sun_data) });
 
         bind_pipeline(compositeCmdBuffer, compositePipeline);
         render(compositeCmdBuffer);
@@ -609,9 +605,9 @@ void engine_render(Engine* engine)
 
 }
 
-void engine_present(Engine* engine)
+void engine_present(my_engine* engine)
 {
-    if (engine->uiPassEnabled)
+    if (engine->ui_pass_enabled)
         submit_gpu_work({ offscreenCmdBuffer, compositeCmdBuffer, uiCmdBuffer });
     else
         submit_gpu_work({ offscreenCmdBuffer, compositeCmdBuffer });
@@ -624,7 +620,7 @@ void engine_present(Engine* engine)
     update_window(engine->window);
 }
 
-void engine_terminate(Engine* engine)
+void engine_terminate(my_engine* engine)
 {
     print_log("Terminating application.\n");
 
@@ -640,9 +636,9 @@ void engine_terminate(Engine* engine)
         destroy_model(model);
 
     // Destroy rendering resources
-    destroy_buffer(engine->cameraBuffer);
-    destroy_buffer(engine->sceneBuffer);
-    destroy_buffer(engine->sunBuffer);
+    destroy_buffer(engine->camera_buffer);
+    destroy_buffer(engine->scene_buffer);
+    destroy_buffer(engine->sun_buffer);
 
     destroy_descriptor_layout(materialLayout);
     destroy_descriptor_layout(compositeLayout);
@@ -661,13 +657,13 @@ void engine_terminate(Engine* engine)
     destroy_pipeline_layout(shadowPipelineLayout);
 
     destroy_render_pass(uiPass);
-    destroy_render_pass(compositePass);
-    destroy_render_pass(offscreenPass);
-    destroy_render_pass(skyboxPass);
-    destroy_render_pass(shadowPass);
+    destroy_render_pass(composite_pass);
+    destroy_render_pass(offscreen_pass);
+    destroy_render_pass(skybox_pass);
+    destroy_render_pass(shadow_pass);
 
-    destroy_image_sampler(gTextureSampler);
-    destroy_image_sampler(gFramebufferSampler);
+    destroy_image_sampler(g_texture_sampler);
+    destroy_image_sampler(g_framebuffer_sampler);
 
     // Destroy core systems
     destroy_windows_audio(engine->audio);
@@ -694,23 +690,23 @@ void engine_terminate(Engine* engine)
 //////////////////////////////////////////////////////////////////////////////
 
 
-void engine_should_terminate(Engine* engine)
+void engine_should_terminate(my_engine* engine)
 {
     engine->running = false;
 }
 
-void engine_set_window_icon(Engine* engine, unsigned char* data, int width, int height)
+void engine_set_window_icon(my_engine* engine, unsigned char* data, int width, int height)
 {
     set_window_icon(engine->window, data, width, height);
 }
 
-void engine_set_callbacks(Engine* engine, engine_callbacks callbacks)
+void engine_set_callbacks(my_engine* engine, engine_callbacks callbacks)
 {
     engine->callbacks = callbacks;
 }
 
 
-void engine_load_model(Engine* engine, const char* path, bool flipUVs)
+void engine_load_model(my_engine* engine, const char* path, bool flipUVs)
 {
     Model model{};
 
@@ -721,11 +717,11 @@ void engine_load_model(Engine* engine, const char* path, bool flipUVs)
         return;
     }
 
-    upload_model_to_gpu(model, materialLayout, materialBindings, gTextureSampler);
+    upload_model_to_gpu(model, materialLayout, materialBindings, g_texture_sampler);
     engine->models.push_back(model);
 }
 
-void engine_add_model(Engine* engine, const char* data, int size, bool flipUVs)
+void engine_add_model(my_engine* engine, const char* data, int size, bool flipUVs)
 {
     Model model;
 
@@ -735,11 +731,11 @@ void engine_add_model(Engine* engine, const char* data, int size, bool flipUVs)
         return;
     }
 
-    upload_model_to_gpu(model, materialLayout, materialBindings, gTextureSampler);
+    upload_model_to_gpu(model, materialLayout, materialBindings, g_texture_sampler);
     engine->models.push_back(model);
 }
 
-void engine_remove_model(Engine* engine, int modelID) {
+void engine_remove_model(my_engine* engine, int modelID) {
     // Remove all instances which use the current model
 #if 0
     std::size_t size = engine->instances.size();
@@ -760,7 +756,7 @@ void engine_remove_model(Engine* engine, int modelID) {
 #endif
 }
 
-void engine_add_instance(Engine* engine, int modelID, float x, float y, float z) {
+void engine_add_instance(my_engine* engine, int modelID, float x, float y, float z) {
     static int instanceID = 0;
 
     Entity instance{};
@@ -772,30 +768,30 @@ void engine_add_instance(Engine* engine, int modelID, float x, float y, float z)
     instance.scale = glm::vec3(1.0f, 1.0f, 1.0f);
     instance.matrix = glm::mat4(1.0f);
 
-    engine->instances.push_back(instance);
+    engine->entities.push_back(instance);
 
     print_log("Instance (%d) added.\n", instance.id);
 }
 
-void engine_remove_instance(Engine* engine, int instanceID) {
+void engine_remove_instance(my_engine* engine, int instanceID) {
     assert(instanceID >= 0);
 
 //#define FIND_BY_ID
 #if defined(FIND_BY_ID)
-    const auto it = std::find_if(engine->instances.begin(), engine->instances.end(), [&](Entity& instance)
+    const auto it = std::find_if(engine->entities.begin(), engine->entities.end(), [&](Entity& instance)
     {
         return instance.id == instanceID;
     });
 
-    if (it == engine->instances.end())
+    if (it == engine->entities.end())
     {
         logger::warning("Unable to find instance with ID of {} to remove", instanceID);
         return;
     }
 
-    engine->instances.erase(it);
+    engine->entities.erase(it);
 #else
-    engine->instances.erase(engine->instances.begin() + instanceID);
+    engine->entities.erase(engine->entities.begin() + instanceID);
 
     print_log("Instance (%d) removed.\n", instanceID);
 #endif
@@ -803,62 +799,62 @@ void engine_remove_instance(Engine* engine, int instanceID) {
     
 }
 
-int engine_get_instance_id(Engine* engine, int instanceIndex) {
+int engine_get_instance_id(my_engine* engine, int instanceIndex) {
     assert(instanceIndex >= 0);
 
-    return engine->instances[instanceIndex].id;
+    return engine->entities[instanceIndex].id;
 }
 
-const char* engine_get_instance_name(Engine* engine, int instanceIndex) {
+const char* engine_get_instance_name(my_engine* engine, int instanceIndex) {
     assert(instanceIndex >= 0);
 
-    return engine->instances[instanceIndex].name.c_str();
+    return engine->entities[instanceIndex].name.c_str();
 }
 
-void engine_get_instance_matrix(Engine* engine, int instanceIndex, float*& matrix)
+void engine_get_instance_matrix(my_engine* engine, int instanceIndex, float*& matrix)
 {
     assert(instanceIndex >= 0);
 
-    matrix = &engine->instances[instanceIndex].matrix[0][0];
+    matrix = &engine->entities[instanceIndex].matrix[0][0];
 }
 
-void engine_get_instance_position(Engine* engine, int instanceIndex, float*& position) {
+void engine_get_instance_position(my_engine* engine, int instanceIndex, float*& position) {
     assert(instanceIndex >= 0);
 
-    position = &engine->instances[instanceIndex].position.x;
+    position = &engine->entities[instanceIndex].position.x;
 }
 
-void engine_set_instance_position(Engine* engine, int instanceIndex, float x, float y, float z)
+void engine_set_instance_position(my_engine* engine, int instanceIndex, float x, float y, float z)
 {
     assert(instanceIndex >= 0);
 
-    engine->instances[instanceIndex].position.x = x;
-    engine->instances[instanceIndex].position.y = y;
-    engine->instances[instanceIndex].position.z = z;
+    engine->entities[instanceIndex].position.x = x;
+    engine->entities[instanceIndex].position.y = y;
+    engine->entities[instanceIndex].position.z = z;
 }
 
 
-void engine_get_instance_rotation(Engine* engine, int instanceIndex, float*& rotation) {
+void engine_get_instance_rotation(my_engine* engine, int instanceIndex, float*& rotation) {
     assert(instanceIndex >= 0);
 
-    rotation = &engine->instances[instanceIndex].rotation.x;
+    rotation = &engine->entities[instanceIndex].rotation.x;
 }
 
-void engine_set_instance_rotation(Engine* engine, int instanceIndex, float x, float y, float z)
+void engine_set_instance_rotation(my_engine* engine, int instanceIndex, float x, float y, float z)
 {
     assert(instanceIndex >= 0);
 
-    engine->instances[instanceIndex].rotation.x = x;
-    engine->instances[instanceIndex].rotation.y = y;
-    engine->instances[instanceIndex].rotation.z = z;
+    engine->entities[instanceIndex].rotation.x = x;
+    engine->entities[instanceIndex].rotation.y = y;
+    engine->entities[instanceIndex].rotation.z = z;
 }
 
-void engine_get_instance_scale(Engine* engine, int instanceIndex, float* scale) {
+void engine_get_instance_scale(my_engine* engine, int instanceIndex, float* scale) {
     assert(instanceIndex >= 0);
 
-    scale[0] = engine->instances[instanceIndex].scale.x;
-    scale[1] = engine->instances[instanceIndex].scale.y;
-    scale[2] = engine->instances[instanceIndex].scale.z;
+    scale[0] = engine->entities[instanceIndex].scale.x;
+    scale[1] = engine->entities[instanceIndex].scale.y;
+    scale[2] = engine->entities[instanceIndex].scale.z;
 }
 
 void engine_set_environment_map(const char* path) {
@@ -867,89 +863,89 @@ void engine_set_environment_map(const char* path) {
     // Update environment map
 }
 
-void engine_create_camera(Engine* engine, float fovy, float speed) {
+void engine_create_camera(my_engine* engine, float fovy, float speed) {
     engine->camera = create_perspective_camera(Camera_Type::first_person, { 0.0f, 0.0f, -2.0f }, fovy, speed);    
 }
 
-void engine_update_input(Engine* engine) {
+void engine_update_input(my_engine* engine) {
     update_input(engine->camera, engine->deltaTime);
 }
 
-void engine_update_camera_view(Engine* engine) {
+void engine_update_camera_view(my_engine* engine) {
     update_camera(engine->camera, get_cursor_position());
 }
 
-void engine_update_camera_projection(Engine* engine, int width, int height) {
+void engine_update_camera_projection(my_engine* engine, int width, int height) {
     update_projection(engine->camera, width, height);
 }
 
 
-float* engine_get_camera_view(Engine* engine)
+float* engine_get_camera_view(my_engine* engine)
 {
     return glm::value_ptr(engine->camera.viewProj.view);
 }
 
-float* engine_get_camera_projection(Engine* engine)
+float* engine_get_camera_projection(my_engine* engine)
 {
     return glm::value_ptr(engine->camera.viewProj.proj);
 }
 
-void engine_get_camera_position(Engine* engine, float* x, float* y, float* z) {
+void engine_get_camera_position(my_engine* engine, float* x, float* y, float* z) {
     *x = engine->camera.position.x;
     *y = engine->camera.position.y;
     *z = engine->camera.position.z;
 }
 
-void engine_get_camera_front_vector(Engine* engine, float* x, float* y, float* z) {
+void engine_get_camera_front_vector(my_engine* engine, float* x, float* y, float* z) {
     *x = engine->camera.front_vector.x;
     *y = engine->camera.front_vector.y;
     *z = engine->camera.front_vector.z;
 }
 
-float* engine_get_camera_fov(Engine* engine) {
+float* engine_get_camera_fov(my_engine* engine) {
     return &engine->camera.fov;
 }
 
-float* engine_get_camera_speed(Engine* engine) {
+float* engine_get_camera_speed(my_engine* engine) {
     return &engine->camera.speed;
 }
 
-float* engine_get_camera_near(Engine* engine) {
+float* engine_get_camera_near(my_engine* engine) {
     return &engine->camera.near;
 }
 
-float* engine_get_camera_far(Engine* engine) {
+float* engine_get_camera_far(my_engine* engine) {
     return &engine->camera.far;
 }
 
-void engine_set_camera_position(Engine* engine, float x, float y, float z) {
+void engine_set_camera_position(my_engine* engine, float x, float y, float z) {
     engine->camera.position = glm::vec3(x, y, z);
 }
 
-void engine_enable_ui(Engine* engine)
+void engine_enable_ui(my_engine* engine)
 {
-    add_framebuffer_attachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebufferSize);
+    add_framebuffer_attachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
     create_render_pass_2(uiPass, true);
 
     engine->ui = create_ui(engine->renderer, uiPass.render_pass);
-    engine->uiPassEnabled = true;
+    engine->ui_pass_enabled = true;
 
     for (std::size_t i = 0; i < get_swapchain_image_count(); ++i)
-        viewportUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, viewport[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        viewportUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, viewport[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
 
     // Create descriptor sets for g-buffer images for UI
     for (std::size_t i = 0; i < positions.size(); ++i) {
-        positionsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, positions[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        normalsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, normals[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        colorsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, colors[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        specularsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, speculars[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        depthsUI.push_back(ImGui_ImplVulkan_AddTexture(gFramebufferSampler, depths[i].view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL));
+        positionsUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, positions[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        normalsUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, normals[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        colorsUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, colors[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        specularsUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, speculars[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        depthsUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, depths[i].view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL));
     }
 
     uiCmdBuffer = create_command_buffers();
 }
 
-void engine_set_ui_font_texture(Engine* engine)
+void engine_set_ui_font_texture(my_engine* engine)
 {
     create_font_textures(engine->renderer);
 }
@@ -974,47 +970,51 @@ void engine_render_viewport_ui(int width, int height)
     ImGui::Image(viewportUI[currentImage], ImVec2((float)width, (float)height));
 }
 
-int engine_get_model_count(Engine* engine)
+int engine_get_model_count(my_engine* engine)
 {
     return static_cast<int>(engine->models.size());
 }
 
-int engine_get_instance_count(Engine* engine)
+int engine_get_instance_count(my_engine* engine)
 {
-    return static_cast<int>(engine->instances.size());
+    return static_cast<int>(engine->entities.size());
 }
 
-const char* engine_get_model_name(Engine* engine, int modelID) {
+const char* engine_get_model_name(my_engine* engine, int modelID) {
     return engine->models[modelID].name.c_str();
 }
 
-void engine_set_instance_scale(Engine* engine, int instanceIndex, float scale) {
-    engine->instances[instanceIndex].scale = glm::vec3(scale);
+void engine_set_instance_scale(my_engine* engine, int instanceIndex, float scale) {
+    engine->entities[instanceIndex].scale = glm::vec3(scale);
 }
 
-void engine_set_instance_scale(Engine* engine, int instanceIndex, float x, float y, float z) {
-    engine->instances[instanceIndex].scale = glm::vec3(x, y, z);
+void engine_set_instance_scale(my_engine* engine, int instanceIndex, float x, float y, float z) {
+    engine->entities[instanceIndex].scale = glm::vec3(x, y, z);
 }
 
-double engine_get_delta_time(Engine* engine) {
+double engine_get_delta_time(my_engine* engine) {
     return engine->deltaTime;
 }
 
-const char* engine_get_gpu_name(Engine* engine)
+const char* engine_get_gpu_name(my_engine* engine)
 {
     return engine->renderer->ctx.device->gpu_name.c_str();
 }
 
-void engine_get_uptime(Engine* engine, int* hours, int* minutes, int* seconds)
+void engine_get_uptime(my_engine* engine, int* hours, int* minutes, int* seconds)
 {
-    const auto [h, m, s] = get_duration(engine->startTime);
+    const auto duration = std::chrono::high_resolution_clock::now() - engine->start_time;
+
+    const int h = std::chrono::duration_cast<std::chrono::hours>(duration).count();
+    const int m = std::chrono::duration_cast<std::chrono::minutes>(duration).count() % 60;
+    const int s = std::chrono::duration_cast<std::chrono::seconds>(duration).count() % 60;
 
     *hours = h;
     *minutes = m;
     *seconds = s;
 }
 
-void engine_get_memory_status(Engine* engine, float* memoryUsage, unsigned int* maxMemory)
+void engine_get_memory_status(my_engine* engine, float* memoryUsage, unsigned int* maxMemory)
 {
     const MEMORYSTATUSEX memoryStatus = get_windows_memory_status();
 
@@ -1022,7 +1022,7 @@ void engine_get_memory_status(Engine* engine, float* memoryUsage, unsigned int* 
     *maxMemory = static_cast<int>(memoryStatus.ullTotalPhys / 1'000'000'000);
 }
 
-const char* engine_display_file_explorer(Engine* engine, const char* path)
+const char* engine_display_file_explorer(my_engine* engine, const char* path)
 {
     // TODO: Clean up this function and ensure that no bugs exist
     static std::string current_dir = path;
@@ -1077,24 +1077,24 @@ const char* engine_display_file_explorer(Engine* engine, const char* path)
     return fullPath.c_str();
 }
 
-const char* engine_get_executable_directory(Engine* engine)
+const char* engine_get_executable_directory(my_engine* engine)
 {
     return engine->execPath.c_str();
 }
 
-void engine_set_cursor_mode(Engine* engine, int cursorMode)
+void engine_set_cursor_mode(my_engine* engine, int cursorMode)
 {
     int mode = (cursorMode == 0) ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
     engine->camera.first_mouse = true;
     glfwSetInputMode(engine->window->handle, GLFW_CURSOR, mode);
 }
 
-void engine_clear_logs(Engine* engine)
+void engine_clear_logs(my_engine* engine)
 {
     clear_logs();
 }
 
-void engine_export_logs_to_file(Engine* engine, const char* path)
+void engine_export_logs_to_file(my_engine* engine, const char* path)
 {
     std::ofstream output(path);
 
@@ -1102,12 +1102,12 @@ void engine_export_logs_to_file(Engine* engine, const char* path)
         output << message << "\n";
 }
 
-int engine_get_log_count(Engine* engine)
+int engine_get_log_count(my_engine* engine)
 {
     return get_log_count();
 }
 
-const char* engine_get_log(Engine* engine, int logIndex)
+const char* engine_get_log(my_engine* engine, int logIndex)
 {
     const std::vector<std::string>& logs = get_logs();
     
@@ -1115,12 +1115,12 @@ const char* engine_get_log(Engine* engine, int logIndex)
 }
 
 
-void engine_set_master_volume(Engine* engine, int master_volume)
+void engine_set_master_volume(my_engine* engine, int master_volume)
 {
     set_master_audio_volume(engine->audio.master_voice, master_volume);
 }
 
-int engine_play_audio(Engine* engine, const char* path)
+int engine_play_audio(my_engine* engine, const char* path)
 {
     create_audio_source(engine->audio, engine->example_audio, path);
     play_audio(engine->example_audio);
@@ -1128,18 +1128,18 @@ int engine_play_audio(Engine* engine, const char* path)
     return 0;
 }
 
-void engine_pause_audio(Engine* engine, int audio_id)
+void engine_pause_audio(my_engine* engine, int audio_id)
 {
     stop_audio(engine->example_audio);
 }
 
-void engine_stop_audio(Engine* engine, int audio_id)
+void engine_stop_audio(my_engine* engine, int audio_id)
 {
     stop_audio(engine->example_audio);
     destroy_audio_source(engine->example_audio);
 }
 
-void engine_set_audio_volume(Engine* engine, int audio_volume)
+void engine_set_audio_volume(my_engine* engine, int audio_volume)
 {
     set_audio_volume(engine->example_audio, audio_volume);
 }
@@ -1168,10 +1168,10 @@ void engine_set_audio_volume(Engine* engine, int audio_volume)
 // TODO: Event system stuff
 static bool press(Key_Pressed_Event& e)
 {
-    if (!gTempEnginePtr->callbacks.key_callback)
+    if (!g_engine_ptr->callbacks.key_callback)
         return false;
 
-    gTempEnginePtr->callbacks.key_callback(gTempEnginePtr, e.get_key_code());
+    g_engine_ptr->callbacks.key_callback(g_engine_ptr, e.get_key_code());
 
     return true;
 }
@@ -1197,28 +1197,41 @@ static bool mouse_moved(Mouse_Moved_Event& e)
 
 static bool resize(Window_Resized_Event& e)
 {
-    if (!gTempEnginePtr->callbacks.resize_callback)
+    if (!g_engine_ptr->callbacks.resize_callback)
         return false;
 
-    gTempEnginePtr->callbacks.resize_callback(gTempEnginePtr, e.get_width(), e.get_height());
+    g_engine_ptr->callbacks.resize_callback(g_engine_ptr, e.get_width(), e.get_height());
 
     return true;
 }
 
-static bool close_window(Window_Closed_Event& e) {
-    gTempEnginePtr->running = false;
+static bool close_window(Window_Closed_Event& e)
+{
+    g_engine_ptr->running = false;
 
     return true;
 }
 
-static bool minimized_window(Window_Minimized_Event& e) {
-    gTempEnginePtr->window->minimized = true;
+static bool minimized_window(Window_Minimized_Event& e)
+{
+    g_engine_ptr->window->minimized = true;
 
     return true;
 }
 
-static bool not_minimized_window(Window_Not_Minimized_Event& e) {
-    gTempEnginePtr->window->minimized = false;
+static bool not_minimized_window(Window_Not_Minimized_Event& e)
+{
+    g_engine_ptr->window->minimized = false;
+    return true;
+}
+
+static bool dropped_window(Window_Dropped_Event& e)
+{
+    if (!g_engine_ptr->callbacks.drop_callback)
+        return false;
+
+    g_engine_ptr->callbacks.drop_callback(g_engine_ptr, e.path_count, e._paths);
+
     return true;
 }
 
@@ -1233,4 +1246,5 @@ static void event_callback(basic_event& e) {
     dispatcher.dispatch<Window_Closed_Event>(close_window);
     dispatcher.dispatch<Window_Minimized_Event>(minimized_window);
     dispatcher.dispatch<Window_Not_Minimized_Event>(not_minimized_window);
+    dispatcher.dispatch<Window_Dropped_Event>(dropped_window);
 }

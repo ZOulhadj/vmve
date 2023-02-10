@@ -1,9 +1,9 @@
-#include "shader.hpp"
+#include "shader.h"
 
-#include "common.hpp"
-#include "renderer.hpp"
+#include "common.h"
+#include "renderer.h"
 
-//#include "logging.hpp"
+//#include "logging.h"
 
 static shaderc_shader_kind vulkan_to_shaderc_type(VkShaderStageFlagBits type) {
     switch (type) {

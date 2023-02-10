@@ -1,12 +1,12 @@
-#include "ui.hpp"
+#include "ui.h"
 
-#include "rendering/api/vulkan/common.hpp"
+#include "rendering/api/vulkan/common.h"
 
 
-#include "filesystem/vfs.hpp"
-#include "filesystem/filesystem.hpp"
+#include "filesystem/vfs.h"
+#include "filesystem/filesystem.h"
 
-#include "logging.hpp"
+#include "logging.h"
 
 ImGuiContext* create_ui(const Vulkan_Renderer* renderer, VkRenderPass renderPass)
 {

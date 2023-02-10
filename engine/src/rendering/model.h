@@ -2,8 +2,8 @@
 #define MY_ENGINE_MODEL_HPP
 
 
-#include "api/vulkan/vertex_array.hpp"
-#include "material.hpp"
+#include "api/vulkan/vertex_array.h"
+#include "material.h"
 
 // One material per mesh
 

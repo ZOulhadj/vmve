@@ -1,7 +1,7 @@
 #ifndef MY_ENGINE_DESCRIPTOR_SETS_HPP
 #define MY_ENGINE_DESCRIPTOR_SETS_HPP
 
-#include "buffer.hpp"
+#include "buffer.h"
 
 
 VkDescriptorPool create_descriptor_pool();

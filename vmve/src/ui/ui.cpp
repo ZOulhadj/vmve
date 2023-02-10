@@ -73,6 +73,8 @@ bool should_resize_viewport = false;
 int viewport_width = 0;
 int viewport_height = 0;
 
+bool drop_load_model = false;
+static const char* drop_load_model_path = "";
 
 bool firstTimeNormal = true;
 bool firstTimeFullScreen = !firstTimeNormal;
@@ -283,16 +285,13 @@ static void set_light_theme()
 static void set_next_window_in_center()
 {
     const ImVec2 settings_window_size = ImVec2(ImGui::GetWindowSize().x / 2.0f, ImGui::GetWindowSize().y / 2.0f);
-    const ImVec2 window_center = ImVec2(
-        (ImGui::GetWindowSize().x / 2.0f) - settings_window_size.x / 2,
-        (ImGui::GetWindowSize().y / 2.0f) - settings_window_size.y / 2
-    );
-
     ImGui::SetNextWindowSize(settings_window_size);
-    ImGui::SetNextWindowPos(window_center);
+
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, 0, ImVec2(0.5f, 0.5f));
 }
 
-static void settings_window(Engine* engine, bool* open)
+static void settings_window(my_engine* engine, bool* open)
 {
     if (!*open)
         return;
@@ -455,7 +454,7 @@ static void about_window(bool* open)
     ImGui::End();
 }
 
-static void load_model_window(Engine* engine, bool* open)
+static void load_model_window(my_engine* engine, bool* open)
 {
     if (!*open)
         return;
@@ -499,7 +498,7 @@ static void load_model_window(Engine* engine, bool* open)
     ImGui::End();
 }
 
-static void vmve_creator_window(Engine* engine, bool* open)
+static void vmve_creator_window(my_engine* engine, bool* open)
 {
     if (!*open)
         return;
@@ -655,8 +654,12 @@ void EndDocking()
     ImGui::End();
 }
 
+void set_drop_model_path(const char* path)
+{
+//    drop_load_model_path = path;
+}
 
-void RenderMainMenu(Engine* engine)
+void RenderMainMenu(my_engine* engine)
 {
     static bool settingsOpen = false;
     static bool aboutOpen = false;
@@ -721,9 +724,41 @@ void RenderMainMenu(Engine* engine)
     vmve_creator_window(engine, &creator_open);
     perf_window(&perfProfilerOpen);
     gbuffer_visualizer_window(&gBufferOpen);
+
+
+    if (drop_load_model) {
+        static bool flip_uvs = false;
+
+        ImGui::OpenPopup("Load_Model_Modal");
+        if (ImGui::BeginPopupModal("Load_Model_Modal", &drop_load_model, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Model path: %s", drop_load_model_path);
+
+            ImGui::Separator();
+
+            ImGui::Checkbox("Flip UVs", &flip_uvs);
+            if (ImGui::Button("Load Model", ImVec2(120, 0))) {
+                engine_load_model(engine, drop_load_model_path, flip_uvs);
+
+                ImGui::CloseCurrentPopup();
+                drop_load_model = false;
+            }
+
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+
+
+                ImGui::CloseCurrentPopup();
+                drop_load_model = false;
+            }
+            ImGui::EndPopup();
+        }
+
+    }
 }
 
-void RenderObjectWindow(Engine* engine)
+void RenderObjectWindow(my_engine* engine)
 {
     // Object window
     ImGui::Begin(object_window, &window_open, dockspaceWindowFlags);
@@ -851,7 +886,7 @@ void RenderObjectWindow(Engine* engine)
     ImGui::End();
 }
 
-void RenderGlobalWindow(Engine* engine)
+void RenderGlobalWindow(my_engine* engine)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -1086,7 +1121,7 @@ void RenderGlobalWindow(Engine* engine)
     ImGui::End();
 }
 
-void RenderConsoleWindow(Engine* engine)
+void RenderConsoleWindow(my_engine* engine)
 {
     static bool autoScroll = true;
     static bool scrollCheckboxClicked = false;
@@ -1142,7 +1177,7 @@ void RenderConsoleWindow(Engine* engine)
     ImGui::End();
 }
 
-void RenderViewportWindow(Engine* engine)
+void RenderViewportWindow(my_engine* engine)
 {
     ImGuiWindowFlags viewportFlags = dockspaceWindowFlags;
 
@@ -1247,7 +1282,7 @@ void RenderViewportWindow(Engine* engine)
 }
 
 
-void configure_ui(Engine* engine)
+void configure_ui(my_engine* engine)
 {
     set_default_styling();
     set_default_theme();
@@ -1261,7 +1296,7 @@ void configure_ui(Engine* engine)
 }
 
 
-void render_ui(Engine* engine, bool fullscreen)
+void render_ui(my_engine* engine, bool fullscreen)
 {
     BeginDocking();
     RenderMainMenu(engine);

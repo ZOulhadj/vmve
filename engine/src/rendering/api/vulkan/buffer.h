@@ -1,7 +1,7 @@
 #ifndef MY_ENGINE_BUFFER_HPP
 #define MY_ENGINE_BUFFER_HPP
 
-#include "common.hpp"
+#include "common.h"
 
 struct vulkan_buffer
 {

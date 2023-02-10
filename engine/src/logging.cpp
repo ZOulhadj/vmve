@@ -1,4 +1,4 @@
-#include "logging.hpp"
+#include "logging.h"
 
 static constexpr uint32_t g_log_history = 10000;
 static std::vector<std::string> g_log_buffer(g_log_history);

@@ -1,7 +1,7 @@
 #ifndef MY_ENGINE_AUDIO_HPP
 #define MY_ENGINE_AUDIO_HPP
 
-#include "rendering/camera.hpp"
+#include "rendering/camera.h"
 
 
 struct main_audio

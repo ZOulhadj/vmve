@@ -1,6 +1,6 @@
-#include "win32_audio.hpp"
+#include "win32_audio.h"
 
-#include "logging.hpp"
+#include "logging.h"
 
 #ifdef _XBOX //Big-Endian
 #define fourccRIFF 'RIFF'

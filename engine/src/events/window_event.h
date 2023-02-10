@@ -1,7 +1,7 @@
 #ifndef MYENGINE_WINDOWEVENT_HPP
 #define MYENGINE_WINDOWEVENT_HPP
 
-#include "event.hpp"
+#include "event.h"
 
 struct Window_Closed_Event : public basic_event {
     EVENT_CLASS_TYPE(window_closed);
@@ -45,14 +45,19 @@ private:
     uint32_t m_Height;
 };
 
-struct Window_Dropped_Event : public basic_event {
-    Window_Dropped_Event(const std::vector<std::string>& paths)
-        : m_Paths(paths)
-    {}
+struct Window_Dropped_Event : public basic_event
+{
+    Window_Dropped_Event(int count, const char* paths[])
+        : path_count(count), _paths(paths)
+    {
+        
+    }
 
     EVENT_CLASS_TYPE(window_dropped);
-private:
-    std::vector<std::string> m_Paths;
+
+
+    int path_count;
+    const char** _paths;
 };
 
 #endif

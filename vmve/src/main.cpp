@@ -9,14 +9,15 @@
 #include <ImGuizmo.h>
 
 
-static void key_callback(Engine* engine, int keycode);
-static void resize_callback(Engine* engine, int width, int height);
+static void key_callback(my_engine* engine, int keycode);
+static void resize_callback(my_engine* engine, int width, int height);
+static void drop_callback(my_engine* engine, int path_count, const char* paths[]);
 
 bool notFullScreen = true;
 
 int main()
 {
-    Engine* engine = nullptr;
+    my_engine* engine = nullptr;
 
     bool engine_initialized = engine_initialize(engine, "VMVE", 1280, 720);
     if (!engine_initialized) {
@@ -35,6 +36,7 @@ int main()
     engine_callbacks callbacks;
     callbacks.key_callback = key_callback;
     callbacks.resize_callback = resize_callback;
+    callbacks.drop_callback = drop_callback;
     engine_set_callbacks(engine, callbacks);
 
     
@@ -86,7 +88,7 @@ int main()
 }
 
 
-void key_callback(Engine* engine, int keycode)
+void key_callback(my_engine* engine, int keycode)
 {
 #define KEY_F1 290
 #define KEY_F2 291
@@ -149,10 +151,15 @@ void key_callback(Engine* engine, int keycode)
 
 }
 
-void resize_callback(Engine* engine, int width, int height)
+void resize_callback(my_engine* engine, int width, int height)
 {
 }
 
+void drop_callback(my_engine* engine, int path_count, const char* paths[])
+{
+    drop_load_model = true;
+    set_drop_model_path(paths[0]);
+}
 
 // The viewport must resize before rendering to texture. If it were
 // to resize within the UI functions then we would be attempting to

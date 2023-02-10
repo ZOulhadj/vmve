@@ -2,8 +2,8 @@
 #define MYENGINE_UI_HPP
 
 
-#include "rendering/api/vulkan/renderer.hpp"
-#include "events/event.hpp"
+#include "rendering/api/vulkan/renderer.h"
+#include "events/event.h"
 
 struct GUI
 {

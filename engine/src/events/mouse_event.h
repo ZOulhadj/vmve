@@ -1,7 +1,7 @@
 #ifndef MYENGINE_MOUSEEVENT_HPP
 #define MYENGINE_MOUSEEVENT_HPP
 
-#include "event.hpp"
+#include "event.h"
 
 struct Mouse_Button_Event : public basic_event {
     int get_button_code() const { return m_ButtonCode; }

@@ -1,7 +1,7 @@
 #ifndef MYENGINE_KEYEVENT_HPP
 #define MYENGINE_KEYEVENT_HPP
 
-#include "event.hpp"
+#include "event.h"
 
 struct Key_Event : public basic_event {
     int get_key_code() const { return m_KeyCode; }

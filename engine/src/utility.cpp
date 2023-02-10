@@ -1,4 +1,4 @@
-#include "utility.hpp"
+#include "utility.h"
 
 std::string load_file(const std::filesystem::path& path)
 {

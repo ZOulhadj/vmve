@@ -1,7 +1,7 @@
 #ifndef MYENGINE_EVENTDISPATCHER_HPP
 #define MYENGINE_EVENTDISPATCHER_HPP
 
-#include "event.hpp"
+#include "event.h"
 
 struct Event_Dispatcher {
     Event_Dispatcher(basic_event& e)

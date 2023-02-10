@@ -1,9 +1,9 @@
-#include "renderer.hpp"
+#include "renderer.h"
 
-#include "common.hpp"
+#include "common.h"
 
 
-#include "descriptor_sets.hpp"
+#include "descriptor_sets.h"
 
 static Vulkan_Renderer* g_r = nullptr;
 static Vulkan_Context* g_rc  = nullptr;

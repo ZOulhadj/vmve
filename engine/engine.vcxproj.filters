@@ -72,12 +72,6 @@
     <ClCompile Include="src\engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\time.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -120,111 +114,120 @@
     <ClCompile Include="src\logging.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\time.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\platform\win32_memory.hpp">
+    <ClInclude Include="src\core\platform\win32_memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\input.hpp">
+    <ClInclude Include="src\core\input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\window.hpp">
+    <ClInclude Include="src\core\window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\events\event.hpp">
+    <ClInclude Include="src\events\event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\events\event_dispatcher.hpp">
+    <ClInclude Include="src\events\event_dispatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\events\key_event.hpp">
+    <ClInclude Include="src\events\key_event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\events\mouse_event.hpp">
+    <ClInclude Include="src\events\mouse_event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\events\window_event.hpp">
+    <ClInclude Include="src\events\window_event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\filesystem\filesystem.hpp">
+    <ClInclude Include="src\filesystem\filesystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\filesystem\vfs.hpp">
+    <ClInclude Include="src\filesystem\vfs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\buffer.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\common.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\vulkan_context.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\vulkan_context.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\descriptor_sets.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\descriptor_sets.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\renderer.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\shader.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\texture.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\vertex_array.hpp">
+    <ClInclude Include="src\rendering\api\vulkan\vertex_array.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\camera.hpp">
+    <ClInclude Include="src\rendering\camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\entity.hpp">
+    <ClInclude Include="src\rendering\entity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\material.hpp">
+    <ClInclude Include="src\rendering\material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\model.hpp">
+    <ClInclude Include="src\rendering\model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\vertex.hpp">
+    <ClInclude Include="src\rendering\vertex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ui\ui.hpp">
+    <ClInclude Include="src\ui\ui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\pch.hpp">
+    <ClInclude Include="src\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\time.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\utility.hpp">
+    <ClInclude Include="src\utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\directx\d3d_context.hpp">
+    <ClInclude Include="src\rendering\api\directx\d3d_context.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\platform\win32_audio.hpp">
+    <ClInclude Include="src\core\platform\win32_audio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\platform\win32_window.hpp">
+    <ClInclude Include="src\core\platform\win32_window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\shaders\shaders.hpp">
+    <ClInclude Include="src\rendering\shaders\shaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\primitives\cube.hpp">
+    <ClInclude Include="src\rendering\primitives\cube.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\volk\volk.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\logging.hpp">
+    <ClInclude Include="src\logging.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\math\math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,7 +2,7 @@
 #define MYENGINE_WINDOW_HPP
 
 
-#include "events/event.hpp"
+#include "events/event.h"
 
 
 struct Window

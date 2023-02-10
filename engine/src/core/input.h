@@ -2,7 +2,7 @@
 #define MY_ENGINE_INPUT_HPP
 
 
-#include "../rendering/camera.hpp"
+#include "../rendering/camera.h"
 
 
 bool is_key_down(int keycode);

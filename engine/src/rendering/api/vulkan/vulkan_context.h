@@ -2,7 +2,7 @@
 #define MY_ENGINE_RENDERER_CONTEXT_HPP
 
 
-#include "core/window.hpp"
+#include "core/window.h"
 
 struct Vulkan_Device {
     VkPhysicalDevice gpu;

@@ -1,9 +1,9 @@
-#include "model.hpp"
+#include "model.h"
 
-#include "vertex.hpp"
-#include "api/vulkan/texture.hpp"
-#include "filesystem/vfs.hpp"
-#include "logging.hpp"
+#include "vertex.h"
+#include "api/vulkan/texture.h"
+#include "filesystem/vfs.h"
+#include "logging.h"
 
 static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial* material, 
                                                    aiTextureType type, 

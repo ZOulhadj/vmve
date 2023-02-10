@@ -1,8 +1,8 @@
-#include "common.hpp"
+#include "common.h"
 
 
 
-#include "logging.hpp"
+#include "logging.h"
 
 // Compares a list of requested instance layers against the layers available
 // on the system. If all the requested layers have been found then true is
