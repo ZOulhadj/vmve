@@ -343,8 +343,7 @@ static void settings_window(my_engine* engine, bool* open)
         const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
         const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
         const ImVec2 button_size = ImVec2(-FLT_MIN, 0.0f);
-        if (ImGui::BeginTable("Shortcuts", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f))
-        {
+        if (ImGui::BeginTable("Shortcuts", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f)) {
             ImGui::TableSetupColumn("Actions");
             ImGui::TableSetupColumn("Shortcuts");
             ImGui::TableSetupScrollFreeze(0, 1);
@@ -588,14 +587,12 @@ static void perf_window(bool* open)
     
     ImGui::Begin("Performance Profiler", open);
 
-    if (ImGui::CollapsingHeader("CPU Timers"))
-    {
+    if (ImGui::CollapsingHeader("CPU Timers")) {
         ImGui::Text("%.2fms - Applicaiton::Render", 15.41f);
         ImGui::Text("%.2fms - GeometryPass::Render", 12.23f);
     }
 
-    if (ImGui::CollapsingHeader("GPU Timers"))
-    {
+    if (ImGui::CollapsingHeader("GPU Timers")) {
         ImGui::Text("%fms - VkQueueSubmit", 0.018f);
     }
 
@@ -668,11 +665,8 @@ void RenderMainMenu(my_engine* engine)
     static bool perfProfilerOpen = false;
     static bool gBufferOpen = false;
 
-    if (ImGui::BeginMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
             loadOpen = ImGui::MenuItem("Load model");
             creator_open = ImGui::MenuItem("VMVE creator");
 
@@ -686,16 +680,13 @@ void RenderMainMenu(my_engine* engine)
         if (ImGui::MenuItem("Settings"))
             settingsOpen = true;
 
-        if (ImGui::BeginMenu("Tools"))
-        {
-            if (ImGui::MenuItem("Performance Profiler"))
-            {
+        if (ImGui::BeginMenu("Tools")) {
+            if (ImGui::MenuItem("Performance Profiler")) {
                 perfProfilerOpen = true;
             }
 
 
-            if (ImGui::MenuItem("G-Buffer Visualizer"))
-            {
+            if (ImGui::MenuItem("G-Buffer Visualizer")) {
                 gBufferOpen = true;
             }
 
@@ -703,8 +694,7 @@ void RenderMainMenu(my_engine* engine)
         }
 
 
-        if (ImGui::BeginMenu("Help"))
-        {
+        if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("About"))
                 aboutOpen = true;
 
@@ -789,8 +779,7 @@ void RenderObjectWindow(my_engine* engine)
         ImGui::SameLine();
 
         ImGui::BeginDisabled(instanceCount == 0);
-        if (ImGui::Button("Remove instance"))
-        {
+        if (ImGui::Button("Remove instance")) {
             engine_remove_instance(engine, selectedInstanceIndex);
 
             // NOTE: should not go below 0
@@ -812,8 +801,7 @@ void RenderObjectWindow(my_engine* engine)
         const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
         const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
 
-        if (ImGui::BeginTable("Objects", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f))
-        {
+        if (ImGui::BeginTable("Objects", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f)) {
             ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, 0.0f, 0);
             ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 0.0f, 1);
             ImGui::TableSetupScrollFreeze(0, 1);
@@ -821,10 +809,8 @@ void RenderObjectWindow(my_engine* engine)
 
             ImGuiListClipper clipper;
             clipper.Begin(engine_get_instance_count(engine));
-            while (clipper.Step())
-            {
-                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-                {
+            while (clipper.Step()) {
+                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
                     char label[32];
                     sprintf(label, "%04d", engine_get_instance_id(engine, i));
 
@@ -847,8 +833,7 @@ void RenderObjectWindow(my_engine* engine)
         }
 
 
-        if (engine_get_instance_count(engine) > 0)
-        {
+        if (engine_get_instance_count(engine) > 0) {
             ImGui::BeginChild("Object Properties");
 
             ImGui::Text("ID: %04d", engine_get_instance_id(engine, selectedInstanceIndex));
@@ -900,8 +885,7 @@ void RenderGlobalWindow(my_engine* engine)
 
     ImGui::Begin(scene_window, &window_open, dockspaceWindowFlags);
     {
-        if (ImGui::CollapsingHeader("Application"))
-        {
+        if (ImGui::CollapsingHeader("Application")) {
             int hours, minutes, seconds;
             engine_get_uptime(engine, &hours, &minutes, &seconds);
 
@@ -917,8 +901,7 @@ void RenderGlobalWindow(my_engine* engine)
             ImGui::ProgressBar(memoryUsage, ImVec2(0.f, 0.f), buf);
         }
 
-        if (ImGui::CollapsingHeader("Renderer"))
-        {
+        if (ImGui::CollapsingHeader("Renderer")) {
             ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::Text("Delta time: %.4f ms/frame", engine_get_delta_time(engine));
 
@@ -928,8 +911,7 @@ void RenderGlobalWindow(my_engine* engine)
             if (ImGui::Checkbox("Wireframe", &wireframe))
                 engine_set_render_mode(engine, wireframe ? 1 : 0);
 
-            if (ImGui::Checkbox("VSync", &vsync))
-            {
+            if (ImGui::Checkbox("VSync", &vsync)) {
                 update_swapchain_vsync = true;
             }
 
@@ -1095,8 +1077,7 @@ void RenderGlobalWindow(my_engine* engine)
 
 
 
-        if (skyboxWindowOpen)
-        {
+        if (skyboxWindowOpen) {
             ImGui::Begin("Load Skybox", &skyboxWindowOpen);
 
             static const char* textureDirectory = engine_get_executable_directory(engine);
@@ -1196,8 +1177,7 @@ void RenderViewportWindow(my_engine* engine)
         viewport_width = (int)ImGui::GetContentRegionAvail().x;
         viewport_height = (int)ImGui::GetContentRegionAvail().y;
 
-        if (first_time)
-        {
+        if (first_time) {
             old_viewport_width = viewport_width;
             old_viewport_height = viewport_height;
             first_time = false;
@@ -1208,8 +1188,7 @@ void RenderViewportWindow(my_engine* engine)
         // viewport size then update the viewport values and flag the main loop to update
         // the resize_viewport variable.
         if (viewport_width != old_viewport_width || 
-            viewport_height != old_viewport_height)
-        {
+            viewport_height != old_viewport_height) {
             old_viewport_width = viewport_width;
             old_viewport_height = viewport_height;
 
