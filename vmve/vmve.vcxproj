@@ -105,6 +105,7 @@
     <ClCompile Include="vendor\imgui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="src\misc.hpp" />
     <ClInclude Include="src\security.hpp" />
     <ClInclude Include="src\ui\ui.hpp" />
@@ -117,6 +118,12 @@
     <ClInclude Include="vendor\imgui\imstb_rectpack.h" />
     <ClInclude Include="vendor\imgui\imstb_textedit.h" />
     <ClInclude Include="vendor\imgui\imstb_truetype.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="vmve.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="S:\education\roehampton_university\2022-2023\final_year_project\media\project_icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
