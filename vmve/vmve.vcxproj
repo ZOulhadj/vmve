@@ -106,11 +106,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
-    <ClInclude Include="src\misc.hpp" />
-    <ClInclude Include="src\security.hpp" />
-    <ClInclude Include="src\ui\ui.hpp" />
-    <ClInclude Include="src\ui\ui_fonts.hpp" />
-    <ClInclude Include="src\vmve.hpp" />
+    <ClInclude Include="src\misc.h" />
+    <ClInclude Include="src\security.h" />
+    <ClInclude Include="src\ui\ui.h" />
+    <ClInclude Include="src\ui\ui_fonts.h" />
+    <ClInclude Include="src\vmve.h" />
     <ClInclude Include="vendor\imgui\imconfig.h" />
     <ClInclude Include="vendor\imgui\imgui.h" />
     <ClInclude Include="vendor\imgui\ImGuizmo.h" />

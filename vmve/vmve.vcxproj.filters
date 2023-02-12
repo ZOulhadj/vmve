@@ -53,13 +53,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\security.hpp">
+    <ClInclude Include="src\security.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ui\ui.hpp">
+    <ClInclude Include="src\ui\ui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\vmve.hpp">
+    <ClInclude Include="src\vmve.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\imgui\imconfig.h">
@@ -83,10 +83,10 @@
     <ClInclude Include="vendor\imgui\imstb_truetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\misc.hpp">
+    <ClInclude Include="src\misc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ui\ui_fonts.hpp">
+    <ClInclude Include="src\ui\ui_fonts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">

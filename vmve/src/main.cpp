@@ -1,9 +1,9 @@
 #include <engine.h>
 
-#include "vmve.hpp"
-#include "security.hpp"
-#include "ui/ui.hpp"
-#include "misc.hpp"
+#include "vmve.h"
+#include "security.h"
+#include "ui/ui.h"
+#include "misc.h"
 
 #include <imgui.h>
 #include <ImGuizmo.h>

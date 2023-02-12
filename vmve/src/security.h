@@ -1,5 +1,5 @@
-#ifndef VMVE_SECURITY_HPP
-#define VMVE_SECURITY_HPP
+#ifndef VMVE_SECURITY_H
+#define VMVE_SECURITY_H
 
 
 #include <string>

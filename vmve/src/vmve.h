@@ -1,5 +1,5 @@
-#ifndef SANDBOX_VMVE_HPP
-#define SANDBOX_VMVE_HPP
+#ifndef VMVE_H
+#define VMVE_H
 
 // TODO: Create a custom file format
 
@@ -15,8 +15,7 @@
 
 #include <string>
 
-
-#include "security.hpp"
+#include "security.h"
 
 enum class vmve_encryption_mode
 {

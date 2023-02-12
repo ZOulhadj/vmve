@@ -1,4 +1,4 @@
-#include "ui.hpp"
+#include "ui.h"
 
 //#define IMGUI_UNLIMITED_FRAME_RATE
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -12,9 +12,9 @@
 #include <string>
 #include <fstream>
 
-#include "../security.hpp"
-#include "../vmve.hpp"
-#include "ui_fonts.hpp"
+#include "../security.h"
+#include "../vmve.h"
+#include "ui_fonts.h"
 
 
 
@@ -94,38 +94,38 @@ static void set_default_styling()
     ImGuiStyle& style = ImGui::GetStyle();
     style.FrameRounding = 0.0f;
     style.TabRounding = 0.0f;
+    style.FrameBorderSize = 1.0f;
 }
 
 static void set_default_theme()
 {
     ImVec4* colors = ImGui::GetStyle().Colors;
-
     colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-    colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 1.00f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.03f, 0.03f, 0.04f, 1.00f);
     colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-    colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
+    colors[ImGuiCol_PopupBg] = ImVec4(0.03f, 0.03f, 0.04f, 0.94f);
+    colors[ImGuiCol_Border] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
     colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_FrameBg] = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
-    colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
-    colors[ImGuiCol_TitleBg] = ImVec4(0.01f, 0.01f, 0.01f, 1.00f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.01f, 0.01f, 0.01f, 1.00f);
+    colors[ImGuiCol_FrameBg] = ImVec4(0.02f, 0.02f, 0.02f, 1.00f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.02f, 0.02f, 0.02f, 0.71f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.16f, 0.40f, 0.28f, 0.63f);
+    colors[ImGuiCol_TitleBg] = ImVec4(0.03f, 0.03f, 0.04f, 1.00f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.30f, 0.68f, 0.61f, 1.00f);
     colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-    colors[ImGuiCol_MenuBarBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+    colors[ImGuiCol_MenuBarBg] = ImVec4(0.03f, 0.03f, 0.04f, 1.00f);
     colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
     colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
     colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
     colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
-    colors[ImGuiCol_CheckMark] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-    colors[ImGuiCol_SliderGrab] = ImVec4(0.24f, 0.52f, 0.88f, 1.00f);
-    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-    colors[ImGuiCol_Button] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
-    colors[ImGuiCol_ButtonHovered] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-    colors[ImGuiCol_ButtonActive] = ImVec4(0.06f, 0.53f, 0.98f, 1.00f);
-    colors[ImGuiCol_Header] = ImVec4(0.26f, 0.59f, 0.98f, 0.31f);
-    colors[ImGuiCol_HeaderHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+    colors[ImGuiCol_CheckMark] = ImVec4(0.30f, 0.68f, 0.61f, 1.00f);
+    colors[ImGuiCol_SliderGrab] = ImVec4(0.11f, 0.32f, 0.20f, 1.00f);
+    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.21f, 0.60f, 0.36f, 1.00f);
+    colors[ImGuiCol_Button] = ImVec4(0.16f, 0.44f, 0.31f, 1.00f);
+    colors[ImGuiCol_ButtonHovered] = ImVec4(0.30f, 0.68f, 0.61f, 1.00f);
+    colors[ImGuiCol_ButtonActive] = ImVec4(0.15f, 0.35f, 0.31f, 1.00f);
+    colors[ImGuiCol_Header] = ImVec4(0.11f, 0.25f, 0.22f, 1.00f);
+    colors[ImGuiCol_HeaderHovered] = ImVec4(0.30f, 0.68f, 0.61f, 0.80f);
     colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
     colors[ImGuiCol_Separator] = ImVec4(0.06f, 0.06f, 0.06f, 0.50f);
     colors[ImGuiCol_SeparatorHovered] = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
@@ -134,15 +134,15 @@ static void set_default_theme()
     colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
     colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
     colors[ImGuiCol_Tab] = ImVec4(0.00f, 0.00f, 0.00f, 0.86f);
-    colors[ImGuiCol_TabHovered] = ImVec4(0.0f, 0.346f, 0.126f, 1.0f);
-    colors[ImGuiCol_TabActive] = ImVec4(0.0f, 0.346f, 0.126f, 1.0f);
+    colors[ImGuiCol_TabHovered] = ImVec4(0.17f, 0.39f, 0.35f, 1.00f);
+    colors[ImGuiCol_TabActive] = ImVec4(0.30f, 0.68f, 0.61f, 1.00f);
     colors[ImGuiCol_TabUnfocused] = ImVec4(0.07f, 0.10f, 0.15f, 0.97f);
     colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
     colors[ImGuiCol_DockingPreview] = ImVec4(0.26f, 0.59f, 0.98f, 0.70f);
     colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
     colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
     colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-    colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+    colors[ImGuiCol_PlotHistogram] = ImVec4(0.30f, 0.68f, 0.61f, 1.00f);
     colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
     colors[ImGuiCol_TableHeaderBg] = ImVec4(0.19f, 0.19f, 0.20f, 1.00f);
     colors[ImGuiCol_TableBorderStrong] = ImVec4(0.31f, 0.31f, 0.35f, 1.00f);
@@ -155,7 +155,6 @@ static void set_default_theme()
     colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
     colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
-
 }
 
 static void set_dark_theme()
@@ -299,14 +298,26 @@ static void settings_window(my_engine* engine, bool* open)
     static ImVec2 buttonSize = ImVec2(-FLT_MIN, 0.0f);
     static setting_options option = (setting_options)0;
 
+    static ImVec4 active_color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+
     set_next_window_in_center();
     ImGui::Begin("Settings", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     ImGui::BeginChild("Options", ImVec2(ImGui::GetContentRegionAvail().x / 3.0f, 0), false);
-    if (ImGui::Button("Appearance", buttonSize)) option = setting_options::appearance;
-    if (ImGui::Button("Input", buttonSize)) option = setting_options::input;
-    if (ImGui::Button("Audio", buttonSize)) option = setting_options::audio;
 
+
+    if (ImGui::Button("Appearance", buttonSize)) {
+        option = setting_options::appearance;
+    }
+
+    if (ImGui::Button("Input", buttonSize)) {
+        option = setting_options::input;
+    }
+
+    if (ImGui::Button("Audio", buttonSize)) {
+        option = setting_options::audio;
+    }
 
 
     ImGui::EndChild();
@@ -335,6 +346,45 @@ static void settings_window(my_engine* engine, bool* open)
         ImGui::Text("Input");
 
 
+        enum class application_action
+        {
+            load_model,
+            export_model,
+            toggle_viewport,
+            maximize_viewport,
+            toggle_guizmo,
+            camera_forward,
+            camera_backward,
+            camera_left,
+            camera_right,
+            camera_up,
+            camera_down,
+        };
+
+        struct mapping
+        {
+            application_action action;
+            std::string name;
+            std::string shortcut;
+        };
+
+        static std::vector<mapping> mappings {
+            { application_action::load_model, "Load Model", "Ctrl+L" },
+            { application_action::export_model, "Export Model", "Ctrl+E" },
+            { application_action::toggle_viewport, "Toggle Viewport", "F1" },
+            { application_action::maximize_viewport, "Maximize Viewport", "F2" },
+            { application_action::toggle_guizmo, "Toggle Guizmo", "E" },
+            { application_action::camera_forward, "Camera Forward", "W" },
+            { application_action::camera_backward, "Camera Backwards", "S" },
+            { application_action::camera_left, "Camera Left", "A" },
+            { application_action::camera_right, "Camera Right", "D" },
+            { application_action::camera_up, "Camera Up", "Space" },
+            { application_action::camera_down, "Camera Down", "Left Ctrl" },
+        };
+
+        static mapping* active_mapping = nullptr;
+        static bool active_shortcut = false;
+
         // Options
         static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | 
                                        ImGuiTableFlags_NoBordersInBody | 
@@ -349,75 +399,40 @@ static void settings_window(my_engine* engine, bool* open)
             ImGui::TableSetupScrollFreeze(0, 1);
             ImGui::TableHeadersRow();
 
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Load model");
-            ImGui::TableNextColumn();
-            ImGui::Button("Ctrl + L", button_size);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Export model");
-            ImGui::TableNextColumn();
-            ImGui::Button("Ctrl + E", button_size);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Toggle viewport");
-            ImGui::TableNextColumn();
-            ImGui::Button("F1", button_size);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Maximize viewport");
-            ImGui::TableNextColumn();
-            ImGui::Button("F2", button_size);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Toggle guizmo");
-            ImGui::TableNextColumn();
-            ImGui::Button("E", button_size);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Camera forward");
-            ImGui::TableNextColumn();
-            ImGui::Button("W", button_size);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Camera backwards");
-            ImGui::TableNextColumn();
-            ImGui::Button("S", button_size);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Camera left");
-            ImGui::TableNextColumn();
-            ImGui::Button("A", button_size);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Camera right");
-            ImGui::TableNextColumn();
-            ImGui::Button("D", button_size);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Camera up");
-            ImGui::TableNextColumn();
-            ImGui::Button("Space", button_size);
-
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::Text("Camera down");
-            ImGui::TableNextColumn();
-            ImGui::Button("Left Ctrl", button_size);
+            for (std::size_t i = 0; i < mappings.size(); ++i) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text(mappings[i].name.c_str());
+                ImGui::TableNextColumn();
+                if (ImGui::Button(mappings[i].shortcut.c_str(), button_size)) {
+                    active_mapping = &mappings[i];
+                    active_shortcut = true;
+                }
+            }
 
             ImGui::EndTable();
         }
+
+        if (active_shortcut) {
+            ImGui::SetNextWindowSize(ImGui::GetContentRegionAvail());
+            ImGui::Begin(active_mapping->name.c_str(), &active_shortcut);
+            ImGui::Text("Current shortcut: ");
+            ImGui::SameLine();
+            ImGui::Text(active_mapping->shortcut.c_str());
+            ImGui::SameLine();
+            ImGui::Text("New shortcut");
+            ImGui::SameLine();
+            if (ImGui::Button("Click me")) {
+
+            }
+
+            if (ImGui::Button("Apply", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f))) {
+                // TODO: Parse shortcut and figure out if it's valid
+                // checks should include: if shortcut already exists
+            }
+            ImGui::End();
+        }
+        
 
         break;
     } case setting_options::audio:
@@ -508,7 +523,6 @@ static void vmve_creator_window(my_engine* engine, bool* open)
     static int keyLengthIndex = 0;
     static key_iv keyIV;
     static key_iv_string keyIVString;
-    static char filename[50];
     static std::string file_contents = "This is some file contents that I am writing to and this is some more text\n";
 
 
@@ -520,7 +534,7 @@ static void vmve_creator_window(my_engine* engine, bool* open)
     static const char* exportPath = engine_get_executable_directory(engine);
     std::string current_path = engine_display_file_explorer(engine, exportPath);
 
-    ImGui::InputText("File name", filename, 50);
+    ImGui::Text(current_path.c_str());
 
     ImGui::Checkbox("Encryption", &useEncryption);
 
@@ -556,7 +570,7 @@ static void vmve_creator_window(my_engine* engine, bool* open)
 
     static bool successfully_exported = false;
     if (ImGui::Button("Export")) {
-        std::ofstream exportFile(filename);
+        std::ofstream exportFile("");
         exportFile << file_contents;
 
         successfully_exported = true;
@@ -571,8 +585,8 @@ static void vmve_creator_window(my_engine* engine, bool* open)
     }
 
 
-    if (successfully_exported)
-        ImGui::Text("A total of %d bytes has been written to %s", file_contents.size(), filename);
+    //if (successfully_exported)
+    //    ImGui::Text("A total of %d bytes has been written to %s", file_contents.size(), filename);
 
 
 

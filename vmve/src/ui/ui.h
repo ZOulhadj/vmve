@@ -1,5 +1,5 @@
-#ifndef VMVE_UI_HPP
-#define VMVE_UI_HPP
+#ifndef VMVE_UI_H
+#define VMVE_UI_H
 
 
 #include <engine.h>

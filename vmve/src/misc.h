@@ -1,5 +1,5 @@
-#ifndef VMVE_MISC_HPP
-#define VMVE_MISC_HPP
+#ifndef VMVE_MISC_H
+#define VMVE_MISC_H
 
 unsigned char* get_app_icon(int* width, int* height);
 

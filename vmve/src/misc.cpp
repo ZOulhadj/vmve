@@ -1,4 +1,4 @@
-#include "misc.hpp"
+#include "misc.h"
 
 // In order to eliminate application dependencies, we bundle the raw icon data
 // into an array of rgba values.
