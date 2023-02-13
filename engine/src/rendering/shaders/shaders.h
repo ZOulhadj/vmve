@@ -141,13 +141,13 @@ layout (binding = 1) uniform sampler2D samplerNormal;
 layout (binding = 2) uniform sampler2D samplerAlbedo;
 layout (binding = 3) uniform sampler2D samplerSpecular;
 layout (binding = 4) uniform sampler2D samplerDepth;
-layout (binding = 5) uniform sampler2D samplerShadowDepth;
-layout (binding = 6) uniform SunData 
-{
-	mat4 viewProj;
-} sun;
+//layout (binding = 5) uniform sampler2D samplerShadowDepth;
+//layout (binding = 5) uniform SunData 
+//{
+//	mat4 viewProj;
+//} sun;
 
-layout(binding = 7) uniform scene_ubo
+layout(binding = 5) uniform scene_ubo
 {
     // ambient Strength, specular strength, specular shininess, empty
     vec4 ambientSpecular;
@@ -161,22 +161,22 @@ layout (location = 0) in vec2 inUV;
 
 layout (location = 0) out vec4 outFragcolor;
 
-float ShadowCalculation(vec3 fragPos) 
-{
-	// TODO: Maybe this needs to be in a vertex shader?
-	vec4 fragPosLightSpace = sun.viewProj * vec4(fragPos, 1.0);
-
-    vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
-
-	float shadowDepth = texture(samplerShadowDepth, projCoords.xy).r;
-	float currentDepth = projCoords.z;
-
-	// Check if current pixel is in shadow
-	//float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);  
-	float shadow = currentDepth > shadowDepth ? 1.0 : 0.0;
-
-	return shadowDepth;	
-}
+//float ShadowCalculation(vec3 fragPos) 
+//{
+//	// TODO: Maybe this needs to be in a vertex shader?
+//	vec4 fragPosLightSpace = sun.viewProj * vec4(fragPos, 1.0);
+//
+//    vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
+//
+//	float shadowDepth = texture(samplerShadowDepth, projCoords.xy).r;
+//	float currentDepth = projCoords.z;
+//
+//	// Check if current pixel is in shadow
+//	//float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);  
+//	float shadow = currentDepth > shadowDepth ? 1.0 : 0.0;
+//
+//	return shadowDepth;	
+//}
 
 void main()
 {
@@ -188,9 +188,9 @@ void main()
 	float depth = texture(samplerDepth, inUV).r;
 	
 	// TODO: Maybe this needs to be in a vertex shader?
-	vec4 fragPosLightSpace = sun.viewProj * vec4(world_pos, 1.0);
-    vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
-	float shadowDepth = texture(samplerShadowDepth, projCoords.xy).r;
+	//vec4 fragPosLightSpace = sun.viewProj * vec4(world_pos, 1.0);
+    //vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
+	//float shadowDepth = texture(samplerShadowDepth, projCoords.xy).r;
 
 	vec3 lightColor = vec3(1.0);
 
@@ -211,7 +211,7 @@ void main()
 	float specFactor = max(dot(normal, halfway_dir), 0.0);
 	vec3 specular = pow(specFactor, scene.ambientSpecular.b) * lightColor;
 
-	float shadow = ShadowCalculation(world_pos);
+	//float shadow = ShadowCalculation(world_pos);
 
 	//vec3 result = (ambient + (1.0 - shadow) * (diffuse + specular)) * albedo;
 	vec3 result = (ambient + diffuse + specular) * albedo;

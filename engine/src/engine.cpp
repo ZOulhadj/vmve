@@ -97,10 +97,10 @@ struct scene_props
 } scene;
 
 
-struct sun_data
-{
-    glm::mat4 view_proj;
-} sunData;
+//struct sun_data
+//{
+//    glm::mat4 view_proj;
+//} sunData;
 
 
 static VkExtent2D shadow_map_size = { 2048, 2048 };
@@ -111,18 +111,10 @@ static VkExtent2D framebuffer_size = { 1280, 720 };
 VkSampler g_framebuffer_sampler;
 VkSampler g_texture_sampler;
 
-Render_Pass shadow_pass{};
-Render_Pass skybox_pass{};
 Render_Pass offscreen_pass{};
 Render_Pass composite_pass{};
-
-VkDescriptorSetLayout shadowLayout;
-std::vector<VkDescriptorSet> shadowSets;
-
-
-VkDescriptorSetLayout skyboxLayout;
-std::vector<VkDescriptorSet> skyboxSets;
-std::vector<vulkan_image_buffer> skyboxDepths;
+//Render_Pass shadow_pass{};
+Render_Pass skybox_pass{};
 
 VkDescriptorSetLayout offscreenLayout;
 std::vector<VkDescriptorSet> offscreenSets;
@@ -137,22 +129,28 @@ std::vector<vulkan_image_buffer> normals;
 std::vector<vulkan_image_buffer> colors;
 std::vector<vulkan_image_buffer> speculars;
 std::vector<vulkan_image_buffer> depths;
-std::vector<vulkan_image_buffer> shadow_depths;
+//std::vector<vulkan_image_buffer> shadow_depths;
 
 std::vector<VkDescriptorSetLayoutBinding> materialBindings;
 VkDescriptorSetLayout materialLayout;
 
+//VkDescriptorSetLayout shadowLayout;
+//std::vector<VkDescriptorSet> shadowSets;
 
+VkDescriptorSetLayout skyboxLayout;
+std::vector<VkDescriptorSet> skyboxSets;
+std::vector<vulkan_image_buffer> skyboxDepths;
 
-VkPipelineLayout shadowPipelineLayout;
-VkPipelineLayout skyspherePipelineLayout;
 VkPipelineLayout offscreenPipelineLayout;
 VkPipelineLayout compositePipelineLayout;
+//VkPipelineLayout shadowPipelineLayout;
+VkPipelineLayout skyspherePipelineLayout;
+
 
 Pipeline offscreenPipeline;
 Pipeline wireframePipeline;
 Pipeline compositePipeline;
-Pipeline shadowPipeline;
+//Pipeline shadowPipeline;
 Pipeline* currentPipeline = &offscreenPipeline;
 
 std::vector<VkCommandBuffer> offscreenCmdBuffer;
@@ -221,10 +219,12 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     g_framebuffer_sampler = create_image_sampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
     g_texture_sampler = create_image_sampler(VK_FILTER_LINEAR);
 
+#if 0
     {
         add_framebuffer_attachment(shadow_pass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, shadow_map_size);
         create_render_pass_2(shadow_pass);
     }
+#endif
     {
         add_framebuffer_attachment(skybox_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
         create_render_pass_2(skybox_pass);
@@ -245,7 +245,7 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
 
 
 
-    out_engine->sun_buffer = create_uniform_buffer(sizeof(sun_data));
+    //out_engine->sun_buffer = create_uniform_buffer(sizeof(sun_data));
     out_engine->camera_buffer = create_uniform_buffer(sizeof(View_Projection));
     out_engine->scene_buffer = create_uniform_buffer(sizeof(scene_props));
 
@@ -254,10 +254,11 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
         { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT }
     };
   
+#if 0
     shadowLayout = create_descriptor_layout(shadowBindings);
     shadowSets = allocate_descriptor_sets(shadowLayout);
     update_binding(shadowSets, shadowBindings[0], out_engine->sun_buffer, sizeof(sun_data));
-
+#endif
 
     std::vector<VkDescriptorSetLayoutBinding> skyboxBindings
     {
@@ -290,9 +291,10 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
         { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
         { 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
         { 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        { 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        { 6, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        { 7, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+        { 5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+        //{ 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+        //{ 5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+        
     };
 
     compositeLayout = create_descriptor_layout(compositeBindings);
@@ -303,15 +305,16 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     colors = attachments_to_images(offscreen_pass.attachments, 2);
     speculars = attachments_to_images(offscreen_pass.attachments, 3);
     depths = attachments_to_images(offscreen_pass.attachments, 4);
-    shadow_depths = attachments_to_images(shadow_pass.attachments, 0);
+    //shadow_depths = attachments_to_images(shadow_pass.attachments, 0);
     update_binding(compositeSets, compositeBindings[0], positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(compositeSets, compositeBindings[1], normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(compositeSets, compositeBindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(compositeSets, compositeBindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(compositeSets, compositeBindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
-    update_binding(compositeSets, compositeBindings[5], shadow_depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
-    update_binding(compositeSets, compositeBindings[6], out_engine->sun_buffer, sizeof(sun_data));
-    update_binding(compositeSets, compositeBindings[7], out_engine->scene_buffer, sizeof(scene_props));
+    update_binding(compositeSets, compositeBindings[5], out_engine->scene_buffer, sizeof(scene_props));
+    //update_binding(compositeSets, compositeBindings[5], shadow_depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    //update_binding(compositeSets, compositeBindings[5], out_engine->sun_buffer, sizeof(sun_data));
+
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -323,11 +326,13 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     materialLayout = create_descriptor_layout(materialBindings);
 
     //////////////////////////////////////////////////////////////////////////
+#if 0
     shadowPipelineLayout = create_pipeline_layout(
         { shadowLayout },
         sizeof(glm::mat4),
         VK_SHADER_STAGE_VERTEX_BIT
     );
+#endif
 
     skyspherePipelineLayout = create_pipeline_layout(
         { skyboxLayout }
@@ -386,6 +391,7 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     wireframePipeline.create_pipeline();
 
     //Pipeline shadowPipeline(shadowPipelineLayout, shadowPass);
+#if 0
     shadowPipeline.m_Layout = shadowPipelineLayout;
     shadowPipeline.m_RenderPass = &shadow_pass;
     shadowPipeline.enable_vertex_binding(vertexBinding);
@@ -395,7 +401,7 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     shadowPipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
     shadowPipeline.set_color_blend(1);
     shadowPipeline.create_pipeline();
-
+#endif
     //Pipeline compositePipeline(compositePipelineLayout, compositePass);
     compositePipeline.m_Layout = compositePipelineLayout;
     compositePipeline.m_RenderPass = &composite_pass;
@@ -481,6 +487,7 @@ bool engine_update(my_engine* engine)
     // same no matter how fast the CPU is running.
     engine->deltaTime = get_delta_time();
 
+#if 0
     // Set sun view matrix
     glm::mat4 sunProjMatrix = glm::ortho(-sunDistance / 2.0f, 
                                           sunDistance / 2.0f, 
@@ -498,6 +505,9 @@ bool engine_update(my_engine* engine)
 
     // copy data into uniform buffer
     set_buffer_data(engine->sun_buffer, &sunData, sizeof(sun_data));
+#endif
+
+
     set_buffer_data(engine->camera_buffer, &engine->camera.viewProj, sizeof(View_Projection));
     set_buffer_data(engine->scene_buffer, &scene);
 
@@ -528,41 +538,6 @@ void engine_render(my_engine* engine)
 {
     begin_command_buffer(offscreenCmdBuffer);
     {
-        //auto skyboxCmdBuffer = BeginRenderPass2(skyboxPass);
-
-        //// Render the sky sphere
-        //BindPipeline(offscreenCmdBuffer, skyspherePipeline, geometry_sets);
-        //for (std::size_t i = 0; i < sphere.meshes.size(); ++i)
-        //{
-        //    BindMaterial(offscreenCmdBuffer, rendering_pipeline_layout, skysphere_material);
-        //    BindVertexArray(offscreenCmdBuffer, sphere.meshes[i].vertex_array);
-        //    Render(offscreenCmdBuffer, rendering_pipeline_layout, sphere.meshes[i].vertex_array.index_count, skyboxsphere_instance);
-        //}
-
-        //EndRenderPass(skyboxCmdBuffer);
-
-        bind_descriptor_set(offscreenCmdBuffer, shadowPipelineLayout, shadowSets, { sizeof(sun_data) });
-        begin_render_pass(offscreenCmdBuffer, shadow_pass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f });
-
-        bind_pipeline(offscreenCmdBuffer, shadowPipeline);
-
-        for (auto& entity : engine->entities) {
-            translate_entity(entity, entity.position);
-            rotate_entity(entity, entity.rotation);
-            scale_entity(entity, entity.scale);
-
-            const std::vector<Mesh>& meshes = engine->models[entity.modelIndex].meshes;
-            for (std::size_t i = 0; i < meshes.size(); ++i) {
-                bind_vertex_array(offscreenCmdBuffer, meshes[i].vertex_array);
-                render(offscreenCmdBuffer, shadowPipelineLayout, meshes[i].vertex_array.index_count, entity.matrix);
-            }
-        }
-
-
-
-        end_render_pass(offscreenCmdBuffer);
-
-
         bind_descriptor_set(offscreenCmdBuffer, offscreenPipelineLayout, offscreenSets, { sizeof(View_Projection) });
         begin_render_pass(offscreenCmdBuffer, offscreen_pass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f });
 
@@ -593,13 +568,19 @@ void engine_render(my_engine* engine)
 
     begin_command_buffer(compositeCmdBuffer);
     {
+        // lighting calculations
         begin_render_pass(compositeCmdBuffer, composite_pass);
 
-        bind_descriptor_set(compositeCmdBuffer, compositePipelineLayout, compositeSets, { sizeof(sun_data) });
+        bind_descriptor_set(compositeCmdBuffer, compositePipelineLayout, compositeSets);
 
         bind_pipeline(compositeCmdBuffer, compositePipeline);
         render(compositeCmdBuffer);
         end_render_pass(compositeCmdBuffer);
+
+
+        // skybox rendering
+
+
     }
     end_command_buffer(compositeCmdBuffer);
 
@@ -644,23 +625,23 @@ void engine_terminate(my_engine* engine)
     destroy_descriptor_layout(compositeLayout);
     destroy_descriptor_layout(offscreenLayout);
     destroy_descriptor_layout(skyboxLayout);
-    destroy_descriptor_layout(shadowLayout);
+    //destroy_descriptor_layout(shadowLayout);
 
     destroy_pipeline(wireframePipeline.m_Pipeline);
     destroy_pipeline(compositePipeline.m_Pipeline);
     destroy_pipeline(offscreenPipeline.m_Pipeline);
-    destroy_pipeline(shadowPipeline.m_Pipeline);
+    //destroy_pipeline(shadowPipeline.m_Pipeline);
 
     destroy_pipeline_layout(compositePipelineLayout);
     destroy_pipeline_layout(offscreenPipelineLayout);
     destroy_pipeline_layout(skyspherePipelineLayout);
-    destroy_pipeline_layout(shadowPipelineLayout);
+    //destroy_pipeline_layout(shadowPipelineLayout);
 
     destroy_render_pass(uiPass);
     destroy_render_pass(composite_pass);
     destroy_render_pass(offscreen_pass);
     destroy_render_pass(skybox_pass);
-    destroy_render_pass(shadow_pass);
+    //destroy_render_pass(shadow_pass);
 
     destroy_image_sampler(g_texture_sampler);
     destroy_image_sampler(g_framebuffer_sampler);
@@ -1235,7 +1216,8 @@ static bool dropped_window(Window_Dropped_Event& e)
     return true;
 }
 
-static void event_callback(basic_event& e) {
+static void event_callback(basic_event& e)
+{
     Event_Dispatcher dispatcher(e);
 
     dispatcher.dispatch<Key_Pressed_Event>(press);

@@ -1121,7 +1121,8 @@ void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout
 void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers,
     VkPipelineLayout layout, 
     const std::vector<VkDescriptorSet>& descriptorSets, 
-    std::vector<uint32_t> sizes) {
+    std::vector<uint32_t> sizes)
+{
     std::vector<uint32_t> sz(sizes);
     for (std::size_t i = 0; i < sz.size(); ++i)
         sz[i] = pad_uniform_buffer_size(sizes[i]) * g_current_frame;

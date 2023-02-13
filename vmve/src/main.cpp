@@ -45,6 +45,7 @@ int main()
 
 
     // Configure engine properties
+    // TODO(zak): load settings file if it exists
     engine_create_camera(engine, 60.0f, 50.0f);
 
 
@@ -80,6 +81,10 @@ int main()
         }
         
     }
+
+
+    // todo: save current settings into file.
+
 
     // Terminate the application and free all resources.
     engine_terminate(engine);
