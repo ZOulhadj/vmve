@@ -221,29 +221,24 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     // Create rendering passes and render targets
     g_framebuffer_sampler = create_image_sampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
     g_texture_sampler = create_image_sampler(VK_FILTER_LINEAR);
-
-#if 0
-    {
-        add_framebuffer_attachment(shadow_pass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, shadow_map_size);
-        create_render_pass_2(shadow_pass);
-    }
-#endif
-    {
-        add_framebuffer_attachment(skybox_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
-        create_render_pass_2(skybox_pass);
-    }
+  
     {    
         add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, framebuffer_size);
         add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, framebuffer_size);
         add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
         add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8_SRGB, framebuffer_size);
         add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_FORMAT_D32_SFLOAT, framebuffer_size);
-        create_render_pass(offscreen_pass);
+        create_offscreen_render_pass(offscreen_pass);
     }
     {
         add_framebuffer_attachment(composite_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
-        create_render_pass_2(composite_pass);
+        create_composite_render_pass(composite_pass);
         viewport = attachments_to_images(composite_pass.attachments, 0);
+    }
+    {
+        add_framebuffer_attachment(skybox_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
+        create_skybox_render_pass(skybox_pass);
+        
     }
 
 
@@ -252,16 +247,6 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     out_engine->camera_buffer = create_uniform_buffer(sizeof(View_Projection));
     out_engine->scene_buffer = create_uniform_buffer(sizeof(scene_props));
 
-    std::vector<VkDescriptorSetLayoutBinding> shadowBindings
-    {
-        { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT }
-    };
-  
-#if 0
-    shadowLayout = create_descriptor_layout(shadowBindings);
-    shadowSets = allocate_descriptor_sets(shadowLayout);
-    update_binding(shadowSets, shadowBindings[0], out_engine->sun_buffer, sizeof(sun_data));
-#endif
 
     std::vector<VkDescriptorSetLayoutBinding> skyboxBindings
     {
@@ -292,10 +277,7 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
         { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
         { 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
         { 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        { 5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        //{ 5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        //{ 5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        
+        { 5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }
     };
 
     compositeLayout = create_descriptor_layout(compositeBindings);
@@ -306,15 +288,12 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     colors = attachments_to_images(offscreen_pass.attachments, 2);
     speculars = attachments_to_images(offscreen_pass.attachments, 3);
     depths = attachments_to_images(offscreen_pass.attachments, 4);
-    //shadow_depths = attachments_to_images(shadow_pass.attachments, 0);
     update_binding(compositeSets, compositeBindings[0], positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(compositeSets, compositeBindings[1], normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(compositeSets, compositeBindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(compositeSets, compositeBindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(compositeSets, compositeBindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(compositeSets, compositeBindings[5], out_engine->scene_buffer, sizeof(scene_props));
-    //update_binding(compositeSets, compositeBindings[5], shadow_depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
-    //update_binding(compositeSets, compositeBindings[5], out_engine->sun_buffer, sizeof(sun_data));
 
 
 
@@ -327,13 +306,6 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     materialLayout = create_descriptor_layout(materialBindings);
 
     //////////////////////////////////////////////////////////////////////////
-#if 0
-    shadowPipelineLayout = create_pipeline_layout(
-        { shadowLayout },
-        sizeof(glm::mat4),
-        VK_SHADER_STAGE_VERTEX_BIT
-    );
-#endif
 
     skybox_pipeline_layout = create_pipeline_layout(
         { skyboxLayout, materialLayout }
@@ -394,12 +366,11 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     compositePipeline.create_pipeline();
 
     skybox_pipeline.m_Layout = skybox_pipeline_layout;
-    skybox_pipeline.m_RenderPass = &composite_pass;
+    skybox_pipeline.m_RenderPass = &skybox_pass;
     skybox_pipeline.enable_vertex_binding(vertexBinding);
     skybox_pipeline.set_shader_pipeline({ skybox_vs, skybox_fs });
     skybox_pipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    skybox_pipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-    skybox_pipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
+    skybox_pipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
     skybox_pipeline.set_color_blend(1);
     skybox_pipeline.create_pipeline();
 
@@ -556,17 +527,18 @@ void engine_render(my_engine* engine)
         bind_descriptor_set(compositeCmdBuffer, compositePipelineLayout, compositeSets);
         bind_pipeline(compositeCmdBuffer, compositePipeline);
         render(compositeCmdBuffer);
+        end_render_pass(compositeCmdBuffer);
 
+#if 0
+        begin_render_pass(compositeCmdBuffer, skybox_pass);
         // skybox rendering
         if (engine->using_skybox) {
             bind_descriptor_set(compositeCmdBuffer, skybox_pipeline_layout, skyboxSets, { sizeof(View_Projection) });
             bind_pipeline(compositeCmdBuffer, skybox_pipeline);
             render_model(skybox_model, compositeCmdBuffer, skybox_pipeline_layout);
         }
-
-
         end_render_pass(compositeCmdBuffer);
-
+#endif
 
 
 
@@ -906,7 +878,7 @@ void engine_set_camera_position(my_engine* engine, float x, float y, float z) {
 void engine_enable_ui(my_engine* engine)
 {
     add_framebuffer_attachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
-    create_render_pass_2(uiPass, true);
+    create_ui_render_pass(uiPass);
 
     engine->ui = create_ui(engine->renderer, uiPass.render_pass);
     engine->ui_pass_enabled = true;

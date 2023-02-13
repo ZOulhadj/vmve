@@ -148,8 +148,11 @@ void recreate_swapchain(Buffer_Mode buffer_mode, VSync_Mode vsync);
 
 void add_framebuffer_attachment(Render_Pass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
 
-void create_render_pass(Render_Pass& rp);
-void create_render_pass_2(Render_Pass& fb, bool ui = false);
+void create_offscreen_render_pass(Render_Pass& rp);
+void create_composite_render_pass(Render_Pass& rp);
+void create_skybox_render_pass(Render_Pass& rp);
+void create_ui_render_pass(Render_Pass& rp);
+
 void destroy_render_pass(Render_Pass& fb);
 
 void resize_framebuffer(Render_Pass& fb, VkExtent2D extent);

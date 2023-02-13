@@ -497,7 +497,7 @@ void add_framebuffer_attachment(Render_Pass& fb, VkImageUsageFlags usage, VkForm
     fb.height = extent.height;
 }
 
-void create_render_pass(Render_Pass& rp)
+void create_offscreen_render_pass(Render_Pass& rp)
 {
     // attachment descriptions
     std::vector<VkAttachmentDescription> descriptions;
@@ -584,7 +584,7 @@ void create_render_pass(Render_Pass& rp)
     create_framebuffer(rp);
 }
 
-void create_render_pass_2(Render_Pass& rp, bool ui)
+void create_composite_render_pass(Render_Pass& rp)
 {
     // attachment descriptions
     std::vector<VkAttachmentDescription> descriptions;
@@ -601,7 +601,7 @@ void create_render_pass_2(Render_Pass& rp, bool ui)
         if (is_depth(attachment)) {
             description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
         } else {
-            description.finalLayout = !ui ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         }
 
         descriptions.push_back(description);
@@ -656,12 +656,172 @@ void create_render_pass_2(Render_Pass& rp, bool ui)
     vk_check(vkCreateRenderPass(g_rc->device->device, &render_pass_info, nullptr,
         &rp.render_pass));
 
-    rp.is_ui = ui;
+    rp.is_ui = false;
 
     //////////////////////////////////////////////////////////////////////////
     create_framebuffer(rp);
 }
 
+
+void create_skybox_render_pass(Render_Pass& rp)
+{
+    // attachment descriptions
+    std::vector<VkAttachmentDescription> descriptions;
+    for (auto& attachment : rp.attachments) {
+        VkAttachmentDescription description{};
+        description.format = attachment.image[0].format;
+        description.samples = VK_SAMPLE_COUNT_1_BIT;
+        description.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        description.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        if (is_depth(attachment)) {
+            description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        }
+        else {
+            description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        }
+
+        descriptions.push_back(description);
+    }
+
+
+    // attachment references
+    std::vector<VkAttachmentReference> color_references;
+    VkAttachmentReference depth_reference{};
+
+    uint32_t attachment_index = 0;
+    bool has_depth = false;
+    for (auto& attachment : rp.attachments) {
+        if (is_depth(attachment)) {
+            // A Framebuffer can only have a single depth attachment
+            assert(!has_depth);
+            has_depth = true;
+
+            depth_reference.attachment = attachment_index;
+            depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        }
+        else {
+            color_references.push_back({ attachment_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+        }
+
+        attachment_index++;
+    }
+
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0; // or VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = u32(color_references.size());
+    subpass.pColorAttachments = color_references.data();
+    if (has_depth)
+        subpass.pDepthStencilAttachment = &depth_reference;
+
+    VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+    render_pass_info.attachmentCount = u32(descriptions.size());
+    render_pass_info.pAttachments = descriptions.data();
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
+
+    vk_check(vkCreateRenderPass(g_rc->device->device, &render_pass_info, nullptr,
+        &rp.render_pass));
+
+    rp.is_ui = false;
+
+    //////////////////////////////////////////////////////////////////////////
+    create_framebuffer(rp);
+}
+
+void create_ui_render_pass(Render_Pass& rp)
+{
+    // attachment descriptions
+    std::vector<VkAttachmentDescription> descriptions;
+    for (auto& attachment : rp.attachments) {
+        VkAttachmentDescription description{};
+        description.format = attachment.image[0].format;
+        description.samples = VK_SAMPLE_COUNT_1_BIT;
+        description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        if (is_depth(attachment)) {
+            description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        }
+        else {
+            description.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        }
+
+        descriptions.push_back(description);
+    }
+
+
+    // attachment references
+    std::vector<VkAttachmentReference> color_references;
+    VkAttachmentReference depth_reference{};
+
+    uint32_t attachment_index = 0;
+    bool has_depth = false;
+    for (auto& attachment : rp.attachments) {
+        if (is_depth(attachment)) {
+            // A Framebuffer can only have a single depth attachment
+            assert(!has_depth);
+            has_depth = true;
+
+            depth_reference.attachment = attachment_index;
+            depth_reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        }
+        else {
+            color_references.push_back({ attachment_index, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
+        }
+
+        attachment_index++;
+    }
+
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0; // or VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = u32(color_references.size());
+    subpass.pColorAttachments = color_references.data();
+    if (has_depth)
+        subpass.pDepthStencilAttachment = &depth_reference;
+
+    VkRenderPassCreateInfo render_pass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+    render_pass_info.attachmentCount = u32(descriptions.size());
+    render_pass_info.pAttachments = descriptions.data();
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
+
+    vk_check(vkCreateRenderPass(g_rc->device->device, &render_pass_info, nullptr,
+        &rp.render_pass));
+
+    rp.is_ui = true;
+
+    //////////////////////////////////////////////////////////////////////////
+    create_framebuffer(rp);
+}
 
 void destroy_render_pass(Render_Pass& fb) {
     destroy_framebuffer(fb);
