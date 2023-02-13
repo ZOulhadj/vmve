@@ -1141,11 +1141,17 @@ void render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout
     vkCmdDrawIndexed(buffers[g_current_frame], index_count, 1, 0, 0, 0);
 }
 
+void render(const std::vector<VkCommandBuffer>& buffers, uint32_t index_count)
+{
+    vkCmdDrawIndexed(buffers[g_current_frame], index_count, 1, 0, 0, 0);
+}
 
 void render(const std::vector<VkCommandBuffer>& buffers)
 {
     vkCmdDraw(buffers[g_current_frame], 3, 1, 0, 0);
 }
+
+
 
 void wait_for_gpu()
 {

@@ -1,45 +1,7 @@
 #ifndef MY_ENGINE_SHADERS_HPP
 #define MY_ENGINE_SHADERS_HPP
 
-
-
-std::string shadowMappingVSCode = R"(
-
-#version 450
-
-layout(location = 0) in vec3 position;
-
-layout(binding = 0) uniform SunData
-{
-    mat4 viewProj;
-} sun;
-
-
-layout(push_constant) uniform constant
-{
-    mat4 model;
-} obj;
-
-void main()
-{
-    gl_Position = sun.viewProj * obj.model * vec4(position, 1.0);
-
-}
-
-)";
-
-std::string shadowMappingFSCode = R"(
-#version 450
-
-void main()
-{
-	// gl_FragDepth = gl_FragCoord.z;
-}
-
-)";
-
-
-std::string geometryVSCode = R"(
+const std::string geometryVSCode = R"(
 #version 450
 
 layout(location = 0) in vec3 position;
@@ -80,7 +42,7 @@ void main()
 }
 )";
 
-std::string geometryFSCode = R"(
+const std::string geometryFSCode = R"(
 #version 450
 
 layout(location = 0) in vec2 texture_coord;
@@ -115,7 +77,7 @@ void main()
 }
 )";
 
-std::string lightingVSCode = R"(
+const std::string lightingVSCode = R"(
 #version 450
 
 layout (location = 0) out vec2 outUV;
@@ -128,7 +90,7 @@ void main()
 
 )";
 
-std::string lightingFSCode = R"(
+const std::string lightingFSCode = R"(
 #version 450
 
 
@@ -218,6 +180,49 @@ void main()
 	outFragcolor = vec4(result, 1.0);
 }
 )";
+
+
+
+const std::string skybox_vs_code = R"(
+#version 450
+
+layout(location = 0) in vec3 position;
+layout(location = 2) in vec2 uv;
+
+layout(location = 0) out vec2 texture_coord;
+
+layout(binding = 0) uniform model_view_projection
+{
+    mat4 view;
+    mat4 proj;
+} mvp;
+
+void main()
+{
+    texture_coord   = uv;
+
+    gl_Position = mvp.proj * mat4(mat3(mvp.view)) * vec4(position, 1.0);
+}
+)";
+
+const std::string skybox_fs_code = R"(
+#version 450
+
+layout(location = 0) in vec2 texture_coord;
+
+layout(location = 0) out vec4 final_color;
+
+layout(set = 1, binding = 0) uniform sampler2D tex;
+
+void main()
+{
+    final_color = vec4(texture(tex, texture_coord).rgb, 1.0);
+}
+)";
+
+
+
+
 
 
 

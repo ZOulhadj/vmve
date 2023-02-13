@@ -39,6 +39,7 @@ glm::vec3 get_entity_rotation(const Entity& e);
 
 // todo(zak): move this to either model.cpp or renderer.cpp
 void render_model(Model& model, glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
+void render_model(Model& model, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
 
 
 #endif

@@ -90,7 +90,7 @@ void engine_present(my_engine* engine);
 //
 //
 //
-void engine_set_environment_map(const char* path);
+void engine_set_environment_map(my_engine* engine, const char* path);
 
 // Models
 

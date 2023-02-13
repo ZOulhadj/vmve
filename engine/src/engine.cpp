@@ -70,7 +70,11 @@ struct my_engine
 
 
     bool swapchain_ready;
+
+
+    bool using_skybox;
     bool ui_pass_enabled;
+
 };
 
 // Just here for the time being as events don't have direct access to the engine
@@ -113,7 +117,6 @@ VkSampler g_texture_sampler;
 
 Render_Pass offscreen_pass{};
 Render_Pass composite_pass{};
-//Render_Pass shadow_pass{};
 Render_Pass skybox_pass{};
 
 VkDescriptorSetLayout offscreenLayout;
@@ -134,27 +137,27 @@ std::vector<vulkan_image_buffer> depths;
 std::vector<VkDescriptorSetLayoutBinding> materialBindings;
 VkDescriptorSetLayout materialLayout;
 
-//VkDescriptorSetLayout shadowLayout;
-//std::vector<VkDescriptorSet> shadowSets;
-
 VkDescriptorSetLayout skyboxLayout;
 std::vector<VkDescriptorSet> skyboxSets;
-std::vector<vulkan_image_buffer> skyboxDepths;
 
 VkPipelineLayout offscreenPipelineLayout;
 VkPipelineLayout compositePipelineLayout;
-//VkPipelineLayout shadowPipelineLayout;
-VkPipelineLayout skyspherePipelineLayout;
+VkPipelineLayout skybox_pipeline_layout;
 
 
 Pipeline offscreenPipeline;
 Pipeline wireframePipeline;
 Pipeline compositePipeline;
-//Pipeline shadowPipeline;
+Pipeline skybox_pipeline;
 Pipeline* currentPipeline = &offscreenPipeline;
 
 std::vector<VkCommandBuffer> offscreenCmdBuffer;
 std::vector<VkCommandBuffer> compositeCmdBuffer;
+
+Model skybox_model;
+
+
+
 
 // UI related stuff
 Render_Pass uiPass{};
@@ -268,9 +271,7 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
 
     skyboxLayout = create_descriptor_layout(skyboxBindings);
     skyboxSets = allocate_descriptor_sets(skyboxLayout);
-    skyboxDepths = attachments_to_images(skybox_pass.attachments, 0);
     update_binding(skyboxSets, skyboxBindings[0], out_engine->camera_buffer, sizeof(View_Projection));
-    update_binding(skyboxSets, skyboxBindings[1], skyboxDepths, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
 
 
 
@@ -334,8 +335,8 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     );
 #endif
 
-    skyspherePipelineLayout = create_pipeline_layout(
-        { skyboxLayout }
+    skybox_pipeline_layout = create_pipeline_layout(
+        { skyboxLayout, materialLayout }
     );
 
     offscreenPipelineLayout = create_pipeline_layout(
@@ -354,21 +355,16 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     vertexBinding.add_attribute(VK_FORMAT_R32G32_SFLOAT, "UV");
     vertexBinding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
 
-    Shader shadowMappingVS = create_vertex_shader(shadowMappingVSCode);
-    Shader shadowMappingFS = create_fragment_shader(shadowMappingFSCode);
+    //Shader shadowMappingVS = create_vertex_shader(shadowMappingVSCode);
+    //Shader shadowMappingFS = create_fragment_shader(shadowMappingFSCode);
 
     Shader geometry_vs = create_vertex_shader(geometryVSCode);
     Shader geometry_fs = create_fragment_shader(geometryFSCode);
     Shader lighting_vs = create_vertex_shader(lightingVSCode);
     Shader lighting_fs = create_fragment_shader(lightingFSCode);
+    Shader skybox_vs = create_vertex_shader(skybox_vs_code);
+    Shader skybox_fs = create_fragment_shader(skybox_fs_code);
 
-    //Shader skysphereVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphere.vert")));
-    //Shader skysphereFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphere.frag")));
-
-    //Shader skysphereNewVS = CreateVertexShader(LoadFile(GetVFSPath("/shaders/skysphereNew.vert")));
-    //Shader skysphereNewFS = CreateFragmentShader(LoadFile(GetVFSPath("/shaders/skysphereNew.frag")));
-
-    //Pipeline offscreenPipeline(offscreenPipelineLayout, offscreenPass);
     offscreenPipeline.m_Layout = offscreenPipelineLayout;
     offscreenPipeline.m_RenderPass = &offscreen_pass;
     offscreenPipeline.enable_vertex_binding(vertexBinding);
@@ -379,7 +375,6 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     offscreenPipeline.set_color_blend(4);
     offscreenPipeline.create_pipeline();
 
-    //Pipeline wireframePipeline(offscreenPipelineLayout, offscreenPass);
     wireframePipeline.m_Layout = offscreenPipelineLayout;
     wireframePipeline.m_RenderPass = &offscreen_pass;
     wireframePipeline.enable_vertex_binding(vertexBinding);
@@ -390,19 +385,6 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     wireframePipeline.set_color_blend(4);
     wireframePipeline.create_pipeline();
 
-    //Pipeline shadowPipeline(shadowPipelineLayout, shadowPass);
-#if 0
-    shadowPipeline.m_Layout = shadowPipelineLayout;
-    shadowPipeline.m_RenderPass = &shadow_pass;
-    shadowPipeline.enable_vertex_binding(vertexBinding);
-    shadowPipeline.set_shader_pipeline({ shadowMappingVS, shadowMappingFS });
-    shadowPipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    shadowPipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
-    shadowPipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
-    shadowPipeline.set_color_blend(1);
-    shadowPipeline.create_pipeline();
-#endif
-    //Pipeline compositePipeline(compositePipelineLayout, compositePass);
     compositePipeline.m_Layout = compositePipelineLayout;
     compositePipeline.m_RenderPass = &composite_pass;
     compositePipeline.set_shader_pipeline({ lighting_vs, lighting_fs });
@@ -411,17 +393,23 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     compositePipeline.set_color_blend(1);
     compositePipeline.create_pipeline();
 
+    skybox_pipeline.m_Layout = skybox_pipeline_layout;
+    skybox_pipeline.m_RenderPass = &composite_pass;
+    skybox_pipeline.enable_vertex_binding(vertexBinding);
+    skybox_pipeline.set_shader_pipeline({ skybox_vs, skybox_fs });
+    skybox_pipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    skybox_pipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+    skybox_pipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
+    skybox_pipeline.set_color_blend(1);
+    skybox_pipeline.create_pipeline();
+
     // Delete all individual shaders since they are now part of the various pipelines
-    //DestroyShader(skysphereNewFS);
-    //DestroyShader(skysphereNewVS);
-    //DestroyShader(skysphereFS);
-    //DestroyShader(skysphereVS);
+    destroy_shader(skybox_fs);
+    destroy_shader(skybox_vs);
     destroy_shader(lighting_fs);
     destroy_shader(lighting_vs);
     destroy_shader(geometry_fs);
     destroy_shader(geometry_vs);
-    destroy_shader(shadowMappingFS);
-    destroy_shader(shadowMappingVS);
 
 
     // Create required command buffers
@@ -443,25 +431,18 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     };
 
 
-    // create models
-    //quad = CreateVertexArray(quad_vertices, quad_indices);
-
-    // TEMP: Don't want to have to manually load the model each time so I will do it
-    // here instead for the time-being.
-    //futures.push_back(std::async(
-    //    std::launch::async,
-    //    load_mesh,
-    //    std::ref(g_models),
-    //    get_vfs_path("/models/backpack/backpack.obj"))
-    //);
-    //
 
 
     //create_3d_audio(out_engine->audio, out_engine->object_audio, "C:\\Users\\zakar\\Downloads\\true_colors.wav");
     //play_audio(out_engine->object_audio.source_voice);
 
     out_engine->running = true;
+
+
+
+
     out_engine->swapchain_ready = true;
+    out_engine->using_skybox = false;
 
     g_engine_ptr = out_engine;
 
@@ -568,17 +549,27 @@ void engine_render(my_engine* engine)
 
     begin_command_buffer(compositeCmdBuffer);
     {
-        // lighting calculations
+
         begin_render_pass(compositeCmdBuffer, composite_pass);
 
+        // lighting calculations
         bind_descriptor_set(compositeCmdBuffer, compositePipelineLayout, compositeSets);
-
         bind_pipeline(compositeCmdBuffer, compositePipeline);
         render(compositeCmdBuffer);
+
+        // skybox rendering
+        if (engine->using_skybox) {
+            bind_descriptor_set(compositeCmdBuffer, skybox_pipeline_layout, skyboxSets, { sizeof(View_Projection) });
+            bind_pipeline(compositeCmdBuffer, skybox_pipeline);
+            render_model(skybox_model, compositeCmdBuffer, skybox_pipeline_layout);
+        }
+
+
         end_render_pass(compositeCmdBuffer);
 
 
-        // skybox rendering
+
+
 
 
     }
@@ -603,15 +594,18 @@ void engine_present(my_engine* engine)
 
 void engine_terminate(my_engine* engine)
 {
+    assert(engine);
+
     print_log("Terminating application.\n");
 
-    assert(engine);
 
     // Wait until all GPU commands have finished
     wait_for_gpu();
 
     for (auto& framebuffer : viewportUI)
         ImGui_ImplVulkan_RemoveTexture(framebuffer);
+
+    destroy_model(skybox_model);
 
     for (auto& model : engine->models)
         destroy_model(model);
@@ -625,23 +619,20 @@ void engine_terminate(my_engine* engine)
     destroy_descriptor_layout(compositeLayout);
     destroy_descriptor_layout(offscreenLayout);
     destroy_descriptor_layout(skyboxLayout);
-    //destroy_descriptor_layout(shadowLayout);
 
     destroy_pipeline(wireframePipeline.m_Pipeline);
     destroy_pipeline(compositePipeline.m_Pipeline);
     destroy_pipeline(offscreenPipeline.m_Pipeline);
-    //destroy_pipeline(shadowPipeline.m_Pipeline);
 
     destroy_pipeline_layout(compositePipelineLayout);
     destroy_pipeline_layout(offscreenPipelineLayout);
-    destroy_pipeline_layout(skyspherePipelineLayout);
-    //destroy_pipeline_layout(shadowPipelineLayout);
+    destroy_pipeline_layout(skybox_pipeline_layout);
+
 
     destroy_render_pass(uiPass);
     destroy_render_pass(composite_pass);
     destroy_render_pass(offscreen_pass);
     destroy_render_pass(skybox_pass);
-    //destroy_render_pass(shadow_pass);
 
     destroy_image_sampler(g_texture_sampler);
     destroy_image_sampler(g_framebuffer_sampler);
@@ -651,9 +642,6 @@ void engine_terminate(my_engine* engine)
     destroy_ui(engine->ui);
     destroy_vulkan_renderer(engine->renderer);
     destroy_window(engine->window);
-
-
-    // TODO: Export all logs into a log file
 
     delete engine;
 }
@@ -830,7 +818,8 @@ void engine_set_instance_rotation(my_engine* engine, int instanceIndex, float x,
     engine->entities[instanceIndex].rotation.z = z;
 }
 
-void engine_get_instance_scale(my_engine* engine, int instanceIndex, float* scale) {
+void engine_get_instance_scale(my_engine* engine, int instanceIndex, float* scale)
+{
     assert(instanceIndex >= 0);
 
     scale[0] = engine->entities[instanceIndex].scale.x;
@@ -838,10 +827,21 @@ void engine_get_instance_scale(my_engine* engine, int instanceIndex, float* scal
     scale[2] = engine->entities[instanceIndex].scale.z;
 }
 
-void engine_set_environment_map(const char* path) {
-    // Delete existing environment map if any
-    // Load texture
-    // Update environment map
+void engine_set_environment_map(my_engine* engine, const char* path)
+{
+    assert(!engine->using_skybox);
+
+    // todo: continue from here
+    bool model_loaded = load_model(skybox_model, path, true);
+    if (!model_loaded) {
+        print_log("Failed to load environment model/texture: %s\n", skybox_model.path.c_str());
+        return;
+    }
+
+    upload_model_to_gpu(skybox_model, materialLayout, materialBindings, g_texture_sampler);
+
+
+    engine->using_skybox = true;
 }
 
 void engine_create_camera(my_engine* engine, float fovy, float speed) {

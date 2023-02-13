@@ -47,7 +47,7 @@ int main()
     // Configure engine properties
     // TODO(zak): load settings file if it exists
     engine_create_camera(engine, 60.0f, 50.0f);
-
+    engine_set_environment_map(engine, "C:/Users/zakar/Projects/vmve/vmve/assets/models/skybox_sphere.obj");
 
     while (engine_update(engine)) {
         //  Only update the camera view if the viewport is currently in focus.
