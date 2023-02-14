@@ -1,5 +1,5 @@
-#ifndef MYENGINE_PCH_HPP
-#define MYENGINE_PCH_HPP
+#ifndef MY_ENGINE_PCH_H
+#define MY_ENGINE_PCH_H
 
 #if 1
 #include <cstdio>

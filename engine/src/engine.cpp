@@ -174,18 +174,26 @@ float sunDistance = 400.0f;
 
 static void event_callback(basic_event& e);
 
+static std::string get_executable_directory()
+{
+    // Get the current path of the executable
+    // TODO: MAX_PATH is ok to use however, for a long term solution another 
+    // method should used since some paths can go beyond this limit.
+    std::string directory(MAX_PATH, ' ');
+    GetModuleFileNameA(nullptr, directory.data(), sizeof(char) * directory.size());
+
+    // TODO: Might be overkill to convert into filesystem just to get the parent path.
+    // Test speed compared to simply doing a quick parse by finding the last '/'.
+    return std::filesystem::path(directory).parent_path().string();
+}
+
+
 bool engine_initialize(my_engine*& out_engine, const char* name, int width, int height)
 {
     out_engine = new my_engine();
 
     out_engine->start_time = std::chrono::high_resolution_clock::now();
-
-    // Get the current path of the executable
-    // TODO: MAX_PATH is ok to use however, for a long term solution another 
-    // method should used since some paths can go beyond this limit.
-    char fileName[MAX_PATH];
-    GetModuleFileNameA(nullptr, fileName, sizeof(char) * MAX_PATH);
-    out_engine->execPath = std::filesystem::path(fileName).parent_path().string();
+    out_engine->execPath = get_executable_directory();
 
     print_log("Initializing engine (%s)\n", out_engine->execPath.c_str());
 
@@ -208,15 +216,6 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
         print_log("Failed to initialize audio.\n");
         return false;
     }
-
-    // Mount specific VFS folders
-    //const std::string rootDir = "C:/Users/zakar/Projects/vmve/vmve/";
-    //const std::string rootDir1 = "C:/Users/zakar/Projects/vmve/engine/src";
-    //MountPath("models", rootDir + "assets/models");
-    //MountPath("textures", rootDir + "assets/textures");
-    //MountPath("fonts", rootDir + "assets/fonts");
-    //MountPath("shaders", rootDir1 + "/shaders");
-
 
     // Create rendering passes and render targets
     g_framebuffer_sampler = create_image_sampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
@@ -557,8 +556,7 @@ void engine_terminate(my_engine* engine)
 {
     assert(engine);
 
-    print_log("Terminating application.\n");
-
+    print_log("Terminating engine.\n");
 
     // Wait until all GPU commands have finished
     wait_for_gpu();
@@ -1079,8 +1077,13 @@ void engine_export_logs_to_file(my_engine* engine, const char* path)
 {
     std::ofstream output(path);
 
-    for (auto& message : get_logs())
-        output << message << "\n";
+    // NOTE: only export lines which have been printed instead of exporting the
+    // entire log buffer which will mostly be empty.
+    const auto& logs = get_logs();
+    for (std::size_t i = 0; i < get_log_count(); ++i) {
+        output << logs[i];
+    }
+
 }
 
 int engine_get_log_count(my_engine* engine)
