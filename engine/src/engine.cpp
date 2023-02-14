@@ -238,7 +238,7 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
         add_framebuffer_attachment(skybox_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
         create_skybox_render_pass(skybox_pass);
     }
-    viewport = attachments_to_images(skybox_pass.attachments, 0);
+    viewport = attachments_to_images(composite_pass.attachments, 0);
 
 
     //out_engine->sun_buffer = create_uniform_buffer(sizeof(sun_data));
@@ -519,14 +519,14 @@ void engine_render(my_engine* engine)
         end_render_pass(compositeCmdBuffer);
 
 #if 1
-        begin_render_pass(compositeCmdBuffer, skybox_pass);
-        // skybox rendering
         if (engine->using_skybox) {
+            begin_render_pass(compositeCmdBuffer, skybox_pass);
+
             bind_descriptor_set(compositeCmdBuffer, skybox_pipeline_layout, skyboxSets, { sizeof(View_Projection) });
             bind_pipeline(compositeCmdBuffer, skybox_pipeline);
             render_model(skybox_model, compositeCmdBuffer, skybox_pipeline_layout);
+            end_render_pass(compositeCmdBuffer);
         }
-        end_render_pass(compositeCmdBuffer);
 #endif
 
 
@@ -915,10 +915,40 @@ void engine_end_ui_pass()
     end_command_buffer(uiCmdBuffer);
 }
 
-void engine_render_viewport_ui(int width, int height)
+void* engine_get_viewport_texture()
 {
     const uint32_t currentImage = get_swapchain_frame_index();
-    ImGui::Image(viewportUI[currentImage], ImVec2((float)width, (float)height));
+    return viewportUI[currentImage];
+}
+
+void* engine_get_position_texture()
+{
+    const uint32_t currentImage = get_swapchain_frame_index();
+    return positionsUI[currentImage];
+}
+
+void* engine_get_normals_texture()
+{
+    const uint32_t currentImage = get_swapchain_frame_index();
+    return normalsUI[currentImage];
+}
+
+void* engine_get_color_texture()
+{
+    const uint32_t currentImage = get_swapchain_frame_index();
+    return colorsUI[currentImage];
+}
+
+void* engine_get_specular_texutre()
+{
+    const uint32_t currentImage = get_swapchain_frame_index();
+    return specularsUI[currentImage];
+}
+
+void* engine_get_depth_texture()
+{
+    const uint32_t currentImage = get_swapchain_frame_index();
+    return depthsUI[currentImage];
 }
 
 int engine_get_model_count(my_engine* engine)

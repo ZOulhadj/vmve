@@ -345,15 +345,13 @@ void engine_begin_ui_pass();
 //
 void engine_end_ui_pass();
 
-//
-//
-//
-//
-void engine_render_viewport_ui(int width, int height);
-
-
-
-
+// G-Buffer Framebufffers
+void* engine_get_viewport_texture();
+void* engine_get_position_texture();
+void* engine_get_normals_texture();
+void* engine_get_color_texture();
+void* engine_get_specular_texutre();
+void* engine_get_depth_texture();
 
 // Audio
 void engine_set_master_volume(my_engine* engine, int master_volume);

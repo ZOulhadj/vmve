@@ -53,8 +53,8 @@ int main()
     // Configure engine properties
     // TODO(zak): load settings file if it exists
 
-    bool settings_loaded = load_settings_file(app_settings_file);
-    if (settings_loaded) {
+    std::vector<vmve_setting> settings = load_settings_file(app_settings_file);
+    if (!settings.empty()) {
         // parse and apply default settings
     } else {
         // set default settings if no settings file was found
@@ -95,7 +95,9 @@ int main()
         }
         
     }
-    export_settings_file(app_settings_file);
+
+
+    export_settings_file(settings, app_settings_file);
 
     // Terminate the application and free all resources.
     engine_terminate(engine);

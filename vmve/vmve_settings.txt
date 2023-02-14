@@ -1,0 +1,8 @@
+camera_speed=20
+camera_fov=45
+camera_near_plane=0.1
+camera_far_plane=2000
+wireframe=0
+vsync=1
+triple_buffering=0
+fullscreen=0

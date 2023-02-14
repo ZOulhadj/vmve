@@ -611,31 +611,29 @@ static void gbuffer_visualizer_window(bool* open)
     if (!*open)
         return;
 
-#if 0
-    ImGui::Begin("G-Buffer Visualizer", &gBufferVisualizer);
+    ImGui::Begin("G-Buffer Visualizer", open);
 
     const ImVec2& size = ImGui::GetContentRegionAvail() / 2;
 
     //ImGui::Text("Positions");
     //ImGui::SameLine();
 
-    ImGui::Image(positionsUI[currentImage], size);
+    ImGui::Image(engine_get_position_texture(), size);
     //ImGui::Text("Colors");
     ImGui::SameLine();
-    ImGui::Image(colorsUI[currentImage], size);
+    ImGui::Image(engine_get_color_texture(), size);
     //ImGui::Text("Normals");
     //ImGui::SameLine();
 
-    ImGui::Image(normalsUI[currentImage], size);
+    ImGui::Image(engine_get_normals_texture(), size);
     //ImGui::Text("Speculars");
     ImGui::SameLine();
-    ImGui::Image(specularsUI[currentImage], size);
+    ImGui::Image(engine_get_specular_texutre(), size);
 
-    ImGui::Image(depthsUI[currentImage], size);
+    ImGui::Image(engine_get_depth_texture(), size);
 
 
     ImGui::End();
-#endif
 }
 
 void BeginDocking()
@@ -1202,7 +1200,7 @@ void RenderViewportWindow(my_engine* engine)
 
         // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
         // when the viewport window resizes.
-        engine_render_viewport_ui(viewport_width, viewport_height);
+        ImGui::Image(engine_get_viewport_texture(), ImVec2(viewport_width, viewport_height));
 
         // todo(zak): move this into its own function
         float* view = engine_get_camera_view(engine);
