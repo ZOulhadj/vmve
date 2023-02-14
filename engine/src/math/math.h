@@ -1,5 +1,5 @@
-#ifndef MY_ENGINE_MATH_HPP
-#define MY_ENGINE_MATH_HPP
+#ifndef MY_ENGINE_MATH_H
+#define MY_ENGINE_MATH_H
 
 
 #endif
