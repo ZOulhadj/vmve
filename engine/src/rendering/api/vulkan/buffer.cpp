@@ -168,7 +168,7 @@ vulkan_buffer create_gpu_buffer(uint32_t size, VkBufferUsageFlags type) {
 
 // A function that executes a command directly on the GPU. This is most often
 // used for copying data from staging buffers into GPU local buffers.
-void submit_to_gpu(const std::function<void()>& submit_func)
+void submit_to_gpu(const std::function<void(VkCommandBuffer)>& submit_func)
 {
     const vk_renderer* renderer = get_vulkan_renderer();
 
@@ -180,7 +180,7 @@ void submit_to_gpu(const std::function<void()>& submit_func)
     // memory
     vk_check(vkBeginCommandBuffer(renderer->submit.CmdBuffer, &begin_info));
     {
-        submit_func();
+        submit_func(renderer->submit.CmdBuffer);
     }
     vk_check(vkEndCommandBuffer(renderer->submit.CmdBuffer));
 
@@ -217,7 +217,7 @@ void destroy_buffers(std::vector<vulkan_buffer>& buffers)
 }
 
 
-VkImageView create_image_views(VkImage image, VkFormat format, VkImageUsageFlags usage)
+VkImageView create_image_views(VkImage image, VkFormat format, VkImageUsageFlags usage, uint32_t mip_levels)
 {
     VkImageView view{};
 
@@ -242,7 +242,7 @@ VkImageView create_image_views(VkImage image, VkFormat format, VkImageUsageFlags
     imageViewInfo.format   = format;
     imageViewInfo.subresourceRange.aspectMask = aspect_flags;
     imageViewInfo.subresourceRange.baseMipLevel = 0;
-    imageViewInfo.subresourceRange.levelCount = 1;
+    imageViewInfo.subresourceRange.levelCount = mip_levels;
     imageViewInfo.subresourceRange.baseArrayLayer = 0;
     imageViewInfo.subresourceRange.layerCount = 1;
 
@@ -252,7 +252,7 @@ VkImageView create_image_views(VkImage image, VkFormat format, VkImageUsageFlags
     return view;
 }
 
-vulkan_image_buffer create_image(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage)
+vulkan_image_buffer create_image(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage, uint32_t mip_levels)
 {
     vulkan_image_buffer image{};
 
@@ -262,7 +262,7 @@ vulkan_image_buffer create_image(VkExtent2D extent, VkFormat format, VkImageUsag
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.format = format;
     imageInfo.extent = { extent.width, extent.height, 1 };
-    imageInfo.mipLevels = 1;
+    imageInfo.mipLevels = mip_levels;
     imageInfo.arrayLayers = 1;
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -274,14 +274,16 @@ vulkan_image_buffer create_image(VkExtent2D extent, VkFormat format, VkImageUsag
 
     vk_check(vmaCreateImage(rc.allocator, &imageInfo, &allocInfo, &image.handle, &image.allocation, nullptr));
 
-    image.view   = create_image_views(image.handle, format, usage);
+    image.view   = create_image_views(image.handle, format, usage, mip_levels);
     image.format = format;
     image.extent = extent;
+    image.mip_levels = mip_levels;
 
     return image;
 }
 
-std::vector<vulkan_image_buffer> create_color_images(VkExtent2D size) {
+std::vector<vulkan_image_buffer> create_color_images(VkExtent2D size)
+{
     std::vector<vulkan_image_buffer> images(get_swapchain_image_count());
 
     for (auto& image : images)
@@ -290,7 +292,8 @@ std::vector<vulkan_image_buffer> create_color_images(VkExtent2D size) {
     return images;
 }
 
-vulkan_image_buffer create_depth_image(VkExtent2D size) {
+vulkan_image_buffer create_depth_image(VkExtent2D size)
+{
     return create_image(size, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 

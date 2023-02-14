@@ -53,10 +53,12 @@ ImGuiContext* create_ui(const vk_renderer* renderer, VkRenderPass renderPass)
     return context;
 }
 
-void create_font_textures(const vk_renderer* renderer)
+void create_font_textures()
 {
     // Submit ImGui fonts to the GPU in order to be used during rendering.
-    submit_to_gpu([&] { ImGui_ImplVulkan_CreateFontsTexture(renderer->submit.CmdBuffer); });
+    submit_to_gpu([&](VkCommandBuffer cmd_buffer) { 
+        ImGui_ImplVulkan_CreateFontsTexture(cmd_buffer); 
+    });
 
     ImGui_ImplVulkan_DestroyFontUploadObjects();
 }

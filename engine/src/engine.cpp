@@ -110,7 +110,7 @@ struct scene_props
 static VkExtent2D shadow_map_size = { 2048, 2048 };
 
 // Default framebuffer at startup
-static VkExtent2D framebuffer_size = { 1280, 720 };
+static VkExtent2D framebuffer_size = { 1920, 1080 };
 
 VkSampler g_framebuffer_sampler;
 VkSampler g_texture_sampler;
@@ -219,7 +219,7 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
 
     // Create rendering passes and render targets
     g_framebuffer_sampler = create_image_sampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
-    g_texture_sampler = create_image_sampler(VK_FILTER_LINEAR);
+    g_texture_sampler = create_image_sampler(VK_FILTER_LINEAR, 16, 12);
   
     {    
         add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, framebuffer_size);
@@ -896,7 +896,7 @@ void engine_enable_ui(my_engine* engine)
 
 void engine_set_ui_font_texture(my_engine* engine)
 {
-    create_font_textures(engine->renderer);
+    create_font_textures();
 }
 
 void engine_begin_ui_pass()

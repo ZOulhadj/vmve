@@ -109,7 +109,8 @@ static bool is_depth(const vk_framebuffer_attachment& attachment) {
 // like to be created. It's important to remember that this is a request
 // and not guaranteed as the hardware may not support that number
 // of images.
-static vk_swapchain create_swapchain() {
+static vk_swapchain create_swapchain()
+{
     vk_swapchain swapchain{};
 
 
@@ -188,7 +189,7 @@ static vk_swapchain create_swapchain() {
         vulkan_image_buffer& image = swapchain.images[i];
 
         image.handle = color_images[i];
-        image.view   = create_image_views(image.handle, swapchain_info.imageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        image.view   = create_image_views(image.handle, swapchain_info.imageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 1);
         image.format = swapchain_info.imageFormat;
         image.extent = swapchain_info.imageExtent;
     }

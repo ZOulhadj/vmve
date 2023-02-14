@@ -12,7 +12,7 @@ struct GUI
 
 
 ImGuiContext* create_ui(const vk_renderer* renderer, VkRenderPass renderPass);
-void create_font_textures(const vk_renderer* renderer);
+void create_font_textures();
 void destroy_ui(ImGuiContext* context);
 
 void begin_ui();
