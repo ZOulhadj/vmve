@@ -7,7 +7,7 @@ Vertex_Array create_vertex_array(const std::vector<Vertex>& vertices, const std:
 {
     Vertex_Array vertexArray{};
 
-    const Vulkan_Renderer* renderer = get_vulkan_renderer();
+    const vk_renderer* renderer = get_vulkan_renderer();
 
     const uint32_t vertices_size = vertices.size() * sizeof(Vertex);
     const uint32_t indices_size = indices.size() * sizeof(uint32_t);

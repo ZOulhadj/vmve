@@ -8,7 +8,7 @@
 
 #include "logging.h"
 
-ImGuiContext* create_ui(const Vulkan_Renderer* renderer, VkRenderPass renderPass)
+ImGuiContext* create_ui(const vk_renderer* renderer, VkRenderPass renderPass)
 {
     print_log("Initializing user interface\n");
 
@@ -53,7 +53,7 @@ ImGuiContext* create_ui(const Vulkan_Renderer* renderer, VkRenderPass renderPass
     return context;
 }
 
-void create_font_textures(const Vulkan_Renderer* renderer)
+void create_font_textures(const vk_renderer* renderer)
 {
     // Submit ImGui fonts to the GPU in order to be used during rendering.
     submit_to_gpu([&] { ImGui_ImplVulkan_CreateFontsTexture(renderer->submit.CmdBuffer); });

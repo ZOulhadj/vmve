@@ -5,7 +5,7 @@
 
 VkDescriptorPool create_descriptor_pool()
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     VkDescriptorPool pool{};
 
@@ -38,7 +38,7 @@ VkDescriptorPool create_descriptor_pool()
 
 VkDescriptorSetLayout create_descriptor_layout(std::vector<VkDescriptorSetLayoutBinding> bindings)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     VkDescriptorSetLayout layout{};
 
@@ -52,14 +52,14 @@ VkDescriptorSetLayout create_descriptor_layout(std::vector<VkDescriptorSetLayout
 
 void destroy_descriptor_layout(VkDescriptorSetLayout layout)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     vkDestroyDescriptorSetLayout(rc.device->device, layout, nullptr);
 }
 
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout) {
-    const Vulkan_Renderer* r = get_vulkan_renderer();
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_renderer* r = get_vulkan_renderer();
+    const vk_context& rc = get_vulkan_context();
 
     VkDescriptorSet descriptor_sets{};
 
@@ -73,8 +73,8 @@ VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout) {
 }
 
 std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout) {
-    const Vulkan_Renderer* r = get_vulkan_renderer();
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_renderer* r = get_vulkan_renderer();
+    const vk_context& rc = get_vulkan_context();
 
     std::vector<VkDescriptorSet> descriptor_sets(get_swapchain_image_count());
 
@@ -95,7 +95,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
     vulkan_buffer& buffer,
     std::size_t size)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
         VkDescriptorBufferInfo sceneInfo{};
@@ -122,7 +122,7 @@ void update_binding(VkDescriptorSet descriptor_set,
     VkImageLayout layout,
     VkSampler sampler)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     VkDescriptorImageInfo buffer_info{};
     buffer_info.imageLayout = layout;
@@ -144,7 +144,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
     vulkan_image_buffer& buffer,
     VkImageLayout layout,
     VkSampler sampler) {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
         VkDescriptorImageInfo buffer_info{};
@@ -169,7 +169,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
                     VkImageLayout layout, 
                     VkSampler sampler)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     for (std::size_t i = 0; i < get_swapchain_image_count(); ++i) {
         VkDescriptorImageInfo buffer_info{};

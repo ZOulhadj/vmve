@@ -11,7 +11,7 @@ vulkan_image_buffer create_texture_buffer(unsigned char* texture, uint32_t width
 {
     vulkan_image_buffer buffer{};
 
-    const Vulkan_Renderer* renderer = get_vulkan_renderer();
+    const vk_renderer* renderer = get_vulkan_renderer();
 
     // We do "* 4" because each pixel has four channels red, green, blue and alpha
     vulkan_buffer staging_buffer = create_staging_buffer(texture, (width * height) * 4);
@@ -119,7 +119,7 @@ vulkan_image_buffer load_texture(const std::filesystem::path& path, bool flip_y,
 VkSampler create_image_sampler(VkFilter filtering, const uint32_t anisotropic_level, VkSamplerAddressMode addressMode) {
     VkSampler sampler{};
 
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     // get the maximum supported anisotropic filtering level
     VkPhysicalDeviceProperties properties{};
@@ -156,7 +156,7 @@ VkSampler create_image_sampler(VkFilter filtering, const uint32_t anisotropic_le
 }
 
 void destroy_image_sampler(VkSampler sampler) {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     if (sampler) {
         vkDestroySampler(rc.device->device, sampler, nullptr);

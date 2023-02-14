@@ -8,25 +8,28 @@
 #include "rendering/entity.h"
 #include "logging.h"
 
-enum class Buffer_Mode
+enum class renderer_buffer_mode
 {
     Double,
     Triple
 };
 
-enum class VSync_Mode {
+enum class renderer_vsync_mode
+{
     disabled = 0,
     enabled  = 1,
     adaptive = 2
 };
 
-struct Swapchain {
+struct vk_swapchain
+{
     VkSwapchainKHR handle;
 
     std::vector<vulkan_image_buffer> images;
 };
 
-struct Frame {
+struct vk_frame
+{
     // CPU -> GPU sync
     VkFence submit_fence;
 
@@ -38,21 +41,24 @@ struct Frame {
     VkSemaphore composite_semaphore;
 };
 
-struct Framebuffer_Attachment {
+struct vk_framebuffer_attachment
+{
     // TEMP: Can this be a single image instead of multiple frames?
     std::vector<vulkan_image_buffer> image;
     VkImageUsageFlags usage;
 };
 
-
-struct Render_Pass {
+struct vk_render_pass
+{
     std::vector<VkFramebuffer> handle;
-    std::vector<Framebuffer_Attachment> attachments;
+    std::vector<vk_framebuffer_attachment> attachments;
 
     uint32_t width;
     uint32_t height;
 
     VkRenderPass render_pass;
+
+    std::vector<VkClearValue> clear_values;
 
     // temp
     bool is_ui;
@@ -60,9 +66,9 @@ struct Render_Pass {
 
 // TODO: Add support for adding specific offsets
 template<typename T>
-struct Vertex_Binding
+struct vk_vertex_binding
 {
-    Vertex_Binding(VkVertexInputRate rate)
+    vk_vertex_binding(VkVertexInputRate rate)
         : input_rate(rate), current_bytes(0), max_bytes(sizeof(T))
     {}
 
@@ -87,9 +93,10 @@ struct Vertex_Binding
 
 // Set... Functions are required
 // Enable... Functions are optional
-struct Pipeline {
-    void enable_vertex_binding(const Vertex_Binding<Vertex>& binding);
-    void set_shader_pipeline(std::vector<Shader> shaders);
+struct vk_pipeline
+{
+    void enable_vertex_binding(const vk_vertex_binding<Vertex>& binding);
+    void set_shader_pipeline(std::vector<vk_shader> shaders);
     void set_input_assembly(VkPrimitiveTopology topology, bool primitiveRestart = false);
     void set_rasterization(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace);
     void enable_depth_stencil(VkCompareOp compare);
@@ -101,7 +108,7 @@ struct Pipeline {
 
     VkPipelineLayout m_Layout;
     VkPipeline m_Pipeline;
-    Render_Pass* m_RenderPass;
+    vk_render_pass* m_RenderPass;
 
     // temp
     std::vector<VkVertexInputBindingDescription> bindingDescriptions;
@@ -117,45 +124,47 @@ struct Pipeline {
     VkPipelineColorBlendStateCreateInfo m_BlendInfo;
 };
 
-struct Upload_Context {
+struct vk_upload_context
+{
     VkFence         Fence;
     VkCommandPool   CmdPool;
     VkCommandBuffer CmdBuffer;
 };
 
-struct Vulkan_Renderer {
-    Vulkan_Context ctx;
+struct vk_renderer
+{
+    vk_context ctx;
 
-    Upload_Context submit;
-    Shader_Compiler compiler;
+    vk_upload_context submit;
+    shader_compiler compiler;
 
     VkDescriptorPool descriptor_pool;
 
     VkDebugUtilsMessengerEXT messenger;
 };
 
-bool create_vulkan_renderer(Vulkan_Renderer*& out_renderer, const Window* window, Buffer_Mode buffering_mode, VSync_Mode sync_mode);
-void destroy_vulkan_renderer(Vulkan_Renderer* renderer);
+bool create_vulkan_renderer(vk_renderer*& out_renderer, const Window* window, renderer_buffer_mode buffering_mode, renderer_vsync_mode sync_mode);
+void destroy_vulkan_renderer(vk_renderer* renderer);
 
-Vulkan_Renderer* get_vulkan_renderer();
-Vulkan_Context& get_vulkan_context();
+vk_renderer* get_vulkan_renderer();
+vk_context& get_vulkan_context();
 uint32_t get_frame_index(); // in order
 uint32_t get_swapchain_frame_index(); // out of order
 uint32_t get_swapchain_image_count();
 
 
-void recreate_swapchain(Buffer_Mode buffer_mode, VSync_Mode vsync);
+void recreate_swapchain(renderer_buffer_mode buffer_mode, renderer_vsync_mode vsync);
 
-void add_framebuffer_attachment(Render_Pass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
+void add_framebuffer_attachment(vk_render_pass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
 
-void create_offscreen_render_pass(Render_Pass& rp);
-void create_composite_render_pass(Render_Pass& rp);
-void create_skybox_render_pass(Render_Pass& rp);
-void create_ui_render_pass(Render_Pass& rp);
+void create_offscreen_render_pass(vk_render_pass& rp);
+void create_composite_render_pass(vk_render_pass& rp);
+void create_skybox_render_pass(vk_render_pass& rp);
+void create_ui_render_pass(vk_render_pass& rp);
 
-void destroy_render_pass(Render_Pass& fb);
+void destroy_render_pass(vk_render_pass& fb);
 
-void resize_framebuffer(Render_Pass& fb, VkExtent2D extent);
+void resize_framebuffer(vk_render_pass& fb, VkExtent2D extent);
 
 
 std::vector<VkCommandBuffer> create_command_buffers();
@@ -164,10 +173,10 @@ std::vector<VkCommandBuffer> create_command_buffers();
 void begin_command_buffer(const std::vector<VkCommandBuffer>& cmd_buffer);
 void end_command_buffer(const std::vector<VkCommandBuffer>& cmd_buffer);
 
-void begin_render_pass(const std::vector<VkCommandBuffer>& cmd_buffer, 
-    const Render_Pass& fb,
-    const glm::vec4& clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
-    const glm::vec2& clearDepthStencil = glm::vec2(0.0f, 0.0f));
+void begin_render_pass(const std::vector<VkCommandBuffer>& cmd_buffer,
+    const vk_render_pass& fb,
+    const VkClearColorValue& clear_color = { 0.0f, 0.0f, 0.0f, 1.0f },
+    const VkClearDepthStencilValue& depth_stencil = { 0.0f, 0 });
 void end_render_pass(std::vector<VkCommandBuffer>& buffers);
 
 VkPipelineLayout create_pipeline_layout(const std::vector<VkDescriptorSetLayout>& descriptor_sets,
@@ -185,7 +194,7 @@ void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers,
     VkPipelineLayout layout, 
     const std::vector<VkDescriptorSet>& descriptorSets, 
     std::vector<uint32_t> sizes);
-void bind_pipeline(std::vector<VkCommandBuffer>& buffers, const Pipeline& pipeline);
+void bind_pipeline(std::vector<VkCommandBuffer>& buffers, const vk_pipeline& pipeline);
 void render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, const glm::mat4& matrix);
 void render(const std::vector<VkCommandBuffer>& buffers, uint32_t index_count);
 void render(const std::vector<VkCommandBuffer>& buffers);
@@ -194,7 +203,7 @@ void render(const std::vector<VkCommandBuffer>& buffers);
 // Often used when create or destroying resources in device local memory.
 void wait_for_gpu();
 
-const auto attachments_to_images = [](const std::vector<Framebuffer_Attachment>& attachments, uint32_t index)
+const auto attachments_to_images = [](const std::vector<vk_framebuffer_attachment>& attachments, uint32_t index)
 {
     std::vector<vulkan_image_buffer> images(attachments[index].image.size());
 

@@ -18,7 +18,7 @@
 struct my_engine;
 
 
-struct engine_callbacks
+struct my_engine_callbacks
 {
     void (*key_callback)(my_engine* engine, int keycode);
     void (*resize_callback)(my_engine* engine, int width, int height);
@@ -50,7 +50,7 @@ void engine_should_terminate(my_engine* engine);
 void engine_set_window_icon(my_engine* engine, unsigned char* data, int width, int height);
 
 
-void engine_set_callbacks(my_engine* engine, engine_callbacks callbacks);
+void engine_set_callbacks(my_engine* engine, my_engine_callbacks callbacks);
 
 // Rendering
 

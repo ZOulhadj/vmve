@@ -1,12 +1,16 @@
 #include <engine.h>
 
+#include "config.h"
 #include "vmve.h"
 #include "security.h"
 #include "ui/ui.h"
 #include "misc.h"
+#include "settings.h"
 
 #include <imgui.h>
 #include <ImGuizmo.h>
+
+
 
 
 static void key_callback(my_engine* engine, int keycode);
@@ -19,9 +23,9 @@ int main()
 {
     my_engine* engine = nullptr;
 
-    bool engine_initialized = engine_initialize(engine, "VMVE", 1280, 720);
+    bool engine_initialized = engine_initialize(engine, app_title, app_width, app_height);
     if (!engine_initialized) {
-        engine_export_logs_to_file(engine, "vmve_crash_log.txt");
+        engine_export_logs_to_file(engine, app_crash_file);
         engine_terminate(engine);
 
         return -1;
@@ -33,21 +37,31 @@ int main()
     engine_set_window_icon(engine, app_icon, icon_width, icon_height);
 
     // Register application event callbacks with the engine.
-    engine_callbacks callbacks;
+    my_engine_callbacks callbacks;
     callbacks.key_callback = key_callback;
     callbacks.resize_callback = resize_callback;
     callbacks.drop_callback = drop_callback;
     engine_set_callbacks(engine, callbacks);
-
     
     engine_enable_ui(engine);
     configure_ui(engine);
 
+    engine_create_camera(engine, 60.0f, 50.0f);
+    engine_set_environment_map(engine, "C:/Users/zakar/Projects/vmve/vmve/assets/models/skybox_sphere.obj");
+
 
     // Configure engine properties
     // TODO(zak): load settings file if it exists
-    engine_create_camera(engine, 60.0f, 50.0f);
-    engine_set_environment_map(engine, "C:/Users/zakar/Projects/vmve/vmve/assets/models/skybox_sphere.obj");
+
+    bool settings_loaded = load_settings_file(app_settings_file);
+    if (settings_loaded) {
+        // parse and apply default settings
+    } else {
+        // set default settings if no settings file was found
+    }
+
+
+
 
     while (engine_update(engine)) {
         //  Only update the camera view if the viewport is currently in focus.
@@ -81,10 +95,7 @@ int main()
         }
         
     }
-
-
-    // todo: save current settings into file.
-
+    export_settings_file(app_settings_file);
 
     // Terminate the application and free all resources.
     engine_terminate(engine);
@@ -165,71 +176,3 @@ void drop_callback(my_engine* engine, int path_count, const char* paths[])
     drop_load_model = true;
     set_drop_model_path(paths[0]);
 }
-
-// The viewport must resize before rendering to texture. If it were
-// to resize within the UI functions then we would be attempting to
-// recreate resources using a new size before submitting to the GPU
-// which causes an error. Need to figure out how to do this properly.
-#if 0
-if (resize_viewport)
-{
-    VkExtent2D size{};
-    size.width = viewport_size.x;
-    size.height = viewport_size.y;
-
-    UpdateProjection(engine->camera, size.width, size.height);
-
-    WaitForGPU();
-
-    // TODO: You would think that resizing is easy.... Yet, there seems to
-    // be multiple issues such as stuttering, and image layout being 
-    // undefined. Needs to be fixed.
-#if 0
-    ResizeFramebuffer(offscreenPass, size);
-    ResizeFramebuffer(compositePass, size);
-
-    // TODO: update all image buffer descriptor sets
-    positions = AttachmentsToImages(offscreenPass.attachments, 0);
-    normals = AttachmentsToImages(offscreenPass.attachments, 1);
-    colors = AttachmentsToImages(offscreenPass.attachments, 2);
-    speculars = AttachmentsToImages(offscreenPass.attachments, 3);
-    depths = AttachmentsToImages(offscreenPass.attachments, 4);
-
-    viewport = AttachmentsToImages(compositePass.attachments, 0);
-
-    std::vector<VkDescriptorSetLayoutBinding> compositeBindings
-    {
-        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        { 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-        { 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
-    };
-    UpdateBinding(compositeSets, compositeBindings[0], positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    UpdateBinding(compositeSets, compositeBindings[1], normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    UpdateBinding(compositeSets, compositeBindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    UpdateBinding(compositeSets, compositeBindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
-    UpdateBinding(compositeSets, compositeBindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, gFramebufferSampler);
-
-    // Create descriptor sets for g-buffer images for UI
-
-
-    // TODO: Causes stuttering for some reason
-    // This is related to the order, creating the textures the other way seemed
-    // to fix it...
-    for (auto& image : viewport)
-        RecreateUITexture(viewportUI, image.view, gFramebufferSampler);
-
-    for (std::size_t i = 0; i < GetSwapchainImageCount(); ++i)
-    {
-        RecreateUITexture(positionsUI, positions[i].view, gFramebufferSampler);
-        RecreateUITexture(normalsUI, normals[i].view, gFramebufferSampler);
-        RecreateUITexture(colorsUI, colors[i].view, gFramebufferSampler);
-        RecreateUITexture(specularsUI, speculars[i].view, gFramebufferSampler);
-        RecreateUITexture(depthsUI, depths[i].view, gFramebufferSampler, true);
-    }
-#endif
-
-    resize_viewport = false;
-}
-#endif

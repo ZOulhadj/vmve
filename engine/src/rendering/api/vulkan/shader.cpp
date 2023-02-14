@@ -5,7 +5,8 @@
 
 //#include "logging.h"
 
-static shaderc_shader_kind vulkan_to_shaderc_type(VkShaderStageFlagBits type) {
+static shaderc_shader_kind vulkan_to_shaderc_type(VkShaderStageFlagBits type)
+{
     switch (type) {
         case VK_SHADER_STAGE_VERTEX_BIT:
             return shaderc_vertex_shader;
@@ -37,8 +38,9 @@ static shaderc_shader_kind vulkan_to_shaderc_type(VkShaderStageFlagBits type) {
 }
 
 
-Shader_Compiler create_shader_compiler() {
-    Shader_Compiler compiler{};
+shader_compiler create_shader_compiler()
+{
+    shader_compiler compiler{};
 
     // TODO: Check for potential initialization errors.
     compiler.compiler = shaderc_compiler_initialize();
@@ -49,15 +51,17 @@ Shader_Compiler create_shader_compiler() {
     return compiler;
 }
 
-void destroy_shader_compiler(Shader_Compiler& compiler) {
+void destroy_shader_compiler(shader_compiler& compiler)
+{
     shaderc_compile_options_release(compiler.options);
     shaderc_compiler_release(compiler.compiler);
 }
 
-static Shader create_shader(VkShaderStageFlagBits type, const std::string& code) {
-    Shader shader{};
+static vk_shader create_shader(VkShaderStageFlagBits type, const std::string& code)
+{
+    vk_shader shader{};
 
-    const Vulkan_Renderer* renderer = get_vulkan_renderer();
+    const vk_renderer* renderer = get_vulkan_renderer();
 
     shaderc_compilation_result_t result;
     shaderc_compilation_status status;
@@ -89,19 +93,19 @@ static Shader create_shader(VkShaderStageFlagBits type, const std::string& code)
 }
 
 
-void destroy_shader(Shader& shader)
+void destroy_shader(vk_shader& shader)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     vkDestroyShaderModule(rc.device->device, shader.handle, nullptr);
 }
 
-Shader create_vertex_shader(const std::string& code)
+vk_shader create_vertex_shader(const std::string& code)
 {
     return create_shader(VK_SHADER_STAGE_VERTEX_BIT, code);
 }
 
-Shader create_fragment_shader(const std::string& code)
+vk_shader create_fragment_shader(const std::string& code)
 {
     return create_shader(VK_SHADER_STAGE_FRAGMENT_BIT, code);
 }

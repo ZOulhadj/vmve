@@ -16,7 +16,7 @@ struct Vulkan_Device {
     uint32_t present_index;
 };
 
-struct Vulkan_Context {
+struct vk_context {
     const Window* window;
 
     VkInstance      instance;
@@ -25,12 +25,12 @@ struct Vulkan_Context {
     VmaAllocator    allocator;
 };
 
-bool create_vulkan_context(Vulkan_Context& context, const std::vector<const char*>& requested_layers,
+bool create_vulkan_context(vk_context& context, const std::vector<const char*>& requested_layers,
                                                    std::vector<const char*>& requested_extensions,
                                                    const std::vector<const char*>& requested_device_extensions,
                                                    const VkPhysicalDeviceFeatures& requested_gpu_features,
                                                    const Window* window);
-void destroy_vulkan_context(Vulkan_Context& rc);
+void destroy_vulkan_context(vk_context& rc);
 
 
 #endif

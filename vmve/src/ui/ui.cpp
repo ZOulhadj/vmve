@@ -12,6 +12,7 @@
 #include <string>
 #include <fstream>
 
+#include "../config.h"
 #include "../security.h"
 #include "../vmve.h"
 #include "ui_fonts.h"
@@ -49,16 +50,6 @@ int old_viewport_height = 0;
 
 float resize_width = 0;
 float resize_height = 0;
-
-
-const char* build_version = "0.0.2";
-const char* build_date = "05/05/2023";
-const char* author_name = "Zakariya Oulhadj";
-const char* author_email = "oulhadjz@roehampton.ac.uk";
-const char* applicationAbout = R"(
-    This is a 3D model viewer and exporter designed for the purpose of graphics
-    debugging and testing.
-)";
 
 
 float temperature = 23.5;
@@ -457,13 +448,13 @@ static void about_window(bool* open)
 
     ImGui::Begin("About", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
-    ImGui::Text("Build version: %s", build_version);
-    ImGui::Text("Build date: %s", build_date);
+    ImGui::Text("Build version: %s", app_version);
+    ImGui::Text("Build date: %s", app_build_date);
     ImGui::Separator();
-    ImGui::Text("Author: %s", author_name);
-    ImGui::Text("Contact: %s", author_email);
+    ImGui::Text("Author: %s", app_dev_full_name);
+    ImGui::Text("Email: %s", app_dev_email);
     ImGui::Separator();
-    ImGui::TextWrapped("Description: %s", applicationAbout);
+    ImGui::TextWrapped("Description: %s", app_description);
 
     ImGui::End();
 }

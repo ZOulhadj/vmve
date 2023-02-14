@@ -41,14 +41,14 @@ struct my_engine
 {
     Window* window;
     win32_window* new_window; // TEMP
-    Vulkan_Renderer* renderer;
+    vk_renderer* renderer;
     ImGuiContext* ui;
 
     main_audio audio;
     IXAudio2SourceVoice* example_audio;
     audio_3d object_audio;
 
-    engine_callbacks callbacks;
+    my_engine_callbacks callbacks;
 
     std::string execPath;
     bool running;
@@ -115,9 +115,9 @@ static VkExtent2D framebuffer_size = { 1280, 720 };
 VkSampler g_framebuffer_sampler;
 VkSampler g_texture_sampler;
 
-Render_Pass offscreen_pass{};
-Render_Pass composite_pass{};
-Render_Pass skybox_pass{};
+vk_render_pass offscreen_pass{};
+vk_render_pass composite_pass{};
+vk_render_pass skybox_pass{};
 
 VkDescriptorSetLayout offscreenLayout;
 std::vector<VkDescriptorSet> offscreenSets;
@@ -145,11 +145,11 @@ VkPipelineLayout compositePipelineLayout;
 VkPipelineLayout skybox_pipeline_layout;
 
 
-Pipeline offscreenPipeline;
-Pipeline wireframePipeline;
-Pipeline compositePipeline;
-Pipeline skybox_pipeline;
-Pipeline* currentPipeline = &offscreenPipeline;
+vk_pipeline offscreenPipeline;
+vk_pipeline wireframePipeline;
+vk_pipeline compositePipeline;
+vk_pipeline skybox_pipeline;
+vk_pipeline* currentPipeline = &offscreenPipeline;
 
 std::vector<VkCommandBuffer> offscreenCmdBuffer;
 std::vector<VkCommandBuffer> compositeCmdBuffer;
@@ -160,7 +160,7 @@ Model skybox_model;
 
 
 // UI related stuff
-Render_Pass uiPass{};
+vk_render_pass uiPass{};
 std::vector<VkDescriptorSet> viewportUI;
 std::vector<VkDescriptorSet> positionsUI;
 std::vector<VkDescriptorSet> colorsUI;
@@ -197,7 +197,7 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     }
     out_engine->window->event_callback = event_callback;
 
-    bool renderer_initialized = create_vulkan_renderer(out_engine->renderer, out_engine->window, Buffer_Mode::Double, VSync_Mode::enabled);
+    bool renderer_initialized = create_vulkan_renderer(out_engine->renderer, out_engine->window, renderer_buffer_mode::Double, renderer_vsync_mode::enabled);
     if (!renderer_initialized) {
         print_log("Failed to create renderer.\n");
         return false;
@@ -233,14 +233,12 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     {
         add_framebuffer_attachment(composite_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
         create_composite_render_pass(composite_pass);
-        viewport = attachments_to_images(composite_pass.attachments, 0);
     }
     {
         add_framebuffer_attachment(skybox_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
         create_skybox_render_pass(skybox_pass);
-        
     }
-
+    viewport = attachments_to_images(skybox_pass.attachments, 0);
 
 
     //out_engine->sun_buffer = create_uniform_buffer(sizeof(sun_data));
@@ -321,7 +319,7 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
         { compositeLayout }
     );
 
-    Vertex_Binding<Vertex> vertexBinding(VK_VERTEX_INPUT_RATE_VERTEX);
+    vk_vertex_binding<Vertex> vertexBinding(VK_VERTEX_INPUT_RATE_VERTEX);
     vertexBinding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
     vertexBinding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
     vertexBinding.add_attribute(VK_FORMAT_R32G32_SFLOAT, "UV");
@@ -330,12 +328,12 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     //Shader shadowMappingVS = create_vertex_shader(shadowMappingVSCode);
     //Shader shadowMappingFS = create_fragment_shader(shadowMappingFSCode);
 
-    Shader geometry_vs = create_vertex_shader(geometryVSCode);
-    Shader geometry_fs = create_fragment_shader(geometryFSCode);
-    Shader lighting_vs = create_vertex_shader(lightingVSCode);
-    Shader lighting_fs = create_fragment_shader(lightingFSCode);
-    Shader skybox_vs = create_vertex_shader(skybox_vs_code);
-    Shader skybox_fs = create_fragment_shader(skybox_fs_code);
+    vk_shader geometry_vs = create_vertex_shader(geometryVSCode);
+    vk_shader geometry_fs = create_fragment_shader(geometryFSCode);
+    vk_shader lighting_vs = create_vertex_shader(lightingVSCode);
+    vk_shader lighting_fs = create_fragment_shader(lightingFSCode);
+    vk_shader skybox_vs = create_vertex_shader(skybox_vs_code);
+    vk_shader skybox_fs = create_fragment_shader(skybox_fs_code);
 
     offscreenPipeline.m_Layout = offscreenPipelineLayout;
     offscreenPipeline.m_RenderPass = &offscreen_pass;
@@ -370,7 +368,8 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     skybox_pipeline.enable_vertex_binding(vertexBinding);
     skybox_pipeline.set_shader_pipeline({ skybox_vs, skybox_fs });
     skybox_pipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    skybox_pipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
+    skybox_pipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_CLOCKWISE);
+    skybox_pipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
     skybox_pipeline.set_color_blend(1);
     skybox_pipeline.create_pipeline();
 
@@ -420,16 +419,6 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     print_log("Successfully initialized engine.\n");
 
     return true;
-}
-
-
-void engine_set_render_mode(my_engine* engine, int mode)
-{
-    if (mode == 0) {
-        currentPipeline = &offscreenPipeline;
-    } else if (mode == 1) {
-        currentPipeline = &wireframePipeline;
-    }
 }
 
 bool engine_update(my_engine* engine)
@@ -491,7 +480,7 @@ void engine_render(my_engine* engine)
     begin_command_buffer(offscreenCmdBuffer);
     {
         bind_descriptor_set(offscreenCmdBuffer, offscreenPipelineLayout, offscreenSets, { sizeof(View_Projection) });
-        begin_render_pass(offscreenCmdBuffer, offscreen_pass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f });
+        begin_render_pass(offscreenCmdBuffer, offscreen_pass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0 });
 
         bind_pipeline(offscreenCmdBuffer, *currentPipeline);
 
@@ -529,7 +518,7 @@ void engine_render(my_engine* engine)
         render(compositeCmdBuffer);
         end_render_pass(compositeCmdBuffer);
 
-#if 0
+#if 1
         begin_render_pass(compositeCmdBuffer, skybox_pass);
         // skybox rendering
         if (engine->using_skybox) {
@@ -631,6 +620,15 @@ void engine_terminate(my_engine* engine)
 //////////////////////////////////////////////////////////////////////////////
 
 
+void engine_set_render_mode(my_engine* engine, int mode)
+{
+    if (mode == 0) {
+        currentPipeline = &offscreenPipeline;
+    } else if (mode == 1) {
+        currentPipeline = &wireframePipeline;
+    }
+}
+
 void engine_should_terminate(my_engine* engine)
 {
     engine->running = false;
@@ -641,7 +639,7 @@ void engine_set_window_icon(my_engine* engine, unsigned char* data, int width, i
     set_window_icon(engine->window, data, width, height);
 }
 
-void engine_set_callbacks(my_engine* engine, engine_callbacks callbacks)
+void engine_set_callbacks(my_engine* engine, my_engine_callbacks callbacks)
 {
     engine->callbacks = callbacks;
 }
@@ -1202,3 +1200,73 @@ static void event_callback(basic_event& e)
     dispatcher.dispatch<Window_Not_Minimized_Event>(not_minimized_window);
     dispatcher.dispatch<Window_Dropped_Event>(dropped_window);
 }
+
+
+
+// The viewport must resize before rendering to texture. If it were
+// to resize within the UI functions then we would be attempting to
+// recreate resources using a new size before submitting to the GPU
+// which causes an error. Need to figure out how to do this properly.
+#if 0
+if (resize_viewport)
+{
+    VkExtent2D size{};
+    size.width = viewport_size.x;
+    size.height = viewport_size.y;
+
+    UpdateProjection(engine->camera, size.width, size.height);
+
+    WaitForGPU();
+
+    // TODO: You would think that resizing is easy.... Yet, there seems to
+    // be multiple issues such as stuttering, and image layout being 
+    // undefined. Needs to be fixed.
+#if 0
+    ResizeFramebuffer(offscreenPass, size);
+    ResizeFramebuffer(compositePass, size);
+
+    // TODO: update all image buffer descriptor sets
+    positions = AttachmentsToImages(offscreenPass.attachments, 0);
+    normals = AttachmentsToImages(offscreenPass.attachments, 1);
+    colors = AttachmentsToImages(offscreenPass.attachments, 2);
+    speculars = AttachmentsToImages(offscreenPass.attachments, 3);
+    depths = AttachmentsToImages(offscreenPass.attachments, 4);
+
+    viewport = AttachmentsToImages(compositePass.attachments, 0);
+
+    std::vector<VkDescriptorSetLayoutBinding> compositeBindings
+    {
+        { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+        { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+        { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+        { 3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+        { 4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
+    };
+    UpdateBinding(compositeSets, compositeBindings[0], positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
+    UpdateBinding(compositeSets, compositeBindings[1], normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
+    UpdateBinding(compositeSets, compositeBindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
+    UpdateBinding(compositeSets, compositeBindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, gFramebufferSampler);
+    UpdateBinding(compositeSets, compositeBindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, gFramebufferSampler);
+
+    // Create descriptor sets for g-buffer images for UI
+
+
+    // TODO: Causes stuttering for some reason
+    // This is related to the order, creating the textures the other way seemed
+    // to fix it...
+    for (auto& image : viewport)
+        RecreateUITexture(viewportUI, image.view, gFramebufferSampler);
+
+    for (std::size_t i = 0; i < GetSwapchainImageCount(); ++i)
+    {
+        RecreateUITexture(positionsUI, positions[i].view, gFramebufferSampler);
+        RecreateUITexture(normalsUI, normals[i].view, gFramebufferSampler);
+        RecreateUITexture(colorsUI, colors[i].view, gFramebufferSampler);
+        RecreateUITexture(specularsUI, speculars[i].view, gFramebufferSampler);
+        RecreateUITexture(depthsUI, depths[i].view, gFramebufferSampler, true);
+    }
+#endif
+
+    resize_viewport = false;
+}
+#endif

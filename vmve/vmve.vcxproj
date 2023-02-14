@@ -94,6 +94,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\misc.cpp" />
     <ClCompile Include="src\security.cpp" />
+    <ClCompile Include="src\settings.cpp" />
     <ClCompile Include="src\ui\ui.cpp" />
     <ClCompile Include="src\ui\ui_fonts.cpp" />
     <ClCompile Include="src\vmve.cpp" />
@@ -106,8 +107,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="src\config.h" />
     <ClInclude Include="src\misc.h" />
     <ClInclude Include="src\security.h" />
+    <ClInclude Include="src\settings.h" />
     <ClInclude Include="src\ui\ui.h" />
     <ClInclude Include="src\ui\ui_fonts.h" />
     <ClInclude Include="src\vmve.h" />

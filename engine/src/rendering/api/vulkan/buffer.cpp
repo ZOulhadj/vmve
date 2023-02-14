@@ -7,7 +7,7 @@
 
 std::size_t pad_uniform_buffer_size(std::size_t original_size)
 {
-    const Vulkan_Context& context = get_vulkan_context();
+    const vk_context& context = get_vulkan_context();
 
     // Get GPU minimum uniform buffer alignment
     VkPhysicalDeviceProperties properties{};
@@ -26,7 +26,7 @@ std::size_t pad_uniform_buffer_size(std::size_t original_size)
 vulkan_buffer create_buffer(uint32_t size, VkBufferUsageFlags type) {
     vulkan_buffer buffer{};
 
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     buffer_info.size  = size;
@@ -73,7 +73,7 @@ std::vector<vulkan_buffer> create_uniform_buffers(std::size_t buffer_size) {
 
 // Maps/Fills an existing buffer with data.
 void set_buffer_data(std::vector<vulkan_buffer>& buffers, void* data) {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     const uint32_t current_frame= get_frame_index();
 
@@ -84,7 +84,7 @@ void set_buffer_data(std::vector<vulkan_buffer>& buffers, void* data) {
 }
 
 void set_buffer_data(vulkan_buffer& buffer, void* data) {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     void* allocation{};
     vk_check(vmaMapMemory(rc.allocator, buffer.allocation, &allocation));
@@ -95,7 +95,7 @@ void set_buffer_data(vulkan_buffer& buffer, void* data) {
 
 void set_buffer_data(vulkan_buffer& buffer, void* data, std::size_t size)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
     const uint32_t current_frame = get_frame_index();
 
     char* allocation{};
@@ -112,7 +112,7 @@ vulkan_buffer create_staging_buffer(void* data, uint32_t size)
 {
     vulkan_buffer buffer{};
 
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     buffer_info.size  = size;
@@ -143,7 +143,7 @@ vulkan_buffer create_staging_buffer(void* data, uint32_t size)
 vulkan_buffer create_gpu_buffer(uint32_t size, VkBufferUsageFlags type) {
     vulkan_buffer buffer{};
 
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     buffer_info.size  = size;
@@ -170,7 +170,7 @@ vulkan_buffer create_gpu_buffer(uint32_t size, VkBufferUsageFlags type) {
 // used for copying data from staging buffers into GPU local buffers.
 void submit_to_gpu(const std::function<void()>& submit_func)
 {
-    const Vulkan_Renderer* renderer = get_vulkan_renderer();
+    const vk_renderer* renderer = get_vulkan_renderer();
 
     VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -203,14 +203,14 @@ void submit_to_gpu(const std::function<void()>& submit_func)
 
 void destroy_buffer(vulkan_buffer& buffer)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     vmaDestroyBuffer(rc.allocator, buffer.buffer, buffer.allocation);
 }
 
 void destroy_buffers(std::vector<vulkan_buffer>& buffers)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     for (vulkan_buffer& buffer : buffers)
         vmaDestroyBuffer(rc.allocator, buffer.buffer, buffer.allocation);
@@ -221,7 +221,7 @@ VkImageView create_image_views(VkImage image, VkFormat format, VkImageUsageFlags
 {
     VkImageView view{};
 
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
 
     // Select aspect mask based on image format
@@ -256,7 +256,7 @@ vulkan_image_buffer create_image(VkExtent2D extent, VkFormat format, VkImageUsag
 {
     vulkan_image_buffer image{};
 
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -296,7 +296,7 @@ vulkan_image_buffer create_depth_image(VkExtent2D size) {
 
 void destroy_image(vulkan_image_buffer& image)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     vkDestroyImageView(rc.device->device, image.view, nullptr);
     vmaDestroyImage(rc.allocator, image.handle, image.allocation);

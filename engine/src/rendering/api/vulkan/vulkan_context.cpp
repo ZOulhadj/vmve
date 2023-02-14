@@ -319,7 +319,7 @@ static VmaAllocator create_allocator(VkInstance instance, uint32_t version, Vulk
 }
 
 
-bool create_vulkan_context(Vulkan_Context& context, 
+bool create_vulkan_context(vk_context& context, 
     const std::vector<const char*>& requested_layers, 
     std::vector<const char*>& requested_extensions,
     const std::vector<const char*>& requested_device_extensions,
@@ -385,7 +385,7 @@ bool create_vulkan_context(Vulkan_Context& context,
 }
 
 // Deallocates/frees memory allocated by the renderer context.
-void destroy_vulkan_context(Vulkan_Context& rc)
+void destroy_vulkan_context(vk_context& rc)
 {
     vmaDestroyAllocator(rc.allocator);
 
