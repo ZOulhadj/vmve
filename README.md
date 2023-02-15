@@ -2,7 +2,8 @@
 
 # Vulkan Model Viewer and Exporter
 
-![overview](.git_assets/1.png)
+![overview_1](.git_assets/1.png)
+![overview_2](.git_assets/2.png)
 
 ## Features
 * Standalone application
