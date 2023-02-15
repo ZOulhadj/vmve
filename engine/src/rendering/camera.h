@@ -27,7 +27,7 @@ enum class Camera_Type {
     look_at
 };
 
-struct View_Projection {
+struct view_projection {
     glm::mat4 view;
     glm::mat4 proj;
 };
@@ -58,7 +58,7 @@ struct Camera {
     float near;
     float far;
 
-    View_Projection viewProj;
+    view_projection viewProj;
 
     bool first_mouse;
 };

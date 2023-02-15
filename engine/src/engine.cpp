@@ -52,7 +52,7 @@ struct my_engine
     std::string execPath;
     bool running;
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
-    double deltaTime;
+    double delta_time;
 
     // Resources
     vulkan_buffer scene_buffer;
@@ -111,65 +111,63 @@ static VkExtent2D shadow_map_size = { 2048, 2048 };
 // Default framebuffer at startup
 static VkExtent2D framebuffer_size = { 1920, 1080 };
 
-VkSampler g_framebuffer_sampler;
-//VkSampler g_texture_sampler;
-
-vk_render_pass offscreen_pass{};
-vk_render_pass composite_pass{};
-vk_render_pass skybox_pass{};
-
-VkDescriptorSetLayout offscreenLayout;
-std::vector<VkDescriptorSet> offscreenSets;
+static VkSampler g_framebuffer_sampler;
 
 
-VkDescriptorSetLayout compositeLayout;
-std::vector<VkDescriptorSet> compositeSets;
-std::vector<vk_image> viewport;
+static vk_render_pass offscreen_pass{};
+static vk_render_pass composite_pass{};
+static vk_render_pass skybox_pass{};
 
-std::vector<vk_image> positions;
-std::vector<vk_image> normals;
-std::vector<vk_image> colors;
-std::vector<vk_image> speculars;
-std::vector<vk_image> depths;
-//std::vector<vulkan_image_buffer> shadow_depths;
+static VkDescriptorSetLayout offscreen_ds_layout;
+static std::vector<VkDescriptorSet> offscreen_ds;
 
-std::vector<VkDescriptorSetLayoutBinding> materialBindings;
-VkDescriptorSetLayout materialLayout;
+static VkDescriptorSetLayout composite_ds_layout;
+static std::vector<VkDescriptorSet> composite_ds;
 
-VkDescriptorSetLayout skyboxLayout;
-std::vector<VkDescriptorSet> skyboxSets;
+static std::vector<vk_image> viewport;
+static std::vector<vk_image> positions;
+static std::vector<vk_image> normals;
+static std::vector<vk_image> colors;
+static std::vector<vk_image> speculars;
+static std::vector<vk_image> depths;
 
-VkPipelineLayout offscreenPipelineLayout;
-VkPipelineLayout compositePipelineLayout;
-VkPipelineLayout skybox_pipeline_layout;
+static VkDescriptorSetLayout skybox_ds_layout;
+static std::vector<VkDescriptorSet> skybox_ds;
 
+static std::vector<VkDescriptorSetLayoutBinding> material_ds_binding;
+static VkDescriptorSetLayout material_ds_layout;
 
-vk_pipeline offscreenPipeline;
-vk_pipeline wireframePipeline;
-vk_pipeline compositePipeline;
-vk_pipeline skybox_pipeline;
-vk_pipeline* currentPipeline = &offscreenPipeline;
+static VkPipelineLayout offscreen_pipeline_layout;
+static VkPipelineLayout composite_pipeline_layout;
+static VkPipelineLayout skybox_pipeline_layout;
 
-std::vector<VkCommandBuffer> offscreenCmdBuffer;
-std::vector<VkCommandBuffer> compositeCmdBuffer;
+static vk_pipeline offscreen_pipeline;
+static vk_pipeline wireframe_pipeline;
+static vk_pipeline composite_pipeline;
+static vk_pipeline skybox_pipeline;
 
-Model skybox_model;
+static vk_pipeline* current_pipeline = &offscreen_pipeline;
+
+static std::vector<VkCommandBuffer> offscreen_cmd_buffer;
+static std::vector<VkCommandBuffer> composite_cmd_buffer;
+
+static Model skybox_model;
 
 
 
 
 // UI related stuff
-vk_render_pass uiPass{};
-std::vector<VkDescriptorSet> viewportUI;
-std::vector<VkDescriptorSet> positionsUI;
-std::vector<VkDescriptorSet> colorsUI;
-std::vector<VkDescriptorSet> normalsUI;
-std::vector<VkDescriptorSet> specularsUI;
-std::vector<VkDescriptorSet> depthsUI;
-std::vector<VkCommandBuffer> uiCmdBuffer;
+static vk_render_pass ui_pass{};
+static std::vector<VkDescriptorSet> viewport_ui;
+static std::vector<VkDescriptorSet> positions_ui;
+static std::vector<VkDescriptorSet> colors_ui;
+static std::vector<VkDescriptorSet> normals_ui;
+static std::vector<VkDescriptorSet> speculars_ui;
+static std::vector<VkDescriptorSet> depths_ui;
+static std::vector<VkCommandBuffer> ui_cmd_buffer;
 
-float shadowNear = 1.0f, shadowFar = 2000.0f;
-float sunDistance = 400.0f;
+static float shadowNear = 1.0f, shadowFar = 2000.0f;
+static float sunDistance = 400.0f;
 
 static void event_callback(basic_event& e);
 
@@ -239,34 +237,20 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
 
 
     //out_engine->sun_buffer = create_uniform_buffer(sizeof(sun_data));
-    out_engine->camera_buffer = create_uniform_buffer(sizeof(View_Projection));
+    out_engine->camera_buffer = create_uniform_buffer(sizeof(view_projection));
     out_engine->scene_buffer = create_uniform_buffer(sizeof(scene_props));
 
 
-    std::vector<VkDescriptorSetLayoutBinding> skyboxBindings
-    {
-        { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT },
-        { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }
-    };
-
-    skyboxLayout = create_descriptor_layout(skyboxBindings);
-    skyboxSets = allocate_descriptor_sets(skyboxLayout);
-    update_binding(skyboxSets, skyboxBindings[0], out_engine->camera_buffer, sizeof(View_Projection));
-
-
-
-
-    std::vector<VkDescriptorSetLayoutBinding> offscreenBindings
-    {
+    const std::vector<VkDescriptorSetLayoutBinding> offscreen_bindings  {
         { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT }
     };
-    offscreenLayout = create_descriptor_layout(offscreenBindings);
-    offscreenSets = allocate_descriptor_sets(offscreenLayout);
-    update_binding(offscreenSets, offscreenBindings[0], out_engine->camera_buffer, sizeof(View_Projection));
+
+    offscreen_ds_layout = create_descriptor_layout(offscreen_bindings);
+    offscreen_ds = allocate_descriptor_sets(offscreen_ds_layout);
+    update_binding(offscreen_ds, offscreen_bindings[0], out_engine->camera_buffer, sizeof(view_projection));
 
     //////////////////////////////////////////////////////////////////////////
-    std::vector<VkDescriptorSetLayoutBinding> compositeBindings
-    {
+    const std::vector<VkDescriptorSetLayoutBinding> composite_bindings {
         { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
         { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
         { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
@@ -275,94 +259,102 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
         { 5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }
     };
 
-    compositeLayout = create_descriptor_layout(compositeBindings);
-    compositeSets = allocate_descriptor_sets(compositeLayout);
+    composite_ds_layout = create_descriptor_layout(composite_bindings);
+    composite_ds = allocate_descriptor_sets(composite_ds_layout);
     // Convert render target attachments into flat arrays for descriptor binding
     positions = attachments_to_images(offscreen_pass.attachments, 0);
     normals = attachments_to_images(offscreen_pass.attachments, 1);
     colors = attachments_to_images(offscreen_pass.attachments, 2);
     speculars = attachments_to_images(offscreen_pass.attachments, 3);
     depths = attachments_to_images(offscreen_pass.attachments, 4);
-    update_binding(compositeSets, compositeBindings[0], positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
-    update_binding(compositeSets, compositeBindings[1], normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
-    update_binding(compositeSets, compositeBindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
-    update_binding(compositeSets, compositeBindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
-    update_binding(compositeSets, compositeBindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
-    update_binding(compositeSets, compositeBindings[5], out_engine->scene_buffer, sizeof(scene_props));
+    update_binding(composite_ds, composite_bindings[0], positions, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(composite_ds, composite_bindings[1], normals, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(composite_ds, composite_bindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(composite_ds, composite_bindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(composite_ds, composite_bindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
+    update_binding(composite_ds, composite_bindings[5], out_engine->scene_buffer, sizeof(scene_props));
 
 
+    const std::vector<VkDescriptorSetLayoutBinding> skybox_bindings {
+        { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT },
+        { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }
+    };
+
+    skybox_ds_layout = create_descriptor_layout(skybox_bindings);
+    skybox_ds = allocate_descriptor_sets(skybox_ds_layout);
+    update_binding(skybox_ds, skybox_bindings[0], out_engine->camera_buffer, sizeof(view_projection));
 
     //////////////////////////////////////////////////////////////////////////
-    materialBindings = {
+    material_ds_binding = {
         { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
         { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
         { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }
     };
-    materialLayout = create_descriptor_layout(materialBindings);
+    material_ds_layout = create_descriptor_layout(material_ds_binding);
 
     //////////////////////////////////////////////////////////////////////////
 
     skybox_pipeline_layout = create_pipeline_layout(
-        { skyboxLayout, materialLayout }
+        { skybox_ds_layout, material_ds_layout }
     );
 
-    offscreenPipelineLayout = create_pipeline_layout(
-        { offscreenLayout, materialLayout },
+    offscreen_pipeline_layout = create_pipeline_layout(
+        { offscreen_ds_layout, material_ds_layout },
         sizeof(glm::mat4),
         VK_SHADER_STAGE_VERTEX_BIT
     );
 
-    compositePipelineLayout = create_pipeline_layout(
-        { compositeLayout }
+    composite_pipeline_layout = create_pipeline_layout(
+        { composite_ds_layout }
     );
 
-    vk_vertex_binding<Vertex> vertexBinding(VK_VERTEX_INPUT_RATE_VERTEX);
-    vertexBinding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
-    vertexBinding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
-    vertexBinding.add_attribute(VK_FORMAT_R32G32_SFLOAT, "UV");
-    vertexBinding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
+    vk_vertex_binding<Vertex> vertex_binding(VK_VERTEX_INPUT_RATE_VERTEX);
+    vertex_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
+    vertex_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
+    vertex_binding.add_attribute(VK_FORMAT_R32G32_SFLOAT, "UV");
+    vertex_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Tangent");
 
     //Shader shadowMappingVS = create_vertex_shader(shadowMappingVSCode);
     //Shader shadowMappingFS = create_fragment_shader(shadowMappingFSCode);
 
-    vk_shader geometry_vs = create_vertex_shader(geometryVSCode);
-    vk_shader geometry_fs = create_fragment_shader(geometryFSCode);
-    vk_shader lighting_vs = create_vertex_shader(lightingVSCode);
-    vk_shader lighting_fs = create_fragment_shader(lightingFSCode);
+    vk_shader geometry_vs = create_vertex_shader(geometry_vs_code);
+    vk_shader geometry_fs = create_fragment_shader(geometry_fs_code);
+    vk_shader lighting_vs = create_vertex_shader(lighting_vs_code);
+    vk_shader lighting_fs = create_fragment_shader(lighting_fs_code);
     vk_shader skybox_vs = create_vertex_shader(skybox_vs_code);
     vk_shader skybox_fs = create_fragment_shader(skybox_fs_code);
 
-    offscreenPipeline.m_Layout = offscreenPipelineLayout;
-    offscreenPipeline.m_RenderPass = &offscreen_pass;
-    offscreenPipeline.enable_vertex_binding(vertexBinding);
-    offscreenPipeline.set_shader_pipeline({ geometry_vs, geometry_fs });
-    offscreenPipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    offscreenPipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
-    offscreenPipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
-    offscreenPipeline.set_color_blend(4);
-    offscreenPipeline.create_pipeline();
+    offscreen_pipeline.m_Layout = offscreen_pipeline_layout;
+    offscreen_pipeline.m_RenderPass = &offscreen_pass;
+    offscreen_pipeline.enable_vertex_binding(vertex_binding);
+    offscreen_pipeline.set_shader_pipeline({ geometry_vs, geometry_fs });
+    offscreen_pipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    offscreen_pipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
+    offscreen_pipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
+    offscreen_pipeline.set_color_blend(4);
+    offscreen_pipeline.create_pipeline();
 
-    wireframePipeline.m_Layout = offscreenPipelineLayout;
-    wireframePipeline.m_RenderPass = &offscreen_pass;
-    wireframePipeline.enable_vertex_binding(vertexBinding);
-    wireframePipeline.set_shader_pipeline({ geometry_vs, geometry_fs });
-    wireframePipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    wireframePipeline.set_rasterization(VK_POLYGON_MODE_LINE, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
-    wireframePipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
-    wireframePipeline.set_color_blend(4);
-    wireframePipeline.create_pipeline();
+    wireframe_pipeline.m_Layout = offscreen_pipeline_layout;
+    wireframe_pipeline.m_RenderPass = &offscreen_pass;
+    wireframe_pipeline.enable_vertex_binding(vertex_binding);
+    wireframe_pipeline.set_shader_pipeline({ geometry_vs, geometry_fs });
+    wireframe_pipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    wireframe_pipeline.set_rasterization(VK_POLYGON_MODE_LINE, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
+    wireframe_pipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
+    wireframe_pipeline.set_color_blend(4);
+    wireframe_pipeline.create_pipeline();
 
-    compositePipeline.m_Layout = compositePipelineLayout;
-    compositePipeline.m_RenderPass = &composite_pass;
-    compositePipeline.set_shader_pipeline({ lighting_vs, lighting_fs });
-    compositePipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    compositePipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
-    compositePipeline.set_color_blend(1);
-    compositePipeline.create_pipeline();
+    composite_pipeline.m_Layout = composite_pipeline_layout;
+    composite_pipeline.m_RenderPass = &composite_pass;
+    composite_pipeline.set_shader_pipeline({ lighting_vs, lighting_fs });
+    composite_pipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    composite_pipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
+    composite_pipeline.set_color_blend(1);
+    composite_pipeline.create_pipeline();
 
     skybox_pipeline.m_Layout = skybox_pipeline_layout;
     skybox_pipeline.m_RenderPass = &skybox_pass;
-    skybox_pipeline.enable_vertex_binding(vertexBinding);
+    skybox_pipeline.enable_vertex_binding(vertex_binding);
     skybox_pipeline.set_shader_pipeline({ skybox_vs, skybox_fs });
     skybox_pipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     skybox_pipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_CLOCKWISE);
@@ -380,8 +372,8 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
 
 
     // Create required command buffers
-    offscreenCmdBuffer = create_command_buffers();
-    compositeCmdBuffer = create_command_buffers();
+    offscreen_cmd_buffer = create_command_buffers();
+    composite_cmd_buffer = create_command_buffers();
 
 
 
@@ -423,7 +415,7 @@ bool engine_update(my_engine* engine)
     // Calculate the amount that has passed since the last frame. This value
     // is then used with inputs and physics to ensure that the result is the
     // same no matter how fast the CPU is running.
-    engine->deltaTime = get_delta_time();
+    engine->delta_time = get_delta_time();
 
 #if 0
     // Set sun view matrix
@@ -446,7 +438,7 @@ bool engine_update(my_engine* engine)
 #endif
 
 
-    set_buffer_data(engine->camera_buffer, &engine->camera.viewProj, sizeof(View_Projection));
+    set_buffer_data(engine->camera_buffer, &engine->camera.viewProj, sizeof(view_projection));
     set_buffer_data(engine->scene_buffer, &scene);
 
 
@@ -466,7 +458,7 @@ bool engine_begin_render(my_engine* engine)
     if (!engine->swapchain_ready) {
         wait_for_gpu();
 
-        resize_framebuffer(uiPass, { engine->window->width, engine->window->height });
+        resize_framebuffer(ui_pass, { engine->window->width, engine->window->height });
     }
 
     return engine->swapchain_ready;
@@ -474,12 +466,12 @@ bool engine_begin_render(my_engine* engine)
 
 void engine_render(my_engine* engine)
 {
-    begin_command_buffer(offscreenCmdBuffer);
+    begin_command_buffer(offscreen_cmd_buffer);
     {
-        bind_descriptor_set(offscreenCmdBuffer, offscreenPipelineLayout, offscreenSets, { sizeof(View_Projection) });
-        begin_render_pass(offscreenCmdBuffer, offscreen_pass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0 });
+        bind_descriptor_set(offscreen_cmd_buffer, offscreen_pipeline_layout, offscreen_ds, { sizeof(view_projection) });
+        begin_render_pass(offscreen_cmd_buffer, offscreen_pass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0 });
 
-        bind_pipeline(offscreenCmdBuffer, *currentPipeline);
+        bind_pipeline(offscreen_cmd_buffer, *current_pipeline);
 
         // TODO: Currently we are rendering each instance individually
         // which is a very naive. Firstly, instances should be rendered
@@ -495,34 +487,34 @@ void engine_render(my_engine* engine)
             translate_entity(instance, instance.position);
             rotate_entity(instance, instance.rotation);
             scale_entity(instance, instance.scale);
-            render_model(engine->models[instance.modelIndex], instance.matrix, offscreenCmdBuffer, offscreenPipelineLayout);
+            render_model(engine->models[instance.modelIndex], instance.matrix, offscreen_cmd_buffer, offscreen_pipeline_layout);
         }
-        end_render_pass(offscreenCmdBuffer);
+        end_render_pass(offscreen_cmd_buffer);
 
     }
-    end_command_buffer(offscreenCmdBuffer);
+    end_command_buffer(offscreen_cmd_buffer);
 
     //////////////////////////////////////////////////////////////////////////
 
-    begin_command_buffer(compositeCmdBuffer);
+    begin_command_buffer(composite_cmd_buffer);
     {
 
-        begin_render_pass(compositeCmdBuffer, composite_pass);
+        begin_render_pass(composite_cmd_buffer, composite_pass);
 
         // lighting calculations
-        bind_descriptor_set(compositeCmdBuffer, compositePipelineLayout, compositeSets);
-        bind_pipeline(compositeCmdBuffer, compositePipeline);
-        render(compositeCmdBuffer);
-        end_render_pass(compositeCmdBuffer);
+        bind_descriptor_set(composite_cmd_buffer, composite_pipeline_layout, composite_ds);
+        bind_pipeline(composite_cmd_buffer, composite_pipeline);
+        render(composite_cmd_buffer);
+        end_render_pass(composite_cmd_buffer);
 
 #if 1
         if (engine->using_skybox) {
-            begin_render_pass(compositeCmdBuffer, skybox_pass);
+            begin_render_pass(composite_cmd_buffer, skybox_pass);
 
-            bind_descriptor_set(compositeCmdBuffer, skybox_pipeline_layout, skyboxSets, { sizeof(View_Projection) });
-            bind_pipeline(compositeCmdBuffer, skybox_pipeline);
-            render_model(skybox_model, compositeCmdBuffer, skybox_pipeline_layout);
-            end_render_pass(compositeCmdBuffer);
+            bind_descriptor_set(composite_cmd_buffer, skybox_pipeline_layout, skybox_ds, { sizeof(view_projection) });
+            bind_pipeline(composite_cmd_buffer, skybox_pipeline);
+            render_model(skybox_model, composite_cmd_buffer, skybox_pipeline_layout);
+            end_render_pass(composite_cmd_buffer);
         }
 #endif
 
@@ -531,16 +523,16 @@ void engine_render(my_engine* engine)
 
 
     }
-    end_command_buffer(compositeCmdBuffer);
+    end_command_buffer(composite_cmd_buffer);
 
 }
 
 void engine_present(my_engine* engine)
 {
     if (engine->ui_pass_enabled)
-        submit_gpu_work({ offscreenCmdBuffer, compositeCmdBuffer, uiCmdBuffer });
+        submit_gpu_work({ offscreen_cmd_buffer, composite_cmd_buffer, ui_cmd_buffer });
     else
-        submit_gpu_work({ offscreenCmdBuffer, compositeCmdBuffer });
+        submit_gpu_work({ offscreen_cmd_buffer, composite_cmd_buffer });
 
     if (!present_swapchain_image()) {
         // TODO: Resize framebuffers if unable to display to swapchain
@@ -559,7 +551,7 @@ void engine_terminate(my_engine* engine)
     // Wait until all GPU commands have finished
     wait_for_gpu();
 
-    for (auto& framebuffer : viewportUI)
+    for (auto& framebuffer : viewport_ui)
         ImGui_ImplVulkan_RemoveTexture(framebuffer);
 
     destroy_model(skybox_model);
@@ -572,21 +564,21 @@ void engine_terminate(my_engine* engine)
     destroy_buffer(engine->scene_buffer);
     destroy_buffer(engine->sun_buffer);
 
-    destroy_descriptor_layout(materialLayout);
-    destroy_descriptor_layout(compositeLayout);
-    destroy_descriptor_layout(offscreenLayout);
-    destroy_descriptor_layout(skyboxLayout);
+    destroy_descriptor_layout(material_ds_layout);
+    destroy_descriptor_layout(composite_ds_layout);
+    destroy_descriptor_layout(offscreen_ds_layout);
+    destroy_descriptor_layout(skybox_ds_layout);
 
-    destroy_pipeline(wireframePipeline.m_Pipeline);
-    destroy_pipeline(compositePipeline.m_Pipeline);
-    destroy_pipeline(offscreenPipeline.m_Pipeline);
+    destroy_pipeline(wireframe_pipeline.m_Pipeline);
+    destroy_pipeline(composite_pipeline.m_Pipeline);
+    destroy_pipeline(offscreen_pipeline.m_Pipeline);
 
-    destroy_pipeline_layout(compositePipelineLayout);
-    destroy_pipeline_layout(offscreenPipelineLayout);
+    destroy_pipeline_layout(composite_pipeline_layout);
+    destroy_pipeline_layout(offscreen_pipeline_layout);
     destroy_pipeline_layout(skybox_pipeline_layout);
 
 
-    destroy_render_pass(uiPass);
+    destroy_render_pass(ui_pass);
     destroy_render_pass(composite_pass);
     destroy_render_pass(offscreen_pass);
     destroy_render_pass(skybox_pass);
@@ -619,9 +611,9 @@ void engine_terminate(my_engine* engine)
 void engine_set_render_mode(my_engine* engine, int mode)
 {
     if (mode == 0) {
-        currentPipeline = &offscreenPipeline;
+        current_pipeline = &offscreen_pipeline;
     } else if (mode == 1) {
-        currentPipeline = &wireframePipeline;
+        current_pipeline = &wireframe_pipeline;
     }
 }
 
@@ -652,7 +644,7 @@ void engine_load_model(my_engine* engine, const char* path, bool flipUVs)
         return;
     }
 
-    upload_model_to_gpu(model, materialLayout, materialBindings);
+    upload_model_to_gpu(model, material_ds_layout, material_ds_binding);
     engine->models.push_back(model);
 }
 
@@ -666,7 +658,7 @@ void engine_add_model(my_engine* engine, const char* data, int size, bool flipUV
         return;
     }
 
-    upload_model_to_gpu(model, materialLayout, materialBindings);
+    upload_model_to_gpu(model, material_ds_layout, material_ds_binding);
     engine->models.push_back(model);
 }
 
@@ -804,7 +796,7 @@ void engine_set_environment_map(my_engine* engine, const char* path)
         return;
     }
 
-    upload_model_to_gpu(skybox_model, materialLayout, materialBindings);
+    upload_model_to_gpu(skybox_model, material_ds_layout, material_ds_binding);
 
 
     engine->using_skybox = true;
@@ -815,7 +807,7 @@ void engine_create_camera(my_engine* engine, float fovy, float speed) {
 }
 
 void engine_update_input(my_engine* engine) {
-    update_input(engine->camera, engine->deltaTime);
+    update_input(engine->camera, engine->delta_time);
 }
 
 void engine_update_camera_view(my_engine* engine) {
@@ -871,25 +863,25 @@ void engine_set_camera_position(my_engine* engine, float x, float y, float z) {
 
 void engine_enable_ui(my_engine* engine)
 {
-    add_framebuffer_attachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { engine->window->width, engine->window->height });
-    create_ui_render_pass(uiPass);
+    add_framebuffer_attachment(ui_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { engine->window->width, engine->window->height });
+    create_ui_render_pass(ui_pass);
 
-    engine->ui = create_ui(engine->renderer, uiPass.render_pass);
+    engine->ui = create_ui(engine->renderer, ui_pass.render_pass);
     engine->ui_pass_enabled = true;
 
     for (std::size_t i = 0; i < get_swapchain_image_count(); ++i)
-        viewportUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, viewport[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        viewport_ui.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, viewport[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
 
     // Create descriptor sets for g-buffer images for UI
     for (std::size_t i = 0; i < positions.size(); ++i) {
-        positionsUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, positions[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        normalsUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, normals[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        colorsUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, colors[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        specularsUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, speculars[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        depthsUI.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, depths[i].view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL));
+        positions_ui.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, positions[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        normals_ui.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, normals[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        colors_ui.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, colors[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        speculars_ui.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, speculars[i].view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        depths_ui.push_back(ImGui_ImplVulkan_AddTexture(g_framebuffer_sampler, depths[i].view, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL));
     }
 
-    uiCmdBuffer = create_command_buffers();
+    ui_cmd_buffer = create_command_buffers();
 }
 
 void engine_set_ui_font_texture(my_engine* engine)
@@ -899,52 +891,52 @@ void engine_set_ui_font_texture(my_engine* engine)
 
 void engine_begin_ui_pass()
 {
-    begin_command_buffer(uiCmdBuffer);
-    begin_render_pass(uiCmdBuffer, uiPass);
+    begin_command_buffer(ui_cmd_buffer);
+    begin_render_pass(ui_cmd_buffer, ui_pass);
     begin_ui();
 }
 
 void engine_end_ui_pass()
 {
-    end_ui(uiCmdBuffer);
-    end_render_pass(uiCmdBuffer);
-    end_command_buffer(uiCmdBuffer);
+    end_ui(ui_cmd_buffer);
+    end_render_pass(ui_cmd_buffer);
+    end_command_buffer(ui_cmd_buffer);
 }
 
 void* engine_get_viewport_texture()
 {
-    const uint32_t currentImage = get_swapchain_frame_index();
-    return viewportUI[currentImage];
+    const uint32_t current_image = get_swapchain_frame_index();
+    return viewport_ui[current_image];
 }
 
 void* engine_get_position_texture()
 {
-    const uint32_t currentImage = get_swapchain_frame_index();
-    return positionsUI[currentImage];
+    const uint32_t current_image = get_swapchain_frame_index();
+    return positions_ui[current_image];
 }
 
 void* engine_get_normals_texture()
 {
-    const uint32_t currentImage = get_swapchain_frame_index();
-    return normalsUI[currentImage];
+    const uint32_t current_image = get_swapchain_frame_index();
+    return normals_ui[current_image];
 }
 
 void* engine_get_color_texture()
 {
-    const uint32_t currentImage = get_swapchain_frame_index();
-    return colorsUI[currentImage];
+    const uint32_t current_image = get_swapchain_frame_index();
+    return colors_ui[current_image];
 }
 
 void* engine_get_specular_texutre()
 {
-    const uint32_t currentImage = get_swapchain_frame_index();
-    return specularsUI[currentImage];
+    const uint32_t current_image = get_swapchain_frame_index();
+    return speculars_ui[current_image];
 }
 
 void* engine_get_depth_texture()
 {
-    const uint32_t currentImage = get_swapchain_frame_index();
-    return depthsUI[currentImage];
+    const uint32_t current_image = get_swapchain_frame_index();
+    return depths_ui[current_image];
 }
 
 int engine_get_model_count(my_engine* engine)
@@ -970,7 +962,7 @@ void engine_set_instance_scale(my_engine* engine, int instanceIndex, float x, fl
 }
 
 double engine_get_delta_time(my_engine* engine) {
-    return engine->deltaTime;
+    return engine->delta_time;
 }
 
 const char* engine_get_gpu_name(my_engine* engine)
@@ -1003,7 +995,7 @@ const char* engine_display_file_explorer(my_engine* engine, const char* path)
 {
     // TODO: Clean up this function and ensure that no bugs exist
     static std::string current_dir = path;
-    static std::string fullPath;
+    static std::string full_path;
 
     static std::vector<Directory_Item> items = get_directory_items(current_dir);
     static int currentlySelected = 0;
@@ -1028,13 +1020,13 @@ const char* engine_display_file_explorer(my_engine* engine, const char* path)
             if (item.type == Item_Type::file) {
                 if (selected) {
                     currentlySelected = static_cast<int>(i);
-                    fullPath = current_dir + '/' + item.name;
+                    full_path = current_dir + '/' + item.name;
                 }
                 ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), item.name.c_str());
             } else if (item.type == Item_Type::folder) {
                 if (selected) {
                     current_dir = items[i].path;
-                    fullPath = current_dir;
+                    full_path = current_dir;
                     items = get_directory_items(current_dir);
                     item = items[0];
                     currentlySelected = 0;
@@ -1051,7 +1043,7 @@ const char* engine_display_file_explorer(my_engine* engine, const char* path)
         ImGui::EndListBox();
     }
 
-    return fullPath.c_str();
+    return full_path.c_str();
 }
 
 const char* engine_get_executable_directory(my_engine* engine)
