@@ -21,12 +21,6 @@ struct Mesh
     VkDescriptorSet descriptor_set;
 };
 
-struct Mesh_Texture
-{
-    std::filesystem::path path;
-    vk_image texture;
-};
-
 struct Model
 {
     std::string path;
