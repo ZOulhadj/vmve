@@ -871,7 +871,7 @@ void engine_set_camera_position(my_engine* engine, float x, float y, float z) {
 
 void engine_enable_ui(my_engine* engine)
 {
-    add_framebuffer_attachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
+    add_framebuffer_attachment(uiPass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, { engine->window->width, engine->window->height });
     create_ui_render_pass(uiPass);
 
     engine->ui = create_ui(engine->renderer, uiPass.render_pass);
