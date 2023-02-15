@@ -1,4 +1,0 @@
-#ifndef MYENGINE_TYPES_HPP
-#define MYENGINE_TYPES_HPP
-
-#endif

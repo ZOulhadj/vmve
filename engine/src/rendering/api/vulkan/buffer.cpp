@@ -1,16 +1,15 @@
-#include "buffer.hpp"
+#include "buffer.h"
 
-#include "common.hpp"
-#include "renderer.hpp"
+#include "common.h"
+#include "renderer.h"
 
-
-
-std::size_t pad_uniform_buffer_size(std::size_t original_size) {
-    const Vulkan_Context& context = get_vulkan_context();
+std::size_t pad_uniform_buffer_size(std::size_t original_size)
+{
+    const vk_context& context = get_vulkan_context();
 
     // Get GPU minimum uniform buffer alignment
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(context.device.gpu, &properties);
+    vkGetPhysicalDeviceProperties(context.device->gpu, &properties);
 
     std::size_t minUboAlignment = properties.limits.minUniformBufferOffsetAlignment;
     std::size_t alignedSize = original_size;
@@ -22,10 +21,11 @@ std::size_t pad_uniform_buffer_size(std::size_t original_size) {
     return (alignedSize + minUboAlignment - 1) & ~(minUboAlignment - 1);
 }
 
-Buffer create_buffer(uint32_t size, VkBufferUsageFlags type) {
-    Buffer buffer{};
+vulkan_buffer create_buffer(uint32_t size, VkBufferUsageFlags type)
+{
+    vulkan_buffer buffer{};
 
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     buffer_info.size  = size;
@@ -48,22 +48,24 @@ Buffer create_buffer(uint32_t size, VkBufferUsageFlags type) {
     return buffer;
 }
 
-Buffer create_uniform_buffer(std::size_t buffer_size) {
+vulkan_buffer create_uniform_buffer(std::size_t buffer_size)
+{
     // Automatically align buffer to correct alignment
     const std::size_t size = frames_in_flight * pad_uniform_buffer_size(buffer_size);
 
-    Buffer buffer = create_buffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    vulkan_buffer buffer = create_buffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     return buffer;
 }
 
-std::vector<Buffer> create_uniform_buffers(std::size_t buffer_size) {
-    std::vector<Buffer> buffers(frames_in_flight);
+std::vector<vulkan_buffer> create_uniform_buffers(std::size_t buffer_size)
+{
+    std::vector<vulkan_buffer> buffers(frames_in_flight);
 
     // Automatically align buffer to correct alignment
     std::size_t size = pad_uniform_buffer_size(buffer_size);
 
-    for (Buffer& buffer : buffers) {
+    for (vulkan_buffer& buffer : buffers) {
         buffer = create_buffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     }
 
@@ -71,8 +73,9 @@ std::vector<Buffer> create_uniform_buffers(std::size_t buffer_size) {
 }
 
 // Maps/Fills an existing buffer with data.
-void set_buffer_data(std::vector<Buffer>& buffers, void* data) {
-    const Vulkan_Context& rc = get_vulkan_context();
+void set_buffer_data(std::vector<vulkan_buffer>& buffers, void* data)
+{
+    const vk_context& rc = get_vulkan_context();
 
     const uint32_t current_frame= get_frame_index();
 
@@ -82,8 +85,9 @@ void set_buffer_data(std::vector<Buffer>& buffers, void* data) {
     vmaUnmapMemory(rc.allocator, buffers[current_frame].allocation);
 }
 
-void set_buffer_data(Buffer& buffer, void* data) {
-    const Vulkan_Context& rc = get_vulkan_context();
+void set_buffer_data(vulkan_buffer& buffer, void* data)
+{
+    const vk_context& rc = get_vulkan_context();
 
     void* allocation{};
     vk_check(vmaMapMemory(rc.allocator, buffer.allocation, &allocation));
@@ -92,8 +96,9 @@ void set_buffer_data(Buffer& buffer, void* data) {
 }
 
 
-void set_buffer_data(Buffer& buffer, void* data, std::size_t size) {
-    const Vulkan_Context& rc = get_vulkan_context();
+void set_buffer_data(vulkan_buffer& buffer, void* data, std::size_t size)
+{
+    const vk_context& rc = get_vulkan_context();
     const uint32_t current_frame = get_frame_index();
 
     char* allocation{};
@@ -106,10 +111,11 @@ void set_buffer_data(Buffer& buffer, void* data, std::size_t size) {
 // Creates and fills a buffer that is CPU accessible. A staging
 // buffer is most often used as a temporary buffer when copying
 // data from the CPU to the GPU.
-Buffer create_staging_buffer(void* data, uint32_t size) {
-    Buffer buffer{};
+vulkan_buffer create_staging_buffer(void* data, uint32_t size)
+{
+    vulkan_buffer buffer{};
 
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     buffer_info.size  = size;
@@ -137,10 +143,11 @@ Buffer create_staging_buffer(void* data, uint32_t size) {
 
 // Creates an empty buffer on the GPU that will need to be filled by
 // calling SubmitToGPU.
-Buffer create_gpu_buffer(uint32_t size, VkBufferUsageFlags type) {
-    Buffer buffer{};
+vulkan_buffer create_gpu_buffer(uint32_t size, VkBufferUsageFlags type)
+{
+    vulkan_buffer buffer{};
 
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     buffer_info.size  = size;
@@ -163,141 +170,17 @@ Buffer create_gpu_buffer(uint32_t size, VkBufferUsageFlags type) {
     return buffer;
 }
 
-// A function that executes a command directly on the GPU. This is most often
-// used for copying data from staging buffers into GPU local buffers.
-void submit_to_gpu(const std::function<void()>& submit_func) {
-    const Vulkan_Renderer* renderer = get_vulkan_renderer();
-
-    VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    // Record command that needs to be executed on the GPU. Since this is a
-    // single submit command this will often be copying data into device local
-    // memory
-    vk_check(vkBeginCommandBuffer(renderer->submit.CmdBuffer, &begin_info));
-    {
-        submit_func();
-    }
-    vk_check(vkEndCommandBuffer(renderer->submit.CmdBuffer));
-
-    VkSubmitInfo end_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    end_info.commandBufferCount = 1;
-    end_info.pCommandBuffers = &renderer->submit.CmdBuffer;
-
-    // Tell the GPU to now execute the previously recorded command
-    vk_check(vkQueueSubmit(renderer->ctx.device.graphics_queue, 1, &end_info,
-                           renderer->submit.Fence));
-
-    vk_check(vkWaitForFences(renderer->ctx.device.device, 1, &renderer->submit.Fence, true,
-                             UINT64_MAX));
-    vk_check(vkResetFences(renderer->ctx.device.device, 1, &renderer->submit.Fence));
-
-    // Reset the command buffers inside the command pool
-    vk_check(vkResetCommandPool(renderer->ctx.device.device, renderer->submit.CmdPool, 0));
-}
-
-
-void destroy_buffer(Buffer& buffer) {
-    const Vulkan_Context& rc = get_vulkan_context();
+void destroy_buffer(vulkan_buffer& buffer)
+{
+    const vk_context& rc = get_vulkan_context();
 
     vmaDestroyBuffer(rc.allocator, buffer.buffer, buffer.allocation);
 }
 
-void destroy_buffers(std::vector<Buffer>& buffers) {
-    const Vulkan_Context& rc = get_vulkan_context();
+void destroy_buffers(std::vector<vulkan_buffer>& buffers)
+{
+    const vk_context& rc = get_vulkan_context();
 
-    for (Buffer& buffer : buffers)
+    for (vulkan_buffer& buffer : buffers)
         vmaDestroyBuffer(rc.allocator, buffer.buffer, buffer.allocation);
 }
-
-
-VkImageView create_image_views(VkImage image, VkFormat format, VkImageUsageFlags usage) {
-    VkImageView view{};
-
-    const Vulkan_Context& rc = get_vulkan_context();
-
-
-    // Select aspect mask based on image format
-    VkImageAspectFlags aspect_flags = 0;
-    // todo: VK_IMAGE_USAGE_TRANSFER_DST_BIT was only added because of texture creation
-    // todo: This needs to be looked at again.
-    if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT || usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) {
-        aspect_flags = VK_IMAGE_ASPECT_COLOR_BIT;
-    } else if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-        aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT;
-    }
-
-    assert(aspect_flags > 0);
-
-    VkImageViewCreateInfo imageViewInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-    imageViewInfo.image    = image;
-    imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imageViewInfo.format   = format;
-    imageViewInfo.subresourceRange.aspectMask = aspect_flags;
-    imageViewInfo.subresourceRange.baseMipLevel = 0;
-    imageViewInfo.subresourceRange.levelCount = 1;
-    imageViewInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewInfo.subresourceRange.layerCount = 1;
-
-    vk_check(vkCreateImageView(rc.device.device, &imageViewInfo, nullptr,
-                               &view));
-
-    return view;
-}
-
-Image_Buffer create_image(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage) {
-    Image_Buffer image{};
-
-    const Vulkan_Context& rc = get_vulkan_context();
-
-    VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.format = format;
-    imageInfo.extent = { extent.width, extent.height, 1 };
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = usage | VK_IMAGE_USAGE_SAMPLED_BIT;
-
-    VmaAllocationCreateInfo allocInfo{};
-    allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-    allocInfo.requiredFlags = VkMemoryAllocateFlagBits(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    vk_check(vmaCreateImage(rc.allocator, &imageInfo, &allocInfo, &image.handle, &image.allocation, nullptr));
-
-    image.view   = create_image_views(image.handle, format, usage);
-    image.format = format;
-    image.extent = extent;
-
-    return image;
-}
-
-std::vector<Image_Buffer> create_color_images(VkExtent2D size) {
-    std::vector<Image_Buffer> images(get_swapchain_image_count());
-
-    for (auto& image : images)
-        image = create_image(size, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
-    return images;
-}
-
-Image_Buffer create_depth_image(VkExtent2D size) {
-    return create_image(size, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-}
-
-void destroy_image(Image_Buffer& image) {
-    const Vulkan_Context& rc = get_vulkan_context();
-
-    vkDestroyImageView(rc.device.device, image.view, nullptr);
-    vmaDestroyImage(rc.allocator, image.handle, image.allocation);
-}
-
-void destroy_images(std::vector<Image_Buffer>& images) {
-    for (auto& image : images) {
-        destroy_image(image);
-    }
-
-    images.clear();
-}
-

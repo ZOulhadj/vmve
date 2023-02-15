@@ -1,13 +1,13 @@
-#include "material.hpp"
+#include "material.h"
 
-#include "api/vulkan/renderer.hpp"
+#include "api/vulkan/renderer.h"
 
 
 
 
 void create_material(Material& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler)
 {
-    const Vulkan_Context& rc = get_vulkan_context();
+    const vk_context& rc = get_vulkan_context();
 
     material.descriptor_set = allocate_descriptor_set(layout);
 

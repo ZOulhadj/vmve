@@ -1,19 +1,22 @@
-#include "common.hpp"
+#include "common.h"
 
 
+
+#include "logging.h"
 
 // Compares a list of requested instance layers against the layers available
 // on the system. If all the requested layers have been found then true is
 // returned.
 bool compare_layers(const std::vector<const char*>& requested,
-    const std::vector<VkLayerProperties>& layers) {
+    const std::vector<VkLayerProperties>& layers)
+{
     for (const auto& requested_name : requested) {
         const auto iter = std::find_if(layers.begin(), layers.end(), [=](const auto& layer) {
             return std::strcmp(requested_name, layer.layerName) == 0;
             });
 
         if (iter == layers.end()) {
-            printf("Failed to find instance layer: %s\n", requested_name);
+            print_log("Failed to find instance layer: %s\n", requested_name);
             return false;
         }
     }
@@ -25,14 +28,15 @@ bool compare_layers(const std::vector<const char*>& requested,
 // on the system. If all the requested extensions have been found then true is
 // returned.
 bool compare_extensions(const std::vector<const char*>& requested,
-    const std::vector<VkExtensionProperties>& extensions) {
+    const std::vector<VkExtensionProperties>& extensions)
+{
     for (const auto& requested_name : requested) {
         const auto iter = std::find_if(extensions.begin(), extensions.end(), [=](const auto& extension) {
             return std::strcmp(requested_name, extension.extensionName) == 0;
             });
 
         if (iter == extensions.end()) {
-            printf("Failed to find extension: %s\n", requested_name);
+            print_log("Failed to find extension: %s\n", requested_name);
             return false;
         }
     }
@@ -41,7 +45,8 @@ bool compare_extensions(const std::vector<const char*>& requested,
 }
 
 
-bool has_extensions(std::string_view name, const std::vector<VkExtensionProperties>& extensions) {
+bool has_extensions(std::string_view name, const std::vector<VkExtensionProperties>& extensions)
+{
     const auto iter = std::find_if(extensions.begin(), extensions.end(), [=](const auto& extension) {
         return std::strcmp(name.data(), extension.extensionName) == 0;
         });
@@ -52,7 +57,8 @@ bool has_extensions(std::string_view name, const std::vector<VkExtensionProperti
 
 // A helper function that returns the size in bytes of a particular format
 // based on the number of components and data type.
-uint32_t format_to_bytes(VkFormat format) {
+uint32_t format_to_bytes(VkFormat format)
+{
     switch (format) {
     case VK_FORMAT_R32G32_SFLOAT:
         return 2 * sizeof(float);
@@ -77,7 +83,8 @@ uint32_t format_to_bytes(VkFormat format) {
 // other array with the features that is supported. Then we simply compare them
 // to see if all requested features are present.
 bool has_required_features(VkPhysicalDevice physical_device,
-    VkPhysicalDeviceFeatures requested_features) {
+    VkPhysicalDeviceFeatures requested_features)
+{
     VkPhysicalDeviceFeatures available_features{};
     vkGetPhysicalDeviceFeatures(physical_device, &available_features);
 

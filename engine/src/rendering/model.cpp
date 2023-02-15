@@ -1,20 +1,21 @@
-#include "model.hpp"
+#include "model.h"
 
-#include "vertex.hpp"
-#include "api/vulkan/texture.hpp"
-#include "filesystem/vfs.hpp"
-#include "logging.hpp"
+#include "vertex.h"
+#include "api/vulkan/image.h"
+#include "filesystem/vfs.h"
+#include "logging.h"
 
 static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial* material, 
                                                    aiTextureType type, 
-                                                   const std::filesystem::path& model_path) {
+                                                   const std::filesystem::path& model_path)
+{
     std::vector<std::filesystem::path> paths;
 
     for (std::size_t i = 0; i < material->GetTextureCount(type); ++i) {
         aiString ai_path;
 
         if (material->GetTexture(type, i, &ai_path) == aiReturn_FAILURE) {
-            Logger::error("Failed to load texture: {}", ai_path.C_Str());
+            print_log("Failed to load texture: %s\n", ai_path.C_Str());
             return {};
         }
 
@@ -27,7 +28,8 @@ static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial
     return paths;
 }
 
-static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::filesystem::path>& paths) {
+static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::filesystem::path>& paths)
+{
     std::vector<std::filesystem::path>& uniques = model.unique_texture_paths;
 
     for (std::size_t i = 0; i < paths.size(); ++i) {
@@ -35,7 +37,7 @@ static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::f
         const auto it = std::find(uniques.begin(), uniques.end(), paths[i]);
         
         if (it == uniques.end()) {
-            Image_Buffer texture = load_texture(paths[i].string());
+            vk_image texture = create_texture(paths[i].string());
             model.unique_textures.push_back(texture);
             uniques.push_back(paths[i]);
             index = model.unique_textures.size() - 1;
@@ -52,7 +54,8 @@ static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::f
 static void create_fallback_mesh_texture(Model& model, 
     Mesh& mesh, 
     unsigned char* texture,
-    const std::filesystem::path& path) {
+    const std::filesystem::path& path)
+{
 
     std::vector<std::filesystem::path>& uniques = model.unique_texture_paths;
 
@@ -60,7 +63,7 @@ static void create_fallback_mesh_texture(Model& model,
     const auto it = std::find(uniques.begin(), uniques.end(), path);
 
     if (it == uniques.end()) {
-        Image_Buffer image = create_texture_buffer(texture, 1, 1, VK_FORMAT_R8G8B8A8_SRGB);
+        vk_image image = create_texture(texture, 1, 1, VK_FORMAT_R8G8B8A8_SRGB);
         model.unique_textures.push_back(image);
         uniques.push_back(path);
         index = model.unique_textures.size() - 1;
@@ -78,7 +81,8 @@ static void create_fallback_mesh_texture(Model& model,
 
 
 
-static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* scene) {
+static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* scene)
+{
     Mesh mesh{};
 
     mesh.name = ai_mesh->mName.C_Str();
@@ -185,25 +189,25 @@ static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* sce
 
         if (diffuse_path.empty()) {
             create_fallback_mesh_texture(model, mesh, defaultAlbedo, "albedo_fallback");
-            Logger::warning("{} using fallback albedo texture.", model.name);
+            print_log("%s using fallback albedo texture.\n", model.name.c_str());
         }
 
         if (normal_path.empty()) {
             create_fallback_mesh_texture(model, mesh, defaultNormal, "normal_fallback");
-            Logger::warning("{} using fallback normal texture.", model.name);
-
+            print_log("%s using fallback normal texture.\n", model.name.c_str());
         }
 
         if (specular_path.empty()) {
             create_fallback_mesh_texture(model, mesh, defaultSpecular, "specular_fallback");
-            Logger::warning("{} using fallback specular texture.", model.name);
+            print_log("%s using fallback specular texture.\n", model.name.c_str());
         }
     }
  
     return mesh;
 }
 
-static void process_node(Model& model, aiNode* node, const aiScene* scene) {
+static void process_node(Model& model, aiNode* node, const aiScene* scene)
+{
     // process the current nodes meshes if they exist
     for (std::size_t i = 0; i < node->mNumMeshes; ++i) {
         const aiMesh* assimp_mesh = scene->mMeshes[node->mMeshes[i]];
@@ -218,12 +222,11 @@ static void process_node(Model& model, aiNode* node, const aiScene* scene) {
     }
 }
 
-
-Model load_model(const std::filesystem::path& path, bool flipUVs) {
-    Model model{};
+bool load_model(Model& model, const std::filesystem::path& path, bool flipUVs)
+{
+    print_log("Loading mesh %s\n", path.string().c_str());
 
     Assimp::Importer importer;
-
 
     unsigned int flags = aiProcessPreset_TargetRealtime_Fast |
         aiProcess_FlipWindingOrder |
@@ -233,18 +236,16 @@ Model load_model(const std::filesystem::path& path, bool flipUVs) {
         aiProcess_OptimizeGraph |
         aiProcess_ImproveCacheLocality;
 
-
     if (flipUVs)
         flags |= aiProcess_FlipUVs;
 
     const aiScene* scene = importer.ReadFile(path.string(), flags);
 
     if (!scene) {
-        Logger::error("Failed to load model at path: {}", path.string());
-        return {};
+        return false;
     }
-
    
+
     // TEMP: Set model original path so that textures know where
     // they should load the files from
     model.path = path.string();
@@ -253,17 +254,58 @@ Model load_model(const std::filesystem::path& path, bool flipUVs) {
     // Start processing from the root scene node
     process_node(model, scene->mRootNode, scene);
 
-    return model;
+    print_log("Successfully loaded model with %llu meshes at path %s\n", model.meshes.size(), path.string().c_str());
+
+    return true;
 }
 
-void destroy_model(Model& model) {
+bool create_model(Model& model, const char* data, std::size_t len, bool flipUVs /*= true*/)
+{
+    print_log("Creating mesh\n");
+
+    Assimp::Importer importer;
+
+    unsigned int flags = aiProcessPreset_TargetRealtime_Fast |
+        aiProcess_FlipWindingOrder |
+        aiProcess_MakeLeftHanded |
+        aiProcess_GenBoundingBoxes |
+        aiProcess_OptimizeMeshes |
+        aiProcess_OptimizeGraph |
+        aiProcess_ImproveCacheLocality;
+
+    if (flipUVs)
+        flags |= aiProcess_FlipUVs;
+
+    const aiScene* scene = importer.ReadFileFromMemory(data, len, flags);
+
+    if (!scene) {
+        return false;
+    }
+
+
+    // Start processing from the root scene node
+    process_node(model, scene->mRootNode, scene);
+
+    // TEMP: Set model original path so that textures know where
+    // they should load the files from
+    //model.path = path.string();
+    //model.name = path.filename().string();
+
+    print_log("Successfully created model from memory\n");
+
+    return true;
+}
+
+void destroy_model(Model& model)
+{
     destroy_images(model.unique_textures);
     for (auto& mesh : model.meshes) {
         destroy_vertex_array(mesh.vertex_array);
     }
 }
 
-void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler) {
+void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings)
+{
 
     // At this point, the model has been fully loaded onto the CPU and now we 
     // need to transfer this data onto the GPU.
@@ -281,7 +323,7 @@ void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector
                 bindings[j],
                 model.unique_textures[mesh.textures[j]], 
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
-                sampler);
+                model.unique_textures[mesh.textures[j]].sampler);
         }
     }
 }
