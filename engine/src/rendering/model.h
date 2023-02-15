@@ -24,7 +24,7 @@ struct Mesh
 struct Mesh_Texture
 {
     std::filesystem::path path;
-    vulkan_image_buffer texture;
+    vk_image texture;
 };
 
 struct Model
@@ -33,7 +33,7 @@ struct Model
 
     // A list of all the unique textures
     std::vector<std::filesystem::path> unique_texture_paths;
-    std::vector<vulkan_image_buffer> unique_textures;
+    std::vector<vk_image> unique_textures;
 
     std::vector<Mesh> meshes;
     std::string name;
@@ -43,7 +43,7 @@ bool load_model(Model& model, const std::filesystem::path& path, bool flipUVs = 
 bool create_model(Model& model, const char* data, std::size_t len, bool flipUVs = true);
 void destroy_model(Model& model);
 
+void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings);
 
-void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout,
-    std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler);
+
 #endif

@@ -186,7 +186,7 @@ static vk_swapchain create_swapchain()
         //
         // Also, since all color images have the same format there will be a format for
         // each image and a swapchain global format for them.
-        vulkan_image_buffer& image = swapchain.images[i];
+        vk_image& image = swapchain.images[i];
 
         image.handle = color_images[i];
         image.view   = create_image_views(image.handle, swapchain_info.imageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 1);
@@ -1148,6 +1148,40 @@ void destroy_vulkan_renderer(vk_renderer* renderer)
 
     delete renderer;
 }
+
+
+
+// A function that executes a command directly on the GPU. This is most often
+// used for copying data from staging buffers into GPU local buffers.
+void submit_to_gpu(const std::function<void(VkCommandBuffer)>& submit_func)
+{
+    VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    // Record command that needs to be executed on the GPU. Since this is a
+    // single submit command this will often be copying data into device local
+    // memory
+    vk_check(vkBeginCommandBuffer(g_r->submit.CmdBuffer, &begin_info));
+    {
+        submit_func(g_r->submit.CmdBuffer);
+    }
+    vk_check(vkEndCommandBuffer(g_r->submit.CmdBuffer));
+
+    VkSubmitInfo end_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
+    end_info.commandBufferCount = 1;
+    end_info.pCommandBuffers = &g_r->submit.CmdBuffer;
+
+    // Tell the GPU to now execute the previously recorded command
+    vk_check(vkQueueSubmit(g_r->ctx.device->graphics_queue, 1, &end_info, g_r->submit.Fence));
+    vk_check(vkWaitForFences(g_r->ctx.device->device, 1, &g_r->submit.Fence, true, UINT64_MAX));
+    vk_check(vkResetFences(g_r->ctx.device->device, 1, &g_r->submit.Fence));
+
+    // Reset the command buffers inside the command pool
+    vk_check(vkResetCommandPool(g_r->ctx.device->device, g_r->submit.CmdPool, 0));
+}
+
+
+
 
 vk_renderer* get_vulkan_renderer()
 {

@@ -118,7 +118,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
 
 void update_binding(VkDescriptorSet descriptor_set,
     const VkDescriptorSetLayoutBinding& binding,
-    vulkan_image_buffer& buffer,
+    vk_image& buffer,
     VkImageLayout layout,
     VkSampler sampler)
 {
@@ -141,7 +141,7 @@ void update_binding(VkDescriptorSet descriptor_set,
 
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
     const VkDescriptorSetLayoutBinding& binding,
-    vulkan_image_buffer& buffer,
+    vk_image& buffer,
     VkImageLayout layout,
     VkSampler sampler) {
     const vk_context& rc = get_vulkan_context();
@@ -165,7 +165,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
 
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, 
                     const VkDescriptorSetLayoutBinding& binding,
-                    std::vector<vulkan_image_buffer>& buffer, 
+                    std::vector<vk_image>& buffer, 
                     VkImageLayout layout, 
                     VkSampler sampler)
 {

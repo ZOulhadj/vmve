@@ -45,9 +45,6 @@
     <ClCompile Include="src\rendering\api\vulkan\shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\api\vulkan\texture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\rendering\api\vulkan\vertex_array.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -117,7 +114,7 @@
     <ClCompile Include="src\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\time.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -168,9 +165,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\api\vulkan\shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\api\vulkan\vertex_array.h">
@@ -227,7 +221,7 @@
     <ClInclude Include="src\math\math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\time.h">
+    <ClInclude Include="src\rendering\api\vulkan\image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

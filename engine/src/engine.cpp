@@ -11,7 +11,6 @@
 #include "../src/rendering/api/vulkan/common.h"
 #include "../src/rendering/api/vulkan/renderer.h"
 #include "../src/rendering/api/vulkan/buffer.h"
-#include "../src/rendering/api/vulkan/texture.h"
 #include "../src/rendering/api/vulkan/descriptor_sets.h"
 #include "../src/rendering/vertex.h"
 #include "../src/rendering/material.h"
@@ -113,7 +112,7 @@ static VkExtent2D shadow_map_size = { 2048, 2048 };
 static VkExtent2D framebuffer_size = { 1920, 1080 };
 
 VkSampler g_framebuffer_sampler;
-VkSampler g_texture_sampler;
+//VkSampler g_texture_sampler;
 
 vk_render_pass offscreen_pass{};
 vk_render_pass composite_pass{};
@@ -125,13 +124,13 @@ std::vector<VkDescriptorSet> offscreenSets;
 
 VkDescriptorSetLayout compositeLayout;
 std::vector<VkDescriptorSet> compositeSets;
-std::vector<vulkan_image_buffer> viewport;
+std::vector<vk_image> viewport;
 
-std::vector<vulkan_image_buffer> positions;
-std::vector<vulkan_image_buffer> normals;
-std::vector<vulkan_image_buffer> colors;
-std::vector<vulkan_image_buffer> speculars;
-std::vector<vulkan_image_buffer> depths;
+std::vector<vk_image> positions;
+std::vector<vk_image> normals;
+std::vector<vk_image> colors;
+std::vector<vk_image> speculars;
+std::vector<vk_image> depths;
 //std::vector<vulkan_image_buffer> shadow_depths;
 
 std::vector<VkDescriptorSetLayoutBinding> materialBindings;
@@ -218,8 +217,7 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     }
 
     // Create rendering passes and render targets
-    g_framebuffer_sampler = create_image_sampler(VK_FILTER_NEAREST, 1, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
-    g_texture_sampler = create_image_sampler(VK_FILTER_LINEAR, 16, 12);
+    g_framebuffer_sampler = create_image_sampler(VK_FILTER_LINEAR, 0, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
   
     {    
         add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, framebuffer_size);
@@ -593,7 +591,7 @@ void engine_terminate(my_engine* engine)
     destroy_render_pass(offscreen_pass);
     destroy_render_pass(skybox_pass);
 
-    destroy_image_sampler(g_texture_sampler);
+    //destroy_image_sampler(g_texture_sampler);
     destroy_image_sampler(g_framebuffer_sampler);
 
     // Destroy core systems
@@ -654,7 +652,7 @@ void engine_load_model(my_engine* engine, const char* path, bool flipUVs)
         return;
     }
 
-    upload_model_to_gpu(model, materialLayout, materialBindings, g_texture_sampler);
+    upload_model_to_gpu(model, materialLayout, materialBindings);
     engine->models.push_back(model);
 }
 
@@ -668,7 +666,7 @@ void engine_add_model(my_engine* engine, const char* data, int size, bool flipUV
         return;
     }
 
-    upload_model_to_gpu(model, materialLayout, materialBindings, g_texture_sampler);
+    upload_model_to_gpu(model, materialLayout, materialBindings);
     engine->models.push_back(model);
 }
 
@@ -806,7 +804,7 @@ void engine_set_environment_map(my_engine* engine, const char* path)
         return;
     }
 
-    upload_model_to_gpu(skybox_model, materialLayout, materialBindings, g_texture_sampler);
+    upload_model_to_gpu(skybox_model, materialLayout, materialBindings);
 
 
     engine->using_skybox = true;

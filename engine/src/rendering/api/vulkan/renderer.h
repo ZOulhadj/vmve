@@ -25,7 +25,7 @@ struct vk_swapchain
 {
     VkSwapchainKHR handle;
 
-    std::vector<vulkan_image_buffer> images;
+    std::vector<vk_image> images;
 };
 
 struct vk_frame
@@ -44,7 +44,7 @@ struct vk_frame
 struct vk_framebuffer_attachment
 {
     // TEMP: Can this be a single image instead of multiple frames?
-    std::vector<vulkan_image_buffer> image;
+    std::vector<vk_image> image;
     VkImageUsageFlags usage;
 };
 
@@ -146,6 +146,12 @@ struct vk_renderer
 bool create_vulkan_renderer(vk_renderer*& out_renderer, const Window* window, renderer_buffer_mode buffering_mode, renderer_vsync_mode sync_mode);
 void destroy_vulkan_renderer(vk_renderer* renderer);
 
+
+
+void submit_to_gpu(const std::function<void(VkCommandBuffer)>& submit_func);
+
+
+
 vk_renderer* get_vulkan_renderer();
 vk_context& get_vulkan_context();
 uint32_t get_frame_index(); // in order
@@ -205,7 +211,7 @@ void wait_for_gpu();
 
 const auto attachments_to_images = [](const std::vector<vk_framebuffer_attachment>& attachments, uint32_t index)
 {
-    std::vector<vulkan_image_buffer> images(attachments[index].image.size());
+    std::vector<vk_image> images(attachments[index].image.size());
 
     for (std::size_t i = 0; i < images.size(); ++i) {
         images[i] = attachments[index].image[i];

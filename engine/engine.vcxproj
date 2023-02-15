@@ -26,6 +26,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="src\rendering\api\vulkan\image.cpp" />
     <ClCompile Include="src\rendering\camera.cpp" />
     <ClCompile Include="src\rendering\api\directx\d3d_context.cpp" />
     <ClCompile Include="src\rendering\entity.cpp" />
@@ -38,7 +39,6 @@
     <ClCompile Include="src\rendering\api\vulkan\descriptor_sets.cpp" />
     <ClCompile Include="src\rendering\api\vulkan\renderer.cpp" />
     <ClCompile Include="src\rendering\api\vulkan\shader.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\texture.cpp" />
     <ClCompile Include="src\rendering\api\vulkan\vertex_array.cpp" />
     <ClCompile Include="src\ui\ui.cpp" />
     <ClCompile Include="src\utility.cpp" />
@@ -68,6 +68,7 @@
     <ClInclude Include="src\logging.h" />
     <ClInclude Include="src\math\math.h" />
     <ClInclude Include="src\pch.h" />
+    <ClInclude Include="src\rendering\api\vulkan\image.h" />
     <ClInclude Include="src\rendering\camera.h" />
     <ClInclude Include="src\rendering\api\directx\d3d_context.h" />
     <ClInclude Include="src\rendering\entity.h" />
@@ -81,7 +82,6 @@
     <ClInclude Include="src\rendering\api\vulkan\descriptor_sets.h" />
     <ClInclude Include="src\rendering\api\vulkan\renderer.h" />
     <ClInclude Include="src\rendering\api\vulkan\shader.h" />
-    <ClInclude Include="src\rendering\api\vulkan\texture.h" />
     <ClInclude Include="src\rendering\api\vulkan\vertex_array.h" />
     <ClInclude Include="src\rendering\shaders\shaders.h" />
     <ClInclude Include="src\ui\ui.h" />

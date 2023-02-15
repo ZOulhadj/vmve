@@ -1,7 +1,7 @@
 #include "model.h"
 
 #include "vertex.h"
-#include "api/vulkan/texture.h"
+#include "api/vulkan/image.h"
 #include "filesystem/vfs.h"
 #include "logging.h"
 
@@ -37,7 +37,7 @@ static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::f
         const auto it = std::find(uniques.begin(), uniques.end(), paths[i]);
         
         if (it == uniques.end()) {
-            vulkan_image_buffer texture = load_texture(paths[i].string());
+            vk_image texture = create_texture(paths[i].string());
             model.unique_textures.push_back(texture);
             uniques.push_back(paths[i]);
             index = model.unique_textures.size() - 1;
@@ -63,7 +63,7 @@ static void create_fallback_mesh_texture(Model& model,
     const auto it = std::find(uniques.begin(), uniques.end(), path);
 
     if (it == uniques.end()) {
-        vulkan_image_buffer image = create_texture_buffer(texture, 1, 1, VK_FORMAT_R8G8B8A8_SRGB);
+        vk_image image = create_texture(texture, 1, 1, VK_FORMAT_R8G8B8A8_SRGB);
         model.unique_textures.push_back(image);
         uniques.push_back(path);
         index = model.unique_textures.size() - 1;
@@ -304,7 +304,7 @@ void destroy_model(Model& model)
     }
 }
 
-void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings, VkSampler sampler)
+void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings)
 {
 
     // At this point, the model has been fully loaded onto the CPU and now we 
@@ -323,7 +323,7 @@ void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector
                 bindings[j],
                 model.unique_textures[mesh.textures[j]], 
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 
-                sampler);
+                model.unique_textures[mesh.textures[j]].sampler);
         }
     }
 }
