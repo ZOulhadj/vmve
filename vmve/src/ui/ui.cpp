@@ -667,6 +667,7 @@ void RenderMainMenu(my_engine* engine)
     static bool creator_open = false;
     static bool perfProfilerOpen = false;
     static bool gBufferOpen = false;
+    static bool show_demo_window = false;
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
@@ -701,6 +702,9 @@ void RenderMainMenu(my_engine* engine)
             if (ImGui::MenuItem("About"))
                 aboutOpen = true;
 
+            if (ImGui::MenuItem("Show demo window"))
+                show_demo_window = true;
+
 
             ImGui::EndMenu();
         }
@@ -719,6 +723,7 @@ void RenderMainMenu(my_engine* engine)
     gbuffer_visualizer_window(&gBufferOpen);
 
 
+    // TODO: continue working on drag and drog model loading
     if (drop_load_model) {
         static bool flip_uvs = false;
 
@@ -749,9 +754,12 @@ void RenderMainMenu(my_engine* engine)
         }
 
     }
+
+    if (show_demo_window)
+        ImGui::ShowDemoWindow(&show_demo_window);
 }
 
-void RenderObjectWindow(my_engine* engine)
+void render_object_window(my_engine* engine)
 {
     // Object window
     ImGui::Begin(object_window, &window_open, dockspaceWindowFlags);
@@ -795,6 +803,14 @@ void RenderObjectWindow(my_engine* engine)
         }
             
         ImGui::EndDisabled();
+
+        ImGui::Separator();
+
+        ImGui::Button("Add light");
+        ImGui::SameLine();
+        ImGui::Button("Remove light");
+
+        ImGui::Separator();
 
         // Options
         static ImGuiTableFlags flags =
@@ -1027,20 +1043,15 @@ void RenderGlobalWindow(my_engine* engine)
             ImGui::SameLine();
             if (ImGui::Button("Stop"))
                 engine_stop_audio(engine, 0);
-            ImGui::SameLine();
             ImGui::InputText("Audio Path", audio_path, 256);
             if (ImGui::SliderInt("Volume", &audio_volume, 0, 100, "%d%%"))
                 engine_set_audio_volume(engine, audio_volume);
         }
 
+#if 0
         static bool edit_shaders = false;
         if (ImGui::Button("Edit shaders"))
             edit_shaders = true;
-
-
-
-        ImGui::Text("Viewport mode: %s", viewport_active ? "Enabled" : "Disabled");
-
 
         if (edit_shaders) {
             ImGui::Begin("Edit Shaders", &edit_shaders);
@@ -1065,17 +1076,11 @@ void RenderGlobalWindow(my_engine* engine)
 
             ImGui::End();
         }
-
+#endif
 
 
         ImGui::Separator();
 
-        static bool show = false;
-        if (ImGui::Button("Show demo window"))
-            show = true;
-
-        if (show)
-            ImGui::ShowDemoWindow(&show);
 
 
 
@@ -1320,7 +1325,7 @@ void render_ui(my_engine* engine, bool fullscreen)
     if (fullscreen) {
         RenderViewportWindow(engine);
     } else {
-        RenderObjectWindow(engine);
+        render_object_window(engine);
         RenderGlobalWindow(engine);
         RenderConsoleWindow(engine);
         RenderViewportWindow(engine);
