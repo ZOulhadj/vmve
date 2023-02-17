@@ -21,10 +21,8 @@ bool notFullScreen = true;
 
 int main()
 {
-    my_engine* engine = nullptr;
-
-    bool engine_initialized = engine_initialize(engine, app_title, app_width, app_height);
-    if (!engine_initialized) {
+    my_engine* engine = engine_initialize(app_title, app_width, app_height);
+    if (!engine) {
         engine_export_logs_to_file(engine, app_crash_file);
         engine_terminate(engine);
 

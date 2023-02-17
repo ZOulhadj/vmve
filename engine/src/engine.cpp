@@ -39,11 +39,11 @@
 struct my_engine
 {
     Window* window;
-    win32_window* new_window; // TEMP
+    //win32_window* new_window; // TEMP
     vk_renderer* renderer;
     ImGuiContext* ui;
 
-    main_audio audio;
+    main_audio* audio;
     IXAudio2SourceVoice* example_audio;
     audio_3d object_audio;
 
@@ -184,40 +184,41 @@ static std::string get_executable_directory()
     return std::filesystem::path(directory).parent_path().string();
 }
 
-
-bool engine_initialize(my_engine*& out_engine, const char* name, int width, int height)
+static my_engine* initialize_core(my_engine* engine, const char* name, int width, int height)
 {
-    out_engine = new my_engine();
-
-    out_engine->start_time = std::chrono::high_resolution_clock::now();
-    out_engine->execPath = get_executable_directory();
-
-    print_log("Initializing engine (%s)\n", out_engine->execPath.c_str());
+    print_log("Initializing engine (%s)\n", engine->execPath.c_str());
 
     // Initialize core systems
-    bool window_initialized = create_window(out_engine->window, name, width, height);
-    if (!window_initialized) {
+    engine->window = create_window(name, width, height);
+    if (!engine->window) {
         print_log("Failed to create window.\n");
-        return false;
+        return nullptr;
     }
-    out_engine->window->event_callback = event_callback;
+    engine->window->event_callback = event_callback;
 
-    bool renderer_initialized = create_vulkan_renderer(out_engine->renderer, out_engine->window, renderer_buffer_mode::Double, renderer_vsync_mode::enabled);
-    if (!renderer_initialized) {
+    engine->renderer = create_vulkan_renderer(engine->window, renderer_buffer_mode::Double, renderer_vsync_mode::enabled);
+    if (!engine->renderer) {
         print_log("Failed to create renderer.\n");
-        return false;
+        return nullptr;
     }
 
-    bool audio_initialized = create_windows_audio(out_engine->audio);
-    if (!audio_initialized) {
+    engine->audio = create_windows_audio();
+    if (!engine->audio) {
         print_log("Failed to initialize audio.\n");
-        return false;
+
+        // TODO: clear audio resources
+
     }
 
+    return engine;
+}
+
+static void configure_renderer(my_engine* engine)
+{
     // Create rendering passes and render targets
     g_framebuffer_sampler = create_image_sampler(VK_FILTER_LINEAR, 0, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
-  
-    {    
+
+    {
         add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, framebuffer_size);
         add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, framebuffer_size);
         add_framebuffer_attachment(offscreen_pass, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_FORMAT_R8G8B8A8_SRGB, framebuffer_size);
@@ -237,20 +238,20 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
 
 
     //out_engine->sun_buffer = create_uniform_buffer(sizeof(sun_data));
-    out_engine->camera_buffer = create_uniform_buffer(sizeof(view_projection));
-    out_engine->scene_buffer = create_uniform_buffer(sizeof(scene_props));
+    engine->camera_buffer = create_uniform_buffer(sizeof(view_projection));
+    engine->scene_buffer = create_uniform_buffer(sizeof(scene_props));
 
 
-    const std::vector<VkDescriptorSetLayoutBinding> offscreen_bindings  {
+    const std::vector<VkDescriptorSetLayoutBinding> offscreen_bindings{
         { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT }
     };
 
     offscreen_ds_layout = create_descriptor_layout(offscreen_bindings);
     offscreen_ds = allocate_descriptor_sets(offscreen_ds_layout);
-    update_binding(offscreen_ds, offscreen_bindings[0], out_engine->camera_buffer, sizeof(view_projection));
+    update_binding(offscreen_ds, offscreen_bindings[0], engine->camera_buffer, sizeof(view_projection));
 
     //////////////////////////////////////////////////////////////////////////
-    const std::vector<VkDescriptorSetLayoutBinding> composite_bindings {
+    const std::vector<VkDescriptorSetLayoutBinding> composite_bindings{
         { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
         { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
         { 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT },
@@ -272,17 +273,17 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
     update_binding(composite_ds, composite_bindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(composite_ds, composite_bindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(composite_ds, composite_bindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
-    update_binding(composite_ds, composite_bindings[5], out_engine->scene_buffer, sizeof(scene_props));
+    update_binding(composite_ds, composite_bindings[5], engine->scene_buffer, sizeof(scene_props));
 
 
-    const std::vector<VkDescriptorSetLayoutBinding> skybox_bindings {
+    const std::vector<VkDescriptorSetLayoutBinding> skybox_bindings{
         { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT },
         { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT }
     };
 
     skybox_ds_layout = create_descriptor_layout(skybox_bindings);
     skybox_ds = allocate_descriptor_sets(skybox_ds_layout);
-    update_binding(skybox_ds, skybox_bindings[0], out_engine->camera_buffer, sizeof(view_projection));
+    update_binding(skybox_ds, skybox_bindings[0], engine->camera_buffer, sizeof(view_projection));
 
     //////////////////////////////////////////////////////////////////////////
     material_ds_binding = {
@@ -388,26 +389,33 @@ bool engine_initialize(my_engine*& out_engine, const char* name, int width, int 
         0, 1, 2,
         3, 2, 1
     };
+}
 
+my_engine* engine_initialize(const char* name, int width, int height)
+{
+    my_engine* engine = new my_engine();
 
+    engine->start_time = std::chrono::high_resolution_clock::now();
+    engine->execPath = get_executable_directory();
 
+    if (!initialize_core(engine, name, width, height)) {
+        return nullptr;
+    }
+
+    configure_renderer(engine);
 
     //create_3d_audio(out_engine->audio, out_engine->object_audio, "C:\\Users\\zakar\\Downloads\\true_colors.wav");
     //play_audio(out_engine->object_audio.source_voice);
 
-    out_engine->running = true;
+    engine->running = true;
+    engine->swapchain_ready = true;
+    engine->using_skybox = false;
 
-
-
-
-    out_engine->swapchain_ready = true;
-    out_engine->using_skybox = false;
-
-    g_engine_ptr = out_engine;
+    g_engine_ptr = engine;
 
     print_log("Successfully initialized engine.\n");
 
-    return true;
+    return engine;
 }
 
 bool engine_update(my_engine* engine)
@@ -458,7 +466,10 @@ bool engine_begin_render(my_engine* engine)
     if (!engine->swapchain_ready) {
         wait_for_gpu();
 
-        resize_framebuffer(ui_pass, { engine->window->width, engine->window->height });
+
+        VkExtent2D new_size { engine->window->width, engine->window->height };
+
+        resize_framebuffer(ui_pass, new_size);
     }
 
     return engine->swapchain_ready;
@@ -536,7 +547,8 @@ void engine_present(my_engine* engine)
 
     if (!present_swapchain_image()) {
         // TODO: Resize framebuffers if unable to display to swapchain
-        assert("Code path not expected! Must implement framebuffer resizing");
+        print_log("Code path not expected! Must implement framebuffer resizing");
+        abort();
     }
 
     update_window(engine->window);
@@ -548,7 +560,6 @@ void engine_terminate(my_engine* engine)
 
     print_log("Terminating engine.\n");
 
-    // Wait until all GPU commands have finished
     wait_for_gpu();
 
     for (auto& framebuffer : viewport_ui)
@@ -1091,7 +1102,7 @@ const char* engine_get_log(my_engine* engine, int logIndex)
 
 void engine_set_master_volume(my_engine* engine, int master_volume)
 {
-    set_master_audio_volume(engine->audio.master_voice, master_volume);
+    set_master_audio_volume(engine->audio->master_voice, master_volume);
 }
 
 int engine_play_audio(my_engine* engine, const char* path)

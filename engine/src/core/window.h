@@ -25,7 +25,7 @@ struct Window
 /// @param width  The window in pixels of the current window
 /// @param height The height in pixels of the current window
 ///
-bool create_window(Window*& out_window, const char* name, int width, int height);
+Window* create_window(const char* name, int width, int height);
 
 
 ///

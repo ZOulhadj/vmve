@@ -32,7 +32,7 @@ struct my_engine_callbacks
 // This is the first function that must be called. It initializes all systems
 // such as the window, renderer, audio etc. Takes an EngineInfo as a parameter
 // which provides the required information the engine needs to initialize.
-bool engine_initialize(my_engine*& out_engine, const char* name, int width, int height);
+my_engine* engine_initialize(const char* name, int width, int height);
 
 //
 // The final engine related function call that will terminate all sub-systems

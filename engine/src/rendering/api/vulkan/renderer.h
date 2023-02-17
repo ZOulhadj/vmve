@@ -143,7 +143,7 @@ struct vk_renderer
     VkDebugUtilsMessengerEXT messenger;
 };
 
-bool create_vulkan_renderer(vk_renderer*& out_renderer, const Window* window, renderer_buffer_mode buffering_mode, renderer_vsync_mode sync_mode);
+vk_renderer* create_vulkan_renderer(const Window* window, renderer_buffer_mode buffering_mode, renderer_vsync_mode sync_mode);
 void destroy_vulkan_renderer(vk_renderer* renderer);
 
 

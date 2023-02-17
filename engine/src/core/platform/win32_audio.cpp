@@ -87,9 +87,11 @@ static HRESULT read_chunk_data(HANDLE hFile, void* buffer, DWORD buffersize, DWO
 
 
 
-bool create_windows_audio(main_audio& out_audio)
+main_audio* create_windows_audio()
 {
     print_log("Initializing audio\n");
+
+    main_audio* audio = new main_audio();
 
     // Initialize COM
     HRESULT hr = S_OK;
@@ -98,32 +100,35 @@ bool create_windows_audio(main_audio& out_audio)
     if (FAILED(hr)) {
         print_log("Failed to initialize audio COM\n");
 
-        return false;
+        return nullptr;
     }
 
-    hr = XAudio2Create(&out_audio.ix_audio, 0, XAUDIO2_USE_DEFAULT_PROCESSOR);
+    hr = XAudio2Create(&audio->ix_audio, 0, XAUDIO2_USE_DEFAULT_PROCESSOR);
     if (FAILED(hr)) {
         print_log("Failed to create xaudio2\n");
 
-        return false;
+        return nullptr;
     }
 
-    hr = out_audio.ix_audio->CreateMasteringVoice(&out_audio.master_voice);
+    hr = audio->ix_audio->CreateMasteringVoice(&audio->master_voice);
     if (FAILED(hr)) {
         print_log("Failed to create mastering voice\n");
 
-        return false;
+        return nullptr;
     }
 
-    return true;
+    return audio;
 }
 
-void destroy_windows_audio(main_audio& audio)
+void destroy_windows_audio(main_audio* audio)
 {
+    if (!audio)
+        return;
+
     print_log("Terminating audio\n");
 
-    audio.master_voice->DestroyVoice();
-    audio.ix_audio->Release();
+    audio->master_voice->DestroyVoice();
+    audio->ix_audio->Release();
 
     CoUninitialize();
 }
@@ -136,7 +141,7 @@ void set_master_audio_volume(IXAudio2MasteringVoice* master_voice, int master_vo
     master_voice->SetVolume(actual_vol);
 }
 
-bool create_audio_source(main_audio& audio, IXAudio2SourceVoice*& out_source, const char* path)
+bool create_audio_source(const main_audio* audio, IXAudio2SourceVoice*& out_source, const char* path)
 {
     HRESULT hr = S_OK;
 
@@ -190,7 +195,7 @@ bool create_audio_source(main_audio& audio, IXAudio2SourceVoice*& out_source, co
     buffer.pAudioData = pDataBuffer;  //buffer containing audio data
     buffer.Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
 
-    hr = audio.ix_audio->CreateSourceVoice(&out_source, &wfx.Format);
+    hr = audio->ix_audio->CreateSourceVoice(&out_source, &wfx.Format);
     if (FAILED(hr)) 
         return hr;
 
@@ -232,7 +237,7 @@ void set_audio_volume(IXAudio2SourceVoice* source_voice, int audio_volume)
     source_voice->SetVolume(actual_vol);
 }
 
-void create_3d_audio(main_audio& main, audio_3d& audio, const char* path, float speed_of_sound)
+void create_3d_audio(const main_audio* main, audio_3d& audio, const char* path, float speed_of_sound)
 {
     HRESULT hr = S_OK;
 
@@ -240,7 +245,7 @@ void create_3d_audio(main_audio& main, audio_3d& audio, const char* path, float 
     create_audio_source(main, audio.source_voice, path);
 
     DWORD dwChannelMask;
-    main.master_voice->GetChannelMask(&dwChannelMask);
+    main->master_voice->GetChannelMask(&dwChannelMask);
 
 
     hr = X3DAudioInitialize(dwChannelMask, speed_of_sound, audio.instance);
@@ -250,7 +255,7 @@ void create_3d_audio(main_audio& main, audio_3d& audio, const char* path, float 
     }
 
     XAUDIO2_VOICE_DETAILS voice_details{};
-    main.master_voice->GetVoiceDetails(&voice_details);
+    main->master_voice->GetVoiceDetails(&voice_details);
 
     FLOAT32* matrix = new FLOAT32[voice_details.InputChannels];
     audio.dsp_settings.SrcChannelCount = 1;
@@ -265,7 +270,7 @@ void destroy_3d_audio(audio_3d& audio)
     destroy_audio_source(audio.source_voice);
 }
 
-void update_3d_audio(main_audio& main, audio_3d& audio, const Camera& camera)
+void update_3d_audio(const main_audio* main, audio_3d& audio, const Camera& camera)
 {
     // TODO: https://github.com/microsoft/Xbox-ATG-Samples/blob/main/UWPSamples/Audio/SimplePlay3DSoundUWP/SimplePlay3DSound.cpp
 
@@ -289,7 +294,7 @@ void update_3d_audio(main_audio& main, audio_3d& audio, const Camera& camera)
 
 
     audio.source_voice->SetOutputMatrix(
-        main.master_voice, 
+        main->master_voice, 
         1, 
         audio.dsp_settings.DstChannelCount, 
         audio.dsp_settings.pMatrixCoefficients

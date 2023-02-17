@@ -1050,11 +1050,11 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
 
 
 
-bool create_vulkan_renderer(vk_renderer*& out_renderer, const Window* window, renderer_buffer_mode buffering_mode, renderer_vsync_mode sync_mode)
+vk_renderer* create_vulkan_renderer(const Window* window, renderer_buffer_mode buffering_mode, renderer_vsync_mode sync_mode)
 {
     print_log("Initializing Vulkan renderer\n");
 
-    out_renderer = new vk_renderer();
+    vk_renderer* renderer = new vk_renderer();
 
     // NOTE: layers and extensions lists are non-const as the renderer might add
     // additional layers/extensions based on system configuration.
@@ -1088,45 +1088,45 @@ bool create_vulkan_renderer(vk_renderer*& out_renderer, const Window* window, re
     features.fillModeNonSolid = true;
     features.samplerAnisotropy = true;
 
-    int context_initialized = create_vulkan_context(out_renderer->ctx, layers, extensions, device_extensions, features, window);
+    int context_initialized = create_vulkan_context(renderer->ctx, layers, extensions, device_extensions, features, window);
     if (!context_initialized) {
         print_log("Failed to initialize Vulkan context\n");
 
-        return false;
+        return nullptr;
     }
 
-    g_rc = &out_renderer->ctx;
+    g_rc = &renderer->ctx;
 
 
     // Beyond this point, all subsystems of the renderer now makes use of the
     // renderer context internally to avoid needing to pass the context to
     // every function.
     if (using_validation_layers) {
-        out_renderer->messenger = create_debug_callback(debug_callback);
+        renderer->messenger = create_debug_callback(debug_callback);
 
-        if (!out_renderer->messenger) {
+        if (!renderer->messenger) {
             print_log("Failed to create Vulkan debug callback\n");
-            return false;
+            return nullptr;
         }
     }
         
 
-    out_renderer->submit = create_upload_context();
-    out_renderer->compiler = create_shader_compiler();
+    renderer->submit = create_upload_context();
+    renderer->compiler = create_shader_compiler();
 
     g_buffering = buffering_mode;
     g_vsync = sync_mode;
     g_swapchain = create_swapchain();
 
-    out_renderer->descriptor_pool = create_descriptor_pool();
+    renderer->descriptor_pool = create_descriptor_pool();
 
     g_frames = create_frames(frames_in_flight);
 
     create_command_pool();
 
-    g_r = out_renderer;
+    g_r = renderer;
 
-    return true;
+    return renderer;
 }
 
 void destroy_vulkan_renderer(vk_renderer* renderer)

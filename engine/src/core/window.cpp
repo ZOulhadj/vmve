@@ -153,60 +153,58 @@ static void window_cursor_enter_callback(GLFWwindow* window, int entered)
 
 // Initialized the GLFW library and creates a window. Window callbacks send
 // events to the application callback.
-bool create_window(Window*& out_window, const char* name, int width, int height)
+Window* create_window(const char* name, int width, int height)
 {
     print_log("Initializing window (%d, %d)\n", width, height);
 
     assert(width > 0 && height > 0);
 
-    out_window = new Window();
-
-
+    Window* window = new Window();
 
     glfwSetErrorCallback(glfw_error_callback);
 
     if (!glfwInit()) {
         print_log("Failed to initialize GLFW.\n");
 
-        return false;
+        return nullptr;
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, true);
 
-    out_window->handle = glfwCreateWindow(width, height, name, nullptr, nullptr);
-    out_window->name   = name;
-    out_window->width  = width;
-    out_window->height = height;
+    window->handle = glfwCreateWindow(width, height, name, nullptr, nullptr);
+    window->name   = name;
+    window->width  = width;
+    window->height = height;
 
-    if (!out_window->handle) {
+    if (!window->handle) {
         print_log("Failed to create GLFW window.\n");   
         
         glfwTerminate();
 
-        return false;
+        return nullptr;
     }
 
     //glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // window callbacks
-    glfwSetWindowUserPointer(out_window->handle, out_window);
-    glfwSetWindowCloseCallback(out_window->handle, window_close_callback);
-    glfwSetWindowFocusCallback(out_window->handle, window_focus_callback);
-    glfwSetWindowMaximizeCallback(out_window->handle, window_maximized_callback);
-    glfwSetWindowIconifyCallback(out_window->handle, window_minimized_callback);
-    glfwSetWindowSizeCallback(out_window->handle, window_resize_callback);
-    glfwSetFramebufferSizeCallback(out_window->handle, window_framebuffer_resize_callback);
-    glfwSetDropCallback(out_window->handle, window_drop_callback);
+    glfwSetWindowUserPointer(window->handle, window);
+    glfwSetWindowCloseCallback(window->handle, window_close_callback);
+    glfwSetWindowFocusCallback(window->handle, window_focus_callback);
+    glfwSetWindowMaximizeCallback(window->handle, window_maximized_callback);
+    glfwSetWindowIconifyCallback(window->handle, window_minimized_callback);
+    glfwSetWindowSizeCallback(window->handle, window_resize_callback);
+    glfwSetFramebufferSizeCallback(window->handle, window_framebuffer_resize_callback);
+    glfwSetDropCallback(window->handle, window_drop_callback);
 
     // input callbacks
-    glfwSetKeyCallback(out_window->handle, window_key_callback);
-    glfwSetMouseButtonCallback(out_window->handle, window_mouse_button_callback);
-    glfwSetScrollCallback(out_window->handle, window_mouse_scroll_callback);
-    glfwSetCursorPosCallback(out_window->handle, window_cursor_position_callback);
-    glfwSetCursorEnterCallback(out_window->handle, window_cursor_enter_callback);
+    glfwSetKeyCallback(window->handle, window_key_callback);
+    glfwSetMouseButtonCallback(window->handle, window_mouse_button_callback);
+    glfwSetScrollCallback(window->handle, window_mouse_scroll_callback);
+    glfwSetCursorPosCallback(window->handle, window_cursor_position_callback);
+    glfwSetCursorEnterCallback(window->handle, window_cursor_enter_callback);
 
-    return true;
+    return window;
 }
 
 void set_window_icon(const Window* window, const std::filesystem::path& iconPath)
