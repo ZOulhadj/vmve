@@ -34,7 +34,13 @@ struct encrypted_data
     std::string data;
 };
 
-
+enum class encryption_mode
+{
+    aes,
+    dh,
+    gc,
+    rc6
+};
 
 key_iv generate_key_iv(unsigned char keyLength);
 key_iv_string key_iv_to_hex(key_iv& keyIV);

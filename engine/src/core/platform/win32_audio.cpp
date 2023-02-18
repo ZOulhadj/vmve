@@ -134,9 +134,9 @@ void destroy_windows_audio(main_audio* audio)
 }
 
 
-void set_master_audio_volume(IXAudio2MasteringVoice* master_voice, int master_volume)
+void set_master_audio_volume(IXAudio2MasteringVoice* master_voice, float master_volume)
 {
-    const float actual_vol = master_volume / 100.0f;
+    const float actual_vol = std::clamp(master_volume, 0.0f, 100.0f) / 100.0f;
 
     master_voice->SetVolume(actual_vol);
 }
@@ -230,9 +230,9 @@ void stop_audio(IXAudio2SourceVoice* source_voice)
     print_log("Audio source stopped playing sound.\n");
 }
 
-void set_audio_volume(IXAudio2SourceVoice* source_voice, int audio_volume)
+void set_audio_volume(IXAudio2SourceVoice* source_voice, float audio_volume)
 {
-    const float actual_vol = audio_volume / 100.0f;
+    const float actual_vol = std::clamp(audio_volume, 0.0f, 100.0f) / 100.0f;
 
     source_voice->SetVolume(actual_vol);
 }

@@ -44,6 +44,8 @@ static bool editor_open = false;
 static bool window_open = true;
 
 
+static bool display_tooltips = true;
+
 // temp
 int old_viewport_width = 0;
 int old_viewport_height = 0;
@@ -281,6 +283,23 @@ static void set_next_window_in_center()
     ImGui::SetNextWindowPos(center, 0, ImVec2(0.5f, 0.5f));
 }
 
+static void info_marker(const char* desc)
+{
+    if (!display_tooltips)
+        return;
+
+    ImGui::SameLine();
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
 static void settings_window(my_engine* engine, bool* open)
 {
     if (!*open)
@@ -331,6 +350,10 @@ static void settings_window(my_engine* engine, bool* open)
             else if (currentTheme == 2)
                 set_light_theme();
         }
+
+        ImGui::Checkbox("Display tooltips", &display_tooltips);
+        info_marker("Displays the (?) icon next to options for more information.");
+
 
         break;
     case setting_options::input: {
@@ -465,7 +488,6 @@ static void load_model_window(my_engine* engine, bool* open)
         return;
 
     static bool flip_uv = false;
-    static bool vmve_format = false;
 
     set_next_window_in_center();
 
@@ -474,19 +496,19 @@ static void load_model_window(my_engine* engine, bool* open)
     static const char* modelPath = engine_get_executable_directory(engine);
     std::string model_path = engine_display_file_explorer(engine, modelPath);
 
+    // TODO: instead of simply checking for file extension, we need to properly
+    // parse the file to ensure it is in the correct format.
+    const std::filesystem::path model(model_path);
+
+
     ImGui::Checkbox("Flip UVs", &flip_uv);
-    ImGui::SameLine();
-    ImGui::Checkbox("VMVE model", &vmve_format);
+    info_marker("Orientation of texture coordinates for a model");
 
     if (ImGui::Button("Load")) {
-        // todo(zak): Check if extension is .vmve
-        // if so then parse the file and ensure that format is correct and ready to be loaded
-        // decrypt file contents
-        // load file
 #if 0
         futures.push_back(std::async(std::launch::async, LoadMesh, std::ref(gModels), model_path));
 #else
-        if (vmve_format) {
+        if (model.extension() == ".vmve") {
             std::string raw_data;
             bool file_read = vmve_read_from_file(model_path.c_str(), raw_data);
             if (file_read)
@@ -509,17 +531,20 @@ static void vmve_creator_window(my_engine* engine, bool* open)
         return;
 
     static bool useEncryption = false;
+    static bool isKeyGenerated = false;
     static int encryptionModeIndex = 0;
     static std::array<unsigned char, 2> keyLengthsBytes = { 32, 16 };
     static int keyLengthIndex = 0;
     static key_iv keyIV;
     static key_iv_string keyIVString;
-    static std::string file_contents = "This is some file contents that I am writing to and this is some more text\n";
+    static std::array<const char*, 4> encryptionModes = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
+    static std::array<const char*, 2> keyLengths = { "256 bits", "128 bit" };
+
 
 
 
     set_next_window_in_center();
-    ImGui::Begin("Convert model file", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("Encrypt", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
 
     static const char* exportPath = engine_get_executable_directory(engine);
@@ -530,10 +555,8 @@ static void vmve_creator_window(my_engine* engine, bool* open)
     ImGui::Checkbox("Encryption", &useEncryption);
 
     if (useEncryption) {
-        static std::array<const char*, 4> encryptionModes = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
-        static std::array<const char*, 2> keyLengths = { "256 bits", "128 bit" };
 
-        static bool isKeyGenerated = false;
+
 
 
         ImGui::Combo("Encryption method", &encryptionModeIndex, encryptionModes.data(), encryptionModes.size());
@@ -560,25 +583,40 @@ static void vmve_creator_window(my_engine* engine, bool* open)
     }
 
     static bool successfully_exported = false;
-    if (ImGui::Button("Export")) {
-        std::ofstream exportFile("");
-        exportFile << file_contents;
+    ImGui::BeginDisabled(!isKeyGenerated);
+    if (ImGui::Button("Encrypt")) {
 
-        successfully_exported = true;
+        // First we must load the contents of the model file
+        std::ifstream model_file(current_path);
 
-        // TODO: Encrypt data
-        if (encryptionModeIndex == 0) { // AES 
-            //AES_Data data = EncryptAES("", keyIV);
-        }
-        else if (encryptionModeIndex == 1) { // DH
+        if (model_file.is_open()) {
 
+            std::stringstream stream;
+            stream << model_file.rdbuf();
+            const std::string contents = stream.str();
+
+            if (encryptionModeIndex == 0) { // AES 
+                encrypted_data data = encrypt_aes(contents, keyIV);
+
+                const std::filesystem::path model_path(current_path);
+                const std::string model_parent_path = model_path.parent_path().string();
+                const std::string model_name = model_path.filename().string();
+
+                std::ofstream export_model(model_parent_path + '/' + model_name + ".vmve");
+                export_model << data.data;
+            }
+            else if (encryptionModeIndex == 1) { // DH
+
+            }
+
+            successfully_exported = true;
         }
     }
+    ImGui::EndDisabled();
 
 
-    //if (successfully_exported)
-    //    ImGui::Text("A total of %d bytes has been written to %s", file_contents.size(), filename);
-
+    if (successfully_exported)
+        ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Successfully encrypted model file.\n");
 
 
     ImGui::End();

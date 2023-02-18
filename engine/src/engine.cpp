@@ -1100,7 +1100,7 @@ const char* engine_get_log(my_engine* engine, int logIndex)
 }
 
 
-void engine_set_master_volume(my_engine* engine, int master_volume)
+void engine_set_master_volume(my_engine* engine, float master_volume)
 {
     set_master_audio_volume(engine->audio->master_voice, master_volume);
 }
@@ -1124,7 +1124,7 @@ void engine_stop_audio(my_engine* engine, int audio_id)
     destroy_audio_source(engine->example_audio);
 }
 
-void engine_set_audio_volume(my_engine* engine, int audio_volume)
+void engine_set_audio_volume(my_engine* engine, float audio_volume)
 {
     set_audio_volume(engine->example_audio, audio_volume);
 }

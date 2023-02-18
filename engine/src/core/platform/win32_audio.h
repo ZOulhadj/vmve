@@ -23,12 +23,12 @@ main_audio* create_windows_audio();
 void destroy_windows_audio(main_audio* audio);
 
 // 2d audio
-void set_master_audio_volume(IXAudio2MasteringVoice* master_voice, int master_volume);
+void set_master_audio_volume(IXAudio2MasteringVoice* master_voice, float master_volume);
 bool create_audio_source(const main_audio* audio, IXAudio2SourceVoice*& out_source, const char* path);
 void destroy_audio_source(IXAudio2SourceVoice* source_voice);
 void play_audio(IXAudio2SourceVoice* source_voice);
 void stop_audio(IXAudio2SourceVoice* source_voice);
-void set_audio_volume(IXAudio2SourceVoice* source_voice, int audio_volume);
+void set_audio_volume(IXAudio2SourceVoice* source_voice, float audio_volume);
 
 
 // 3d audio

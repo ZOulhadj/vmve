@@ -354,10 +354,10 @@ void* engine_get_specular_texutre();
 void* engine_get_depth_texture();
 
 // Audio
-void engine_set_master_volume(my_engine* engine, int master_volume);
+void engine_set_master_volume(my_engine* engine, float master_volume);
 int engine_play_audio(my_engine* engine, const char* path);
 void engine_pause_audio(my_engine* engine, int audio_id);
 void engine_stop_audio(my_engine* engine, int audio_id);
-void engine_set_audio_volume(my_engine* engine, int audio_volume);
+void engine_set_audio_volume(my_engine* engine, float audio_volume);
 
 #endif
