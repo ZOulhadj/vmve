@@ -186,26 +186,30 @@ static std::string get_executable_directory()
 
 static my_engine* initialize_core(my_engine* engine, const char* name, int width, int height)
 {
+    engine->execPath = get_executable_directory();
     print_log("Initializing engine (%s)\n", engine->execPath.c_str());
 
     // Initialize core systems
     engine->window = create_window(name, width, height);
     if (!engine->window) {
-        print_log("Failed to create window.\n");
+        print_error("Failed to create window.\n");
         return nullptr;
     }
     engine->window->event_callback = event_callback;
 
     engine->renderer = create_vulkan_renderer(engine->window, renderer_buffer_mode::Double, renderer_vsync_mode::enabled);
     if (!engine->renderer) {
-        print_log("Failed to create renderer.\n");
+        print_error("Failed to create renderer.\n");
         return nullptr;
     }
 
     engine->audio = create_windows_audio();
     if (!engine->audio) {
-        print_log("Failed to initialize audio.\n");
+        print_error("Failed to initialize audio.\n");
 
+        // NODE: At this moment in time, audio failing to initialize is not critical
+        // and therefore, print an error but dont return nullptr.
+        // 
         // TODO: clear audio resources
 
     }
@@ -396,7 +400,6 @@ my_engine* engine_initialize(const char* name, int width, int height)
     my_engine* engine = new my_engine();
 
     engine->start_time = std::chrono::high_resolution_clock::now();
-    engine->execPath = get_executable_directory();
 
     if (!initialize_core(engine, name, width, height)) {
         return nullptr;
@@ -547,7 +550,7 @@ void engine_present(my_engine* engine)
 
     if (!present_swapchain_image()) {
         // TODO: Resize framebuffers if unable to display to swapchain
-        print_log("Code path not expected! Must implement framebuffer resizing");
+        print_error("Code path not expected! Must implement framebuffer resizing");
         abort();
     }
 
@@ -651,7 +654,7 @@ void engine_load_model(my_engine* engine, const char* path, bool flipUVs)
     // todo: continue from here
     bool model_loaded = load_model(model, path, flipUVs);
     if (!model_loaded) {
-        print_log("Failed to load model: %s\n", model.path.c_str());
+        print_error("Failed to load model: %s\n", model.path.c_str());
         return;
     }
 
@@ -665,7 +668,7 @@ void engine_add_model(my_engine* engine, const char* data, int size, bool flipUV
 
     bool model_created = create_model(model, data, size, flipUVs);
     if (!model_created) {
-        print_log("Failed to create model from memory.\n");
+        print_error("Failed to create model from memory.\n");
         return;
     }
 
@@ -711,7 +714,8 @@ void engine_add_instance(my_engine* engine, int modelID, float x, float y, float
     print_log("Instance (%d) added.\n", instance.id);
 }
 
-void engine_remove_instance(my_engine* engine, int instanceID) {
+void engine_remove_instance(my_engine* engine, int instanceID)
+{
     assert(instanceID >= 0);
 
 //#define FIND_BY_ID
@@ -803,7 +807,7 @@ void engine_set_environment_map(my_engine* engine, const char* path)
     // todo: continue from here
     bool model_loaded = load_model(skybox_model, path, true);
     if (!model_loaded) {
-        print_log("Failed to load environment model/texture: %s\n", skybox_model.path.c_str());
+        print_error("Failed to load environment model/texture: %s\n", skybox_model.path.c_str());
         return;
     }
 
@@ -1082,7 +1086,7 @@ void engine_export_logs_to_file(my_engine* engine, const char* path)
     // entire log buffer which will mostly be empty.
     const auto& logs = get_logs();
     for (std::size_t i = 0; i < get_log_count(); ++i) {
-        output << logs[i];
+        output << logs[i].string;
     }
 
 }
@@ -1092,13 +1096,13 @@ int engine_get_log_count(my_engine* engine)
     return get_log_count();
 }
 
-const char* engine_get_log(my_engine* engine, int logIndex)
+void engine_get_log(my_engine* engine, int logIndex, const char** str, int* log_type)
 {
-    const std::vector<std::string>& logs = get_logs();
-    
-    return logs[logIndex].c_str();
-}
+    const std::vector<log_message>& logs = get_logs();
 
+    *str = logs[logIndex].string.c_str();
+    *log_type = static_cast<int>(logs[logIndex].type);
+}
 
 void engine_set_master_volume(my_engine* engine, float master_volume)
 {

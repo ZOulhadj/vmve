@@ -98,21 +98,21 @@ main_audio* create_windows_audio()
 
     hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (FAILED(hr)) {
-        print_log("Failed to initialize audio COM\n");
+        print_error("Failed to initialize audio COM\n");
 
         return nullptr;
     }
 
     hr = XAudio2Create(&audio->ix_audio, 0, XAUDIO2_USE_DEFAULT_PROCESSOR);
     if (FAILED(hr)) {
-        print_log("Failed to create xaudio2\n");
+        print_error("Failed to create xaudio2\n");
 
         return nullptr;
     }
 
     hr = audio->ix_audio->CreateMasteringVoice(&audio->master_voice);
     if (FAILED(hr)) {
-        print_log("Failed to create mastering voice\n");
+        print_error("Failed to create mastering voice\n");
 
         return nullptr;
     }
@@ -163,7 +163,7 @@ bool create_audio_source(const main_audio* audio, IXAudio2SourceVoice*& out_sour
         NULL);
 
     if (INVALID_HANDLE_VALUE == hFile) {
-        print_log("Failed to load audio file at path %s.\n", path);
+        print_error("Failed to load audio file at path %s.\n", path);
         return HRESULT_FROM_WIN32(GetLastError());
     }
         
@@ -216,7 +216,7 @@ void play_audio(IXAudio2SourceVoice* source_voice)
 {
     HRESULT hr = source_voice->Start(0);
     if (FAILED(hr))
-        print_log("Failed to start audio.\n");
+        print_error("Failed to start audio.\n");
 
     print_log("Audio source playing sound.\n");
 }
@@ -225,7 +225,7 @@ void stop_audio(IXAudio2SourceVoice* source_voice)
 {
     HRESULT hr = source_voice->Stop();
     if (FAILED(hr))
-        print_log("Failed to stop audio.\n");
+        print_error("Failed to stop audio.\n");
 
     print_log("Audio source stopped playing sound.\n");
 }
@@ -250,7 +250,7 @@ void create_3d_audio(const main_audio* main, audio_3d& audio, const char* path, 
 
     hr = X3DAudioInitialize(dwChannelMask, speed_of_sound, audio.instance);
     if (FAILED(hr)) {
-        print_log("Failed to initialize X3D Audio.\n");
+        print_error("Failed to initialize X3D Audio.\n");
         return;
     }
 

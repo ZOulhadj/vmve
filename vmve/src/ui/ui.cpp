@@ -16,6 +16,7 @@
 #include "../security.h"
 #include "../vmve.h"
 #include "ui_fonts.h"
+#include "ui_icons.h"
 
 
 
@@ -33,18 +34,17 @@ ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton; // ImG
 
 static ImGuiWindowFlags dockspaceWindowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
 
-
-
 const char* object_window = "Object";
-const char* console_window = "Console";
+const char* console_window = "Logs";
 const char* viewport_window = "Viewport";
 const char* scene_window = "Global";
 
 static bool editor_open = false;
 static bool window_open = true;
 
-
+// appearance settings
 static bool display_tooltips = true;
+static bool highlight_logs = true;
 
 // temp
 int old_viewport_width = 0;
@@ -95,9 +95,9 @@ static void set_default_theme()
     ImVec4* colors = ImGui::GetStyle().Colors;
     colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-    colors[ImGuiCol_WindowBg] = ImVec4(0.03f, 0.03f, 0.04f, 1.00f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.013f, 0.013f, 0.013f, 1.00f);
     colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-    colors[ImGuiCol_PopupBg] = ImVec4(0.03f, 0.03f, 0.04f, 0.94f);
+    colors[ImGuiCol_PopupBg] = ImVec4(0.03f, 0.03f, 0.04f, 1.0f);
     colors[ImGuiCol_Border] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
     colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
     colors[ImGuiCol_FrameBg] = ImVec4(0.02f, 0.02f, 0.02f, 1.00f);
@@ -289,7 +289,7 @@ static void info_marker(const char* desc)
         return;
 
     ImGui::SameLine();
-    ImGui::TextDisabled("(?)");
+    ImGui::TextDisabled(ICON_FA_CIRCLE_INFO);
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
     {
         ImGui::BeginTooltip();
@@ -312,7 +312,7 @@ static void settings_window(my_engine* engine, bool* open)
 
 
     set_next_window_in_center();
-    ImGui::Begin("Settings", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin(ICON_FA_GEAR " Settings", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     ImGui::BeginChild("Options", ImVec2(ImGui::GetContentRegionAvail().x / 3.0f, 0), false);
 
@@ -352,8 +352,10 @@ static void settings_window(my_engine* engine, bool* open)
         }
 
         ImGui::Checkbox("Display tooltips", &display_tooltips);
-        info_marker("Displays the (?) icon next to options for more information.");
+        info_marker("Displays the " ICON_FA_CIRCLE_INFO " icon next to options for more information.");
 
+        ImGui::Checkbox("Highlight logs", &highlight_logs);
+        info_marker("Based on the log type, highlight its background color");
 
         break;
     case setting_options::input: {
@@ -491,7 +493,7 @@ static void load_model_window(my_engine* engine, bool* open)
 
     set_next_window_in_center();
 
-    ImGui::Begin("Load Model", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin(ICON_FA_FOLDER_OPEN " Load Model", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
     static const char* modelPath = engine_get_executable_directory(engine);
     std::string model_path = engine_display_file_explorer(engine, modelPath);
@@ -674,6 +676,58 @@ static void gbuffer_visualizer_window(bool* open)
     ImGui::End();
 }
 
+static void render_audio_window(my_engine* engine, bool* open)
+{
+    if (!*open)
+        return;
+
+    ImGui::Begin("Audio", open);
+
+
+    static char audio_path[256];
+    static int audio_volume = 50;
+    // TODO: disable buttons if not a valid audio path
+    if (ImGui::Button(ICON_FA_PLAY))
+        engine_play_audio(engine, audio_path);
+    ImGui::SameLine();
+    ImGui::Button(ICON_FA_PAUSE);
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_STOP))
+        engine_stop_audio(engine, 0);
+    ImGui::InputText("Audio Path", audio_path, 256);
+    if (ImGui::SliderInt("Volume", &audio_volume, 0, 100, "%d%%"))
+        engine_set_audio_volume(engine, audio_volume);
+
+    if (audio_volume >= 66.6)
+        ImGui::Text(ICON_FA_VOLUME_HIGH);
+    else if (audio_volume >= 33.3)
+        ImGui::Text(ICON_FA_VOLUME_LOW);
+    else if (audio_volume >= 0)
+        ImGui::Text(ICON_FA_VOLUME_OFF);
+
+    ImGui::Text("Fullscreen");
+    ImGui::SameLine();
+    ImGui::Button(ICON_FA_EXPAND);
+    info_marker("Toggle fullscreen mode for the viewport.");
+
+
+    ImGui::End();
+}
+
+static void render_console_window(bool* open)
+{
+    if (!*open)
+        return;
+
+    static char command[256];
+
+    ImGui::Begin("Console", open);
+
+    ImGui::InputText("Command", command, 256);
+
+    ImGui::End();
+}
+
 void BeginDocking()
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -705,15 +759,17 @@ void RenderMainMenu(my_engine* engine)
     static bool creator_open = false;
     static bool perfProfilerOpen = false;
     static bool gBufferOpen = false;
+    static bool audio_window_open = false;
+    static bool console_window_open = false;
     static bool show_demo_window = false;
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
-            loadOpen = ImGui::MenuItem("Load model");
-            creator_open = ImGui::MenuItem("VMVE creator");
+            loadOpen = ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Load model");
+            creator_open = ImGui::MenuItem(ICON_FA_LOCK " VMVE creator");
 
 
-            if (ImGui::MenuItem("Exit"))
+            if (ImGui::MenuItem(ICON_FA_XMARK " Exit"))
                 engine_should_terminate(engine);
 
             ImGui::EndMenu();
@@ -731,6 +787,16 @@ void RenderMainMenu(my_engine* engine)
             if (ImGui::MenuItem("G-Buffer Visualizer")) {
                 gBufferOpen = true;
             }
+
+            if (ImGui::MenuItem("Audio player")) {
+                audio_window_open = true;
+            }
+
+            if (ImGui::MenuItem("Console")) {
+                console_window_open = true;
+            }
+
+
 
             ImGui::EndMenu();
         }
@@ -759,9 +825,10 @@ void RenderMainMenu(my_engine* engine)
     vmve_creator_window(engine, &creator_open);
     perf_window(&perfProfilerOpen);
     gbuffer_visualizer_window(&gBufferOpen);
+    render_audio_window(engine, &audio_window_open);
+    render_console_window(&console_window_open);
 
-
-    // TODO: continue working on drag and drog model loading
+    // TODO: continue working on drag and drop model loading
     if (drop_load_model) {
         static bool flip_uvs = false;
 
@@ -821,14 +888,14 @@ void render_object_window(my_engine* engine)
         ImGui::EndDisabled();
 
         ImGui::BeginDisabled(modelCount == 0);
-        if (ImGui::Button("Add instance"))
+        if (ImGui::Button(ICON_FA_PLUS " Add instance"))
             engine_add_instance(engine, modelID, 0.0f, 0.0f, 0.0f);
         ImGui::EndDisabled();
 
         ImGui::SameLine();
 
         ImGui::BeginDisabled(instanceCount == 0);
-        if (ImGui::Button("Remove instance")) {
+        if (ImGui::Button(ICON_FA_MINUS " Remove instance")) {
             engine_remove_instance(engine, selectedInstanceIndex);
 
             // NOTE: should not go below 0
@@ -928,7 +995,7 @@ void render_object_window(my_engine* engine)
     ImGui::End();
 }
 
-void RenderGlobalWindow(my_engine* engine)
+void render_global_window(my_engine* engine)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -967,10 +1034,12 @@ void RenderGlobalWindow(my_engine* engine)
 
             if (ImGui::Checkbox("Wireframe", &wireframe))
                 engine_set_render_mode(engine, wireframe ? 1 : 0);
-
+            info_marker("Toggles rendering mode to visualize individual vertices");
+            ImGui::SameLine();
             if (ImGui::Checkbox("VSync", &vsync)) {
                 update_swapchain_vsync = true;
             }
+            info_marker("Limits frame rate to your displays refresh rate.");
 
             static int current_buffer_mode = 0;
             static std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
@@ -1070,21 +1139,10 @@ void RenderGlobalWindow(my_engine* engine)
             ImGui::Checkbox("Lock frustum", &lock_camera_frustum);
         }
 
-        if (ImGui::CollapsingHeader("Audio")) {
-            static char audio_path[256];
-            static int audio_volume = 50;
-            // TODO: disable buttons if not a valid audio path
-            if (ImGui::Button("Play"))
-                engine_play_audio(engine, audio_path);
-            ImGui::SameLine();
-            ImGui::Button("Pause");
-            ImGui::SameLine();
-            if (ImGui::Button("Stop"))
-                engine_stop_audio(engine, 0);
-            ImGui::InputText("Audio Path", audio_path, 256);
-            if (ImGui::SliderInt("Volume", &audio_volume, 0, 100, "%d%%"))
-                engine_set_audio_volume(engine, audio_volume);
-        }
+
+
+
+        ImGui::Text(ICON_FA_UP_DOWN_LEFT_RIGHT);
 
 #if 0
         static bool edit_shaders = false;
@@ -1148,36 +1206,85 @@ void RenderGlobalWindow(my_engine* engine)
     ImGui::End();
 }
 
-void RenderConsoleWindow(my_engine* engine)
+void render_logs_windows(my_engine* engine)
 {
+    static ImVec4* style = ImGui::GetStyle().Colors;
+
     static bool autoScroll = true;
     static bool scrollCheckboxClicked = false;
-    //static bool wrap_text = false;
 
     ImGui::Begin(console_window, &window_open, dockspaceWindowFlags);
     {
-        if (ImGui::Button("Clear"))
+        if (ImGui::Button(ICON_FA_BROOM " Clear"))
             engine_clear_logs(engine);
         ImGui::SameLine();
-        if (ImGui::Button("Export"))
+        if (ImGui::Button(ICON_FA_DOWNLOAD " Export"))
             engine_export_logs_to_file(engine, "logs.txt");
         ImGui::SameLine();
         scrollCheckboxClicked = ImGui::Checkbox("Auto-scroll", &autoScroll);
-        
-        //ImGui::SameLine();
-        //ImGui::Checkbox("Wrap text", &wrap_text);
         ImGui::Separator();
 
         ImGui::BeginChild("Logs", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-        ImGuiListClipper clipper;
-        clipper.Begin(engine_get_log_count(engine));
-        while (clipper.Step()) {
-            for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
-                //ImGui::PushTextWrapPos(wrap_text ? ImGui::GetContentRegionAvail().x : -1.0f);
-                ImGui::Text(engine_get_log(engine, index));
-                //ImGui::PopTextWrapPos();
+        static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody;
+
+        if (ImGui::BeginTable("Log_Table", 1, flags)) {
+            ImGuiListClipper clipper;
+            clipper.Begin(engine_get_log_count(engine));
+            while (clipper.Step()) {
+                for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
+                    const char* message = nullptr;
+                    int log_type = 0;
+                    engine_get_log(engine, index, &message, &log_type);
+
+                    static std::string icon_type;
+                    static ImVec4 icon_color;
+                    static ImVec4 bg_color;
+
+                    // set up colors based on log type
+                    if (log_type == 0) {
+                        icon_type = ICON_FA_CIRCLE_CHECK;
+                        icon_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+                        bg_color = style[ImGuiCol_WindowBg];
+                    } else if (log_type == 1) {
+                        icon_type = ICON_FA_TRIANGLE_EXCLAMATION;
+                        icon_color = ImVec4(ImVec4(0.766f, 0.50f, 0.0043f, 1.0f));
+                        bg_color = ImVec4(1.0f, 1.0f, 0.0f, 0.12f);
+                    } else if (log_type == 2) {
+                        icon_type = ICON_FA_TRIANGLE_EXCLAMATION;
+                        icon_color = ImVec4(0.719f, 0.044f, 0.044f, 1.0f);
+                        bg_color = ImVec4(1.0f, 0.0f, 0.0f, 0.098f);
+                    }
+
+                    ImGui::PushID(message);
+
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+
+                    ImGui::GetWindowDrawList()->ChannelsSplit(2);
+                    ImGui::GetWindowDrawList()->ChannelsSetCurrent(1);
+                    ImGui::TextColored(icon_color, icon_type.c_str());
+                    ImGui::SameLine();
+                    ImGui::Selectable(message, false, ImGuiSelectableFlags_SpanAllColumns);
+
+                    // TODO: Should do this once per frame instead of per log 
+                    // message. We should maybe have two code paths based on
+                    // if we have log highlighting.
+                    if (highlight_logs) {
+                        // Set background color
+                        ImGui::GetWindowDrawList()->ChannelsSetCurrent(0);
+                        ImVec2 p_min = ImGui::GetItemRectMin();
+                        ImVec2 p_max = ImGui::GetItemRectMax();
+                        ImGui::GetWindowDrawList()->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32(bg_color));
+                    }
+
+                    ImGui::GetWindowDrawList()->ChannelsMerge();
+
+                    ImGui::PopID();
+                }
             }
+
+            ImGui::EndTable();
         }
 
 
@@ -1306,15 +1413,27 @@ void RenderViewportWindow(my_engine* engine)
     ImGui::End();
 }
 
-
 void configure_ui(my_engine* engine)
 {
     set_default_styling();
     set_default_theme();
 
 
+    // Text font
     ImGuiIO& io = ImGui::GetIO();
     io.Fonts->AddFontFromMemoryCompressedBase85TTF(get_open_sans_compressed_ttf(), 18);
+    //io.Fonts->AddFontDefault();
+
+    // Icons
+
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true; 
+    icons_config.PixelSnapH = true;
+    icons_config.GlyphMinAdvanceX = 16.0f;
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+
+    io.Fonts->AddFontFromMemoryCompressedBase85TTF(get_fa_regular_400_compressed_ttf(), icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
+    io.Fonts->AddFontFromMemoryCompressedBase85TTF(get_fa_solid_900_compressed_ttf(), icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
 
     // Upload font textures to the engine (GPU memory)
     engine_set_ui_font_texture(engine);
@@ -1364,8 +1483,8 @@ void render_ui(my_engine* engine, bool fullscreen)
         RenderViewportWindow(engine);
     } else {
         render_object_window(engine);
-        RenderGlobalWindow(engine);
-        RenderConsoleWindow(engine);
+        render_global_window(engine);
+        render_logs_windows(engine);
         RenderViewportWindow(engine);
     }
 

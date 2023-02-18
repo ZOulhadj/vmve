@@ -16,7 +16,7 @@ bool compare_layers(const std::vector<const char*>& requested,
             });
 
         if (iter == layers.end()) {
-            print_log("Failed to find instance layer: %s\n", requested_name);
+            print_error("Failed to find instance layer: %s\n", requested_name);
             return false;
         }
     }
@@ -36,7 +36,7 @@ bool compare_extensions(const std::vector<const char*>& requested,
             });
 
         if (iter == extensions.end()) {
-            print_log("Failed to find extension: %s\n", requested_name);
+            print_error("Failed to find extension: %s\n", requested_name);
             return false;
         }
     }

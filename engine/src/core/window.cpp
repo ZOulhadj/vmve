@@ -10,7 +10,7 @@
 
 static void glfw_error_callback(int code, const char* description)
 {
-    print_log("GLFW error (%d : %s)\n", code, description);
+    print_error("GLFW error (%d : %s)\n", code, description);
 }
 
 static void window_close_callback(GLFWwindow* window)
@@ -164,7 +164,7 @@ Window* create_window(const char* name, int width, int height)
     glfwSetErrorCallback(glfw_error_callback);
 
     if (!glfwInit()) {
-        print_log("Failed to initialize GLFW.\n");
+        print_error("Failed to initialize GLFW.\n");
 
         return nullptr;
     }
@@ -178,7 +178,7 @@ Window* create_window(const char* name, int width, int height)
     window->height = height;
 
     if (!window->handle) {
-        print_log("Failed to create GLFW window.\n");   
+        print_error("Failed to create GLFW window.\n");   
         
         glfwTerminate();
 
@@ -213,7 +213,7 @@ void set_window_icon(const Window* window, const std::filesystem::path& iconPath
     images[0].pixels = stbi_load(iconPath.string().c_str(), &images[0].width, &images[0].height, 0, STBI_rgb_alpha);
 
     if (!images[0].pixels) {
-        print_log("Failed to load window icon %s.\n", iconPath.string().c_str());
+        print_error("Failed to load window icon %s.\n", iconPath.string().c_str());
 
         stbi_image_free(images[0].pixels);
         return;

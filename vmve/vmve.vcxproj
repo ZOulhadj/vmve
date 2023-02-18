@@ -97,6 +97,7 @@
     <ClCompile Include="src\settings.cpp" />
     <ClCompile Include="src\ui\ui.cpp" />
     <ClCompile Include="src\ui\ui_fonts.cpp" />
+    <ClCompile Include="src\ui\ui_icons.cpp" />
     <ClCompile Include="src\vmve.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
     <ClCompile Include="vendor\imgui\ImGuizmo.cpp" />
@@ -111,6 +112,7 @@
     <ClInclude Include="src\misc.h" />
     <ClInclude Include="src\security.h" />
     <ClInclude Include="src\settings.h" />
+    <ClInclude Include="src\ui\ui_icons.h" />
     <ClInclude Include="src\ui\ui.h" />
     <ClInclude Include="src\ui\ui_fonts.h" />
     <ClInclude Include="src\vmve.h" />

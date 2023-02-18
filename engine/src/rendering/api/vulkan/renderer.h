@@ -78,7 +78,7 @@ struct vk_vertex_binding
         current_bytes += format_to_bytes(format);
 
         if (current_bytes > max_bytes) {
-            print_log("Total attribute size is larger than binding size.\n");
+            print_warning("Total attribute size is larger than binding size.\n");
             return;
         }
 

@@ -320,7 +320,7 @@ int engine_get_log_count(my_engine* engine);
 //
 //
 //
-const char* engine_get_log(my_engine* engine, int logIndex);
+void engine_get_log(my_engine* engine, int logIndex, const char** str, int* log_type);
 
 
 // UI

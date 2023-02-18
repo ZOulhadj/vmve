@@ -7,7 +7,7 @@ constexpr uint32_t frames_in_flight = 2;
 
 #define vk_check(function)                                                  \
     if (function != VK_SUCCESS) {                                           \
-        print_log("Vulkan call failed (%s:%d)\n", __FUNCTION__, __LINE__);     \
+        print_error("Vulkan call failed (%s:%d)\n", __FUNCTION__, __LINE__);\
     }                                                                       \
 
 // Helper cast function often used for Vulkan create info structs

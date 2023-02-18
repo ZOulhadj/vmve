@@ -76,7 +76,7 @@ static vk_shader create_shader(VkShaderStageFlagBits type, const std::string& co
     status = shaderc_result_get_compilation_status(result);
 
     if (status != shaderc_compilation_status_success) {
-        print_log("Failed to compile shader %s\n.", shaderc_result_get_error_message(result));
+        print_error("Failed to compile shader %s\n.", shaderc_result_get_error_message(result));
         return {};
     }
 

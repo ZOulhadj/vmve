@@ -1090,7 +1090,7 @@ vk_renderer* create_vulkan_renderer(const Window* window, renderer_buffer_mode b
 
     int context_initialized = create_vulkan_context(renderer->ctx, layers, extensions, device_extensions, features, window);
     if (!context_initialized) {
-        print_log("Failed to initialize Vulkan context\n");
+        print_error("Failed to initialize Vulkan context\n");
 
         return nullptr;
     }
@@ -1105,7 +1105,7 @@ vk_renderer* create_vulkan_renderer(const Window* window, renderer_buffer_mode b
         renderer->messenger = create_debug_callback(debug_callback);
 
         if (!renderer->messenger) {
-            print_log("Failed to create Vulkan debug callback\n");
+            print_error("Failed to create Vulkan debug callback\n");
             return nullptr;
         }
     }
@@ -1373,9 +1373,9 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
     if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
         print_log("%s\n", pCallbackData->pMessage);
     } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        print_log("%s\n", pCallbackData->pMessage);
+        print_warning("%s\n", pCallbackData->pMessage);
     } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        print_log("%s\n", pCallbackData->pMessage);
+        print_error("%s\n", pCallbackData->pMessage);
     }
 
     return VK_FALSE;
