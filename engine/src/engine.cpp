@@ -498,10 +498,9 @@ void engine_render(my_engine* engine)
         for (std::size_t i = 0; i < engine->entities.size(); ++i) {
             Entity& instance = engine->entities[i];
 
-            translate_entity(instance, instance.position);
-            rotate_entity(instance, instance.rotation);
-            scale_entity(instance, instance.scale);
-            render_model(engine->models[instance.modelIndex], instance.matrix, offscreen_cmd_buffer, offscreen_pipeline_layout);
+            apply_entity_transformation(instance);
+
+            render_model(engine->models[instance.model_index], instance.matrix, offscreen_cmd_buffer, offscreen_pipeline_layout);
         }
         end_render_pass(offscreen_cmd_buffer);
 
@@ -697,21 +696,13 @@ void engine_remove_model(my_engine* engine, int modelID) {
 #endif
 }
 
-void engine_add_instance(my_engine* engine, int modelID, float x, float y, float z) {
+void engine_add_entity(my_engine* engine, int modelID, float x, float y, float z)
+{
     static int instanceID = 0;
 
-    Entity instance{};
-    instance.id = instanceID++;
-    instance.name = engine->models[modelID].name;
-    instance.modelIndex = modelID;
-    instance.position = glm::vec3(0.0f);
-    instance.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-    instance.scale = glm::vec3(1.0f, 1.0f, 1.0f);
-    instance.matrix = glm::mat4(1.0f);
+    Entity entity = create_entity(instanceID++, modelID, engine->models[modelID].name, glm::vec3(x, y, z));
 
-    engine->entities.push_back(instance);
-
-    print_log("Instance (%d) added.\n", instance.id);
+    engine->entities.push_back(entity);
 }
 
 void engine_remove_instance(my_engine* engine, int instanceID)
@@ -753,52 +744,70 @@ const char* engine_get_instance_name(my_engine* engine, int instanceIndex) {
     return engine->entities[instanceIndex].name.c_str();
 }
 
-void engine_get_instance_matrix(my_engine* engine, int instanceIndex, float*& matrix)
+void engine_decompose_entity_matrix(my_engine* engine, int instanceIndex, float* pos, float* rot, float* scale)
 {
     assert(instanceIndex >= 0);
 
-    matrix = &engine->entities[instanceIndex].matrix[0][0];
+    decompose_entity_matrix(&engine->entities[instanceIndex].matrix[0][0], pos, rot, scale);
 }
 
-void engine_get_instance_position(my_engine* engine, int instanceIndex, float*& position) {
-    assert(instanceIndex >= 0);
 
-    position = &engine->entities[instanceIndex].position.x;
+void engine_get_entity_matrix(my_engine* engine, int instance_index, float* matrix)
+{
+    assert(instance_index >= 0);
+
+    const Entity& entity = engine->entities[instance_index];
+
+    matrix[0] = entity.matrix[0][0];
+    matrix[1] = entity.matrix[0][1];
+    matrix[2] = entity.matrix[0][2];
+    matrix[3] = entity.matrix[0][3];
+
+    matrix[4] = entity.matrix[1][0];
+    matrix[5] = entity.matrix[1][1];
+    matrix[6] = entity.matrix[1][2];
+    matrix[7] = entity.matrix[1][3];
+
+    matrix[8] = entity.matrix[2][0];
+    matrix[9] = entity.matrix[2][1];
+    matrix[10] = entity.matrix[2][2];
+    matrix[11] = entity.matrix[2][3];
+
+    matrix[12] = entity.matrix[2][0];
+    matrix[13] = entity.matrix[2][1];
+    matrix[14] = entity.matrix[2][2];
+    matrix[15] = entity.matrix[2][3];
 }
 
 void engine_set_instance_position(my_engine* engine, int instanceIndex, float x, float y, float z)
 {
     assert(instanceIndex >= 0);
 
-    engine->entities[instanceIndex].position.x = x;
-    engine->entities[instanceIndex].position.y = y;
-    engine->entities[instanceIndex].position.z = z;
-}
-
-
-void engine_get_instance_rotation(my_engine* engine, int instanceIndex, float*& rotation) {
-    assert(instanceIndex >= 0);
-
-    rotation = &engine->entities[instanceIndex].rotation.x;
+    translate_entity(engine->entities[instanceIndex], glm::vec3(x, y, z));
 }
 
 void engine_set_instance_rotation(my_engine* engine, int instanceIndex, float x, float y, float z)
 {
     assert(instanceIndex >= 0);
 
-    engine->entities[instanceIndex].rotation.x = x;
-    engine->entities[instanceIndex].rotation.y = y;
-    engine->entities[instanceIndex].rotation.z = z;
+    rotate_entity(engine->entities[instanceIndex], glm::vec3(x, y, z));
 }
 
-void engine_get_instance_scale(my_engine* engine, int instanceIndex, float* scale)
+
+void engine_set_instance_scale(my_engine* engine, int instanceIndex, float scale)
 {
     assert(instanceIndex >= 0);
 
-    scale[0] = engine->entities[instanceIndex].scale.x;
-    scale[1] = engine->entities[instanceIndex].scale.y;
-    scale[2] = engine->entities[instanceIndex].scale.z;
+    scale_entity(engine->entities[instanceIndex], scale);
 }
+
+void engine_set_instance_scale(my_engine* engine, int instanceIndex, float x, float y, float z)
+{
+    assert(instanceIndex >= 0);
+
+    scale_entity(engine->entities[instanceIndex], glm::vec3(x, y, z));
+}
+
 
 void engine_set_environment_map(my_engine* engine, const char* path)
 {
@@ -817,11 +826,13 @@ void engine_set_environment_map(my_engine* engine, const char* path)
     engine->using_skybox = true;
 }
 
-void engine_create_camera(my_engine* engine, float fovy, float speed) {
+void engine_create_camera(my_engine* engine, float fovy, float speed)
+{
     engine->camera = create_perspective_camera(Camera_Type::first_person, { 0.0f, 0.0f, -2.0f }, fovy, speed);    
 }
 
-void engine_update_input(my_engine* engine) {
+void engine_update_input(my_engine* engine)
+{
     update_input(engine->camera, engine->delta_time);
 }
 
@@ -829,7 +840,8 @@ void engine_update_camera_view(my_engine* engine) {
     update_camera(engine->camera, get_cursor_position());
 }
 
-void engine_update_camera_projection(my_engine* engine, int width, int height) {
+void engine_update_camera_projection(my_engine* engine, int width, int height)
+{
     update_projection(engine->camera, width, height);
 }
 
@@ -964,19 +976,13 @@ int engine_get_instance_count(my_engine* engine)
     return static_cast<int>(engine->entities.size());
 }
 
-const char* engine_get_model_name(my_engine* engine, int modelID) {
+const char* engine_get_model_name(my_engine* engine, int modelID)
+{
     return engine->models[modelID].name.c_str();
 }
 
-void engine_set_instance_scale(my_engine* engine, int instanceIndex, float scale) {
-    engine->entities[instanceIndex].scale = glm::vec3(scale);
-}
-
-void engine_set_instance_scale(my_engine* engine, int instanceIndex, float x, float y, float z) {
-    engine->entities[instanceIndex].scale = glm::vec3(x, y, z);
-}
-
-double engine_get_delta_time(my_engine* engine) {
+double engine_get_delta_time(my_engine* engine)
+{
     return engine->delta_time;
 }
 
@@ -1080,15 +1086,7 @@ void engine_clear_logs(my_engine* engine)
 
 void engine_export_logs_to_file(my_engine* engine, const char* path)
 {
-    std::ofstream output(path);
-
-    // NOTE: only export lines which have been printed instead of exporting the
-    // entire log buffer which will mostly be empty.
-    const auto& logs = get_logs();
-    for (std::size_t i = 0; i < get_log_count(); ++i) {
-        output << logs[i].string;
-    }
-
+    export_logs_to_file(path);
 }
 
 int engine_get_log_count(my_engine* engine)
@@ -1098,10 +1096,7 @@ int engine_get_log_count(my_engine* engine)
 
 void engine_get_log(my_engine* engine, int logIndex, const char** str, int* log_type)
 {
-    const std::vector<log_message>& logs = get_logs();
-
-    *str = logs[logIndex].string.c_str();
-    *log_type = static_cast<int>(logs[logIndex].type);
+    get_log(logIndex, str, log_type);
 }
 
 void engine_set_master_volume(my_engine* engine, float master_volume)

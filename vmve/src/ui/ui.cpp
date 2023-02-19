@@ -35,7 +35,7 @@ ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton; // ImG
 static ImGuiWindowFlags dockspaceWindowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
 
 const char* object_window = "Object";
-const char* console_window = "Logs";
+const char* logs_window = "Logs";
 const char* viewport_window = "Viewport";
 const char* scene_window = "Global";
 
@@ -630,7 +630,7 @@ static void perf_window(bool* open)
         return;
 
     
-    ImGui::Begin("Performance Profiler", open);
+    ImGui::Begin(ICON_FA_CLOCK " Performance Profiler", open);
 
     if (ImGui::CollapsingHeader("CPU Timers")) {
         ImGui::Text("%.2fms - Applicaiton::Render", 15.41f);
@@ -651,7 +651,7 @@ static void gbuffer_visualizer_window(bool* open)
     if (!*open)
         return;
 
-    ImGui::Begin("G-Buffer Visualizer", open);
+    ImGui::Begin(ICON_FA_LAYER_GROUP " G-Buffer Visualizer", open);
 
     const ImVec2& size = ImGui::GetContentRegionAvail() / 2;
 
@@ -681,7 +681,7 @@ static void render_audio_window(my_engine* engine, bool* open)
     if (!*open)
         return;
 
-    ImGui::Begin("Audio", open);
+    ImGui::Begin(ICON_FA_MUSIC " Audio", open);
 
 
     static char audio_path[256];
@@ -721,7 +721,7 @@ static void render_console_window(bool* open)
 
     static char command[256];
 
-    ImGui::Begin("Console", open);
+    ImGui::Begin(ICON_FA_TERMINAL " Console", open);
 
     ImGui::InputText("Command", command, 256);
 
@@ -779,20 +779,20 @@ void RenderMainMenu(my_engine* engine)
             settingsOpen = true;
 
         if (ImGui::BeginMenu("Tools")) {
-            if (ImGui::MenuItem("Performance Profiler")) {
+            if (ImGui::MenuItem(ICON_FA_CLOCK " Performance Profiler")) {
                 perfProfilerOpen = true;
             }
 
 
-            if (ImGui::MenuItem("G-Buffer Visualizer")) {
+            if (ImGui::MenuItem(ICON_FA_LAYER_GROUP " G-Buffer Visualizer")) {
                 gBufferOpen = true;
             }
 
-            if (ImGui::MenuItem("Audio player")) {
+            if (ImGui::MenuItem(ICON_FA_MUSIC " Audio player")) {
                 audio_window_open = true;
             }
 
-            if (ImGui::MenuItem("Console")) {
+            if (ImGui::MenuItem(ICON_FA_TERMINAL " Console")) {
                 console_window_open = true;
             }
 
@@ -832,8 +832,8 @@ void RenderMainMenu(my_engine* engine)
     if (drop_load_model) {
         static bool flip_uvs = false;
 
-        ImGui::OpenPopup("Load_Model_Modal");
-        if (ImGui::BeginPopupModal("Load_Model_Modal", &drop_load_model, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::OpenPopup(ICON_FA_FOLDER_OPEN " Load_Model_Modal");
+        if (ImGui::BeginPopupModal(ICON_FA_FOLDER_OPEN " Load_Model_Modal", &drop_load_model, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("Model path: %s", drop_load_model_path);
 
             ImGui::Separator();
@@ -888,14 +888,14 @@ void render_object_window(my_engine* engine)
         ImGui::EndDisabled();
 
         ImGui::BeginDisabled(modelCount == 0);
-        if (ImGui::Button(ICON_FA_PLUS " Add instance"))
-            engine_add_instance(engine, modelID, 0.0f, 0.0f, 0.0f);
+        if (ImGui::Button(ICON_FA_PLUS " Add entity"))
+            engine_add_entity(engine, modelID, 0.0f, 0.0f, 0.0f);
         ImGui::EndDisabled();
 
         ImGui::SameLine();
 
         ImGui::BeginDisabled(instanceCount == 0);
-        if (ImGui::Button(ICON_FA_MINUS " Remove instance")) {
+        if (ImGui::Button(ICON_FA_MINUS " Remove entity")) {
             engine_remove_instance(engine, selectedInstanceIndex);
 
             // NOTE: should not go below 0
@@ -963,30 +963,28 @@ void render_object_window(my_engine* engine)
             ImGui::Text("ID: %04d", engine_get_instance_id(engine, selectedInstanceIndex));
             ImGui::Text("Name: %s", engine_get_instance_name(engine, selectedInstanceIndex));
 
-
-
-
-            // TODO: At this point in time, we are getting the pointer to the start
-            // of the 3 float position, rotation and scale. Is there a better way to
-            // do this?
-            float* instancePos = nullptr;
-            float* instanceRot = nullptr;
+            float instancePos[3];
+            float instanceRot[3];
             float scale[3];
 
-            engine_get_instance_position(engine, selectedInstanceIndex, instancePos);
-            engine_get_instance_rotation(engine, selectedInstanceIndex, instanceRot);
-            engine_get_instance_scale(engine, selectedInstanceIndex, scale);
-            ImGui::SliderFloat3("Translation", instancePos, -50.0f, 50.0f);
-            ImGui::SliderFloat3("Rotation", instanceRot, -360.0f, 360.0f);
-            ImGui::SliderFloat3("Scale", scale, 0.1f, 100.0f);
+            engine_decompose_entity_matrix(engine, selectedInstanceIndex, instancePos, instanceRot, scale);
+
+            if (ImGui::SliderFloat3("Translation", instancePos, -100.0f, 100.0f))
+                engine_set_instance_position(engine, selectedInstanceIndex, instancePos[0], instancePos[1], instancePos[2]);
+            if (ImGui::SliderFloat3("Rotation", instanceRot, -360.0f, 360.0f))
+                engine_set_instance_rotation(engine, selectedInstanceIndex, instanceRot[0], instanceRot[1], instanceRot[2]);
+
 
             static bool uniformScale = true;
-            ImGui::Checkbox("Uniform scale", &uniformScale);
-
-            if (uniformScale)
-                engine_set_instance_scale(engine, selectedInstanceIndex, scale[0]);
-            else
-                engine_set_instance_scale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
+            if (ImGui::SliderFloat3("Scale", scale, 0.1f, 100.0f)) {
+                if (uniformScale)
+                    engine_set_instance_scale(engine, selectedInstanceIndex, scale[0]);
+                else
+                    engine_set_instance_scale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(uniformScale ? ICON_FA_LOCK : ICON_FA_UNLOCK))
+                uniformScale = !uniformScale;
 
             ImGui::EndChild();
         }
@@ -1213,7 +1211,7 @@ void render_logs_windows(my_engine* engine)
     static bool autoScroll = true;
     static bool scrollCheckboxClicked = false;
 
-    ImGui::Begin(console_window, &window_open, dockspaceWindowFlags);
+    ImGui::Begin(logs_window, &window_open, dockspaceWindowFlags);
     {
         if (ImGui::Button(ICON_FA_BROOM " Clear"))
             engine_clear_logs(engine);
@@ -1363,8 +1361,8 @@ void RenderViewportWindow(my_engine* engine)
             if (engine_get_instance_count(engine) > 0 && guizmo_operation != -1) {
                 ImGuiIO& io = ImGui::GetIO();
 
-                float* matrix = nullptr;
-                engine_get_instance_matrix(engine, selectedInstanceIndex, matrix);
+                float matrix[16];
+                engine_get_entity_matrix(engine, selectedInstanceIndex, matrix);
 
                 //ImGuizmo::Enable(true);
                 ImGuizmo::SetDrawlist();
@@ -1377,17 +1375,15 @@ void RenderViewportWindow(my_engine* engine)
 
 
                 if (ImGuizmo::IsUsing()) {
+                    float position[3];
                     float rotation[3];
-                    float translate[3];
                     float scale[3];
 
-                    float* current_rotation = nullptr;
-
-                    engine_get_instance_rotation(engine, selectedInstanceIndex, current_rotation);
-                    
-                    ImGuizmo::DecomposeMatrixToComponents(matrix, translate, rotation, scale);
+                    engine_decompose_entity_matrix(engine, selectedInstanceIndex, position, rotation, scale);
 
                     // TODO: rotation bug causes continuous rotations.
+#if 0
+//float* current_rotation = nullptr;
                     float rotation_delta[3]{};
                     rotation_delta[0] = rotation[0] - current_rotation[0];
                     rotation_delta[1] = rotation[1] - current_rotation[1];
@@ -1398,8 +1394,8 @@ void RenderViewportWindow(my_engine* engine)
                     current_rotation[0] += rotation_delta[0];
                     current_rotation[1] += rotation_delta[1];
                     current_rotation[2] += rotation_delta[2];
-
-                    engine_set_instance_position(engine, selectedInstanceIndex, translate[0], translate[1], translate[2]);
+#endif
+                    engine_set_instance_position(engine, selectedInstanceIndex, position[0], position[1], position[2]);
                     engine_set_instance_scale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
                 }
             }
@@ -1462,7 +1458,7 @@ void render_ui(my_engine* engine, bool fullscreen)
 
         ImGui::DockBuilderDockWindow(object_window, dock_right_id);
         ImGui::DockBuilderDockWindow(scene_window, dock_left_id);
-        ImGui::DockBuilderDockWindow(console_window, dock_down_id);
+        ImGui::DockBuilderDockWindow(logs_window, dock_down_id);
         ImGui::DockBuilderDockWindow(viewport_window, dock_main_id);
 
         //ImGui::DockBuilderFinish(dock_main_id);

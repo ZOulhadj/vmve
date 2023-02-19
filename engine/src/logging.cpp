@@ -66,15 +66,34 @@ void print_error(const char* fmt, ...)
 
 void clear_logs()
 {
+    // TODO: need a better solution
     g_log_buffer.clear();
+    g_log_buffer.resize(g_log_history);
+    g_log_size = 0;
 }
 
-std::vector<log_message>& get_logs()
+void get_log(int logIndex, const char** str, int* type)
 {
-    return g_log_buffer;
+    if (logIndex > g_log_size)
+        return;
+
+    *str = g_log_buffer[logIndex].string.c_str();
+    *type = static_cast<int>(g_log_buffer[logIndex].type);
 }
 
 int get_log_count()
 {
     return g_log_size;
+}
+
+void export_logs_to_file(const char* path)
+{
+    std::ofstream output(path);
+
+    // NOTE: We only export lines which have been printed instead of exporting the
+    // entire log buffer which will mostly be empty
+    for (std::size_t i = 0; i < g_log_size; ++i) {
+        output << g_log_buffer[i].string;
+    }
+
 }

@@ -133,7 +133,7 @@ int engine_get_instance_count(my_engine* engine);
 //
 //
 //
-void engine_add_instance(my_engine* engine, int modelID, float x, float y, float z);
+void engine_add_entity(my_engine* engine, int modelID, float x, float y, float z);
 
 //
 //
@@ -157,24 +157,26 @@ int engine_get_instance_id(my_engine* engine, int instanceIndex);
 const char* engine_get_instance_name(my_engine* engine, int instanceIndex);
 
 
-void engine_get_instance_matrix(my_engine* engine, int instanceIndex, float*& matrix);
+void engine_decompose_entity_matrix(my_engine* engine, int instanceIndex, float* pos, float* rot, float* scale);
+
+
+void engine_get_entity_matrix(my_engine* engine, int instance_index, float* matrix);
 //
 //
 //
 //
-void engine_get_instance_position(my_engine* engine, int instanceIndex, float*& position);
+
 void engine_set_instance_position(my_engine* engine, int instanceIndex, float x, float y, float z);
 //
 //
 //
 //
-void engine_get_instance_rotation(my_engine* engine, int instanceIndex, float*& rotation);
+
 void engine_set_instance_rotation(my_engine* engine, int instanceIndex, float x, float y, float z);
 //
 //
 //
 //
-void engine_get_instance_scale(my_engine* engine, int instanceIndex, float* scale);
 void engine_set_instance_scale(my_engine* engine, int instanceIndex, float scale);
 void engine_set_instance_scale(my_engine* engine, int instanceIndex, float x, float y, float z);
 // Timing
