@@ -85,10 +85,10 @@ void apply_entity_transformation(Entity& e)
     e.matrix = glm::mat4(1.0f);
 
     e.matrix = glm::translate(e.matrix, e.position);
+    e.matrix = glm::scale(e.matrix, e.scale);
     e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
     e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
     e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    e.matrix = glm::scale(e.matrix, e.scale);
 }
 
 void decompose_entity_matrix(const float* matrix, float* pos, float* rot, float* scale)
@@ -108,10 +108,6 @@ void decompose_entity_matrix(const float* matrix, float* pos, float* rot, float*
     mat[1] = glm::length(mat[1]) > FLT_EPSILON ? glm::vec4(1.0f / glm::length(mat[1])) : glm::vec4(1.0f / FLT_EPSILON);
     mat[2] = glm::length(mat[2]) > FLT_EPSILON ? glm::vec4(1.0f / glm::length(mat[2])) : glm::vec4(1.0f / FLT_EPSILON);
 #endif
-
-    rot[0] = glm::degrees(glm::atan2(mat[1][2], mat[2][2]));
-    rot[1] = glm::degrees(glm::atan2(-mat[0][2], glm::sqrt(mat[1][2] * mat[1][2] + mat[2][2] * mat[2][2])));
-    rot[2] = glm::degrees(glm::atan2(mat[0][1], mat[0][0]));
 
     pos[0] = mat[3][0];
     pos[1] = mat[3][1];

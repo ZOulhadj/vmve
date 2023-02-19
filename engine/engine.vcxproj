@@ -88,9 +88,6 @@
     <ClInclude Include="src\utility.h" />
     <ClInclude Include="vendor\volk\volk.h" />
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="changelog.txt" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

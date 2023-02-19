@@ -728,7 +728,7 @@ static void render_console_window(bool* open)
     ImGui::End();
 }
 
-void BeginDocking()
+void begin_docking()
 {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -751,7 +751,7 @@ void set_drop_model_path(const char* path)
 //    drop_load_model_path = path;
 }
 
-void RenderMainMenu(my_engine* engine)
+void render_main_menu(my_engine* engine)
 {
     static bool settingsOpen = false;
     static bool aboutOpen = false;
@@ -1309,7 +1309,7 @@ void render_logs_windows(my_engine* engine)
     ImGui::End();
 }
 
-void RenderViewportWindow(my_engine* engine)
+void render_viewport_window(my_engine* engine)
 {
     ImGuiWindowFlags viewportFlags = dockspaceWindowFlags;
 
@@ -1378,11 +1378,13 @@ void RenderViewportWindow(my_engine* engine)
                     float position[3];
                     float rotation[3];
                     float scale[3];
+                    static float current_rotation[3]{};
 
-                    engine_decompose_entity_matrix(engine, selectedInstanceIndex, position, rotation, scale);
+                    ImGuizmo::DecomposeMatrixToComponents(matrix, position, rotation, scale);
+                    //engine_decompose_entity_matrix(engine, selectedInstanceIndex, position, rotation, scale);
 
                     // TODO: rotation bug causes continuous rotations.
-#if 0
+#if 1
 //float* current_rotation = nullptr;
                     float rotation_delta[3]{};
                     rotation_delta[0] = rotation[0] - current_rotation[0];
@@ -1396,6 +1398,7 @@ void RenderViewportWindow(my_engine* engine)
                     current_rotation[2] += rotation_delta[2];
 #endif
                     engine_set_instance_position(engine, selectedInstanceIndex, position[0], position[1], position[2]);
+                    engine_set_instance_rotation(engine, selectedInstanceIndex, rotation[0], rotation[1], rotation[2]);
                     engine_set_instance_scale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
                 }
             }
@@ -1438,8 +1441,8 @@ void configure_ui(my_engine* engine)
 
 void render_ui(my_engine* engine, bool fullscreen)
 {
-    BeginDocking();
-    RenderMainMenu(engine);
+    begin_docking();
+    render_main_menu(engine);
 
     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 
@@ -1476,12 +1479,12 @@ void render_ui(my_engine* engine, bool fullscreen)
 
 
     if (fullscreen) {
-        RenderViewportWindow(engine);
+        render_viewport_window(engine);
     } else {
         render_object_window(engine);
         render_global_window(engine);
         render_logs_windows(engine);
-        RenderViewportWindow(engine);
+        render_viewport_window(engine);
     }
 
     EndDocking();

@@ -773,10 +773,10 @@ void engine_get_entity_matrix(my_engine* engine, int instance_index, float* matr
     matrix[10] = entity.matrix[2][2];
     matrix[11] = entity.matrix[2][3];
 
-    matrix[12] = entity.matrix[2][0];
-    matrix[13] = entity.matrix[2][1];
-    matrix[14] = entity.matrix[2][2];
-    matrix[15] = entity.matrix[2][3];
+    matrix[12] = entity.matrix[3][0];
+    matrix[13] = entity.matrix[3][1];
+    matrix[14] = entity.matrix[3][2];
+    matrix[15] = entity.matrix[3][3];
 }
 
 void engine_set_instance_position(my_engine* engine, int instanceIndex, float x, float y, float z)
