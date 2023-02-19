@@ -128,7 +128,7 @@
     <ResourceCompile Include="vmve.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="S:\education\roehampton_university\2022-2023\final_year_project\media\project_icon.ico" />
+    <Image Include="assets\icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

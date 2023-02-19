@@ -114,7 +114,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="S:\education\roehampton_university\2022-2023\final_year_project\media\project_icon.ico">
+    <Image Include="assets\icon.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
