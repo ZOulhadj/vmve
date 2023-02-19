@@ -2,6 +2,9 @@ build/
 out/
 .vs/
 
+# Visual Studio compiled binary resource file
+.aps 
+
 # Build directories
 engine/build
 vmve/build
