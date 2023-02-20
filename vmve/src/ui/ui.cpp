@@ -546,7 +546,7 @@ static void vmve_creator_window(my_engine* engine, bool* open)
 
 
     set_next_window_in_center();
-    ImGui::Begin("Encrypt", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin(ICON_FA_LOCK " VMVE Creator", open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
 
     static const char* exportPath = engine_get_executable_directory(engine);
@@ -555,6 +555,7 @@ static void vmve_creator_window(my_engine* engine, bool* open)
     ImGui::Text(current_path.c_str());
 
     ImGui::Checkbox("Encryption", &useEncryption);
+    info_marker("Should the model file be encrypted.");
 
     if (useEncryption) {
 
@@ -887,15 +888,19 @@ void render_object_window(my_engine* engine)
             engine_remove_model(engine, modelID);
         ImGui::EndDisabled();
 
+
+        // TODO: Add different entity types
+        ImGui::Text("Entities");
+        ImGui::SameLine();
         ImGui::BeginDisabled(modelCount == 0);
-        if (ImGui::Button(ICON_FA_PLUS " Add entity"))
+        if (ImGui::Button(ICON_FA_PLUS))
             engine_add_entity(engine, modelID, 0.0f, 0.0f, 0.0f);
         ImGui::EndDisabled();
 
         ImGui::SameLine();
 
         ImGui::BeginDisabled(instanceCount == 0);
-        if (ImGui::Button(ICON_FA_MINUS " Remove entity")) {
+        if (ImGui::Button(ICON_FA_MINUS)) {
             engine_remove_instance(engine, selectedInstanceIndex);
 
             // NOTE: should not go below 0

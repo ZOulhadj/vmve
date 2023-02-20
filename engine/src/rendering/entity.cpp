@@ -86,6 +86,8 @@ void apply_entity_transformation(Entity& e)
 
     e.matrix = glm::translate(e.matrix, e.position);
     e.matrix = glm::scale(e.matrix, e.scale);
+
+    // TODO: Figure out how to rotate object without needing to rotate axis that are not used.
     e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
     e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
     e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
