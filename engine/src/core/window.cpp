@@ -170,6 +170,7 @@ Window* create_window(const char* name, int width, int height)
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    //glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, true);
 
     window->handle = glfwCreateWindow(width, height, name, nullptr, nullptr);

@@ -469,9 +469,7 @@ bool engine_begin_render(my_engine* engine)
     if (!engine->swapchain_ready) {
         wait_for_gpu();
 
-
         VkExtent2D new_size { engine->window->width, engine->window->height };
-
         resize_framebuffer(ui_pass, new_size);
     }
 
@@ -548,9 +546,10 @@ void engine_present(my_engine* engine)
         submit_gpu_work({ offscreen_cmd_buffer, composite_cmd_buffer });
 
     if (!present_swapchain_image()) {
-        // TODO: Resize framebuffers if unable to display to swapchain
-        print_error("Code path not expected! Must implement framebuffer resizing");
-        abort();
+        wait_for_gpu();
+
+        VkExtent2D new_size{ engine->window->width, engine->window->height };
+        resize_framebuffer(ui_pass, new_size);
     }
 
     update_window(engine->window);
@@ -1104,12 +1103,15 @@ void engine_set_master_volume(my_engine* engine, float master_volume)
     set_master_audio_volume(engine->audio->master_voice, master_volume);
 }
 
-int engine_play_audio(my_engine* engine, const char* path)
+bool engine_play_audio(my_engine* engine, const char* path)
 {
-    create_audio_source(engine->audio, engine->example_audio, path);
+    bool audio_created = create_audio_source(engine->audio, engine->example_audio, path);
+    if (!audio_created)
+        return false;
+
     play_audio(engine->example_audio);
 
-    return 0;
+    return true;
 }
 
 void engine_pause_audio(my_engine* engine, int audio_id)
