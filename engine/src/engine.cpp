@@ -73,7 +73,6 @@ struct my_engine
 
     bool using_skybox;
     bool ui_pass_enabled;
-
 };
 
 // Just here for the time being as events don't have direct access to the engine
@@ -929,9 +928,23 @@ void engine_end_ui_pass()
     end_command_buffer(ui_cmd_buffer);
 }
 
-void* engine_get_viewport_texture()
+void* engine_get_viewport_texture(my_engine* engine, my_engine_viewport_view view)
 {
     const uint32_t current_image = get_swapchain_frame_index();
+
+    if (view == my_engine_viewport_view::full)
+        return viewport_ui[current_image];
+    else if (view == my_engine_viewport_view::colors)
+        return colors_ui[current_image];
+    else if (view == my_engine_viewport_view::positions)
+        return positions_ui[current_image];
+    else if (view == my_engine_viewport_view::normals)
+        return normals_ui[current_image];
+    else if (view == my_engine_viewport_view::specular)
+        return speculars_ui[current_image];
+    else if (view == my_engine_viewport_view::depth)
+        return depths_ui[current_image];
+
     return viewport_ui[current_image];
 }
 

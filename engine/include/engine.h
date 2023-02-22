@@ -17,6 +17,16 @@
 //
 struct my_engine;
 
+enum struct my_engine_viewport_view
+{
+    full,
+    colors,
+    positions,
+    normals,
+    specular,
+    depth
+};
+
 
 struct my_engine_callbacks
 {
@@ -347,13 +357,8 @@ void engine_begin_ui_pass();
 //
 void engine_end_ui_pass();
 
-// G-Buffer Framebufffers
-void* engine_get_viewport_texture();
-void* engine_get_position_texture();
-void* engine_get_normals_texture();
-void* engine_get_color_texture();
-void* engine_get_specular_texutre();
-void* engine_get_depth_texture();
+// Viewport
+void* engine_get_viewport_texture(my_engine* engine, my_engine_viewport_view view);
 
 // Audio
 void engine_set_master_volume(my_engine* engine, float master_volume);

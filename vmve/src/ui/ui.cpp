@@ -36,7 +36,7 @@ static ImGuiWindowFlags dockspaceWindowFlags = ImGuiWindowFlags_NoCollapse | ImG
 
 const char* object_window = "Object";
 const char* logs_window = "Logs";
-const char* viewport_window = "Viewport";
+const char* viewport_window = "Main";
 const char* scene_window = "Global";
 
 static bool editor_open = false;
@@ -47,6 +47,11 @@ static bool display_tooltips = true;
 static bool highlight_logs = true;
 
 // renderer settings
+static bool lighting = true;
+static bool positions = false;
+static bool normals = false;
+static bool speculars = false;
+static bool depth = false;
 static bool wireframe = false;
 static bool vsync = true;
 static bool display_stats = false;
@@ -90,8 +95,8 @@ enum class setting_options
 static void set_default_styling()
 {
     ImGuiStyle& style = ImGui::GetStyle();
-    style.FrameRounding = 0.0f;
-    style.TabRounding = 0.0f;
+    style.FrameRounding = 5.0f;
+    style.TabRounding = 2.0f;
     style.FrameBorderSize = 1.0f;
 }
 
@@ -108,8 +113,8 @@ static void set_default_theme()
     colors[ImGuiCol_FrameBg] = ImVec4(0.02f, 0.02f, 0.02f, 1.00f);
     colors[ImGuiCol_FrameBgHovered] = ImVec4(0.02f, 0.02f, 0.02f, 0.71f);
     colors[ImGuiCol_FrameBgActive] = ImVec4(0.16f, 0.40f, 0.28f, 0.63f);
-    colors[ImGuiCol_TitleBg] = ImVec4(0.03f, 0.03f, 0.04f, 1.00f);
-    colors[ImGuiCol_TitleBgActive] = ImVec4(0.30f, 0.68f, 0.61f, 1.00f);
+    colors[ImGuiCol_TitleBg] = ImVec4(0.02f, 0.02f, 0.02f, 1.00f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.02f, 0.02f, 0.02f, 1.00f);
     colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
     colors[ImGuiCol_MenuBarBg] = ImVec4(0.03f, 0.03f, 0.04f, 1.00f);
     colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
@@ -132,9 +137,9 @@ static void set_default_theme()
     colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
     colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
     colors[ImGuiCol_Tab] = ImVec4(0.00f, 0.00f, 0.00f, 0.86f);
-    colors[ImGuiCol_TabHovered] = ImVec4(0.17f, 0.39f, 0.35f, 1.00f);
-    colors[ImGuiCol_TabActive] = ImVec4(0.30f, 0.68f, 0.61f, 1.00f);
-    colors[ImGuiCol_TabUnfocused] = ImVec4(0.07f, 0.10f, 0.15f, 0.97f);
+    colors[ImGuiCol_TabHovered] = ImVec4(0.11f, 0.25f, 0.22f, 1.00f);
+    colors[ImGuiCol_TabActive] = ImVec4(0.11f, 0.25f, 0.22f, 1.00f);
+    colors[ImGuiCol_TabUnfocused] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
     colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
     colors[ImGuiCol_DockingPreview] = ImVec4(0.26f, 0.59f, 0.98f, 0.70f);
     colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
@@ -509,15 +514,30 @@ static void render_tutorial_window(bool* open)
     ImGui::Begin(ICON_FA_BOOK " Tutorial", open);
 
     if (ImGui::CollapsingHeader("1. Basics")) {
+        ImGui::TextWrapped("Welcome to the tutorial!");
+        ImGui::TextWrapped("This tutorial is guide you and explain most features available to you can how they can be used.");
+    }
+
+    if (ImGui::CollapsingHeader("2. Loading Models")) {
+        ImGui::TextWrapped("Models");
+
+        ImGui::TextWrapped("Entities");
+    }
+
+    if (ImGui::CollapsingHeader("3. Controls")) {
+        ImGui::TextWrapped("The controls have been designed to be...");
+    }
+
+    if (ImGui::CollapsingHeader("4. Tools")) {
 
     }
 
-    if (ImGui::CollapsingHeader("2. Controls")) {
+    if (ImGui::CollapsingHeader("5. Configuration")) {
 
     }
 
-    if (ImGui::CollapsingHeader("3. Advanced Topics")) {
-
+    if (ImGui::CollapsingHeader("6. Advanced Topics")) {
+        ImGui::TextWrapped("Although this application has been designed to be as easy to use");
     }
 
     ImGui::End();
@@ -681,37 +701,6 @@ static void perf_window(bool* open)
     ImGui::End();
 }
 
-
-static void gbuffer_visualizer_window(bool* open)
-{
-    if (!*open)
-        return;
-
-    ImGui::Begin(ICON_FA_LAYER_GROUP " G-Buffer Visualizer", open);
-
-    const ImVec2& size = ImGui::GetContentRegionAvail() / 2;
-
-    //ImGui::Text("Positions");
-    //ImGui::SameLine();
-
-    ImGui::Image(engine_get_position_texture(), size);
-    //ImGui::Text("Colors");
-    ImGui::SameLine();
-    ImGui::Image(engine_get_color_texture(), size);
-    //ImGui::Text("Normals");
-    //ImGui::SameLine();
-
-    ImGui::Image(engine_get_normals_texture(), size);
-    //ImGui::Text("Speculars");
-    ImGui::SameLine();
-    ImGui::Image(engine_get_specular_texutre(), size);
-
-    ImGui::Image(engine_get_depth_texture(), size);
-
-
-    ImGui::End();
-}
-
 static void render_audio_window(my_engine* engine, bool* open)
 {
     if (!*open)
@@ -795,7 +784,6 @@ void render_main_menu(my_engine* engine)
     static bool loadOpen = false;
     static bool creator_open = false;
     static bool perfProfilerOpen = false;
-    static bool gBufferOpen = false;
     static bool audio_window_open = false;
     static bool console_window_open = false;
 
@@ -817,6 +805,38 @@ void render_main_menu(my_engine* engine)
 
         if (ImGui::BeginMenu(ICON_FA_GEAR " Options")) {
             if (ImGui::BeginMenu("Rendering")) {
+                ImGui::Checkbox("Lighting", &lighting);
+                info_marker("Toggle lighting in the main viewport");
+
+                if (ImGui::Checkbox("Positions", &positions)) {
+                    normals = false;
+                    speculars = false;
+                    depth = false;
+                }
+                info_marker("Display vertex positions in the world");
+
+                if (ImGui::Checkbox("Normals", &normals)) {
+                    positions = false;
+                    speculars = false;
+                    depth = false;
+                }
+                info_marker("Display surface vector directions");
+
+                if (ImGui::Checkbox("Specular", &speculars)) {
+                    positions = false;
+                    normals = false;
+                    depth = false;
+                }
+                info_marker("Display specular textures on objects");
+
+                if (ImGui::Checkbox("Depth", &depth)) {
+                    positions = false;
+                    normals = false;
+                    speculars = false;
+                }
+                info_marker("Display pixel depth information");
+
+
                 if (ImGui::Checkbox("Wireframe", &wireframe))
                     engine_set_render_mode(engine, wireframe ? 1 : 0);
                 info_marker("Toggles rendering mode to visualize individual vertices");
@@ -839,11 +859,6 @@ void render_main_menu(my_engine* engine)
         if (ImGui::BeginMenu(ICON_FA_WRENCH " Tools")) {
             if (ImGui::MenuItem(ICON_FA_CLOCK " Performance Profiler")) {
                 perfProfilerOpen = true;
-            }
-
-
-            if (ImGui::MenuItem(ICON_FA_LAYER_GROUP " G-Buffer Visualizer")) {
-                gBufferOpen = true;
             }
 
             if (ImGui::MenuItem(ICON_FA_MUSIC " Audio player")) {
@@ -884,7 +899,6 @@ void render_main_menu(my_engine* engine)
     load_model_window(engine, &loadOpen);
     vmve_creator_window(engine, &creator_open);
     perf_window(&perfProfilerOpen);
-    gbuffer_visualizer_window(&gBufferOpen);
     render_audio_window(engine, &audio_window_open);
     render_console_window(&console_window_open);
 
@@ -1389,7 +1403,7 @@ static void display_renderer_stats(my_engine* engine, bool* open)
     ImGui::End();
 }
 
-void render_viewport_window(my_engine* engine)
+static void render_viewport_window(my_engine* engine)
 {
     ImGuiWindowFlags viewportFlags = dockspaceWindowFlags;
 
@@ -1432,7 +1446,27 @@ void render_viewport_window(my_engine* engine)
 
         // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
         // when the viewport window resizes.
-        ImGui::Image(engine_get_viewport_texture(), ImVec2(viewport_width, viewport_height));
+
+
+        // change viewport view based on various settings
+        my_engine_viewport_view viewport_view = my_engine_viewport_view::full;
+        if (lighting)
+            viewport_view = my_engine_viewport_view::full;
+        else
+            viewport_view = my_engine_viewport_view::colors;
+
+        if (positions)
+            viewport_view = my_engine_viewport_view::positions;
+        else if (normals)
+            viewport_view = my_engine_viewport_view::normals;
+        else if (speculars)
+            viewport_view = my_engine_viewport_view::specular;
+        else if (depth)
+            viewport_view = my_engine_viewport_view::depth;
+
+
+
+        ImGui::Image(engine_get_viewport_texture(engine, viewport_view), ImVec2(viewport_width, viewport_height));
 
         // todo(zak): move this into its own function
         float* view = engine_get_camera_view(engine);
