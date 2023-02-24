@@ -50,7 +50,7 @@ static Camera create_camera(camera_type type,
     cam.roll        = 0.0f;
     cam.fov         = fov;
     cam.near        = 0.1f;
-    cam.far = 2000.0f;
+    cam.far         = 2000.0f;
     cam.type = type;
 
     if (cam.type == camera_type::first_person) {
@@ -62,10 +62,10 @@ static Camera create_camera(camera_type type,
 
 
     if (projection == camera_proj::perspective) {
-        cam.viewProj.proj = glm::perspective(glm::radians(fov), (float)cam.width / cam.height, cam.near, cam.far);
+        cam.viewProj.proj = glm::perspective(glm::radians(fov), (float)cam.width / cam.height, cam.far, cam.near);
         //cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
     } else if (projection == camera_proj::orthographic) {
-        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.near, cam.far);
+        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.far, cam.near);
     }
 
     // Required if using Vulkan (left-handed coordinate-system)
@@ -160,9 +160,9 @@ void update_camera(Camera& camera, const glm::vec2& cursor_pos)
 void update_projection(Camera& cam)
 {
     if (cam.projection == camera_proj::perspective) {
-        cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), (float)cam.width / cam.height, cam.near, cam.far);
+        cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), (float)cam.width / cam.height, cam.far, cam.near);
     } else if (cam.projection == camera_proj::orthographic) {
-        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.near, cam.far);
+        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.far, cam.near);
     }
 
     // Required if using Vulkan (left-handed coordinate-system)

@@ -330,7 +330,7 @@ static void configure_renderer(my_engine* engine)
     offscreen_pipeline.set_shader_pipeline({ geometry_vs, geometry_fs });
     offscreen_pipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     offscreen_pipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
-    offscreen_pipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
+    offscreen_pipeline.enable_depth_stencil(VK_COMPARE_OP_GREATER_OR_EQUAL);
     offscreen_pipeline.set_color_blend(4);
     offscreen_pipeline.create_pipeline();
 
@@ -340,7 +340,7 @@ static void configure_renderer(my_engine* engine)
     wireframe_pipeline.set_shader_pipeline({ geometry_vs, geometry_fs });
     wireframe_pipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     wireframe_pipeline.set_rasterization(VK_POLYGON_MODE_LINE, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
-    wireframe_pipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
+    wireframe_pipeline.enable_depth_stencil(VK_COMPARE_OP_GREATER_OR_EQUAL);
     wireframe_pipeline.set_color_blend(4);
     wireframe_pipeline.create_pipeline();
 
@@ -358,7 +358,7 @@ static void configure_renderer(my_engine* engine)
     skybox_pipeline.set_shader_pipeline({ skybox_vs, skybox_fs });
     skybox_pipeline.set_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     skybox_pipeline.set_rasterization(VK_POLYGON_MODE_FILL, VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_CLOCKWISE);
-    skybox_pipeline.enable_depth_stencil(VK_COMPARE_OP_LESS_OR_EQUAL);
+    skybox_pipeline.enable_depth_stencil(VK_COMPARE_OP_GREATER_OR_EQUAL);
     skybox_pipeline.set_color_blend(1);
     skybox_pipeline.create_pipeline();
 
@@ -479,7 +479,7 @@ void engine_render(my_engine* engine)
     begin_command_buffer(offscreen_cmd_buffer);
     {
         bind_descriptor_set(offscreen_cmd_buffer, offscreen_pipeline_layout, offscreen_ds, { sizeof(view_projection) });
-        begin_render_pass(offscreen_cmd_buffer, offscreen_pass, { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0 });
+        begin_render_pass(offscreen_cmd_buffer, offscreen_pass);
 
         bind_pipeline(offscreen_cmd_buffer, *current_pipeline);
 

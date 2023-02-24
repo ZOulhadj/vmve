@@ -44,7 +44,7 @@ int main()
     engine_enable_ui(engine);
     configure_ui(engine);
 
-    engine_create_camera(engine, 60.0f, 50.0f);
+    engine_create_camera(engine, 60.0f, 20.0f);
     //engine_set_environment_map(engine, "C:/Users/zakar/Projects/vmve/vmve/assets/models/skybox_sphere.obj");
 
 
