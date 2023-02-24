@@ -33,8 +33,8 @@ Frustum create_camera_frustum(const Camera& cam) {
     return frustum;
 }
 
-static Camera create_camera(Camera_Type type, 
-    Camera_Projection projection, 
+static Camera create_camera(camera_type type, 
+    camera_proj projection, 
     const glm::vec3& pos, 
     float speed,
     float fov) {
@@ -53,18 +53,18 @@ static Camera create_camera(Camera_Type type,
     cam.far = 2000.0f;
     cam.type = type;
 
-    if (cam.type == Camera_Type::first_person) {
+    if (cam.type == camera_type::first_person) {
         cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) * 
                                            glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
-    } else if (cam.type == Camera_Type::look_at) {
+    } else if (cam.type == camera_type::look_at) {
         cam.viewProj.view = glm::lookAt(cam.position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
 
-    if (projection == Camera_Projection::perspective) {
+    if (projection == camera_proj::perspective) {
         cam.viewProj.proj = glm::perspective(glm::radians(fov), (float)cam.width / cam.height, cam.near, cam.far);
         //cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
-    } else if (projection == Camera_Projection::orthographic) {
+    } else if (projection == camera_proj::orthographic) {
         cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.near, cam.far);
     }
 
@@ -76,14 +76,14 @@ static Camera create_camera(Camera_Type type,
 }
 
 
-Camera create_perspective_camera(Camera_Type type, const glm::vec3& position, float fov, float speed) {
-    return create_camera(type, Camera_Projection::perspective, position, speed, fov);
+Camera create_perspective_camera(camera_type type, const glm::vec3& position, float fov, float speed) {
+    return create_camera(type, camera_proj::perspective, position, speed, fov);
 }
 
 
-Camera create_orthographic_camera(Camera_Type type, const glm::vec3& position, float speed) {
+Camera create_orthographic_camera(camera_type type, const glm::vec3& position, float speed) {
     // Note that an orthographic camera does not use FOV
-    return create_camera(type, Camera_Projection::orthographic, position, speed, 0.0f);
+    return create_camera(type, camera_proj::orthographic, position, speed, 0.0f);
 }
 
 // Reversed Z infinite perspective
@@ -105,32 +105,9 @@ Camera create_orthographic_camera(Camera_Type type, const glm::vec3& position, f
 //    return result;
 //}
 //
-//Camera CreateCamera(const glm::vec3& position, float fov, float speed)
-//{
-//    Camera cam{};
-//    cam.position    = position;
-//    cam.orientation = glm::quat(1, 0, 0, 0);
-//    cam.width       = 1280.0f;
-//    cam.height      = 720.0f;
-//    cam.speed       = speed;
-//    cam.view_speed  = 0.1f;
-//    cam.roll_speed  = 45.0f;
-//    cam.roll        = 0.0f;
-//    cam.fov         = fov;
-//    cam.near        = 0.1f;
-//    cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
-//    cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
-//
-//    // Required if using Vulkan (left-handed coordinate-system)
-//    cam.viewProj.proj[1][1] *= -1.0;
-//
-//
-//    cam.first_mouse = true;
-//
-//    return cam;
-//}
 
-void update_camera(Camera& camera, const glm::vec2& cursor_pos) {
+void update_camera(Camera& camera, const glm::vec2& cursor_pos)
+{
     // todo(zak): Need to fix unwanted roll when rotating
     static float last_x = 1280.0f / 2.0f;
     static float last_y = 720.0f / 2.0f;
@@ -152,7 +129,7 @@ void update_camera(Camera& camera, const glm::vec2& cursor_pos) {
     camera.up_vector    = glm::conjugate(camera.orientation) * glm::vec3(0.0f, 1.0f, 0.0f);
     camera.right_vector = glm::conjugate(camera.orientation) * glm::vec3(1.0f, 0.0f, 0.0f);
 
-    if (camera.type == Camera_Type::first_person) {
+    if (camera.type == camera_type::first_person) {
         // Create each of the orientations based on mouse offset and roll offset.
         //
         // This code snippet below locks the yaw to world coordinates.
@@ -174,16 +151,17 @@ void update_camera(Camera& camera, const glm::vec2& cursor_pos) {
 
         // Build final camera transform matrix
         camera.roll = 0.0f;
-    } else if (camera.type == Camera_Type::look_at) {
+    } else if (camera.type == camera_type::look_at) {
         camera.viewProj.view = glm::lookAt(camera.position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     }
 }
 
 
-void update_projection(Camera& cam) {
-    if (cam.projection == Camera_Projection::perspective) {
+void update_projection(Camera& cam)
+{
+    if (cam.projection == camera_proj::perspective) {
         cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), (float)cam.width / cam.height, cam.near, cam.far);
-    } else if (cam.projection == Camera_Projection::orthographic) {
+    } else if (cam.projection == camera_proj::orthographic) {
         cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.near, cam.far);
     }
 

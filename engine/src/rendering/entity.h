@@ -1,5 +1,5 @@
-#ifndef MYENGINE_ENTITY_HPP
-#define MYENGINE_ENTITY_HPP
+#ifndef MY_ENGINE_ENTITY_H
+#define MY_ENGINE_ENTITY_H
 
 
 

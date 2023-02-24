@@ -271,7 +271,7 @@ vk_image create_texture(unsigned char* texture, uint32_t width, uint32_t height,
     const vk_context& rc = get_vulkan_context();
 
     // We do "* 4" because each pixel has four channels red, green, blue and alpha
-    vulkan_buffer staging_buffer = create_staging_buffer(texture, (width * height) * 4);
+    vk_buffer staging_buffer = create_staging_buffer(texture, (width * height) * 4);
 
     const uint32_t mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 

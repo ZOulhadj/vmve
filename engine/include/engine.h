@@ -59,6 +59,7 @@ void engine_should_terminate(my_engine* engine);
 
 void engine_set_window_icon(my_engine* engine, unsigned char* data, int width, int height);
 
+void engine_show_window(my_engine* engine);
 
 void engine_set_callbacks(my_engine* engine, my_engine_callbacks callbacks);
 

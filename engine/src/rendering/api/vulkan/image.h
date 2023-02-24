@@ -1,5 +1,5 @@
-#ifndef MY_ENGINE_IMAGE_H
-#define MY_ENGINE_IMAGE_H
+#ifndef MY_ENGINE_VULKAN_IMAGE_H
+#define MY_ENGINE_VULKAN_IMAGE_H
 
 struct vk_image
 {

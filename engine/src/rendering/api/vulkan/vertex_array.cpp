@@ -3,17 +3,17 @@
 
 #include "renderer.h"
 
-Vertex_Array create_vertex_array(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
+vk_vertex_array create_vertex_array(const std::vector<vertex>& vertices, const std::vector<uint32_t>& indices)
 {
-    Vertex_Array vertexArray{};
+    vk_vertex_array vertexArray{};
 
-    const uint32_t vertices_size = vertices.size() * sizeof(Vertex);
+    const uint32_t vertices_size = vertices.size() * sizeof(vertex);
     const uint32_t indices_size = indices.size() * sizeof(uint32_t);
 
     // Create a temporary "staging" buffer that will be used to copy the data
     // from CPU memory over to GPU memory.
-    vulkan_buffer vertexStagingBuffer = create_staging_buffer((void*)vertices.data(), vertices_size);
-    vulkan_buffer indexStagingBuffer  = create_staging_buffer((void*)indices.data(), indices_size);
+    vk_buffer vertexStagingBuffer = create_staging_buffer((void*)vertices.data(), vertices_size);
+    vk_buffer indexStagingBuffer  = create_staging_buffer((void*)indices.data(), indices_size);
 
     vertexArray.vertex_buffer = create_gpu_buffer(vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     vertexArray.index_buffer  = create_gpu_buffer(indices_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
@@ -41,12 +41,12 @@ Vertex_Array create_vertex_array(const std::vector<Vertex>& vertices, const std:
     return vertexArray;
 }
 
-void destroy_vertex_array(Vertex_Array& vertexArray) {
+void destroy_vertex_array(vk_vertex_array& vertexArray) {
     destroy_buffer(vertexArray.index_buffer);
     destroy_buffer(vertexArray.vertex_buffer);
 }
 
-void bind_vertex_array(const std::vector<VkCommandBuffer>& buffers, const Vertex_Array& vertexArray) {
+void bind_vertex_array(const std::vector<VkCommandBuffer>& buffers, const vk_vertex_array& vertexArray) {
     uint32_t current_frame = get_frame_index();
 
     const VkDeviceSize offset{ 0 };

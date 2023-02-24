@@ -1,5 +1,5 @@
-#ifndef MYENGINE_MATERIAL_HPP
-#define MYENGINE_MATERIAL_HPP
+#ifndef MY_ENGINE_MATERIAL_H
+#define MY_ENGINE_MATERIAL_H
 
 
 #include "api/vulkan/buffer.h"

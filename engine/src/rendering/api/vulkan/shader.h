@@ -1,5 +1,5 @@
-#ifndef MY_ENGINE_SHADER_HPP
-#define MY_ENGINE_SHADER_HPP
+#ifndef MY_ENGINE_VULKAN_SHADER_H
+#define MY_ENGINE_VULKAN_SHADER_H
 
 struct shader_compiler
 {

@@ -1,8 +1,9 @@
-#ifndef MY_ENGINE_VERTEX_HPP
-#define MY_ENGINE_VERTEX_HPP
+#ifndef MY_ENGINE_VERTEX_H
+#define MY_ENGINE_VERTEX_H
 
 
-struct Vertex {
+struct vertex
+{
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 uv;

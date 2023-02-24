@@ -72,8 +72,8 @@ bool update_swapchain_vsync = false;
 
 bool viewport_active = false;
 bool should_resize_viewport = false;
-int viewport_width = 0;
-int viewport_height = 0;
+int viewport_width = 1280;
+int viewport_height = 720;
 
 bool drop_load_model = false;
 static const char* drop_load_model_path = "";
@@ -1304,7 +1304,7 @@ void render_logs_windows(my_engine* engine)
 
                     // set up colors based on log type
                     if (log_type == 0) {
-                        icon_type = ICON_FA_CIRCLE_CHECK;
+                        icon_type = ICON_FA_CIRCLE_INFO;
                         icon_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
                         bg_color = style[ImGuiCol_WindowBg];
                     } else if (log_type == 1) {

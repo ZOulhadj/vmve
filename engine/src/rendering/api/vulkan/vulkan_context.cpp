@@ -88,12 +88,12 @@ static VkSurfaceKHR create_surface(VkInstance instance, GLFWwindow* window)
     return surface;
 }
 
-static Vulkan_Device* create_device(VkInstance instance,
+static vk_device* create_device(VkInstance instance,
                               VkSurfaceKHR surface,
                               VkPhysicalDeviceFeatures features,
                               const std::vector<const char*>& extensions)
 {
-    Vulkan_Device* device = new Vulkan_Device();
+    vk_device* device = new vk_device();
 
     struct GPUInfo {
         VkPhysicalDevice gpu;
@@ -274,7 +274,7 @@ static Vulkan_Device* create_device(VkInstance instance,
     return device;
 }
 
-static VmaAllocator create_allocator(VkInstance instance, uint32_t version, Vulkan_Device* device)
+static VmaAllocator create_allocator(VkInstance instance, uint32_t version, vk_device* device)
 {
     VmaAllocator allocator{};
 
@@ -324,7 +324,7 @@ bool create_vulkan_context(vk_context& context,
     std::vector<const char*>& requested_extensions,
     const std::vector<const char*>& requested_device_extensions,
     const VkPhysicalDeviceFeatures& requested_gpu_features,
-    const Window* window)
+    const engine_window* window)
 {
     if (volkInitialize() != VK_SUCCESS) {
         print_log("Failed to load Vulkan loader. Is Vulkan installed?\n");

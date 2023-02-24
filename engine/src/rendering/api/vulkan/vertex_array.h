@@ -1,19 +1,20 @@
-#ifndef MY_ENGINE_VERTEX_ARRAY_HPP
-#define MY_ENGINE_VERTEX_ARRAY_HPP
+#ifndef MY_ENGINE_VULKAN_VERTEX_ARRAY_H
+#define MY_ENGINE_VULKAN_VERTEX_ARRAY_H
 
 
 #include "buffer.h"
 #include "rendering/vertex.h"
 
-struct Vertex_Array {
-    vulkan_buffer   vertex_buffer;
-    vulkan_buffer   index_buffer;
+struct vk_vertex_array
+{
+    vk_buffer   vertex_buffer;
+    vk_buffer   index_buffer;
     uint32_t index_count;
 };
 
-Vertex_Array create_vertex_array(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
-void destroy_vertex_array(Vertex_Array& vertexArray);
+vk_vertex_array create_vertex_array(const std::vector<vertex>& vertices, const std::vector<uint32_t>& indices);
+void destroy_vertex_array(vk_vertex_array& vertexArray);
 
-void bind_vertex_array(const std::vector<VkCommandBuffer>& buffers, const Vertex_Array& vertex_array);
+void bind_vertex_array(const std::vector<VkCommandBuffer>& buffers, const vk_vertex_array& vertex_array);
 
 #endif

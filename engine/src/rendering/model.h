@@ -1,5 +1,5 @@
-#ifndef MY_ENGINE_MODEL_HPP
-#define MY_ENGINE_MODEL_HPP
+#ifndef MY_ENGINE_MODEL_H
+#define MY_ENGINE_MODEL_H
 
 
 #include "api/vulkan/vertex_array.h"
@@ -11,13 +11,13 @@ struct Mesh
 {
     std::string name;
 
-    std::vector<Vertex> vertices;
+    std::vector<vertex> vertices;
     std::vector<uint32_t> indices;
     
     // A list of indices so we know we textures this mesh uses
     std::vector<uint32_t> textures;
 
-    Vertex_Array vertex_array;
+    vk_vertex_array vertex_array;
     VkDescriptorSet descriptor_set;
 };
 

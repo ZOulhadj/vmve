@@ -38,8 +38,7 @@
 
 struct my_engine
 {
-    Window* window;
-    //win32_window* new_window; // TEMP
+    engine_window* window;
     vk_renderer* renderer;
     ImGuiContext* ui;
 
@@ -55,9 +54,9 @@ struct my_engine
     double delta_time;
 
     // Resources
-    vulkan_buffer scene_buffer;
-    vulkan_buffer sun_buffer;
-    vulkan_buffer camera_buffer;
+    vk_buffer scene_buffer;
+    vk_buffer sun_buffer;
+    vk_buffer camera_buffer;
 
 
     // Scene information
@@ -185,9 +184,6 @@ static std::string get_executable_directory()
 
 static my_engine* initialize_core(my_engine* engine, const char* name, int width, int height)
 {
-    engine->execPath = get_executable_directory();
-    print_log("Initializing engine (%s)\n", engine->execPath.c_str());
-
     // Initialize core systems
     engine->window = create_window(name, width, height);
     if (!engine->window) {
@@ -196,13 +192,13 @@ static my_engine* initialize_core(my_engine* engine, const char* name, int width
     }
     engine->window->event_callback = event_callback;
 
-    engine->renderer = create_vulkan_renderer(engine->window, renderer_buffer_mode::Double, renderer_vsync_mode::enabled);
+    engine->renderer = create_renderer(engine->window, buffer_mode::double_buffering, vsync_mode::enabled);
     if (!engine->renderer) {
         print_error("Failed to create renderer.\n");
         return nullptr;
     }
 
-    engine->audio = create_windows_audio();
+    engine->audio = create_audio();
     if (!engine->audio) {
         print_error("Failed to initialize audio.\n");
 
@@ -312,7 +308,7 @@ static void configure_renderer(my_engine* engine)
         { composite_ds_layout }
     );
 
-    vk_vertex_binding<Vertex> vertex_binding(VK_VERTEX_INPUT_RATE_VERTEX);
+    vk_vertex_binding<vertex> vertex_binding(VK_VERTEX_INPUT_RATE_VERTEX);
     vertex_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Position");
     vertex_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, "Normal");
     vertex_binding.add_attribute(VK_FORMAT_R32G32_SFLOAT, "UV");
@@ -382,7 +378,7 @@ static void configure_renderer(my_engine* engine)
 
 
     // Built-in resources
-    const std::vector<Vertex> quad_vertices{
+    const std::vector<vertex> quad_vertices{
         {{  0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f} },
         {{ -0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {1.0f, 0.0f} },
         {{  0.5, 0.0,  0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 1.0f} },
@@ -399,6 +395,9 @@ my_engine* engine_initialize(const char* name, int width, int height)
     my_engine* engine = new my_engine();
 
     engine->start_time = std::chrono::high_resolution_clock::now();
+    engine->execPath = get_executable_directory();
+
+    print_log("Initializing engine (%s)\n", engine->execPath.c_str());
 
     if (!initialize_core(engine, name, width, height)) {
         return nullptr;
@@ -580,6 +579,7 @@ void engine_terminate(my_engine* engine)
     destroy_descriptor_layout(offscreen_ds_layout);
     destroy_descriptor_layout(skybox_ds_layout);
 
+    destroy_pipeline(skybox_pipeline.m_Pipeline);
     destroy_pipeline(wireframe_pipeline.m_Pipeline);
     destroy_pipeline(composite_pipeline.m_Pipeline);
     destroy_pipeline(offscreen_pipeline.m_Pipeline);
@@ -600,7 +600,7 @@ void engine_terminate(my_engine* engine)
     // Destroy core systems
     destroy_windows_audio(engine->audio);
     destroy_ui(engine->ui);
-    destroy_vulkan_renderer(engine->renderer);
+    destroy_renderer(engine->renderer);
     destroy_window(engine->window);
 
     delete engine;
@@ -636,6 +636,11 @@ void engine_should_terminate(my_engine* engine)
 void engine_set_window_icon(my_engine* engine, unsigned char* data, int width, int height)
 {
     set_window_icon(engine->window, data, width, height);
+}
+
+void engine_show_window(my_engine* engine)
+{
+    show_window(engine->window);
 }
 
 void engine_set_callbacks(my_engine* engine, my_engine_callbacks callbacks)
@@ -826,7 +831,7 @@ void engine_set_environment_map(my_engine* engine, const char* path)
 
 void engine_create_camera(my_engine* engine, float fovy, float speed)
 {
-    engine->camera = create_perspective_camera(Camera_Type::first_person, { 0.0f, 0.0f, -2.0f }, fovy, speed);    
+    engine->camera = create_perspective_camera(camera_type::first_person, { 0.0f, 0.0f, -2.0f }, fovy, speed);    
 }
 
 void engine_update_input(my_engine* engine)
@@ -946,36 +951,6 @@ void* engine_get_viewport_texture(my_engine* engine, my_engine_viewport_view vie
         return depths_ui[current_image];
 
     return viewport_ui[current_image];
-}
-
-void* engine_get_position_texture()
-{
-    const uint32_t current_image = get_swapchain_frame_index();
-    return positions_ui[current_image];
-}
-
-void* engine_get_normals_texture()
-{
-    const uint32_t current_image = get_swapchain_frame_index();
-    return normals_ui[current_image];
-}
-
-void* engine_get_color_texture()
-{
-    const uint32_t current_image = get_swapchain_frame_index();
-    return colors_ui[current_image];
-}
-
-void* engine_get_specular_texutre()
-{
-    const uint32_t current_image = get_swapchain_frame_index();
-    return speculars_ui[current_image];
-}
-
-void* engine_get_depth_texture()
-{
-    const uint32_t current_image = get_swapchain_frame_index();
-    return depths_ui[current_image];
 }
 
 int engine_get_model_count(my_engine* engine)

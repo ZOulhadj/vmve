@@ -87,7 +87,7 @@ static HRESULT read_chunk_data(HANDLE hFile, void* buffer, DWORD buffersize, DWO
 
 
 
-main_audio* create_windows_audio()
+main_audio* create_audio()
 {
     print_log("Initializing audio\n");
 

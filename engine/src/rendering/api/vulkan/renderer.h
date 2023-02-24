@@ -1,5 +1,5 @@
-#ifndef MYENGINE_VULKAN_RENDERER_HPP
-#define MYENGINE_VULKAN_RENDERER_HPP
+#ifndef MY_ENGINE_VULKAN_RENDERER_H
+#define MY_ENGINE_VULKAN_RENDERER_H
 
 #include "core/window.h"
 #include "vulkan_context.h"
@@ -8,13 +8,13 @@
 #include "rendering/entity.h"
 #include "logging.h"
 
-enum class renderer_buffer_mode
+enum class buffer_mode
 {
-    Double,
-    Triple
+    double_buffering,
+    triple_buffering
 };
 
-enum class renderer_vsync_mode
+enum class vsync_mode
 {
     disabled = 0,
     enabled  = 1,
@@ -95,7 +95,7 @@ struct vk_vertex_binding
 // Enable... Functions are optional
 struct vk_pipeline
 {
-    void enable_vertex_binding(const vk_vertex_binding<Vertex>& binding);
+    void enable_vertex_binding(const vk_vertex_binding<vertex>& binding);
     void set_shader_pipeline(std::vector<vk_shader> shaders);
     void set_input_assembly(VkPrimitiveTopology topology, bool primitiveRestart = false);
     void set_rasterization(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace);
@@ -143,8 +143,8 @@ struct vk_renderer
     VkDebugUtilsMessengerEXT messenger;
 };
 
-vk_renderer* create_vulkan_renderer(const Window* window, renderer_buffer_mode buffering_mode, renderer_vsync_mode sync_mode);
-void destroy_vulkan_renderer(vk_renderer* renderer);
+vk_renderer* create_renderer(const engine_window* window, buffer_mode buffering_mode, vsync_mode sync_mode);
+void destroy_renderer(vk_renderer* renderer);
 
 
 
@@ -159,7 +159,7 @@ uint32_t get_swapchain_frame_index(); // out of order
 uint32_t get_swapchain_image_count();
 
 
-void recreate_swapchain(renderer_buffer_mode buffer_mode, renderer_vsync_mode vsync);
+void recreate_swapchain(buffer_mode buffer_mode, vsync_mode vsync);
 
 void add_framebuffer_attachment(vk_render_pass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
 

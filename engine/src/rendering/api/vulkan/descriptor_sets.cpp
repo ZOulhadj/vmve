@@ -92,7 +92,7 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layo
 
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
     const VkDescriptorSetLayoutBinding& binding,
-    vulkan_buffer& buffer,
+    vk_buffer& buffer,
     std::size_t size)
 {
     const vk_context& rc = get_vulkan_context();

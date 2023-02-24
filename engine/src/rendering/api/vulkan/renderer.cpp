@@ -8,8 +8,8 @@
 static vk_renderer* g_r = nullptr;
 static vk_context* g_rc  = nullptr;
 
-static renderer_buffer_mode g_buffering{};
-static renderer_vsync_mode g_vsync{};
+static buffer_mode g_buffering{};
+static vsync_mode g_vsync{};
 
 static vk_swapchain g_swapchain{};
 
@@ -47,14 +47,14 @@ static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface) {
     return actualExtent;
 }
 
-static uint32_t find_suitable_image_count(VkSurfaceCapabilitiesKHR capabilities, renderer_buffer_mode mode) {
+static uint32_t find_suitable_image_count(VkSurfaceCapabilitiesKHR capabilities, buffer_mode mode) {
     const uint32_t min = capabilities.minImageCount + 1;
     const uint32_t max = capabilities.maxImageCount;
 
     uint32_t requested = 0;
-    if (mode == renderer_buffer_mode::Double)
+    if (mode == buffer_mode::double_buffering)
         requested = 2;
-    else if (mode == renderer_buffer_mode::Triple)
+    else if (mode == buffer_mode::triple_buffering)
         requested = 3;
 
     // check if requested image count
@@ -73,11 +73,11 @@ static uint32_t find_suitable_image_count(VkSurfaceCapabilitiesKHR capabilities,
 }
 
 static VkPresentModeKHR find_suitable_present_mode(const std::vector<VkPresentModeKHR>& present_modes, 
-                                                   renderer_vsync_mode vsync) {
-    if (vsync == renderer_vsync_mode::disabled)
+                                                   vsync_mode vsync) {
+    if (vsync == vsync_mode::disabled)
         return VK_PRESENT_MODE_IMMEDIATE_KHR;
 
-    if (vsync == renderer_vsync_mode::enabled)
+    if (vsync == vsync_mode::enabled)
         return VK_PRESENT_MODE_FIFO_KHR;
 
     for (auto& present : present_modes) {
@@ -197,7 +197,8 @@ static vk_swapchain create_swapchain()
     return swapchain;
 }
 
-static void destroy_swapchain(vk_swapchain& swapchain) {
+static void destroy_swapchain(vk_swapchain& swapchain)
+{
     for (auto& image : swapchain.images)
         vkDestroyImageView(g_rc->device->device, image.view, nullptr);
 
@@ -206,12 +207,14 @@ static void destroy_swapchain(vk_swapchain& swapchain) {
     vkDestroySwapchainKHR(g_rc->device->device, swapchain.handle, nullptr);
 }
 
-static void resize_swapchain(vk_swapchain& swapchain) {
+static void resize_swapchain(vk_swapchain& swapchain)
+{
     destroy_swapchain(swapchain);
     swapchain = create_swapchain();
 }
 
-static std::vector<vk_frame> create_frames(uint32_t frames_in_flight) {
+static std::vector<vk_frame> create_frames(uint32_t frames_in_flight)
+{
     std::vector<vk_frame> frames(frames_in_flight);
 
     VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
@@ -234,7 +237,8 @@ static std::vector<vk_frame> create_frames(uint32_t frames_in_flight) {
 }
 
 
-static void destroy_frames(std::vector<vk_frame>& frames) {
+static void destroy_frames(std::vector<vk_frame>& frames)
+{
     for (vk_frame& frame : frames) {
         vkDestroySemaphore(g_rc->device->device, frame.composite_semaphore, nullptr);
         vkDestroySemaphore(g_rc->device->device, frame.offscreen_semaphore, nullptr);
@@ -245,7 +249,8 @@ static void destroy_frames(std::vector<vk_frame>& frames) {
 }
 
 
-static void create_command_pool() {
+static void create_command_pool()
+{
     VkCommandPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
     pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     pool_info.queueFamilyIndex = g_rc->device->graphics_index;
@@ -253,11 +258,13 @@ static void create_command_pool() {
     vk_check(vkCreateCommandPool(g_rc->device->device, &pool_info, nullptr, &g_cmd_pool));
 }
 
-static void destroy_command_pool() {
+static void destroy_command_pool()
+{
     vkDestroyCommandPool(g_rc->device->device, g_cmd_pool, nullptr);
 }
 
-void vk_pipeline::enable_vertex_binding(const vk_vertex_binding<Vertex>& binding) {
+void vk_pipeline::enable_vertex_binding(const vk_vertex_binding<vertex>& binding)
+{
     // TODO: Add support for multiple bindings
     for (std::size_t i = 0; i < 1; ++i) {
         VkVertexInputBindingDescription description{};
@@ -1050,7 +1057,7 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
 
 
 
-vk_renderer* create_vulkan_renderer(const Window* window, renderer_buffer_mode buffering_mode, renderer_vsync_mode sync_mode)
+vk_renderer* create_renderer(const engine_window* window, buffer_mode buffering_mode, vsync_mode sync_mode)
 {
     print_log("Initializing Vulkan renderer\n");
 
@@ -1112,13 +1119,13 @@ vk_renderer* create_vulkan_renderer(const Window* window, renderer_buffer_mode b
         
 
     renderer->submit = create_upload_context();
-    renderer->compiler = create_shader_compiler();
 
     g_buffering = buffering_mode;
     g_vsync = sync_mode;
     g_swapchain = create_swapchain();
 
     renderer->descriptor_pool = create_descriptor_pool();
+    renderer->compiler = create_shader_compiler();
 
     g_frames = create_frames(frames_in_flight);
 
@@ -1129,7 +1136,7 @@ vk_renderer* create_vulkan_renderer(const Window* window, renderer_buffer_mode b
     return renderer;
 }
 
-void destroy_vulkan_renderer(vk_renderer* renderer)
+void destroy_renderer(vk_renderer* renderer)
 {
     print_log("Terminating Vulkan renderer\n");
 
@@ -1208,7 +1215,7 @@ uint32_t get_swapchain_image_count()
     return g_swapchain.images.size();
 }
 
-void recreate_swapchain(renderer_buffer_mode bufferMode, renderer_vsync_mode vsync)
+void recreate_swapchain(buffer_mode bufferMode, vsync_mode vsync)
 {
     g_buffering = bufferMode;
     g_vsync = vsync;

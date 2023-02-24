@@ -5,7 +5,7 @@
 #include "events/event.h"
 
 
-struct Window
+struct engine_window
 {
     GLFWwindow* handle;
     const char* name;
@@ -25,25 +25,28 @@ struct Window
 /// @param width  The window in pixels of the current window
 /// @param height The height in pixels of the current window
 ///
-Window* create_window(const char* name, int width, int height);
+engine_window* create_window(const char* name, int width, int height);
 
 
 ///
 /// Loads an image to be used as an icon for the specified window handle.
 /// 
-void set_window_icon(const Window* window, const std::filesystem::path& iconPath);
+void set_window_icon(const engine_window* window, const std::filesystem::path& iconPath);
 
 ///
 /// Uses the data from an array as the icon for the specified window handle.
 /// 
-void set_window_icon(const Window* window, unsigned char* data, int width, int height);
+void set_window_icon(const engine_window* window, unsigned char* data, int width, int height);
+
+
+void show_window(const engine_window* window);
 
 ///
 /// Destroys the window and terminates the GLFW library.
 ///
 /// @param window A valid pointer to a window structure to free resources.
 ///
-void destroy_window(Window* window);
+void destroy_window(engine_window* window);
 
 ///
 /// Updates a window by polling for any new events since the last window update
@@ -51,7 +54,7 @@ void destroy_window(Window* window);
 ///
 /// @param window A valid pointer to a window structure to update.
 ///
-void update_window(Window* window);
+void update_window(engine_window* window);
 
 
 

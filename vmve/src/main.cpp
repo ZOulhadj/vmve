@@ -59,7 +59,7 @@ int main()
     }
 
 
-
+    engine_show_window(engine);
 
     while (engine_update(engine)) {
         //  Only update the camera view if the viewport is currently in focus.
@@ -68,15 +68,9 @@ int main()
             engine_update_camera_view(engine);
         }
 
-        // If the main viewport is resized then we should update the camera 
-        // projection to take into account the new dimensions.
-        if (should_resize_viewport) {
-            engine_update_camera_projection(engine, viewport_width, viewport_height);
-
-            should_resize_viewport = false;
-        }
-
-
+        // Always update project as the user may update various camer settings per
+        // frame.
+        engine_update_camera_projection(engine, viewport_width, viewport_height);
 
         if (engine_begin_render(engine)) {
             // Main render pass that renders the scene geometry.
@@ -106,6 +100,7 @@ int main()
 
 void key_callback(my_engine* engine, int keycode)
 {
+    // TODO: Engine should have its own keycodes
 #define KEY_F1 290
 #define KEY_F2 291
 #define KEY_F3 292
@@ -130,23 +125,8 @@ void key_callback(my_engine* engine, int keycode)
         engine_set_cursor_mode(engine, viewport_active);
     }
 
-
     if (keycode == KEY_F2) {
         notFullScreen = !notFullScreen;
-
-#if 0
-        if (notFullScreen) {
-            firstTimeNormal = true;
-            firstTimeFullScreen = false;
-            viewportActive = false;
-            engine_set_cursor_mode(engine, 0);
-        } else {
-            firstTimeFullScreen = true;
-            firstTimeNormal = false;
-            viewportActive = true;
-            engine_set_cursor_mode(engine, 1);
-        }
-#endif
     }
 
     if (keycode == KEY_E) {

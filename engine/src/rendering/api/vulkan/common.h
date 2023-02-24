@@ -1,5 +1,5 @@
-#ifndef MYENGINE_COMMON_HPP
-#define MYENGINE_COMMON_HPP
+#ifndef MY_ENGINE_COMMON_H
+#define MY_ENGINE_COMMON_H
 
 
 // todo(zak): move this variable into the renderer
@@ -13,7 +13,8 @@ constexpr uint32_t frames_in_flight = 2;
 // Helper cast function often used for Vulkan create info structs
 // that accept an uint32_t.
 template <typename T>
-uint32_t u32(T t) {
+uint32_t u32(T t)
+{
     // todo(zak): check if T is a numerical value
     return static_cast<uint32_t>(t);
 }

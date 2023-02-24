@@ -19,7 +19,7 @@ struct audio_3d
 };
 
 
-main_audio* create_windows_audio();
+main_audio* create_audio();
 void destroy_windows_audio(main_audio* audio);
 
 // 2d audio

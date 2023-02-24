@@ -1,10 +1,10 @@
-#ifndef MY_ENGINE_RENDERER_CONTEXT_HPP
-#define MY_ENGINE_RENDERER_CONTEXT_HPP
-
+#ifndef MY_ENGINE_VULKAN_CONTEXT_H
+#define MY_ENGINE_VULKAN_CONTEXT_H
 
 #include "core/window.h"
 
-struct Vulkan_Device {
+struct vk_device
+{
     VkPhysicalDevice gpu;
     std::string gpu_name;
     VkDevice device;
@@ -17,11 +17,11 @@ struct Vulkan_Device {
 };
 
 struct vk_context {
-    const Window* window;
+    const engine_window* window;
 
     VkInstance      instance;
     VkSurfaceKHR    surface;
-    Vulkan_Device*  device;
+    vk_device*  device;
     VmaAllocator    allocator;
 };
 
@@ -29,7 +29,7 @@ bool create_vulkan_context(vk_context& context, const std::vector<const char*>& 
                                                    std::vector<const char*>& requested_extensions,
                                                    const std::vector<const char*>& requested_device_extensions,
                                                    const VkPhysicalDeviceFeatures& requested_gpu_features,
-                                                   const Window* window);
+                                                   const engine_window* window);
 void destroy_vulkan_context(vk_context& rc);
 
 

@@ -89,7 +89,7 @@ static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* sce
 
     // walk through each of the mesh's vertices
     for(std::size_t i = 0; i < ai_mesh->mNumVertices; ++i) {
-        Vertex vertex{};
+        vertex vertex{};
         vertex.position = glm::vec3(ai_mesh->mVertices[i].x, 
                                     ai_mesh->mVertices[i].y, 
                                     ai_mesh->mVertices[i].z);

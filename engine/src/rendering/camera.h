@@ -1,5 +1,5 @@
-#ifndef MY_ENGINE_QUATERNION_CAMERA_HPP
-#define MY_ENGINE_QUATERNION_CAMERA_HPP
+#ifndef MY_ENGINE_CAMERA_H
+#define MY_ENGINE_CAMERA_H
 
 
 struct Frustum_Plane {
@@ -17,12 +17,12 @@ struct Frustum {
 };
 
 
-enum class Camera_Projection {
+enum class camera_proj {
     perspective,
     orthographic
 };
 
-enum class Camera_Type {
+enum class camera_type {
     first_person,
     look_at
 };
@@ -33,8 +33,8 @@ struct view_projection {
 };
 
 struct Camera {
-    Camera_Type type;
-    Camera_Projection projection;
+    camera_type type;
+    camera_proj projection;
 
 
     glm::vec3 position;
@@ -66,8 +66,8 @@ struct Camera {
 
 Frustum create_camera_frustum(const Camera& camera);
 
-Camera create_perspective_camera(Camera_Type type, const glm::vec3& position, float fov, float speed);
-Camera create_orthographic_camera(Camera_Type type, const glm::vec3& position, float speed);
+Camera create_perspective_camera(camera_type type, const glm::vec3& position, float fov, float speed);
+Camera create_orthographic_camera(camera_type type, const glm::vec3& position, float speed);
 
 //Camera CreateCamera(const glm::vec3& position, float fov, float speed);
 void update_camera(Camera& camera, const glm::vec2& cursor_pos);

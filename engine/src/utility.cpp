@@ -29,7 +29,7 @@ double get_delta_time()
     return delta_time;
 }
 
-glm::vec2 world_to_screen(Window* window,
+glm::vec2 world_to_screen(engine_window* window,
                           Camera& camera,
                           const glm::vec3& position,
                           const glm::vec2& offset)
