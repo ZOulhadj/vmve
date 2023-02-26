@@ -109,7 +109,6 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="src\security.cpp" />
     <ClCompile Include="src\settings.cpp" />
     <ClCompile Include="src\ui\ui.cpp" />
     <ClCompile Include="src\ui\ui_fonts.cpp" />
@@ -145,7 +144,6 @@
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\misc.h" />
     <ClInclude Include="src\pch.h" />
-    <ClInclude Include="src\security.h" />
     <ClInclude Include="src\settings.h" />
     <ClInclude Include="src\ui\ui_icons.h" />
     <ClInclude Include="src\ui\ui.h" />

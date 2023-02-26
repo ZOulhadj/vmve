@@ -39,9 +39,6 @@
     <ClCompile Include="vendor\imgui\ImGuizmo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\security.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ui\ui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -62,9 +59,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\security.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\ui\ui.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -1,5 +1,5 @@
-#ifndef VMVE_H
-#define VMVE_H
+#ifndef VMVE_VMVE_H
+#define VMVE_VMVE_H
 
 // TODO: Create a custom file format
 
@@ -13,27 +13,68 @@
 // +-------------------------------+
 //
 
-#include "security.h"
-
-enum class vmve_encryption_mode
+struct key_iv
 {
-    aes
+    CryptoPP::SecByteBlock key{};
+    CryptoPP::SecByteBlock iv{};
+};
+
+
+struct key_iv_string
+{
+    std::string key;
+    std::string iv;
+};
+
+struct encrypted_data
+{
+    key_iv keyIV;
+    std::string data;
+};
+
+enum class encryption_mode
+{
+    aes,
+    dh,
+    gc,
+    rc6
 };
 
 struct vmve_header
 {
-    const char* version;
-    vmve_encryption_mode encryption_mode;
+    std::string version;
+    encryption_mode encrypt_mode;
 };
 
-struct vmve_file_format
+struct vmve_file_structure
 {
     vmve_header header;
     encrypted_data data;
+
+    // cereal serialization
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(header.version, header.encrypt_mode, data.data);
+    }
 };
 
-void vmve_write_to_file(vmve_file_format& file_format, const char* path);
-bool vmve_read_from_file(const char* path, std::string& out_data);
+key_iv generate_key_iv(unsigned char keyLength);
+key_iv_string key_iv_to_hex(key_iv& keyIV);
+
+// AES
+
+encrypted_data encrypt_aes(const std::string& text, key_iv& keyIV);
+encrypted_data encrypt_aes(const std::string& text, unsigned char keyLength);
+std::string decrypt_aes(const encrypted_data& data);
+
+// DH
+
+encrypted_data encrypt_dh(const std::string& text, key_iv& keys);
+std::string decrypt_dh(const encrypted_data& data);
+
+bool vmve_write_to_file(vmve_file_structure& file_format, const std::string& path);
+bool vmve_read_from_file(std::string& out_data, const std::string& path);
 
 // Data
 

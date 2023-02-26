@@ -3,7 +3,6 @@
 
 #include "config.h"
 #include "vmve.h"
-#include "security.h"
 #include "ui/ui.h"
 #include "misc.h"
 #include "settings.h"
@@ -14,6 +13,8 @@ static void resize_callback(my_engine* engine, int width, int height);
 static void drop_callback(my_engine* engine, int path_count, const char* paths[]);
 
 bool notFullScreen = true;
+
+
 
 int main()
 {

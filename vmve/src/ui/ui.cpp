@@ -3,7 +3,6 @@
 
 
 #include "../config.h"
-#include "../security.h"
 #include "../vmve.h"
 #include "ui_fonts.h"
 #include "ui_icons.h"
@@ -560,7 +559,7 @@ static void load_model_window(my_engine* engine, bool* open)
 #else
         if (model.extension() == ".vmve") {
             std::string raw_data;
-            bool file_read = vmve_read_from_file(model_path.c_str(), raw_data);
+            bool file_read = vmve_read_from_file(raw_data, model_path.c_str());
             if (file_read)
                 engine_add_model(engine, raw_data.c_str(), raw_data.size(), flip_uv);
         } else {
@@ -643,15 +642,19 @@ static void vmve_creator_window(my_engine* engine, bool* open)
             stream << model_file.rdbuf();
             const std::string contents = stream.str();
 
-            if (encryptionModeIndex == 0) { // AES 
-                encrypted_data data = encrypt_aes(contents, keyIV);
+            if (encryptionModeIndex == 0) { // AES
+                vmve_file_structure file_structure;
+                // header
+                file_structure.header.version = app_version;
+                file_structure.header.encrypt_mode = encryption_mode::aes;
+                // data
+                file_structure.data = encrypt_aes(contents, keyIV);
 
                 const std::filesystem::path model_path(current_path);
                 const std::string model_parent_path = model_path.parent_path().string();
                 const std::string model_name = model_path.filename().string();
 
-                std::ofstream export_model(model_parent_path + '/' + model_name + ".vmve");
-                export_model << data.data;
+                vmve_write_to_file(file_structure, model_parent_path + '/' + model_name + ".vmve");
             }
             else if (encryptionModeIndex == 1) { // DH
 
