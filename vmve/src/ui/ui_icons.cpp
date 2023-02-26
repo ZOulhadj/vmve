@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ui_icons.h"
 
 static const char fa_regular_400_compressed_data_base85[45740 + 1] =

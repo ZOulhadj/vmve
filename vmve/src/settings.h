@@ -13,8 +13,6 @@ camera far plane
 
 */
 
-#include <vector>
-#include <string>
 
 
 struct vmve_setting

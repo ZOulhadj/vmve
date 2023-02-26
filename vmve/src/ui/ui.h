@@ -1,9 +1,6 @@
 #ifndef VMVE_UI_H
 #define VMVE_UI_H
 
-
-#include <engine.h>
-
 extern bool viewport_active;
 extern bool should_resize_viewport;
 extern int viewport_width;

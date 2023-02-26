@@ -1,6 +1,5 @@
+#include "pch.h"
 #include "settings.h"
-
-#include <fstream>
 
 std::vector<vmve_setting> load_settings_file(const char* path)
 {

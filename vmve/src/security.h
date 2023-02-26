@@ -1,20 +1,6 @@
 #ifndef VMVE_SECURITY_H
 #define VMVE_SECURITY_H
 
-
-#include <string>
-
-
-#include <cryptlib.h>
-#include <rijndael.h>
-#include <modes.h>
-#include <files.h>
-#include <osrng.h>
-#include <hex.h>
-#include <integer.h>
-#include <dh.h>
-
-
 struct key_iv
 {
     CryptoPP::SecByteBlock key{};

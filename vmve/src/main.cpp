@@ -1,3 +1,4 @@
+#include "pch.h"
 #include <engine.h>
 
 #include "config.h"
@@ -6,11 +7,6 @@
 #include "ui/ui.h"
 #include "misc.h"
 #include "settings.h"
-
-#include <imgui.h>
-#include <ImGuizmo.h>
-
-
 
 
 static void key_callback(my_engine* engine, int keycode);

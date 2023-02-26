@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "misc.h"
 
 // In order to eliminate application dependencies, we bundle the raw icon data

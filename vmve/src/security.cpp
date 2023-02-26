@@ -1,6 +1,5 @@
+#include "pch.h"
 #include "security.h"
-
-#include <cassert>
 
 key_iv generate_key_iv(unsigned char keyLength)
 {

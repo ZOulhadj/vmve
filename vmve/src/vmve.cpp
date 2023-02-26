@@ -1,8 +1,5 @@
+#include "pch.h"
 #include "vmve.h"
-
-
-#include <fstream>
-#include <ostream>
 
 static bool vmve_decrypt(vmve_file_format& file_format, std::string& out_raw_data)
 {

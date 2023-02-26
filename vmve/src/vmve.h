@@ -13,8 +13,6 @@
 // +-------------------------------+
 //
 
-#include <string>
-
 #include "security.h"
 
 enum class vmve_encryption_mode
