@@ -539,6 +539,11 @@ static void load_model_window(my_engine* engine, bool* open)
         return;
 
     static bool flip_uv = false;
+    static bool file_encrypted = false;
+
+    static bool decrypt_modal_open = false;
+    static std::array<char, 33> key_input;
+    static std::array<char, 17> iv_input;
 
     ImGui::Begin(ICON_FA_CUBE " Load Model", open);
 
@@ -558,20 +563,33 @@ static void load_model_window(my_engine* engine, bool* open)
         futures.push_back(std::async(std::launch::async, LoadMesh, std::ref(gModels), model_path));
 #else
         if (model.extension() == ".vmve") {
-            std::string raw_data;
-            bool file_read = vmve_read_from_file(raw_data, model_path.c_str());
-            if (file_read)
-                engine_add_model(engine, raw_data.c_str(), raw_data.size(), flip_uv);
+            file_encrypted = true;
         } else {
             engine_load_model(engine, model_path.c_str(), flip_uv);
         }
-
-
-
 #endif
     }
-
     ImGui::End();
+
+    if (file_encrypted) {
+        ImGui::OpenPopup(ICON_FA_UNLOCK " Encrypted model file detected");
+        if (ImGui::BeginPopupModal(ICON_FA_UNLOCK " Encrypted model file detected", &file_encrypted, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::InputText("Key", key_input.data(), key_input.size());
+            ImGui::InputText("IV", iv_input.data(), iv_input.size());
+
+            if (ImGui::Button("Decrypt")) {
+                std::string raw_data;
+                bool file_read = vmve_read_from_file(raw_data, model_path.c_str());
+                if (file_read)
+                    engine_add_model(engine, raw_data.c_str(), raw_data.size(), flip_uv);
+
+                ImGui::CloseCurrentPopup();
+                file_encrypted = false;
+            }
+            ImGui::EndPopup();
+        }
+    }
+
 }
 
 static void vmve_creator_window(my_engine* engine, bool* open)
@@ -602,8 +620,8 @@ static void vmve_creator_window(my_engine* engine, bool* open)
     info_marker("Should the model file be encrypted.");
 
     if (useEncryption) {
-
-
+//        ImGui::InputText("Key");
+//        ImGui::InputText("IV");
 
 
         ImGui::Combo("Encryption method", &encryptionModeIndex, encryptionModes.data(), encryptionModes.size());

@@ -42,8 +42,6 @@ int main()
     configure_ui(engine);
 
     engine_create_camera(engine, 60.0f, 20.0f);
-    //engine_set_environment_map(engine, "C:/Users/zakar/Projects/vmve/vmve/assets/models/skybox_sphere.obj");
-
 
     // Configure engine properties
     // TODO(zak): load settings file if it exists
