@@ -14,8 +14,6 @@ static void drop_callback(my_engine* engine, int path_count, const char* paths[]
 
 bool notFullScreen = true;
 
-
-
 int main()
 {
     my_engine* engine = engine_initialize(app_title, app_width, app_height);
@@ -57,6 +55,7 @@ int main()
     engine_show_window(engine);
 
     while (engine_update(engine)) {
+
         //  Only update the camera view if the viewport is currently in focus.
         if (viewport_active) {
             engine_update_input(engine);

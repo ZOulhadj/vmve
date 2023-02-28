@@ -16,10 +16,6 @@
 #include <imgui.h>
 #include <ImGuizmo.h>
 
-
-
-
-
 // CryptoPP
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/rijndael.h>

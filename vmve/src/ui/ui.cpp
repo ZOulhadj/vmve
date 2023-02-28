@@ -32,6 +32,7 @@ static bool editor_open = false;
 static bool window_open = true;
 
 // appearance settings
+static float ui_scaling = 0.0f;
 static bool display_tooltips = true;
 static bool highlight_logs = true;
 
@@ -84,7 +85,7 @@ enum class setting_options
 static void set_default_styling()
 {
     ImGuiStyle& style = ImGui::GetStyle();
-    style.FrameRounding = 5.0f;
+    style.FrameRounding = 0.0f;
     style.TabRounding = 2.0f;
     style.FrameBorderSize = 1.0f;
 }
@@ -269,20 +270,11 @@ static void set_light_theme()
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
 }
 
-
-
-
-#if 0
-static void set_next_window_in_center()
+static void resize_and_center_next_window(const ImVec2& size, ImGuiCond flags = ImGuiCond_Once)
 {
-
-    const ImVec2 settings_window_size = ImVec2(ImGui::GetWindowSize().x / 2.0f, ImGui::GetWindowSize().y / 2.0f);
-    ImGui::SetNextWindowSize(settings_window_size);
-
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, 0, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(size, flags);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), flags, ImVec2(0.5f, 0.5f));
 }
-#endif
 
 static void info_marker(const char* desc)
 {
@@ -310,6 +302,8 @@ static void render_preferences_window(my_engine* engine, bool* open)
     static setting_options option = (setting_options)0;
 
     static ImVec4 active_color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+    resize_and_center_next_window(ImVec2(800, 600));
 
     ImGui::Begin("Global Options", open);
 
@@ -345,6 +339,9 @@ static void render_preferences_window(my_engine* engine, bool* open)
     case setting_options::appearance: 
         ImGui::Text("Appearance");
 
+        // TODO: When changing themes we must also set specific elements 
+        // to a different color. For example, when changing the a light
+        // theme, any icon/text which was white must now be black etc.
         if (ImGui::Combo("Theme", &currentTheme, themes, 3)) {
             if (currentTheme == 0)
                 set_default_theme();
@@ -354,8 +351,11 @@ static void render_preferences_window(my_engine* engine, bool* open)
                 set_light_theme();
         }
 
+        ImGui::SliderFloat("UI Scaling", &ui_scaling, 1.0f, 2.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+        info_marker("Change the size of the user interface");
+
         ImGui::Checkbox("Display tooltips", &display_tooltips);
-        info_marker("Displays the " ICON_FA_CIRCLE_INFO " icon next to options for more information.");
+        info_marker("Displays the " ICON_FA_CIRCLE_INFO " icon next to options for more information");
 
         ImGui::Checkbox("Highlight logs", &highlight_logs);
         info_marker("Based on the log type, highlight its background color");
@@ -481,18 +481,31 @@ static void render_about_window(bool* open)
     if (!*open)
         return;
 
-    ImGui::Begin("About", open);
+    static bool show_build_info = false;
 
-    ImGui::Text("Build version: %s", app_version);
-    ImGui::Text("Build date: %s", __DATE__);
-    ImGui::Text("Build time: %s", __TIME__);
-    ImGui::Separator();
-    ImGui::Text("Author: %s", app_dev_full_name);
-    ImGui::Text("Email: %s", app_dev_email);
-    ImGui::Separator();
-    ImGui::TextWrapped("Description: %s", app_description);
+    //resize_and_center_next_window(ImVec2(400, 0));
 
-    ImGui::End();
+    ImGui::OpenPopup(ICON_FA_USER " About");
+    if (ImGui::BeginPopupModal(ICON_FA_USER " About", open)) {
+        ImGui::Text(app_description);
+        ImGui::Separator();
+        ImGui::Text(app_dev_info);
+        ImGui::Separator();
+        ImGui::Checkbox("Show build information", &show_build_info);
+
+        if (show_build_info) {
+            ImGui::BeginChild("Build Info");
+            ImGui::Text("Build version: %s", app_version);
+            ImGui::Text("Build timestamp: %s %s", __DATE__, __TIME__);
+            ImGui::Text("__cplusplus=%d", static_cast<int>(__cplusplus));
+            ImGui::Text("_MSC_VER=%d", static_cast<int>(_MSC_VER));
+            ImGui::Text("_MSVC_LANG=%d", _MSVC_LANG);
+
+            ImGui::EndChild();
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 
@@ -500,6 +513,8 @@ static void render_tutorial_window(bool* open)
 {
     if (!*open)
         return;
+
+    resize_and_center_next_window(ImVec2(800, 600));
 
     ImGui::Begin(ICON_FA_BOOK " Tutorial", open);
 
@@ -544,6 +559,9 @@ static void load_model_window(my_engine* engine, bool* open)
     // NOTE: 256 + 1 for null termination character
     static std::array<char, 257> key_input;
     static std::array<char, 33> iv_input;
+
+    resize_and_center_next_window(ImVec2(800, 600));
+
 
     ImGui::Begin(ICON_FA_CUBE " Load Model", open);
 
@@ -608,6 +626,8 @@ static void vmve_creator_window(my_engine* engine, bool* open)
     static std::array<const char*, 4> encryptionModes = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
     static std::array<const char*, 2> keyLengths = { "256 bits", "128 bit" };
 
+
+    resize_and_center_next_window(ImVec2(800, 600));
 
     ImGui::Begin(ICON_FA_KEY " VMVE Creator", open);
 
@@ -700,6 +720,7 @@ static void perf_window(bool* open)
     if (!*open)
         return;
 
+    resize_and_center_next_window(ImVec2(800, 600));
     
     ImGui::Begin(ICON_FA_CLOCK " Performance Profiler", open);
 
@@ -720,6 +741,8 @@ static void render_audio_window(my_engine* engine, bool* open)
 {
     if (!*open)
         return;
+
+    resize_and_center_next_window(ImVec2(800, 600));
 
     ImGui::Begin(ICON_FA_MUSIC " Audio", open);
 
@@ -760,6 +783,9 @@ static void render_console_window(bool* open)
         return;
 
     static char command[256];
+
+
+    resize_and_center_next_window(ImVec2(800, 600));
 
     ImGui::Begin(ICON_FA_TERMINAL " Console", open);
 

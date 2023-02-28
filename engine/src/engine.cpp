@@ -421,6 +421,7 @@ my_engine* engine_initialize(const char* name, int width, int height)
 
 bool engine_update(my_engine* engine)
 {
+
     // Calculate the amount that has passed since the last frame. This value
     // is then used with inputs and physics to ensure that the result is the
     // same no matter how fast the CPU is running.
