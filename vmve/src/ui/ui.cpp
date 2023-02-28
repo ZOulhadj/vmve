@@ -484,7 +484,8 @@ static void render_about_window(bool* open)
     ImGui::Begin("About", open);
 
     ImGui::Text("Build version: %s", app_version);
-    ImGui::Text("Build date: %s", app_build_date);
+    ImGui::Text("Build date: %s", __DATE__);
+    ImGui::Text("Build time: %s", __TIME__);
     ImGui::Separator();
     ImGui::Text("Author: %s", app_dev_full_name);
     ImGui::Text("Email: %s", app_dev_email);
@@ -503,30 +504,27 @@ static void render_tutorial_window(bool* open)
     ImGui::Begin(ICON_FA_BOOK " Tutorial", open);
 
     if (ImGui::CollapsingHeader("1. Basics")) {
-        ImGui::TextWrapped("Welcome to the tutorial!");
-        ImGui::TextWrapped("This tutorial is guide you and explain most features available to you can how they can be used.");
+        ImGui::TextWrapped(tutorial_1_text);
     }
 
     if (ImGui::CollapsingHeader("2. Loading Models")) {
-        ImGui::TextWrapped("Models");
-
-        ImGui::TextWrapped("Entities");
+        ImGui::TextWrapped(tutorial_2_text);
     }
 
     if (ImGui::CollapsingHeader("3. Controls")) {
-        ImGui::TextWrapped("The controls have been designed to be...");
+        ImGui::TextWrapped(tutorial_3_text);
     }
 
     if (ImGui::CollapsingHeader("4. Tools")) {
-
+        ImGui::TextWrapped(tutorial_4_text);
     }
 
     if (ImGui::CollapsingHeader("5. Configuration")) {
-
+        ImGui::TextWrapped(tutorial_5_text);
     }
 
     if (ImGui::CollapsingHeader("6. Advanced Topics")) {
-        ImGui::TextWrapped("Although this application has been designed to be as easy to use");
+        ImGui::TextWrapped(tutorial_6_text);
     }
 
     ImGui::End();
@@ -542,8 +540,10 @@ static void load_model_window(my_engine* engine, bool* open)
     static bool file_encrypted = false;
 
     static bool decrypt_modal_open = false;
-    static std::array<char, 33> key_input;
-    static std::array<char, 17> iv_input;
+
+    // NOTE: 256 + 1 for null termination character
+    static std::array<char, 257> key_input;
+    static std::array<char, 33> iv_input;
 
     ImGui::Begin(ICON_FA_CUBE " Load Model", open);
 
@@ -562,6 +562,7 @@ static void load_model_window(my_engine* engine, bool* open)
 #if 0
         futures.push_back(std::async(std::launch::async, LoadMesh, std::ref(gModels), model_path));
 #else
+        // TODO: Implement actual file parsing so that we know if we could load.
         if (model.extension() == ".vmve") {
             file_encrypted = true;
         } else {
@@ -620,6 +621,9 @@ static void vmve_creator_window(my_engine* engine, bool* open)
     info_marker("Should the model file be encrypted.");
 
     if (useEncryption) {
+
+        // TODO: Allow user to input their own key/iv
+        // NOTE: key/iv must be the correct lengths
 //        ImGui::InputText("Key");
 //        ImGui::InputText("IV");
 
@@ -1549,8 +1553,8 @@ void configure_ui(my_engine* engine)
     set_default_styling();
     set_default_theme();
 
-    const float base_scaling_factor = 1.0f;
-    const float base_font_size = 20.0f * base_scaling_factor;
+    const float base_scaling_factor = engine_get_window_scale(engine);
+    const float base_font_size = 16.0f * base_scaling_factor;
     const float base_icon_size = base_font_size * 2.0f / 3.0f; // Required by FontAwesome for correct alignment.
 
     style.ScaleAllSizes(base_scaling_factor);

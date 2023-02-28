@@ -236,6 +236,26 @@ void set_window_icon(const engine_window* window, unsigned char* data, int width
     glfwSetWindowIcon(window->handle, 1, image);
 }
 
+float get_window_dpi_scale(const engine_window* window)
+{
+    GLFWmonitor* monitor = glfwGetWindowMonitor(window->handle);
+
+    // Is nullptr if in windowed mode
+    if (!monitor)
+        monitor = glfwGetPrimaryMonitor();
+
+    if (!monitor)
+        return 1.0f;
+
+    float x, y;
+    glfwGetMonitorContentScale(monitor, &x, &y);
+
+    // Simply return one of the axis since they are most likely the same
+    assert(x == y && "Currently, X and Y are assumed to be the same. Fix if assert is hit.");
+
+    return x;
+}
+
 void show_window(const engine_window* window)
 {
     glfwShowWindow(window->handle);
@@ -273,4 +293,6 @@ void update_window(engine_window* window)
     while (window->minimized || (window->width == 0 || window->height == 0))
         glfwWaitEvents();
 }
+
+
 

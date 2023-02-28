@@ -38,6 +38,9 @@ void set_window_icon(const engine_window* window, const std::filesystem::path& i
 /// 
 void set_window_icon(const engine_window* window, unsigned char* data, int width, int height);
 
+float get_window_dpi_scale(const engine_window* window);
+
+
 
 void show_window(const engine_window* window);
 
@@ -55,7 +58,5 @@ void destroy_window(engine_window* window);
 /// @param window A valid pointer to a window structure to update.
 ///
 void update_window(engine_window* window);
-
-
 
 #endif

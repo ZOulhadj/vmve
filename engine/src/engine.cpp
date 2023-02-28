@@ -638,6 +638,11 @@ void engine_set_window_icon(my_engine* engine, unsigned char* data, int width, i
     set_window_icon(engine->window, data, width, height);
 }
 
+float engine_get_window_scale(my_engine* engine)
+{
+    return get_window_dpi_scale(engine->window);
+}
+
 void engine_show_window(my_engine* engine)
 {
     show_window(engine->window);

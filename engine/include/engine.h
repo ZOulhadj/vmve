@@ -59,6 +59,8 @@ void engine_should_terminate(my_engine* engine);
 
 void engine_set_window_icon(my_engine* engine, unsigned char* data, int width, int height);
 
+float engine_get_window_scale(my_engine* engine);
+
 void engine_show_window(my_engine* engine);
 
 void engine_set_callbacks(my_engine* engine, my_engine_callbacks callbacks);
