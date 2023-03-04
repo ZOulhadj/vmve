@@ -280,13 +280,18 @@ void update_3d_audio(const main_audio* main, audio_3d& audio, const Camera& came
     listener.Position = X3DAUDIO_VECTOR(camera.position.x, camera.position.y, camera.position.z);
     //listener.Velocity = X3DAUDIO_VECTOR(20.0f, 0.0f, 20.0f);
 
+
+    float x = glm::sin(static_cast<float>(glfwGetTime())) * 100.0f;
+    float y = 0.0f;
+    float z = glm::cos(static_cast<float>(glfwGetTime())) * 100.0f;
+
     X3DAUDIO_EMITTER emitter{};
     emitter.ChannelCount = 1;
     emitter.DopplerScaler = 1.0f;
     emitter.CurveDistanceScaler = emitter.DopplerScaler;
     emitter.OrientFront = X3DAUDIO_VECTOR(0.0f, 0.0f, 1.0f);
     emitter.OrientTop = X3DAUDIO_VECTOR(0.0f, 1.0f, 0.0f);
-    emitter.Position = X3DAUDIO_VECTOR(glm::sin(glfwGetTime()) * 100.0f, 0.0f, glm::cos(glfwGetTime()) * 100.0f);
+    emitter.Position = X3DAUDIO_VECTOR(x, y, z);
     //emitter.Velocity = X3DAUDIO_VECTOR(glm::sin(glfwGetTime()) * 100.0f, 0.0f, glm::cos(glfwGetTime()) * 100.0f);
 
     int flags = X3DAUDIO_CALCULATE_MATRIX | X3DAUDIO_CALCULATE_DOPPLER | X3DAUDIO_CALCULATE_LPF_DIRECT | X3DAUDIO_CALCULATE_REVERB;

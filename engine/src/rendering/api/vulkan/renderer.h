@@ -186,7 +186,7 @@ void begin_render_pass(const std::vector<VkCommandBuffer>& cmd_buffer,
 void end_render_pass(std::vector<VkCommandBuffer>& buffers);
 
 VkPipelineLayout create_pipeline_layout(const std::vector<VkDescriptorSetLayout>& descriptor_sets,
-                                        std::size_t push_constant_size = 0,
+                                        uint32_t push_constant_size = 0,
                                         VkShaderStageFlags push_constant_shader_stages = 0);
 void destroy_pipeline(VkPipeline pipeline);
 void destroy_pipeline_layout(VkPipelineLayout layout);

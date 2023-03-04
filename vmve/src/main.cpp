@@ -8,18 +8,18 @@
 #include "settings.h"
 
 
-static void key_callback(my_engine* engine, int keycode);
-static void resize_callback(my_engine* engine, int width, int height);
-static void drop_callback(my_engine* engine, int path_count, const char* paths[]);
+static void key_callback(int keycode);
+static void resize_callback(int width, int height);
+static void drop_callback(int path_count, const char* paths[]);
 
 bool notFullScreen = true;
 
 int main()
 {
-    my_engine* engine = engine_initialize(app_title, app_width, app_height);
-    if (!engine) {
-        engine_export_logs_to_file(engine, app_crash_file);
-        engine_terminate(engine);
+    bool initialized = engine_initialize(app_title, app_width, app_height);
+    if (!initialized) {
+        engine_export_logs_to_file(app_crash_file);
+        engine_terminate();
 
         return -1;
     }
@@ -27,19 +27,19 @@ int main()
     // Set application icon
     int icon_width, icon_height;
     unsigned char* app_icon = get_app_icon(&icon_width, &icon_height);
-    engine_set_window_icon(engine, app_icon, icon_width, icon_height);
+    engine_set_window_icon(app_icon, icon_width, icon_height);
 
     // Register application event callbacks with the engine.
     my_engine_callbacks callbacks;
-    callbacks.key_callback = key_callback;
+    callbacks.key_callback    = key_callback;
     callbacks.resize_callback = resize_callback;
-    callbacks.drop_callback = drop_callback;
-    engine_set_callbacks(engine, callbacks);
+    callbacks.drop_callback   = drop_callback;
+    engine_set_callbacks(callbacks);
     
-    engine_enable_ui(engine);
-    configure_ui(engine);
+    engine_enable_ui();
+    configure_ui();
 
-    engine_create_camera(engine, 60.0f, 20.0f);
+    engine_create_camera(60.0f, 20.0f);
 
     // Configure engine properties
     // TODO(zak): load settings file if it exists
@@ -52,32 +52,32 @@ int main()
     }
 
 
-    engine_show_window(engine);
+    engine_show_window();
 
-    while (engine_update(engine)) {
+    while (engine_update()) {
 
         //  Only update the camera view if the viewport is currently in focus.
         if (viewport_active) {
-            engine_update_input(engine);
-            engine_update_camera_view(engine);
+            engine_update_input();
+            engine_update_camera_view();
         }
 
         // Always update project as the user may update various camer settings per
         // frame.
-        engine_update_camera_projection(engine, viewport_width, viewport_height);
+        engine_update_camera_projection(viewport_width, viewport_height);
 
-        if (engine_begin_render(engine)) {
+        if (engine_begin_render()) {
             // Main render pass that renders the scene geometry.
-            engine_render(engine);
+            engine_render();
 
             // Render all UI elements 
             engine_begin_ui_pass();
-            render_ui(engine, !notFullScreen);
+            render_ui(!notFullScreen);
             engine_end_ui_pass();
        
             // Request the GPU to execute all rendering operations and display
             // final result onto the screen.
-            engine_present(engine);
+            engine_present();
         }
         
     }
@@ -85,14 +85,14 @@ int main()
 
     export_settings_file(settings, app_settings_file);
 
-    // Terminate the application and free all resources.
-    engine_terminate(engine);
+
+    engine_terminate();
 
     return 0;
 }
 
 
-void key_callback(my_engine* engine, int keycode)
+void key_callback(int keycode)
 {
     // TODO: Engine should have its own keycodes
 #define KEY_F1 290
@@ -116,7 +116,7 @@ void key_callback(my_engine* engine, int keycode)
     if (keycode == KEY_F1) {
         viewport_active = !viewport_active;
 
-        engine_set_cursor_mode(engine, viewport_active);
+        engine_set_cursor_mode(viewport_active);
     }
 
     if (keycode == KEY_F2) {
@@ -141,11 +141,11 @@ void key_callback(my_engine* engine, int keycode)
 
 }
 
-void resize_callback(my_engine* engine, int width, int height)
+void resize_callback(int width, int height)
 {
 }
 
-void drop_callback(my_engine* engine, int path_count, const char* paths[])
+void drop_callback(int path_count, const char* paths[])
 {
     drop_load_model = true;
     set_drop_model_path(paths[0]);

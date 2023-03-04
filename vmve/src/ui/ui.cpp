@@ -12,11 +12,11 @@
 
 // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 // because it would be confusing to have two docking targets within each others.
-static ImGuiWindowFlags rootNodeFlags = ImGuiWindowFlags_MenuBar | 
-                                        ImGuiWindowFlags_NoDecoration |
-                                        ImGuiWindowFlags_NoNavFocus |
-                                        ImGuiWindowFlags_NoDocking |
-                                        ImGuiWindowFlags_NoBringToFrontOnFocus;
+static ImGuiWindowFlags rootNodeFlags = ImGuiWindowFlags_MenuBar |
+ImGuiWindowFlags_NoDecoration |
+ImGuiWindowFlags_NoNavFocus |
+ImGuiWindowFlags_NoDocking |
+ImGuiWindowFlags_NoBringToFrontOnFocus;
 
 static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode |
 ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton; // ImGuiDockNodeFlags_NoTabBar
@@ -28,30 +28,27 @@ const char* logs_window = "Logs";
 const char* viewport_window = "Main";
 const char* scene_window = "Global";
 
-static bool editor_open = false;
-static bool window_open = true;
+bool editor_open = false;
+bool window_open = true;
 
 // appearance settings
-static float ui_scaling = 0.0f;
-static bool display_tooltips = true;
-static bool highlight_logs = true;
+float ui_scaling = 0.0f;
+bool display_tooltips = true;
+bool highlight_logs = true;
 
 // renderer settings
-static bool lighting = true;
-static bool positions = false;
-static bool normals = false;
-static bool speculars = false;
-static bool depth = false;
-static bool wireframe = false;
-static bool vsync = true;
-static bool display_stats = false;
+bool lighting = true;
+bool positions = false;
+bool normals = false;
+bool speculars = false;
+bool depth = false;
+bool wireframe = false;
+bool vsync = true;
+bool display_stats = false;
 
 // temp
-int old_viewport_width = 0;
-int old_viewport_height = 0;
 
-float resize_width = 0;
-float resize_height = 0;
+
 
 
 float temperature = 23.5;
@@ -60,19 +57,56 @@ int timeOfDay = 10;
 int renderMode = 0;
 bool update_swapchain_vsync = false;
 
-bool viewport_active = false;
-bool should_resize_viewport = false;
-int viewport_width = 1280;
-int viewport_height = 720;
-
-bool drop_load_model = false;
-static const char* drop_load_model_path = "";
 
 bool firstTimeNormal = true;
 bool firstTimeFullScreen = !firstTimeNormal;
 bool object_edit_mode = false;
-int selectedInstanceIndex = 0;
+extern int selectedInstanceIndex = 0;
 int guizmo_operation = -1;
+
+
+// menu options
+bool preferences_open = false;
+bool aboutOpen = false;
+bool tutorial_open = false;
+bool loadOpen = false;
+bool creator_open = false;
+bool perfProfilerOpen = false;
+bool audio_window_open = false;
+bool console_window_open = false;
+
+#if defined(_DEBUG)
+bool show_demo_window = false;
+#endif
+
+
+// left panel
+bool lock_camera_frustum = false;
+int hours = 0, minutes = 0, seconds = 0;
+float memoryUsage = 0.0f;
+unsigned int maxMemory = 0;
+char memory_string[32];
+float cameraPosX, cameraPosY, cameraPosZ;
+float cameraFrontX, cameraFrontY, cameraFrontZ;
+float* cameraFOV = nullptr;
+float* cameraSpeed = nullptr;
+float* cameraNearPlane = nullptr;
+float* cameraFarPlane = nullptr;
+
+
+bool viewport_active = false;
+bool should_resize_viewport = false;
+int viewport_width = 1280;
+int viewport_height = 720;
+int old_viewport_width = 0;
+int old_viewport_height = 0;
+float resize_width = 0;
+float resize_height = 0;
+
+bool drop_load_model = false;
+const char* drop_load_model_path = "";
+
+
 
 enum class setting_options
 {
@@ -276,24 +310,7 @@ static void resize_and_center_next_window(const ImVec2& size, ImGuiCond flags = 
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), flags, ImVec2(0.5f, 0.5f));
 }
 
-static void info_marker(const char* desc)
-{
-    if (!display_tooltips)
-        return;
-
-    ImGui::SameLine();
-    ImGui::TextDisabled(ICON_FA_CIRCLE_INFO);
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
-    {
-        ImGui::BeginTooltip();
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextUnformatted(desc);
-        ImGui::PopTextWrapPos();
-        ImGui::EndTooltip();
-    }
-}
-
-static void render_preferences_window(my_engine* engine, bool* open)
+static void render_preferences_window(bool* open)
 {
     if (!*open)
         return;
@@ -467,7 +484,7 @@ static void render_preferences_window(my_engine* engine, bool* open)
         ImGui::Text("Audio");
 
         if (ImGui::SliderInt("Main volume", &main_volume, 0, 100, "%d%%"))
-            engine_set_master_volume(engine, main_volume);
+            engine_set_master_volume(main_volume);
         break;
     }
 
@@ -508,7 +525,6 @@ static void render_about_window(bool* open)
     }
 }
 
-
 static void render_tutorial_window(bool* open)
 {
     if (!*open)
@@ -545,8 +561,7 @@ static void render_tutorial_window(bool* open)
     ImGui::End();
 }
 
-
-static void load_model_window(my_engine* engine, bool* open)
+static void load_model_window(bool* open)
 {
     if (!*open)
         return;
@@ -565,8 +580,8 @@ static void load_model_window(my_engine* engine, bool* open)
 
     ImGui::Begin(ICON_FA_CUBE " Load Model", open);
 
-    static const char* modelPath = engine_get_executable_directory(engine);
-    std::string model_path = engine_display_file_explorer(engine, modelPath);
+    static const char* modelPath = engine_get_executable_directory();
+    std::string model_path = engine_display_file_explorer(modelPath);
 
     // TODO: instead of simply checking for file extension, we need to properly
     // parse the file to ensure it is in the correct format.
@@ -584,7 +599,7 @@ static void load_model_window(my_engine* engine, bool* open)
         if (model.extension() == ".vmve") {
             file_encrypted = true;
         } else {
-            engine_load_model(engine, model_path.c_str(), flip_uv);
+            engine_load_model(model_path.c_str(), flip_uv);
         }
 #endif
     }
@@ -600,7 +615,7 @@ static void load_model_window(my_engine* engine, bool* open)
                 std::string raw_data;
                 bool file_read = vmve_read_from_file(raw_data, model_path.c_str());
                 if (file_read)
-                    engine_add_model(engine, raw_data.c_str(), raw_data.size(), flip_uv);
+                    engine_add_model(raw_data.c_str(), raw_data.size(), flip_uv);
 
                 ImGui::CloseCurrentPopup();
                 file_encrypted = false;
@@ -611,7 +626,7 @@ static void load_model_window(my_engine* engine, bool* open)
 
 }
 
-static void vmve_creator_window(my_engine* engine, bool* open)
+static void vmve_creator_window(bool* open)
 {
     if (!*open)
         return;
@@ -632,8 +647,8 @@ static void vmve_creator_window(my_engine* engine, bool* open)
     ImGui::Begin(ICON_FA_KEY " VMVE Creator", open);
 
 
-    static const char* exportPath = engine_get_executable_directory(engine);
-    std::string current_path = engine_display_file_explorer(engine, exportPath);
+    static const char* exportPath = engine_get_executable_directory();
+    std::string current_path = engine_display_file_explorer(exportPath);
 
     ImGui::Text(current_path.c_str());
 
@@ -737,7 +752,7 @@ static void perf_window(bool* open)
     ImGui::End();
 }
 
-static void render_audio_window(my_engine* engine, bool* open)
+static void render_audio_window(bool* open)
 {
     if (!*open)
         return;
@@ -751,12 +766,12 @@ static void render_audio_window(my_engine* engine, bool* open)
     static int audio_volume = 50;
     // TODO: disable buttons if not a valid audio path
     if (ImGui::Button(ICON_FA_PLAY))
-        engine_play_audio(engine, audio_path);
+        engine_play_audio(audio_path);
     ImGui::SameLine();
     ImGui::Button(ICON_FA_PAUSE);
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_STOP))
-        engine_stop_audio(engine, 0);
+        engine_stop_audio(0);
     ImGui::SameLine();
 
     if (audio_volume >= 66.6)
@@ -770,7 +785,7 @@ static void render_audio_window(my_engine* engine, bool* open)
 
     ImGui::InputText("Audio Path", audio_path, 256);
     if (ImGui::SliderInt("Volume", &audio_volume, 0, 100, "%d%%"))
-        engine_set_audio_volume(engine, audio_volume);
+        engine_set_audio_volume(audio_volume);
 
 
 
@@ -794,153 +809,15 @@ static void render_console_window(bool* open)
     ImGui::End();
 }
 
-void begin_docking()
+static void render_windows()
 {
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("Editor", &editor_open, rootNodeFlags);
-    ImGui::PopStyleVar(3);
-}
-
-void EndDocking()
-{
-    ImGui::End();
-}
-
-void set_drop_model_path(const char* path)
-{
-//    drop_load_model_path = path;
-}
-
-void render_main_menu(my_engine* engine)
-{
-    static bool preferences_open = false;
-    static bool aboutOpen = false;
-    static bool tutorial_open = false;
-    static bool loadOpen = false;
-    static bool creator_open = false;
-    static bool perfProfilerOpen = false;
-    static bool audio_window_open = false;
-    static bool console_window_open = false;
-
-#if defined(_DEBUG)
-    static bool show_demo_window = false;
-#endif
-
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu(ICON_FA_FOLDER " File")) {
-            loadOpen = ImGui::MenuItem(ICON_FA_CUBE " Load model");
-            creator_open = ImGui::MenuItem(ICON_FA_KEY " VMVE creator");
-
-
-            if (ImGui::MenuItem(ICON_FA_XMARK " Exit"))
-                engine_should_terminate(engine);
-
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu(ICON_FA_GEAR " Options")) {
-            if (ImGui::BeginMenu("Rendering")) {
-                ImGui::Checkbox("Lighting", &lighting);
-                info_marker("Toggle lighting in the main viewport");
-
-                if (ImGui::Checkbox("Positions", &positions)) {
-                    normals = false;
-                    speculars = false;
-                    depth = false;
-                }
-                info_marker("Display vertex positions in the world");
-
-                if (ImGui::Checkbox("Normals", &normals)) {
-                    positions = false;
-                    speculars = false;
-                    depth = false;
-                }
-                info_marker("Display surface vector directions");
-
-                if (ImGui::Checkbox("Specular", &speculars)) {
-                    positions = false;
-                    normals = false;
-                    depth = false;
-                }
-                info_marker("Display specular textures on objects");
-
-                if (ImGui::Checkbox("Depth", &depth)) {
-                    positions = false;
-                    normals = false;
-                    speculars = false;
-                }
-                info_marker("Display pixel depth information");
-
-
-                if (ImGui::Checkbox("Wireframe", &wireframe))
-                    engine_set_render_mode(engine, wireframe ? 1 : 0);
-                info_marker("Toggles rendering mode to visualize individual vertices");
-
-                if (ImGui::Checkbox("VSync", &vsync))
-                    update_swapchain_vsync = true;
-                info_marker("Limits frame rate to your displays refresh rate");
-
-                ImGui::Checkbox("Display stats", &display_stats);
-                info_marker("Displays detailed renderer statistics");
-
-                ImGui::EndMenu();
-            }
-            if (ImGui::MenuItem("Preferences"))
-                preferences_open = true;
-
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu(ICON_FA_WRENCH " Tools")) {
-            if (ImGui::MenuItem(ICON_FA_CLOCK " Performance Profiler")) {
-                perfProfilerOpen = true;
-            }
-
-            if (ImGui::MenuItem(ICON_FA_MUSIC " Audio player")) {
-                audio_window_open = true;
-            }
-
-            if (ImGui::MenuItem(ICON_FA_TERMINAL " Console")) {
-                console_window_open = true;
-            }
-
-
-
-            ImGui::EndMenu();
-        }
-
-
-        if (ImGui::BeginMenu(ICON_FA_LIFE_RING " Help")) {
-            if (ImGui::MenuItem("About"))
-                aboutOpen = true;
-            if (ImGui::MenuItem("Tutorial"))
-                tutorial_open = true;
-#if defined(_DEBUG)
-            if (ImGui::MenuItem("Show demo window"))
-                show_demo_window = true;
-#endif
-
-            ImGui::EndMenu();
-        }
-
-
-
-        ImGui::EndMenuBar();
-    }
-
-    render_preferences_window(engine, &preferences_open);
+    render_preferences_window(&preferences_open);
     render_about_window(&aboutOpen);
     render_tutorial_window(&tutorial_open);
-    load_model_window(engine, &loadOpen);
-    vmve_creator_window(engine, &creator_open);
+    load_model_window(&loadOpen);
+    vmve_creator_window(&creator_open);
     perf_window(&perfProfilerOpen);
-    render_audio_window(engine, &audio_window_open);
+    render_audio_window(&audio_window_open);
     render_console_window(&console_window_open);
 
     // TODO: continue working on drag and drop model loading
@@ -955,7 +832,7 @@ void render_main_menu(my_engine* engine)
 
             ImGui::Checkbox("Flip UVs", &flip_uvs);
             if (ImGui::Button("Load Model", ImVec2(120, 0))) {
-                engine_load_model(engine, drop_load_model_path, flip_uvs);
+                engine_load_model(drop_load_model_path, flip_uvs);
 
                 ImGui::CloseCurrentPopup();
                 drop_load_model = false;
@@ -981,597 +858,47 @@ void render_main_menu(my_engine* engine)
 #endif
 }
 
-void render_object_window(my_engine* engine)
+static void begin_docking()
 {
-    // Object window
-    ImGui::Begin(object_window, &window_open, dockspaceWindowFlags);
-    {
-        static int modelID = 0;
-
-        int modelCount = engine_get_model_count(engine);
-        int instanceCount = engine_get_instance_count(engine);
-
-        // TODO: Get a contiguous list of models names for the combo box instead
-        // of recreating a temporary list each frame.
-        std::vector<const char*> modelNames(modelCount);
-        for (std::size_t i = 0; i < modelNames.size(); ++i)
-            modelNames[i] = engine_get_model_name(engine, i);
-
-        ImGui::Combo("Model", &modelID, modelNames.data(), modelNames.size());
-
-        ImGui::Text("Models");
-        ImGui::SameLine();
-        ImGui::Button(ICON_FA_PLUS);
-        ImGui::SameLine();
-        ImGui::BeginDisabled(modelCount == 0);
-        if (ImGui::Button(ICON_FA_MINUS))
-            engine_remove_model(engine, modelID);
-        ImGui::EndDisabled();
-
-
-        // TODO: Add different entity types
-        // TODO: Using only an icon for a button does not seem to register
-        ImGui::Text("Entities");
-        ImGui::SameLine();
-        ImGui::BeginDisabled(modelCount == 0);
-        if (ImGui::Button(ICON_FA_PLUS " add"))
-            engine_add_entity(engine, modelID, 0.0f, 0.0f, 0.0f);
-        ImGui::EndDisabled();
-
-        ImGui::SameLine();
-
-        ImGui::BeginDisabled(instanceCount == 0);
-        if (ImGui::Button(ICON_FA_MINUS " remove")) {
-            engine_remove_instance(engine, selectedInstanceIndex);
-
-            // NOTE: should not go below 0
-
-            // Decrement selected index if at boundary
-            if (instanceCount - 1 == selectedInstanceIndex && selectedInstanceIndex != 0)
-                --selectedInstanceIndex;
-
-            assert(selectedInstanceIndex >= 0);
-        }
-            
-        ImGui::EndDisabled();
-
-        ImGui::Separator();
-
-#if 0
-        ImGui::Button("Add light");
-        ImGui::SameLine();
-        ImGui::Button("Remove light");
-#endif
-        ImGui::Separator();
-
-        // Options
-        static ImGuiTableFlags flags =
-            ImGuiTableFlags_Resizable | ImGuiTableFlags_Hideable | ImGuiTableFlags_BordersOuter |
-            ImGuiTableFlags_BordersV | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_ScrollY;
-
-        const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
-        const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
-
-        if (ImGui::BeginTable("Objects", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f)) {
-            ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, 0.0f, 0);
-            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 0.0f, 1);
-            ImGui::TableSetupScrollFreeze(0, 1);
-            ImGui::TableHeadersRow();
-
-            ImGuiListClipper clipper;
-            clipper.Begin(engine_get_instance_count(engine));
-            while (clipper.Step()) {
-                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
-                    char label[32];
-                    sprintf(label, "%04d", engine_get_instance_id(engine, i));
-
-                    bool isCurrentlySelected = (selectedInstanceIndex == i);
-
-                    ImGui::PushID(label);
-                    ImGui::TableNextRow();
-
-                    ImGui::TableNextColumn();
-                    if (ImGui::Selectable(label, isCurrentlySelected, ImGuiSelectableFlags_SpanAllColumns))
-                        selectedInstanceIndex = i;
-
-                    ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(engine_get_instance_name(engine, i));
-
-                    ImGui::PopID();
-                }
-            }
-            ImGui::EndTable();
-        }
-
-
-        if (engine_get_instance_count(engine) > 0) {
-            ImGui::BeginChild("Object Properties");
-
-            ImGui::Button(ICON_FA_UP_DOWN_LEFT_RIGHT);
-            ImGui::SameLine();
-            ImGui::Button(ICON_FA_ARROWS_UP_TO_LINE);
-            ImGui::SameLine();
-            ImGui::Button(ICON_FA_ROTATE);
-
-            ImGui::Text("ID: %04d", engine_get_instance_id(engine, selectedInstanceIndex));
-            ImGui::Text("Name: %s", engine_get_instance_name(engine, selectedInstanceIndex));
-
-            float instancePos[3];
-            float instanceRot[3];
-            float scale[3];
-
-            engine_decompose_entity_matrix(engine, selectedInstanceIndex, instancePos, instanceRot, scale);
-
-            if (ImGui::SliderFloat3("Translation", instancePos, -100.0f, 100.0f))
-                engine_set_instance_position(engine, selectedInstanceIndex, instancePos[0], instancePos[1], instancePos[2]);
-            if (ImGui::SliderFloat3("Rotation", instanceRot, -360.0f, 360.0f))
-                engine_set_instance_rotation(engine, selectedInstanceIndex, instanceRot[0], instanceRot[1], instanceRot[2]);
-
-
-            static bool uniformScale = true;
-            if (ImGui::SliderFloat3("Scale", scale, 0.1f, 100.0f)) {
-                if (uniformScale)
-                    engine_set_instance_scale(engine, selectedInstanceIndex, scale[0]);
-                else
-                    engine_set_instance_scale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
-            }
-            ImGui::SameLine();
-            if (ImGui::Button(uniformScale ? ICON_FA_LOCK : ICON_FA_UNLOCK))
-                uniformScale = !uniformScale;
-
-            ImGui::EndChild();
-        }
-
-    }
-    ImGui::End();
-}
-
-void render_global_window(my_engine* engine)
-{
-    ImGuiIO& io = ImGui::GetIO();
-
-
-    static bool lock_camera_frustum = false;
-
-    static bool skyboxWindowOpen = false;
-
-    ImGui::Begin(scene_window, &window_open, dockspaceWindowFlags);
-    {
-        if (ImGui::CollapsingHeader("Application")) {
-            int hours, minutes, seconds;
-            engine_get_uptime(engine, &hours, &minutes, &seconds);
-
-            float memoryUsage;
-            unsigned int maxMemory;
-            engine_get_memory_status(engine, &memoryUsage, &maxMemory);
-
-            ImGui::Text("Uptime: %d:%d:%d", hours, minutes, seconds);
-
-            ImGui::Text("Memory usage:");
-            char buf[32];
-            sprintf(buf, "%.1f GB/%lld GB", (memoryUsage * maxMemory), maxMemory);
-            ImGui::ProgressBar(memoryUsage, ImVec2(0.f, 0.f), buf);
-        }
-
-#if 0
-        if (ImGui::CollapsingHeader("Environment"))
-        {
-            float sun_direction[3];
-
-            //ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.sunDirection), -1.0f, 1.0f);
-
-            // todo: Maybe we could use std::chrono for the time here?
-            ImGui::SliderInt("Time of day", &timeOfDay, 0.0f, 23.0f, "%d:00");
-            ImGui::SliderFloat("Temperature", &temperature, -20.0f, 50.0f, "%.1f C");
-            ImGui::SliderFloat("Wind speed", &windSpeed, 0.0f, 15.0f, "%.1f m/s");
-            ImGui::Separator();
-            ImGui::SliderFloat("Ambient", &scene.ambientSpecular.x, 0.0f, 1.0f);
-            ImGui::SliderFloat("Specular strength", &scene.ambientSpecular.y, 0.0f, 1.0f);
-            ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
-
-            ImGui::SliderFloat("Shadow map distance", &sunDistance, 1.0f, 2000.0f);
-            ImGui::SliderFloat("Shadow near", &shadowNear, 0.1f, 1.0f);
-            ImGui::SliderFloat("Shadow far", &shadowFar, 5.0f, 2000.0f);
-
-            ImGui::Text("Skybox");
-            //ImGui::SameLine();
-            //if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
-            //    skyboxWindowOpen = true;
-
-        }
-#endif
-
-        if (ImGui::CollapsingHeader("Camera")) {
-            float cameraPosX, cameraPosY, cameraPosZ;
-            float cameraFrontX, cameraFrontY, cameraFrontZ;
-
-            float* cameraFOV = engine_get_camera_fov(engine);
-            float* cameraSpeed = engine_get_camera_speed(engine);
-            float* cameraNearPlane = engine_get_camera_near(engine);
-            float* cameraFarPlane = engine_get_camera_far(engine);
-
-            engine_get_camera_position(engine, &cameraPosX, &cameraPosY, &cameraPosZ);
-            engine_get_camera_front_vector(engine, &cameraFrontX, &cameraFrontY, &cameraFrontZ);
-
-#if 0
-            if (ImGui::RadioButton("Perspective", engine->camera.projection == CameraProjection::Perspective))
-                engine->camera.projection = CameraProjection::Perspective;
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Orthographic", engine->camera.projection == CameraProjection::Orthographic))
-                engine->camera.projection = CameraProjection::Orthographic;
-            if (ImGui::RadioButton("First person", engine->camera.type == CameraType::FirstPerson))
-                engine->camera.type = CameraType::FirstPerson;
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Look at", engine->camera.type == CameraType::LookAt))
-                engine->camera.type = CameraType::LookAt;
-#endif
-            ImGui::Text("Position");
-            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
-            //ImGui::PopFont();
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraPosX);
-            ImGui::SameLine();
-            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
-            //ImGui::PopFont();
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraPosY);
-            ImGui::SameLine();
-            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-            ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
-            //ImGui::PopFont();
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraPosZ);
-
-            ImGui::Text("Direction");
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraFrontX);
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraFrontY);
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraFrontZ);
-
-            ImGui::SliderFloat("Speed", cameraSpeed, 0.0f, 20.0f, "%.1f m/s");
-            //ImGui::SliderFloat("Yaw Speed", cameraYawSpeed, 0.0f, 45.0f);
-            ImGui::SliderFloat("FOV", cameraFOV, 10.0f, 120.0f);
-
-            ImGui::SliderFloat("Near plane", cameraNearPlane, 0.1f, 10.0f, "%.1f m");
-            ImGui::SliderFloat("Far plane", cameraFarPlane, 10.0f, 2000.0f, "%.1f m");
-            ImGui::Checkbox("Lock frustum", &lock_camera_frustum);
-        }
-
-#if 0
-        static bool edit_shaders = false;
-        if (ImGui::Button("Edit shaders"))
-            edit_shaders = true;
-
-        if (edit_shaders) {
-            ImGui::Begin("Edit Shaders", &edit_shaders);
-
-            static char text[1024 * 16] =
-                "/*\n"
-                " The Pentium F00F bug, shorthand for F0 0F C7 C8,\n"
-                " the hexadecimal encoding of one offending instruction,\n"
-                " more formally, the invalid operand with locked CMPXCHG8B\n"
-                " instruction bug, is a design flaw in the majority of\n"
-                " Intel Pentium, Pentium MMX, and Pentium OverDrive\n"
-                " processors (all in the P5 microarchitecture).\n"
-                "*/\n\n"
-                "label:\n"
-                "\tlock cmpxchg8b eax\n";
-
-            static ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput;
-            ImGui::CheckboxFlags("ImGuiInputTextFlags_ReadOnly", &flags, ImGuiInputTextFlags_ReadOnly);
-            ImGui::CheckboxFlags("ImGuiInputTextFlags_AllowTabInput", &flags, ImGuiInputTextFlags_AllowTabInput);
-            ImGui::CheckboxFlags("ImGuiInputTextFlags_CtrlEnterForNewLine", &flags, ImGuiInputTextFlags_CtrlEnterForNewLine);
-            ImGui::InputTextMultiline("##source", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), flags);
-
-            ImGui::End();
-        }
-#endif
-
-
-        ImGui::Separator();
-
-
-
-
-
-        if (skyboxWindowOpen) {
-            ImGui::Begin("Load Skybox", &skyboxWindowOpen);
-
-            static const char* textureDirectory = engine_get_executable_directory(engine);
-            std::string path = engine_display_file_explorer(engine, textureDirectory);
-
-            if (ImGui::Button("Load"))
-            {
-                // Wait for GPU to finish commands
-                // Remove skybox resources
-                // load new skybox texture and allocate resources
-            }
-
-            ImGui::End();
-        }
-
-
-
-
-
-
-    }
-    ImGui::End();
-}
-
-void render_logs_windows(my_engine* engine)
-{
-    static ImVec4* style = ImGui::GetStyle().Colors;
-
-    static bool autoScroll = true;
-    static bool scrollCheckboxClicked = false;
-
-    ImGui::Begin(logs_window, &window_open, dockspaceWindowFlags);
-    {
-        if (ImGui::Button(ICON_FA_BROOM " Clear"))
-            engine_clear_logs(engine);
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_DOWNLOAD " Export"))
-            engine_export_logs_to_file(engine, "logs.txt");
-        ImGui::SameLine();
-        scrollCheckboxClicked = ImGui::Checkbox("Auto-scroll", &autoScroll);
-        ImGui::Separator();
-
-        ImGui::BeginChild("Logs", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-        static ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody;
-
-        if (ImGui::BeginTable("Log_Table", 1, flags)) {
-            ImGuiListClipper clipper;
-            clipper.Begin(engine_get_log_count(engine));
-            while (clipper.Step()) {
-                for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
-                    const char* message = nullptr;
-                    int log_type = 0;
-                    engine_get_log(engine, index, &message, &log_type);
-
-                    static std::string icon_type;
-                    static ImVec4 icon_color;
-                    static ImVec4 bg_color;
-
-                    // set up colors based on log type
-                    if (log_type == 0) {
-                        icon_type = ICON_FA_CIRCLE_INFO;
-                        icon_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-                        bg_color = style[ImGuiCol_WindowBg];
-                    } else if (log_type == 1) {
-                        icon_type = ICON_FA_TRIANGLE_EXCLAMATION;
-                        icon_color = ImVec4(ImVec4(0.766f, 0.50f, 0.0043f, 1.0f));
-                        bg_color = ImVec4(1.0f, 1.0f, 0.0f, 0.12f);
-                    } else if (log_type == 2) {
-                        icon_type = ICON_FA_TRIANGLE_EXCLAMATION;
-                        icon_color = ImVec4(0.719f, 0.044f, 0.044f, 1.0f);
-                        bg_color = ImVec4(1.0f, 0.0f, 0.0f, 0.098f);
-                    }
-
-                    ImGui::PushID(message);
-
-                    ImGui::TableNextRow();
-                    ImGui::TableNextColumn();
-
-                    ImGui::GetWindowDrawList()->ChannelsSplit(2);
-                    ImGui::GetWindowDrawList()->ChannelsSetCurrent(1);
-                    ImGui::TextColored(icon_color, icon_type.c_str());
-                    ImGui::SameLine();
-                    ImGui::Selectable(message, false, ImGuiSelectableFlags_SpanAllColumns);
-
-                    // TODO: Should do this once per frame instead of per log 
-                    // message. We should maybe have two code paths based on
-                    // if we have log highlighting.
-                    if (highlight_logs) {
-                        // Set background color
-                        ImGui::GetWindowDrawList()->ChannelsSetCurrent(0);
-                        ImVec2 p_min = ImGui::GetItemRectMin();
-                        ImVec2 p_max = ImGui::GetItemRectMax();
-                        ImGui::GetWindowDrawList()->AddRectFilled(p_min, p_max, ImGui::ColorConvertFloat4ToU32(bg_color));
-                    }
-
-                    ImGui::GetWindowDrawList()->ChannelsMerge();
-
-                    ImGui::PopID();
-                }
-            }
-
-            ImGui::EndTable();
-        }
-
-
-
-        bool isBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY();
-        autoScroll = isBottom;
-
-        if ((scrollCheckboxClicked && autoScroll) && isBottom) {
-            // TODO: Instead of moving slightly up so that
-            // isBottom is false. We should have a boolean
-            // that can handle this. This will ensure that
-            // we can disable auto-scroll even if we are
-            // at the bottom without moving visually.
-            ImGui::SetScrollY(ImGui::GetScrollY() - 0.001f);
-            isBottom = false;
-        }
-
-        if ((scrollCheckboxClicked && !autoScroll) || isBottom) {
-            ImGui::SetScrollHereY(1.0f);
-        }
-
-        ImGui::EndChild();
-    }
-    ImGui::End();
-}
-
-static void display_renderer_stats(my_engine* engine, bool* open)
-{
-    if (!*open)
-        return;
-
-
-    ImGuiIO& io = ImGui::GetIO();
-
-    // Renderer stats
-    const float padding = 10.0f;
-    const ImVec2 vMin = ImGui::GetWindowContentRegionMin() + ImGui::GetWindowPos();
-    const ImVec2 vMax = ImGui::GetWindowContentRegionMax() + ImGui::GetWindowPos();
-    const ImVec2 work_size = ImGui::GetWindowSize();
-    const ImVec2 window_pos = ImVec2(vMin.x + padding, vMin.y + padding);
-    const ImVec2 window_pos_pivot = ImVec2(0, 0);
-
-    //ImGui::GetForegroundDrawList()->AddRect(vMin, vMax, IM_COL32(255, 255, 0, 255));
-
-    ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
-    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-    if (ImGui::Begin("Renderer Stats", open, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
-    {
-        ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::Text("Delta time: %.4f ms/frame", engine_get_delta_time(engine));
-
-        static const char* gpu_name = engine_get_gpu_name(engine);
-        ImGui::Text("GPU: %s", gpu_name);
-    }
-    ImGui::End();
-}
-
-static void render_viewport_window(my_engine* engine)
-{
-    ImGuiWindowFlags viewportFlags = dockspaceWindowFlags;
-
-    ImGuiIO& io = ImGui::GetIO();
-
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin(viewport_window, &window_open, viewportFlags);
+    ImGui::Begin("Editor", &editor_open, rootNodeFlags);
+    ImGui::PopStyleVar(3);
+}
 
-
-    display_renderer_stats(engine, &display_stats);
-
-
-    //in_viewport = ImGui::IsWindowFocused();
-
-    ImGui::PopStyleVar(2);
-    {
-        static bool first_time = true;
-        // If new size is different than old size we will resize all contents
-        viewport_width = (int)ImGui::GetContentRegionAvail().x;
-        viewport_height = (int)ImGui::GetContentRegionAvail().y;
-
-        if (first_time) {
-            old_viewport_width = viewport_width;
-            old_viewport_height = viewport_height;
-            first_time = false;
-        }
-
-
-        // If at any point the viewport dimensions are different than the previous frames 
-        // viewport size then update the viewport values and flag the main loop to update
-        // the resize_viewport variable.
-        if (viewport_width != old_viewport_width || 
-            viewport_height != old_viewport_height) {
-            old_viewport_width = viewport_width;
-            old_viewport_height = viewport_height;
-
-            should_resize_viewport = true;
-        }
-
-        // todo: ImGui::GetContentRegionAvail() can be used in order to resize the framebuffer
-        // when the viewport window resizes.
-
-
-        // change viewport view based on various settings
-        my_engine_viewport_view viewport_view = my_engine_viewport_view::full;
-        if (lighting)
-            viewport_view = my_engine_viewport_view::full;
-        else
-            viewport_view = my_engine_viewport_view::colors;
-
-        if (positions)
-            viewport_view = my_engine_viewport_view::positions;
-        else if (normals)
-            viewport_view = my_engine_viewport_view::normals;
-        else if (speculars)
-            viewport_view = my_engine_viewport_view::specular;
-        else if (depth)
-            viewport_view = my_engine_viewport_view::depth;
-
-
-
-        ImGui::Image(engine_get_viewport_texture(engine, viewport_view), ImVec2(viewport_width, viewport_height));
-
-        // todo(zak): move this into its own function
-        float* view = engine_get_camera_view(engine);
-        float* proj = engine_get_camera_projection(engine);
-
-        // note: proj[5] == proj[1][1]
-        proj[5] *= -1.0f;
-
-        if (object_edit_mode) {
-            if (engine_get_instance_count(engine) > 0 && guizmo_operation != -1) {
-                ImGuiIO& io = ImGui::GetIO();
-
-                float matrix[16];
-                engine_get_entity_matrix(engine, selectedInstanceIndex, matrix);
-
-                //ImGuizmo::Enable(true);
-                ImGuizmo::SetDrawlist();
-                ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, viewport_width, viewport_height);
-                //ImGuizmo::SetOrthographic(false);
-
-                //ImGuizmo::SetID(0);
-  
-                ImGuizmo::Manipulate(view, proj, (ImGuizmo::OPERATION)guizmo_operation, ImGuizmo::MODE::WORLD, matrix);
-
-
-                if (ImGuizmo::IsUsing()) {
-                    float position[3];
-                    float rotation[3];
-                    float scale[3];
-                    static float current_rotation[3]{};
-
-                    ImGuizmo::DecomposeMatrixToComponents(matrix, position, rotation, scale);
-                    //engine_decompose_entity_matrix(engine, selectedInstanceIndex, position, rotation, scale);
-
-                    // TODO: rotation bug causes continuous rotations.
-#if 1
-//float* current_rotation = nullptr;
-                    float rotation_delta[3]{};
-                    rotation_delta[0] = rotation[0] - current_rotation[0];
-                    rotation_delta[1] = rotation[1] - current_rotation[1];
-                    rotation_delta[2] = rotation[2] - current_rotation[2];
-
-                    // set
-
-                    current_rotation[0] += rotation_delta[0];
-                    current_rotation[1] += rotation_delta[1];
-                    current_rotation[2] += rotation_delta[2];
-#endif
-                    engine_set_instance_position(engine, selectedInstanceIndex, position[0], position[1], position[2]);
-                    engine_set_instance_rotation(engine, selectedInstanceIndex, rotation[0], rotation[1], rotation[2]);
-                    engine_set_instance_scale(engine, selectedInstanceIndex, scale[0], scale[1], scale[2]);
-                }
-            }
-        }
-
-
-        proj[5] *= -1.0f;
-
-
-    }
+static void end_docking()
+{
     ImGui::End();
 }
 
-void configure_ui(my_engine* engine)
+void set_drop_model_path(const char* path)
+{
+//    drop_load_model_path = path;
+}
+
+void info_marker(const char* desc)
+{
+    if (!display_tooltips)
+        return;
+
+    ImGui::SameLine();
+    ImGui::TextDisabled(ICON_FA_CIRCLE_INFO);
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
+void configure_ui()
 {
     ImGuiIO& io = ImGui::GetIO();
     ImGuiStyle& style = ImGui::GetStyle();
@@ -1579,7 +906,7 @@ void configure_ui(my_engine* engine)
     set_default_styling();
     set_default_theme();
 
-    const float base_scaling_factor = engine_get_window_scale(engine);
+    const float base_scaling_factor = engine_get_window_scale();
     const float base_font_size = 16.0f * base_scaling_factor;
     const float base_icon_size = base_font_size * 2.0f / 3.0f; // Required by FontAwesome for correct alignment.
 
@@ -1602,14 +929,14 @@ void configure_ui(my_engine* engine)
     io.Fonts->AddFontFromMemoryCompressedBase85TTF(get_fa_solid_900_compressed_ttf(), icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
 
     // Upload font textures to the engine (GPU memory)
-    engine_set_ui_font_texture(engine);
+    engine_set_ui_font_texture();
 }
 
-
-void render_ui(my_engine* engine, bool fullscreen)
+void render_ui(bool fullscreen)
 {
     begin_docking();
-    render_main_menu(engine);
+    
+    menu_panel();
 
     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 
@@ -1646,15 +973,17 @@ void render_ui(my_engine* engine, bool fullscreen)
 
 
     if (fullscreen) {
-        render_viewport_window(engine);
+        center_panel(viewport_window, &window_open, dockspaceWindowFlags);
     } else {
-        render_object_window(engine);
-        render_global_window(engine);
-        render_logs_windows(engine);
-        render_viewport_window(engine);
+        left_panel(scene_window, &window_open, dockspaceWindowFlags);
+        right_panel(object_window, &window_open, dockspaceWindowFlags);
+        bottom_panel(logs_window, &window_open, dockspaceWindowFlags);
+        center_panel(viewport_window, &window_open, dockspaceWindowFlags);
     }
 
-    EndDocking();
+    render_windows();
+
+    end_docking();
 
 }
 

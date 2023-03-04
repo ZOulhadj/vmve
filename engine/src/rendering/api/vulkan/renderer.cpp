@@ -945,7 +945,7 @@ void end_render_pass(std::vector<VkCommandBuffer>& buffers)
 }
 
 VkPipelineLayout create_pipeline_layout(const std::vector<VkDescriptorSetLayout>& descriptor_sets, 
-                                        std::size_t push_constant_size /*= 0*/, 
+                                        uint32_t push_constant_size /*= 0*/, 
                                         VkShaderStageFlags push_constant_shader_stages /*= 0*/)
 {
     VkPipelineLayout pipeline_layout{};
@@ -1212,7 +1212,7 @@ uint32_t get_swapchain_frame_index()
 
 uint32_t get_swapchain_image_count()
 {
-    return g_swapchain.images.size();
+    return static_cast<uint32_t>(g_swapchain.images.size());
 }
 
 void recreate_swapchain(buffer_mode bufferMode, vsync_mode vsync)

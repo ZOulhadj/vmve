@@ -72,7 +72,7 @@ void clear_logs()
     g_log_size = 0;
 }
 
-void get_log(int logIndex, const char** str, int* type)
+void get_log(uint32_t logIndex, const char** str, int* type)
 {
     if (logIndex > g_log_size)
         return;

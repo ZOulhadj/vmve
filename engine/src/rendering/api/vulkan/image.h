@@ -13,9 +13,9 @@ struct vk_image
 };
 
 
-uint32_t query_max_anisotropy_level(uint32_t anisotropic_level);
+float query_max_anisotropy_level(float anisotropic_level);
 
-VkSampler create_image_sampler(VkFilter filtering, uint32_t anisotropy, uint32_t max_mip_level = 0, VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT);
+VkSampler create_image_sampler(VkFilter filtering, float anisotropy, float max_mip_level = 0.0f, VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT);
 void destroy_image_sampler(VkSampler sampler);
 
 VkImageView create_image_views(VkImage image, VkFormat format, VkImageUsageFlags usage, uint32_t mip_levels);

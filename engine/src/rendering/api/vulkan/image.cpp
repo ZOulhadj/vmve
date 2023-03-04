@@ -2,7 +2,7 @@
 
 #include "renderer.h"
 
-uint32_t query_max_anisotropy_level(uint32_t anisotropic_level)
+float query_max_anisotropy_level(float anisotropic_level)
 {
     const vk_context& rc = get_vulkan_context();
 
@@ -12,13 +12,13 @@ uint32_t query_max_anisotropy_level(uint32_t anisotropic_level)
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(rc.device->gpu, &properties);
 
-    const uint32_t max_ansiotropic_level = properties.limits.maxSamplerAnisotropy;
+    const float max_ansiotropic_level = properties.limits.maxSamplerAnisotropy;
 
     if (anisotropic_level <= max_ansiotropic_level)
         return anisotropic_level;
 
     print_log(
-        "Requested anisotropic level of %u not supported. Using the maximum level of %u instead.\n",
+        "Requested anisotropic level of %f not supported. Using the maximum level of %f instead.\n",
         anisotropic_level,
         max_ansiotropic_level
     );
@@ -26,7 +26,7 @@ uint32_t query_max_anisotropy_level(uint32_t anisotropic_level)
     return max_ansiotropic_level;
 }
 
-VkSampler create_image_sampler(VkFilter filtering, uint32_t anisotropy, uint32_t max_mip_level, VkSamplerAddressMode addressMode)
+VkSampler create_image_sampler(VkFilter filtering, float anisotropy, float max_mip_level, VkSamplerAddressMode addressMode)
 {
     VkSampler sampler{};
 
@@ -37,8 +37,8 @@ VkSampler create_image_sampler(VkFilter filtering, uint32_t anisotropy, uint32_t
     // a better solution so that we could either disable it, use the lowest,
     // have a custom value or simply get the highest value.
     VkBool32 enable_anisotropy = VK_FALSE;
-    uint32_t anisotropy_level = 0;
-    if (anisotropy > 0) {
+    float anisotropy_level = 0.0f;
+    if (anisotropy > 0.0f) {
         anisotropy_level = query_max_anisotropy_level(anisotropy);
         enable_anisotropy = VK_TRUE;
     }
@@ -50,7 +50,7 @@ VkSampler create_image_sampler(VkFilter filtering, uint32_t anisotropy, uint32_t
     sampler_info.addressModeV = addressMode;
     sampler_info.addressModeW = addressMode;
     sampler_info.anisotropyEnable = enable_anisotropy;
-    sampler_info.maxAnisotropy = static_cast<float>(anisotropy_level);
+    sampler_info.maxAnisotropy = anisotropy_level;
     sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
     sampler_info.compareEnable = VK_FALSE;
@@ -278,10 +278,10 @@ vk_image create_texture(unsigned char* texture, uint32_t width, uint32_t height,
     // Get the highest anisotropy level for model textures
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(rc.device->gpu, &properties);
-    const uint32_t max_ansiotropic_level = properties.limits.maxSamplerAnisotropy;
+    const float max_ansiotropic_level = properties.limits.maxSamplerAnisotropy;
 
     buffer = create_image({ width, height }, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, mip_levels);
-    buffer.sampler = create_image_sampler(VK_FILTER_LINEAR, max_ansiotropic_level, mip_levels);
+    buffer.sampler = create_image_sampler(VK_FILTER_LINEAR, max_ansiotropic_level, static_cast<float>(mip_levels));
 
     // Upload texture data into GPU memory by doing a layout transition
     submit_to_gpu([&](VkCommandBuffer cmd_buffer) {
