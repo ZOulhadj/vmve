@@ -145,8 +145,8 @@ static vk_pipeline skybox_pipeline;
 
 static vk_pipeline* current_pipeline = &offscreen_pipeline;
 
-static std::vector<VkCommandBuffer> offscreen_cmd_buffer;
-static std::vector<VkCommandBuffer> composite_cmd_buffer;
+static std::vector<VkCommandBuffer> cmd_buffer;
+//static std::vector<VkCommandBuffer> composite_cmd_buffer;
 
 static Model skybox_model;
 
@@ -183,7 +183,7 @@ static std::string get_executable_directory()
 
 static bool initialize_core(my_engine* engine, const char* name, int width, int height)
 {
-    // Initialize core sXSystems
+    // Initialize core systems
     engine->window = create_window(name, width, height);
     if (!engine->window) {
         print_error("Failed to create window.\n");
@@ -371,8 +371,8 @@ static void configure_renderer(my_engine* engine)
 
 
     // Create required command buffers
-    offscreen_cmd_buffer = create_command_buffers();
-    composite_cmd_buffer = create_command_buffers();
+    cmd_buffer = create_command_buffers();
+    //composite_cmd_buffer = create_command_buffers();
 
 
 
@@ -474,12 +474,12 @@ bool engine_begin_render()
 
 void engine_render()
 {
-    begin_command_buffer(offscreen_cmd_buffer);
+    begin_command_buffer(cmd_buffer);
     {
-        bind_descriptor_set(offscreen_cmd_buffer, offscreen_pipeline_layout, offscreen_ds, { sizeof(view_projection) });
-        begin_render_pass(offscreen_cmd_buffer, offscreen_pass);
+        bind_descriptor_set(cmd_buffer, offscreen_pipeline_layout, offscreen_ds, { sizeof(view_projection) });
+        begin_render_pass(cmd_buffer, offscreen_pass);
 
-        bind_pipeline(offscreen_cmd_buffer, *current_pipeline);
+        bind_pipeline(cmd_buffer, *current_pipeline);
 
         // TODO: Currently we are rendering each instance individually
         // which is a very naive. Firstly, instances should be rendered
@@ -494,34 +494,30 @@ void engine_render()
 
             apply_entity_transformation(instance);
 
-            render_model(g_engine->models[instance.model_index], instance.matrix, offscreen_cmd_buffer, offscreen_pipeline_layout);
+            render_model(g_engine->models[instance.model_index], instance.matrix, cmd_buffer, offscreen_pipeline_layout);
         }
-        end_render_pass(offscreen_cmd_buffer);
+        end_render_pass(cmd_buffer);
 
-    }
-    end_command_buffer(offscreen_cmd_buffer);
 
-    //////////////////////////////////////////////////////////////////////////
 
-    begin_command_buffer(composite_cmd_buffer);
-    {
 
-        begin_render_pass(composite_cmd_buffer, composite_pass);
+
+        begin_render_pass(cmd_buffer, composite_pass);
 
         // lighting calculations
-        bind_descriptor_set(composite_cmd_buffer, composite_pipeline_layout, composite_ds);
-        bind_pipeline(composite_cmd_buffer, composite_pipeline);
-        render(composite_cmd_buffer);
-        end_render_pass(composite_cmd_buffer);
+        bind_descriptor_set(cmd_buffer, composite_pipeline_layout, composite_ds);
+        bind_pipeline(cmd_buffer, composite_pipeline);
+        render(cmd_buffer);
+        end_render_pass(cmd_buffer);
 
 #if 1
         if (g_engine->using_skybox) {
-            begin_render_pass(composite_cmd_buffer, skybox_pass);
+            begin_render_pass(cmd_buffer, skybox_pass);
 
-            bind_descriptor_set(composite_cmd_buffer, skybox_pipeline_layout, skybox_ds, { sizeof(view_projection) });
-            bind_pipeline(composite_cmd_buffer, skybox_pipeline);
-            render_model(skybox_model, composite_cmd_buffer, skybox_pipeline_layout);
-            end_render_pass(composite_cmd_buffer);
+            bind_descriptor_set(cmd_buffer, skybox_pipeline_layout, skybox_ds, { sizeof(view_projection) });
+            bind_pipeline(cmd_buffer, skybox_pipeline);
+            render_model(skybox_model, cmd_buffer, skybox_pipeline_layout);
+            end_render_pass(cmd_buffer);
         }
 #endif
 
@@ -529,17 +525,32 @@ void engine_render()
 
 
 
+
+
+    }
+    end_command_buffer(cmd_buffer);
+
+#if 0
+    //////////////////////////////////////////////////////////////////////////
+
+    begin_command_buffer(composite_cmd_buffer);
+    {
+
+
+
     }
     end_command_buffer(composite_cmd_buffer);
+
+#endif
 
 }
 
 void engine_present()
 {
     if (g_engine->ui_pass_enabled)
-        submit_gpu_work({ offscreen_cmd_buffer, composite_cmd_buffer, ui_cmd_buffer });
+        submit_gpu_work({ cmd_buffer, ui_cmd_buffer });
     else
-        submit_gpu_work({ offscreen_cmd_buffer, composite_cmd_buffer });
+        submit_gpu_work({ cmd_buffer });
 
     if (!present_swapchain_image()) {
         wait_for_gpu();

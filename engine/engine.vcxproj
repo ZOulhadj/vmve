@@ -68,6 +68,7 @@
     <ClInclude Include="src\logging.h" />
     <ClInclude Include="src\math\math.h" />
     <ClInclude Include="src\pch.h" />
+    <ClInclude Include="src\rendering\renderer.h" />
     <ClInclude Include="src\rendering\api\vulkan\image.h" />
     <ClInclude Include="src\rendering\camera.h" />
     <ClInclude Include="src\rendering\api\directx\d3d_context.h" />

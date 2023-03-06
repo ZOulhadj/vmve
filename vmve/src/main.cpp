@@ -40,6 +40,7 @@ int main()
     configure_ui();
 
     engine_create_camera(60.0f, 20.0f);
+    engine_set_environment_map("assets/models/skybox_sphere.obj");
 
     // Configure engine properties
     // TODO(zak): load settings file if it exists
