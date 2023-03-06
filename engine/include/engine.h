@@ -61,6 +61,9 @@ void engine_set_callbacks(my_engine_callbacks callbacks);
 // Rendering
 
 void engine_set_render_mode(int mode);
+
+void engine_set_vsync(bool enabled);
+
 //
 // Updates the internal state of the engine. This is called every frame before
 // any rendering related function calls. The boolean return value returns true

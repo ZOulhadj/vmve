@@ -283,13 +283,13 @@ bool create_model(Model& model, const char* data, std::size_t len, bool flipUVs 
     }
 
 
-    // Start processing from the root scene node
-    process_node(model, scene->mRootNode, scene);
-
     // TEMP: Set model original path so that textures know where
     // they should load the files from
-    //model.path = path.string();
-    //model.name = path.filename().string();
+    model.path = "";
+    model.name = std::string(scene->mName.C_Str());
+
+    // Start processing from the root scene node
+    process_node(model, scene->mRootNode, scene);
 
     print_log("Successfully created model from memory\n");
 

@@ -1,121 +1,113 @@
 #include "pch.h"
 #include "vmve.h"
 
-key_iv generate_key_iv(unsigned char keyLength)
+encryption_keys generate_key_iv(unsigned char keyLength)
 {
-    assert(keyLength == 16 || keyLength == 32);
-
-    key_iv keyIV{};
+    encryption_keys keys{};
 
     CryptoPP::AutoSeededRandomPool randomPool;
 
-    // Set key and IV byte lengths
-    keyIV.key = CryptoPP::SecByteBlock(keyLength);
-    keyIV.iv = CryptoPP::SecByteBlock(CryptoPP::AES::BLOCKSIZE);
+    keys.key.resize(keyLength);
+    keys.iv.resize(CryptoPP::AES::BLOCKSIZE);
 
-    // Generate key and IV
-    randomPool.GenerateBlock(keyIV.key, keyIV.key.size());
-    randomPool.GenerateBlock(keyIV.iv, keyIV.iv.size());
+    randomPool.GenerateBlock(reinterpret_cast<CryptoPP::byte*>(keys.key.data()), keys.key.size());
+    randomPool.GenerateBlock(reinterpret_cast<CryptoPP::byte*>(keys.iv.data()), keys.iv.size());
 
-    return keyIV;
+    return keys;
 }
 
-key_iv_string key_iv_to_hex(key_iv& keyIV)
+encryption_keys key_iv_to_hex(encryption_keys& keyIV)
 {
-    key_iv_string strings{};
+    encryption_keys key_strings;
 
     CryptoPP::HexEncoder keyHexEncoder;
-    keyHexEncoder.Put(keyIV.key, sizeof(CryptoPP::byte) * keyIV.key.size());
+    keyHexEncoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.key.data()), sizeof(CryptoPP::byte) * keyIV.key.size());
     keyHexEncoder.MessageEnd();
 
-    strings.key.resize(keyHexEncoder.MaxRetrievable());
-    keyHexEncoder.Get((CryptoPP::byte*)&strings.key[0], strings.key.size());
-
-
+    key_strings.key.resize(keyHexEncoder.MaxRetrievable());
+    keyHexEncoder.Get((CryptoPP::byte*)&key_strings.key[0], key_strings.key.size());
 
     CryptoPP::HexEncoder ivHexEncoder;
-    ivHexEncoder.Put(keyIV.iv, sizeof(CryptoPP::byte) * keyIV.iv.size());
+    ivHexEncoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.iv.data()), sizeof(CryptoPP::byte) * keyIV.iv.size());
     ivHexEncoder.MessageEnd();
 
-    strings.iv.resize(ivHexEncoder.MaxRetrievable());
-    ivHexEncoder.Get((CryptoPP::byte*)&strings.iv[0], strings.iv.size());
+    key_strings.iv.resize(ivHexEncoder.MaxRetrievable());
+    ivHexEncoder.Get((CryptoPP::byte*)&key_strings.iv[0], key_strings.iv.size());
 
-    return strings;
+    return key_strings;
 }
 
 
-encrypted_data encrypt_aes(const std::string& text, key_iv& keyIV)
+std::string encrypt_aes(const std::string& text, encryption_keys& keys)
 {
-    encrypted_data data{};
-
-    data.keyIV = keyIV;
+    std::string encrypted_text;
 
     // Set key and IV to encryption mode
     CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
-    encryption.SetKeyWithIV(data.keyIV.key, data.keyIV.key.size(), data.keyIV.iv);
+    encryption.SetKeyWithIV(
+        reinterpret_cast<const CryptoPP::byte*>(keys.key.data()), 
+        keys.key.size(), 
+        reinterpret_cast<const CryptoPP::byte*>(keys.iv.data())
+    );
 
     // Encrypt text
-    CryptoPP::StringSource s(text, true, new CryptoPP::StreamTransformationFilter(encryption, new CryptoPP::StringSink(data.data)));
+    CryptoPP::StringSource s(text, true, new CryptoPP::StreamTransformationFilter(encryption, new CryptoPP::StringSink(encrypted_text)));
 
-
-    return data;
+    return encrypted_text;
 }
 
 
-encrypted_data encrypt_aes(const std::string& text, unsigned char keyLength)
+std::string encrypt_aes(const std::string& text, unsigned char keyLength)
 {
-    encrypted_data data{};
+    std::string encrypted_text;
 
-    data.keyIV = generate_key_iv(keyLength);
+    encryption_keys keys = generate_key_iv(keyLength);
 
     // Set key and IV to encryption mode
     CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
-    encryption.SetKeyWithIV(data.keyIV.key, data.keyIV.key.size(), data.keyIV.iv);
+    encryption.SetKeyWithIV(
+        reinterpret_cast<const CryptoPP::byte*>(keys.key.data()),
+        keys.key.size(),
+        reinterpret_cast<const CryptoPP::byte*>(keys.iv.data())
+    );
 
     // Encrypt text
-    CryptoPP::StringSource s(text, true, new CryptoPP::StreamTransformationFilter(encryption, new CryptoPP::StringSink(data.data)));
+    CryptoPP::StringSource s(text, true, new CryptoPP::StreamTransformationFilter(encryption, new CryptoPP::StringSink(encrypted_text)));
 
-
-    return data;
+    return encrypted_text;
 }
 
-std::string decrypt_aes(const encrypted_data& data)
+std::string decrypt_aes(const std::string& encrypted_text, const encryption_keys& keys)
 {
     std::string text;
 
     // Set decryption key and IV
     CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryption;
-    decryption.SetKeyWithIV(data.keyIV.key, data.keyIV.key.size(), data.keyIV.iv);
+    decryption.SetKeyWithIV(
+        reinterpret_cast<const CryptoPP::byte*>(keys.key.data()),
+        keys.key.size(),
+        reinterpret_cast<const CryptoPP::byte*>(keys.iv.data())
+    );
 
     // Decrypt
-    CryptoPP::StringSource s(data.data.data(), true, new CryptoPP::StreamTransformationFilter(decryption, new CryptoPP::StringSink(text)));
+    CryptoPP::StringSource s(encrypted_text, true, new CryptoPP::StreamTransformationFilter(decryption, new CryptoPP::StringSink(text)));
 
     return text;
 }
 
-encrypted_data encrypt_dh(const std::string& text, key_iv& keys)
+static bool vmve_decrypt(vmve_file& file_format, std::string& out_raw_data)
 {
-    return {};
-}
-
-std::string decrypt_dh(const encrypted_data& data)
-{
-    return "";
-}
-
-static bool vmve_decrypt(vmve_file_structure& file_format, std::string& out_raw_data)
-{
-    const vmve_header& header = file_format.header;
-
     // parse the vmve file to figure out which encryption method was used
-    if (header.encrypt_mode == encryption_mode::aes) {
-        out_raw_data = decrypt_aes(file_format.data);
+    if (file_format.header.encrypt_mode == encryption_mode::aes) {
+        out_raw_data = decrypt_aes(file_format.data.encrypted_data, file_format.header.keys);
+
+        return true;
     }
 
-    return true;
+    return false;
 }
 
-bool vmve_write_to_file(vmve_file_structure& file_format, const std::string& path)
+bool vmve_write_to_file(vmve_file& file_format, const std::string& path)
 {
     std::ofstream file(path, std::ios::binary);
     if (!file.is_open())
@@ -129,7 +121,7 @@ bool vmve_write_to_file(vmve_file_structure& file_format, const std::string& pat
 
 bool vmve_read_from_file(std::string& out_data, const std::string& path)
 {
-    vmve_file_structure file_structure;
+    vmve_file file_structure;
 
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open())

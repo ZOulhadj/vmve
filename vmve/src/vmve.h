@@ -13,24 +13,6 @@
 // +-------------------------------+
 //
 
-struct key_iv
-{
-    CryptoPP::SecByteBlock key{};
-    CryptoPP::SecByteBlock iv{};
-};
-
-
-struct key_iv_string
-{
-    std::string key;
-    std::string iv;
-};
-
-struct encrypted_data
-{
-    key_iv keyIV;
-    std::string data;
-};
 
 enum class encryption_mode
 {
@@ -40,43 +22,50 @@ enum class encryption_mode
     rc6
 };
 
+struct encryption_keys
+{
+    std::string key;
+    std::string iv;
+};
+
 struct vmve_header
 {
     std::string version;
     encryption_mode encrypt_mode;
+    encryption_keys keys;
 };
 
-struct vmve_file_structure
+struct vmve_data
+{
+    std::string encrypted_data;
+};
+
+struct vmve_file
 {
     vmve_header header;
-    encrypted_data data;
+    vmve_data   data;
 
     // cereal serialization
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(header.version, header.encrypt_mode, data.data);
+        ar(header.version, header.encrypt_mode, header.keys.key, header.keys.iv, data.encrypted_data);
     }
 };
 
-key_iv generate_key_iv(unsigned char keyLength);
-key_iv_string key_iv_to_hex(key_iv& keyIV);
+encryption_keys generate_key_iv(unsigned char keyLength);
+encryption_keys key_iv_to_hex(encryption_keys& keys);
 
 // AES
 
-encrypted_data encrypt_aes(const std::string& text, key_iv& keyIV);
-encrypted_data encrypt_aes(const std::string& text, unsigned char keyLength);
-std::string decrypt_aes(const encrypted_data& data);
+std::string encrypt_aes(const std::string& text, encryption_keys& keys);
+std::string encrypt_aes(const std::string& text, unsigned char keyLength);
+std::string decrypt_aes(const std::string& encrypted_text, const encryption_keys& keys);
 
-// DH
-
-encrypted_data encrypt_dh(const std::string& text, key_iv& keys);
-std::string decrypt_dh(const encrypted_data& data);
-
-bool vmve_write_to_file(vmve_file_structure& file_format, const std::string& path);
+bool vmve_write_to_file(vmve_file& file_format, const std::string& path);
 bool vmve_read_from_file(std::string& out_data, const std::string& path);
 
-// Data
+
 
 
 #endif

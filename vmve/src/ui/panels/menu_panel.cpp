@@ -56,7 +56,7 @@ void menu_panel()
                 info_marker("Toggles rendering mode to visualize individual vertices");
 
                 if (ImGui::Checkbox("VSync", &vsync))
-                    update_swapchain_vsync = true;
+                    engine_set_vsync(vsync);
                 info_marker("Limits frame rate to your displays refresh rate");
 
                 ImGui::Checkbox("Display stats", &display_stats);

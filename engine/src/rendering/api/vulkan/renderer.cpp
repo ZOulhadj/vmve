@@ -1220,8 +1220,6 @@ void recreate_swapchain(buffer_mode bufferMode, vsync_mode vsync)
     g_buffering = bufferMode;
     g_vsync = vsync;
 
-    print_log("Swapchain resized %u, %u\n", g_rc->window->width, g_rc->window->height);
-
     destroy_swapchain(g_swapchain);
     g_swapchain = create_swapchain();
 }

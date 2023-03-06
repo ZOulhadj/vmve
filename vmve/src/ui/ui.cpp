@@ -107,6 +107,13 @@ bool drop_load_model = false;
 const char* drop_load_model_path = "";
 
 
+const char* tutorial_1_text = R"(Welcome to the tutorial! This tutorial is guide you and explain most features available to you can how they can be used.)";
+const char* tutorial_2_text = R"()";
+const char* tutorial_3_text = R"(The controls have been designed to be...)";
+const char* tutorial_4_text = R"()";
+const char* tutorial_5_text = R"()";
+const char* tutorial_6_text = R"(Although this application has been designed to be as easy to use)";
+
 
 enum class setting_options
 {
@@ -568,7 +575,6 @@ static void load_model_window(bool* open)
 
     static bool flip_uv = false;
     static bool file_encrypted = false;
-
     static bool decrypt_modal_open = false;
 
     // NOTE: 256 + 1 for null termination character
@@ -576,7 +582,6 @@ static void load_model_window(bool* open)
     static std::array<char, 33> iv_input;
 
     resize_and_center_next_window(ImVec2(800, 600));
-
 
     ImGui::Begin(ICON_FA_CUBE " Load Model", open);
 
@@ -632,15 +637,18 @@ static void vmve_creator_window(bool* open)
         return;
 
     static bool useEncryption = false;
-    static bool isKeyGenerated = false;
     static int encryptionModeIndex = 0;
-    static std::array<unsigned char, 2> keyLengthsBytes = { 32, 16 };
-    static int keyLengthIndex = 0;
-    static key_iv keyIV;
-    static key_iv_string keyIVString;
+
     static std::array<const char*, 4> encryptionModes = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
     static std::array<const char*, 2> keyLengths = { "256 bits", "128 bit" };
+    static std::array<unsigned char, 2> keyLengthSizes = { 32, 16 };
+    static std::array<unsigned char, 2> keyLengthsCharacters = { 64, 32 };
+    static int keyLengthIndex = 0;
+    int key_size = keyLengthsCharacters[keyLengthIndex];
+    static const int iv_size = 32;
 
+
+    static encryption_keys keyIV;
 
     resize_and_center_next_window(ImVec2(800, 600));
 
@@ -656,38 +664,54 @@ static void vmve_creator_window(bool* open)
     info_marker("Should the model file be encrypted.");
 
     if (useEncryption) {
-
-        // TODO: Allow user to input their own key/iv
-        // NOTE: key/iv must be the correct lengths
-//        ImGui::InputText("Key");
-//        ImGui::InputText("IV");
-
-
         ImGui::Combo("Encryption method", &encryptionModeIndex, encryptionModes.data(), encryptionModes.size());
         ImGui::Combo("Key length", &keyLengthIndex, keyLengths.data(), keyLengths.size());
 
         if (ImGui::Button("Generate Key/IV")) {
-            keyIV = generate_key_iv(keyLengthsBytes[keyLengthIndex]);
-            keyIVString = key_iv_to_hex(keyIV);
-
-            isKeyGenerated = true;
+            keyIV = generate_key_iv(keyLengthSizes[keyLengthIndex]);
+            keyIV = key_iv_to_hex(keyIV);
         }
 
-        if (isKeyGenerated) {
-            ImGui::Text("Key: %s", keyIVString.key.c_str());
-            ImGui::Text("IV: %s", keyIVString.iv.c_str());
+        ImGui::SameLine();
 
-            if (ImGui::Button("Copy to clipboard")) {
-                std::string clipboard = "Key: " + keyIVString.key + "\n" +
-                    "IV: " + keyIVString.iv;
+        if (ImGui::Button("Copy to clipboard")) {
+            const std::string clipboard("Key: " + keyIV.key + "\n" +
+                "IV: " + keyIV.iv);
 
-                ImGui::SetClipboardText(clipboard.c_str());
-            }
+            ImGui::SetClipboardText(clipboard.c_str());
         }
+
+        if (ImGui::InputText("Key", &keyIV.key)) {
+//            keyIV.key = CryptoPP::SecByteBlock((const CryptoPP::byte*)keyIVString.key.data(), keyIVString.key.size());
+        }
+
+
+        if (keyIV.key.size() != key_size) {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
+                ICON_FA_CIRCLE_EXCLAMATION " Key must be at exactly %d characters long",
+                key_size);
+        }
+
+        if (ImGui::InputText("IV", &keyIV.iv)) {
+//            keyIV.iv = CryptoPP::SecByteBlock((const CryptoPP::byte*)keyIVString.iv.data(), keyIVString.iv.size());
+        }
+
+        if (keyIV.iv.size() != iv_size) {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), 
+                ICON_FA_CIRCLE_EXCLAMATION " IV must be exactly %d characters long",
+                iv_size);
+        }
+
     }
 
+
     static bool successfully_exported = false;
-    ImGui::BeginDisabled(!isKeyGenerated);
+
+    const bool encryption_ready = keyIV.key.size() == key_size && keyIV.iv.size() == iv_size;
+
+    ImGui::BeginDisabled(!encryption_ready);
     if (ImGui::Button("Encrypt")) {
 
         // First we must load the contents of the model file
@@ -700,12 +724,13 @@ static void vmve_creator_window(bool* open)
             const std::string contents = stream.str();
 
             if (encryptionModeIndex == 0) { // AES
-                vmve_file_structure file_structure;
+                vmve_file file_structure;
                 // header
                 file_structure.header.version = app_version;
                 file_structure.header.encrypt_mode = encryption_mode::aes;
+                file_structure.header.keys = keyIV;
                 // data
-                file_structure.data = encrypt_aes(contents, keyIV);
+                file_structure.data.encrypted_data = encrypt_aes(contents, keyIV);
 
                 const std::filesystem::path model_path(current_path);
                 const std::string model_parent_path = model_path.parent_path().string();

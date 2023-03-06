@@ -183,7 +183,7 @@ static std::string get_executable_directory()
 
 static bool initialize_core(my_engine* engine, const char* name, int width, int height)
 {
-    // Initialize core systems
+    // Initialize core sXSystems
     engine->window = create_window(name, width, height);
     if (!engine->window) {
         print_error("Failed to create window.\n");
@@ -624,6 +624,20 @@ void engine_set_render_mode(int mode)
     } else if (mode == 1) {
         current_pipeline = &wireframe_pipeline;
     }
+}
+
+void engine_set_vsync(bool enabled)
+{
+    print_warning("Vsync toggling not yet implemented.");
+
+    // TODO: We might need to recreate swapchain at the end and not in the middle?
+#if 0
+    wait_for_gpu();
+
+    recreate_swapchain(buffer_mode::double_buffering, static_cast<vsync_mode>(enabled));
+    VkExtent2D new_size{ g_engine->window->width, g_engine->window->height };
+    resize_framebuffer(ui_pass, new_size);
+#endif
 }
 
 void engine_should_terminate()
