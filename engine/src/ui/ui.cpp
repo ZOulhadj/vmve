@@ -1,6 +1,6 @@
 #include "ui.h"
 
-#include "rendering/api/vulkan/common.h"
+#include "rendering/api/vulkan/vk_common.h"
 
 
 #include "filesystem/vfs.h"

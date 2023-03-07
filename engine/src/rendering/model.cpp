@@ -1,7 +1,7 @@
 #include "model.h"
 
 #include "vertex.h"
-#include "api/vulkan/image.h"
+#include "api/vulkan/vk_image.h"
 #include "filesystem/vfs.h"
 #include "logging.h"
 

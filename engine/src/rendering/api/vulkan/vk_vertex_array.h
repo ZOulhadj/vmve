@@ -2,7 +2,7 @@
 #define MY_ENGINE_VULKAN_VERTEX_ARRAY_H
 
 
-#include "buffer.h"
+#include "vk_buffer.h"
 #include "rendering/vertex.h"
 
 struct vk_vertex_array

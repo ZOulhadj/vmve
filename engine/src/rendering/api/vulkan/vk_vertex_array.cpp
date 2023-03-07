@@ -1,7 +1,7 @@
-#include "vertex_array.h"
+#include "vk_vertex_array.h"
 
 
-#include "renderer.h"
+#include "vk_renderer.h"
 
 vk_vertex_array create_vertex_array(const std::vector<vertex>& vertices, const std::vector<uint32_t>& indices)
 {

@@ -1,30 +1,6 @@
 #include "entity.h"
 
-#include "api/vulkan/renderer.h"
-
-/*
-     matrix to position, rotation and scale
-
-      matrix_t mat = *(matrix_t*)matrix;
-
-      scale[0] = mat.v.right.Length(); sqrtf(x * x + y * y + z * z); 
-      scale[1] = mat.v.up.Length();
-      scale[2] = mat.v.dir.Length();
-
-      mat.OrthoNormalize();          v.right.Normalize();     (*this) *= (1.f / ( Length() > FLT_EPSILON ? Length() : FLT_EPSILON ) ); return (*this);
-                                     v.up.Normalize();
-                                     v.dir.Normalize();
-
-      rotation[0] = RAD2DEG * atan2f(mat.m[1][2], mat.m[2][2]);
-      rotation[1] = RAD2DEG * atan2f(-mat.m[0][2], sqrtf(mat.m[1][2] * mat.m[1][2] + mat.m[2][2] * mat.m[2][2]));
-      rotation[2] = RAD2DEG * atan2f(mat.m[0][1], mat.m[0][0]);
-
-      translation[0] = mat.v.position.x;
-      translation[1] = mat.v.position.y;
-      translation[2] = mat.v.position.z;
-
-*/
-
+#include "api/vulkan/vk_renderer.h"
 
 Entity create_entity(int id, int model_index, const std::string& name, const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& scale)
 {

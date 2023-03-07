@@ -17,7 +17,7 @@ struct vk_shader
 shader_compiler create_shader_compiler();
 void destroy_shader_compiler(shader_compiler& compiler);
 vk_shader create_vertex_shader(const std::string& code);
-vk_shader create_fragment_shader(const std::string& code);
+vk_shader create_pixel_shader(const std::string& code);
 void destroy_shader(vk_shader& shader);
 
 

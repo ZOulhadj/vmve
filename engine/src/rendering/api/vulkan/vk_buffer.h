@@ -1,7 +1,7 @@
 #ifndef MY_ENGINE_VULKAN_BUFFER_H
 #define MY_ENGINE_VULKAN_BUFFER_H
 
-#include "common.h"
+#include "vk_common.h"
 
 struct vk_buffer
 {

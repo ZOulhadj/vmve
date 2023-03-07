@@ -13,6 +13,22 @@
 
 struct engine_renderer;
 
+
+
+enum class buffer_mode
+{
+    double_buffering,
+    triple_buffering
+};
+
+enum class vsync_mode
+{
+    disabled = 0,
+    enabled = 1,
+    adaptive = 2
+};
+
+
 engine_renderer* initialize_renderer();
 void terminate_renderer(engine_renderer* renderer);
 

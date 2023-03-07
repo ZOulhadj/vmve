@@ -1,6 +1,6 @@
-#include "image.h"
+#include "vk_image.h"
 
-#include "renderer.h"
+#include "vk_renderer.h"
 
 float query_max_anisotropy_level(float anisotropic_level)
 {

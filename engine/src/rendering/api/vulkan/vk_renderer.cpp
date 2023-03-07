@@ -1,9 +1,9 @@
-#include "renderer.h"
+#include "vk_renderer.h"
 
-#include "common.h"
+#include "vk_common.h"
 
 
-#include "descriptor_sets.h"
+#include "vk_descriptor_sets.h"
 
 static vk_renderer* g_r = nullptr;
 static vk_context* g_rc  = nullptr;

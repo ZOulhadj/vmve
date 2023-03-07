@@ -3,7 +3,7 @@
 
 
 
-#include "api/vulkan/vertex_array.h"
+#include "api/vulkan/vk_vertex_array.h"
 #include "model.h"
 
 struct Entity

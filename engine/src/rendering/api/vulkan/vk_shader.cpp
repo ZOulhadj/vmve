@@ -1,7 +1,7 @@
-#include "shader.h"
+#include "vk_shader.h"
 
-#include "common.h"
-#include "renderer.h"
+#include "vk_common.h"
+#include "vk_renderer.h"
 
 //#include "logging.h"
 
@@ -105,7 +105,7 @@ vk_shader create_vertex_shader(const std::string& code)
     return create_shader(VK_SHADER_STAGE_VERTEX_BIT, code);
 }
 
-vk_shader create_fragment_shader(const std::string& code)
+vk_shader create_pixel_shader(const std::string& code)
 {
     return create_shader(VK_SHADER_STAGE_FRAGMENT_BIT, code);
 }

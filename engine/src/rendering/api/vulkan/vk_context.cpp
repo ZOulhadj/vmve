@@ -1,6 +1,6 @@
-#include "vulkan_context.h"
+#include "vk_context.h"
 
-#include "common.h"
+#include "vk_common.h"
 
 #include "logging.h"
 

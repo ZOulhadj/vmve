@@ -15,15 +15,15 @@ Frustum create_camera_frustum(const Camera& cam) {
     Frustum frustum{};
 
 
-    constexpr float far = std::numeric_limits<float>::max();
+    constexpr float far_dist = std::numeric_limits<float>::max();
     const float aspect_ratio = cam.width / cam.height;
 
-    const float half_height = far * glm::tan(cam.fov * 0.5f);
+    const float half_height = far_dist * glm::tan(cam.fov * 0.5f);
     const float half_width = half_height * aspect_ratio;
-    const glm::vec3 front_mult_far = far * cam.front_vector;
+    const glm::vec3 front_mult_far = far_dist * cam.front_vector;
 
-    frustum.near = CreateFrustum(cam.front_vector, cam.position + cam.near * cam.front_vector);
-    frustum.far  = CreateFrustum(-cam.front_vector, cam.position + front_mult_far);
+    frustum.near_plane = CreateFrustum(cam.front_vector, cam.position + cam.near_plane * cam.front_vector);
+    frustum.far_plane  = CreateFrustum(-cam.front_vector, cam.position + front_mult_far);
     frustum.right = CreateFrustum(glm::cross(cam.up_vector, front_mult_far + cam.right_vector * half_width), cam.position);
     frustum.left = CreateFrustum(glm::cross(front_mult_far - cam.right_vector * half_width, cam.up_vector), cam.position);
     frustum.top = CreateFrustum(glm::cross(cam.right_vector, front_mult_far - cam.up_vector * half_height), cam.position);
@@ -49,8 +49,8 @@ static Camera create_camera(camera_type type,
     cam.roll_speed  = 45.0f;
     cam.roll        = 0.0f;
     cam.fov         = fov;
-    cam.near        = 0.1f;
-    cam.far         = 2000.0f;
+    cam.near_plane  = 0.1f;
+    cam.far_plane   = 2000.0f;
     cam.type = type;
 
     if (cam.type == camera_type::first_person) {
@@ -62,10 +62,10 @@ static Camera create_camera(camera_type type,
 
 
     if (projection == camera_proj::perspective) {
-        cam.viewProj.proj = glm::perspective(glm::radians(fov), (float)cam.width / cam.height, cam.far, cam.near);
+        cam.viewProj.proj = glm::perspective(glm::radians(fov), (float)cam.width / cam.height, cam.far_plane, cam.near_plane);
         //cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
     } else if (projection == camera_proj::orthographic) {
-        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.far, cam.near);
+        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.far_plane, cam.near_plane);
     }
 
     // Required if using Vulkan (left-handed coordinate-system)
@@ -160,9 +160,9 @@ void update_camera(Camera& camera, const glm::vec2& cursor_pos)
 void update_projection(Camera& cam)
 {
     if (cam.projection == camera_proj::perspective) {
-        cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), (float)cam.width / cam.height, cam.far, cam.near);
+        cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), (float)cam.width / cam.height, cam.far_plane, cam.near_plane);
     } else if (cam.projection == camera_proj::orthographic) {
-        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.far, cam.near);
+        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.far_plane, cam.near_plane);
     }
 
     // Required if using Vulkan (left-handed coordinate-system)

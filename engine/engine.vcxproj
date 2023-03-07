@@ -11,10 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\platform\win32_audio.cpp" />
+    <ClCompile Include="src\core\windows\win32_audio.cpp" />
     <ClCompile Include="src\core\input.cpp" />
-    <ClCompile Include="src\core\platform\win32_memory.cpp" />
-    <ClCompile Include="src\core\platform\win32_window.cpp" />
+    <ClCompile Include="src\core\windows\win32_memory.cpp" />
     <ClCompile Include="src\core\window.cpp" />
     <ClCompile Include="src\engine.cpp" />
     <ClCompile Include="src\filesystem\filesystem.cpp" />
@@ -26,20 +25,19 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="src\rendering\api\vulkan\image.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_image.cpp" />
     <ClCompile Include="src\rendering\camera.cpp" />
-    <ClCompile Include="src\rendering\api\directx\d3d_context.cpp" />
     <ClCompile Include="src\rendering\entity.cpp" />
     <ClCompile Include="src\rendering\material.cpp" />
     <ClCompile Include="src\rendering\model.cpp" />
     <ClCompile Include="src\rendering\vertex.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\buffer.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\common.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\vulkan_context.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\descriptor_sets.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\renderer.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\shader.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\vertex_array.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_buffer.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_common.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_context.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_descriptor_sets.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_renderer.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_shader.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_vertex_array.cpp" />
     <ClCompile Include="src\ui\ui.cpp" />
     <ClCompile Include="src\utility.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp" />
@@ -53,10 +51,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\engine.h" />
-    <ClInclude Include="src\core\platform\win32_audio.h" />
+    <ClInclude Include="src\core\audio.h" />
     <ClInclude Include="src\core\input.h" />
-    <ClInclude Include="src\core\platform\win32_memory.h" />
-    <ClInclude Include="src\core\platform\win32_window.h" />
+    <ClInclude Include="src\core\windows\win32_memory.h" />
     <ClInclude Include="src\core\window.h" />
     <ClInclude Include="src\events\event.h" />
     <ClInclude Include="src\events\event_dispatcher.h" />
@@ -69,21 +66,20 @@
     <ClInclude Include="src\math\math.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\rendering\renderer.h" />
-    <ClInclude Include="src\rendering\api\vulkan\image.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_image.h" />
     <ClInclude Include="src\rendering\camera.h" />
-    <ClInclude Include="src\rendering\api\directx\d3d_context.h" />
     <ClInclude Include="src\rendering\entity.h" />
     <ClInclude Include="src\rendering\material.h" />
     <ClInclude Include="src\rendering\model.h" />
     <ClInclude Include="src\rendering\primitives\cube.h" />
     <ClInclude Include="src\rendering\vertex.h" />
-    <ClInclude Include="src\rendering\api\vulkan\buffer.h" />
-    <ClInclude Include="src\rendering\api\vulkan\common.h" />
-    <ClInclude Include="src\rendering\api\vulkan\vulkan_context.h" />
-    <ClInclude Include="src\rendering\api\vulkan\descriptor_sets.h" />
-    <ClInclude Include="src\rendering\api\vulkan\renderer.h" />
-    <ClInclude Include="src\rendering\api\vulkan\shader.h" />
-    <ClInclude Include="src\rendering\api\vulkan\vertex_array.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_buffer.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_common.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_context.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_descriptor_sets.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_renderer.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_shader.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_vertex_array.h" />
     <ClInclude Include="src\rendering\shaders\shaders.h" />
     <ClInclude Include="src\ui\ui.h" />
     <ClInclude Include="src\utility.h" />

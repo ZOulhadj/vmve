@@ -1,25 +1,19 @@
 #ifndef MY_ENGINE_VULKAN_RENDERER_H
 #define MY_ENGINE_VULKAN_RENDERER_H
 
+#include "rendering/renderer.h"
+
 #include "core/window.h"
-#include "vulkan_context.h"
-#include "buffer.h"
-#include "shader.h"
+
+#include "vk_context.h"
+#include "vk_buffer.h"
+#include "vk_image.h"
+#include "vk_shader.h"
+
+#include "rendering/vertex.h"
 #include "rendering/entity.h"
+
 #include "logging.h"
-
-enum class buffer_mode
-{
-    double_buffering,
-    triple_buffering
-};
-
-enum class vsync_mode
-{
-    disabled = 0,
-    enabled  = 1,
-    adaptive = 2
-};
 
 struct vk_swapchain
 {

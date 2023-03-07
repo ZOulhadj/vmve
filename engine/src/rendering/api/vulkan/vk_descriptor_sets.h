@@ -1,8 +1,8 @@
 #ifndef MY_ENGINE_VULKAN_DESCRIPTOR_SETS_H
 #define MY_ENGINE_VULKAN_DESCRIPTOR_SETS_H
 
-#include "buffer.h"
-#include "image.h"
+#include "vk_buffer.h"
+#include "vk_image.h"
 
 
 VkDescriptorPool create_descriptor_pool();

@@ -12,8 +12,8 @@ struct Frustum {
     Frustum_Plane bottom;
     Frustum_Plane left;
     Frustum_Plane right;
-    Frustum_Plane near;
-    Frustum_Plane far;
+    Frustum_Plane near_plane;
+    Frustum_Plane far_plane;
 };
 
 
@@ -55,8 +55,8 @@ struct Camera {
     float roll_speed;
     float fov;
 
-    float near;
-    float far;
+    float near_plane;
+    float far_plane;
 
     view_projection viewProj;
 

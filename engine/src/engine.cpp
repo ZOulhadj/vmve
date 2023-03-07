@@ -1,17 +1,18 @@
 #include "../include/engine.h"
 
 #include "../src/core/window.h"
-#include "../src/core/window.h"
 #include "../src/core/input.h"
-#if defined(_WIN32)
-#include "../src/core/platform/win32_window.h"
-#endif
-#include "../src/core/platform/win32_memory.h"
+#include "../src/core/audio.h"
 
-#include "../src/rendering/api/vulkan/common.h"
-#include "../src/rendering/api/vulkan/renderer.h"
-#include "../src/rendering/api/vulkan/buffer.h"
-#include "../src/rendering/api/vulkan/descriptor_sets.h"
+#if defined(_WIN32)
+#include "../src/core/windows/win32_memory.h"
+#endif
+
+
+#include "../src/rendering/api/vulkan/vk_common.h"
+#include "../src/rendering/api/vulkan/vk_renderer.h"
+#include "../src/rendering/api/vulkan/vk_buffer.h"
+#include "../src/rendering/api/vulkan/vk_descriptor_sets.h"
 #include "../src/rendering/vertex.h"
 #include "../src/rendering/material.h"
 #include "../src/rendering/camera.h"
@@ -19,8 +20,6 @@
 #include "../src/rendering/model.h"
 
 #include "../src/rendering/shaders/shaders.h"
-
-#include "../src/core/platform/win32_audio.h"
 
 #include "../src/events/event.h"
 #include "../src/events/event_dispatcher.h"
@@ -42,9 +41,9 @@ struct my_engine
     vk_renderer* renderer;
     ImGuiContext* ui;
 
-    main_audio* audio;
-    IXAudio2SourceVoice* example_audio;
-    audio_3d object_audio;
+    engine_audio* audio;
+    engine_audio_source* audio_source;
+
 
     my_engine_callbacks callbacks;
 
@@ -197,7 +196,7 @@ static bool initialize_core(my_engine* engine, const char* name, int width, int 
         return false;
     }
 
-    engine->audio = create_audio();
+    engine->audio = initialize_audio();
     if (!engine->audio) {
         print_error("Failed to initialize audio.\n");
 
@@ -317,11 +316,11 @@ static void configure_renderer(my_engine* engine)
     //Shader shadowMappingFS = create_fragment_shader(shadowMappingFSCode);
 
     vk_shader geometry_vs = create_vertex_shader(geometry_vs_code);
-    vk_shader geometry_fs = create_fragment_shader(geometry_fs_code);
+    vk_shader geometry_fs = create_pixel_shader(geometry_fs_code);
     vk_shader lighting_vs = create_vertex_shader(lighting_vs_code);
-    vk_shader lighting_fs = create_fragment_shader(lighting_fs_code);
+    vk_shader lighting_fs = create_pixel_shader(lighting_fs_code);
     vk_shader skybox_vs = create_vertex_shader(skybox_vs_code);
-    vk_shader skybox_fs = create_fragment_shader(skybox_fs_code);
+    vk_shader skybox_fs = create_pixel_shader(skybox_fs_code);
 
     offscreen_pipeline.m_Layout = offscreen_pipeline_layout;
     offscreen_pipeline.m_RenderPass = &offscreen_pass;
@@ -607,7 +606,7 @@ void engine_terminate()
     destroy_image_sampler(g_framebuffer_sampler);
 
     // Destroy core systems
-    destroy_windows_audio(g_engine->audio);
+    terminate_audio(g_engine->audio);
     destroy_ui(g_engine->ui);
     destroy_renderer(g_engine->renderer);
     destroy_window(g_engine->window);
@@ -917,12 +916,12 @@ float* engine_get_camera_speed()
 
 float* engine_get_camera_near()
 {
-    return &g_engine->camera.near;
+    return &g_engine->camera.near_plane;
 }
 
 float* engine_get_camera_far()
 {
-    return &g_engine->camera.far;
+    return &g_engine->camera.far_plane;
 }
 
 void engine_set_camera_position(float x, float y, float z) {
@@ -1130,34 +1129,34 @@ void engine_get_log(int logIndex, const char** str, int* log_type)
 
 void engine_set_master_volume(float master_volume)
 {
-    set_master_audio_volume(g_engine->audio->master_voice, master_volume);
+    set_audio_volume(g_engine->audio, master_volume);
 }
 
 bool engine_play_audio(const char* path)
 {
-    bool audio_created = create_audio_source(g_engine->audio, g_engine->example_audio, path);
+    bool audio_created = create_audio_source(g_engine->audio, &g_engine->audio_source, path);
     if (!audio_created)
         return false;
 
-    play_audio(g_engine->example_audio);
+    start_audio_source(g_engine->audio_source);
 
     return true;
 }
 
 void engine_pause_audio(int audio_id)
 {
-    stop_audio(g_engine->example_audio);
+    stop_audio_source(g_engine->audio_source);
 }
 
 void engine_stop_audio(int audio_id)
 {
-    stop_audio(g_engine->example_audio);
-    destroy_audio_source(g_engine->example_audio);
+    stop_audio_source(g_engine->audio_source);
+    terminate_audio_source(g_engine->audio_source);
 }
 
 void engine_set_audio_volume(float audio_volume)
 {
-    set_audio_volume(g_engine->example_audio, audio_volume);
+    set_audio_volume(g_engine->audio_source, audio_volume);
 }
 
 

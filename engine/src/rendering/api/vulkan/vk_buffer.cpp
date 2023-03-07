@@ -1,7 +1,6 @@
-#include "buffer.h"
+#include "vk_buffer.h"
 
-#include "common.h"
-#include "renderer.h"
+#include "vk_renderer.h"
 
 std::size_t pad_uniform_buffer_size(std::size_t original_size)
 {

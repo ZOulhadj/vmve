@@ -2,7 +2,7 @@
 #define MY_ENGINE_MODEL_H
 
 
-#include "api/vulkan/vertex_array.h"
+#include "api/vulkan/vk_vertex_array.h"
 #include "material.h"
 
 // One material per mesh

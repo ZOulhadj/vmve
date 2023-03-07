@@ -30,21 +30,6 @@
 #include <format>
 #include <tuple>
 
-#if defined(_WIN32)
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <d3d12.h>
-#include <xaudio2.h>
-#include <x3daudio.h>
-
-// NOTE: These must be placed after all Windows header files
-#undef far
-#undef near
-
-#endif
-
-
 // ensures that external code that calls vulkan.h does not give us symbol
 // conflicts.
 #define VK_NO_PROTOTYPES

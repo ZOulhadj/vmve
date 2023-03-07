@@ -1,6 +1,9 @@
 #ifndef MY_ENGINE_WIN32_WINDOW_HPP
 #define MY_ENGINE_WIN32_WINDOW_HPP
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 struct win32_window
 {
     HWND handle;

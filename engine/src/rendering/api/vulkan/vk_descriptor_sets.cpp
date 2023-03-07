@@ -1,6 +1,6 @@
-#include "descriptor_sets.h"
+#include "vk_descriptor_sets.h"
 
-#include "renderer.h"
+#include "vk_renderer.h"
 #include "logging.h"
 
 VkDescriptorPool create_descriptor_pool()
