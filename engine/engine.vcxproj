@@ -25,6 +25,8 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="src\rendering\api\d3d11\d3d11.cpp" />
+    <ClCompile Include="src\rendering\api\d3d11\d3d11_vertex_buffer.cpp" />
     <ClCompile Include="src\rendering\api\vulkan\vk_image.cpp" />
     <ClCompile Include="src\rendering\camera.cpp" />
     <ClCompile Include="src\rendering\entity.cpp" />

@@ -386,6 +386,10 @@ static void configure_renderer(my_engine* engine)
         0, 1, 2,
         3, 2, 1
     };
+
+
+    engine_renderer* temp = initialize_renderer(engine->window);
+    terminate_renderer(temp);
 }
 
 bool engine_initialize(const char* name, int width, int height)

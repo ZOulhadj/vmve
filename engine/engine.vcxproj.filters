@@ -111,6 +111,12 @@
     <ClCompile Include="src\rendering\api\vulkan\vk_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\rendering\api\d3d11\d3d11.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rendering\api\d3d11\d3d11_vertex_buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\windows\win32_memory.h">
