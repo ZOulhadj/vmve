@@ -2,12 +2,14 @@
 #define MY_ENGINE_CAMERA_H
 
 
-struct Frustum_Plane {
+struct Frustum_Plane
+{
     glm::vec3 normal;
     float distance_from_origin;
 };
 
-struct Frustum {
+struct Frustum
+{
     Frustum_Plane top;
     Frustum_Plane bottom;
     Frustum_Plane left;
@@ -16,26 +18,21 @@ struct Frustum {
     Frustum_Plane far_plane;
 };
 
-
-enum class camera_proj {
-    perspective,
-    orthographic
-};
-
-enum class camera_type {
+enum class camera_type
+{
     first_person,
     look_at
 };
 
-struct view_projection {
+struct view_projection
+{
     glm::mat4 view;
     glm::mat4 proj;
 };
 
-struct Camera {
+struct Camera
+{
     camera_type type;
-    camera_proj projection;
-
 
     glm::vec3 position;
     glm::vec3 front_vector;
@@ -66,8 +63,7 @@ struct Camera {
 
 Frustum create_camera_frustum(const Camera& camera);
 
-Camera create_perspective_camera(camera_type type, const glm::vec3& position, float fov, float speed);
-Camera create_orthographic_camera(camera_type type, const glm::vec3& position, float speed);
+Camera create_perspective_camera(const glm::vec3& position, float fov, float speed);
 
 //Camera CreateCamera(const glm::vec3& position, float fov, float speed);
 void update_camera(Camera& camera, const glm::vec2& cursor_pos);

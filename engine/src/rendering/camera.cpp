@@ -1,6 +1,7 @@
 #include "camera.h"
 
-static Frustum_Plane CreateFrustum(const glm::vec3& normal, const glm::vec3& point) {
+static Frustum_Plane CreateFrustum(const glm::vec3& normal, const glm::vec3& point)
+{
     Frustum_Plane plane;
     plane.normal = glm::normalize(normal);
     plane.distance_from_origin = glm::dot(plane.normal, point);
@@ -8,7 +9,8 @@ static Frustum_Plane CreateFrustum(const glm::vec3& normal, const glm::vec3& poi
     return plane;
 }
 
-Frustum create_camera_frustum(const Camera& cam) {
+Frustum create_camera_frustum(const Camera& cam)
+{
     // NOTE: The camera frustum can also be extracted from the MVP
     // https://www.gamedevs.org/uploads/fast-extraction-viewing-frustum-planes-from-world-view-projection-matrix.pdf    
     
@@ -33,11 +35,10 @@ Frustum create_camera_frustum(const Camera& cam) {
     return frustum;
 }
 
-static Camera create_camera(camera_type type, 
-    camera_proj projection, 
-    const glm::vec3& pos, 
+static Camera create_camera(const glm::vec3& pos, 
     float speed,
-    float fov) {
+    float fov)
+{
     Camera cam{};
 
     cam.position    = pos;
@@ -51,22 +52,13 @@ static Camera create_camera(camera_type type,
     cam.fov         = fov;
     cam.near_plane  = 0.1f;
     cam.far_plane   = 2000.0f;
-    cam.type = type;
-
-    if (cam.type == camera_type::first_person) {
-        cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) * 
-                                           glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
-    } else if (cam.type == camera_type::look_at) {
-        cam.viewProj.view = glm::lookAt(cam.position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    }
+    cam.type = camera_type::first_person;
 
 
-    if (projection == camera_proj::perspective) {
-        cam.viewProj.proj = glm::perspective(glm::radians(fov), (float)cam.width / cam.height, cam.far_plane, cam.near_plane);
-        //cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
-    } else if (projection == camera_proj::orthographic) {
-        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.far_plane, cam.near_plane);
-    }
+    cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) *
+        glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
+    cam.viewProj.proj = glm::perspective(glm::radians(fov), (float)cam.width / cam.height, cam.far_plane, cam.near_plane);
+    //cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
 
     // Required if using Vulkan (left-handed coordinate-system)
     cam.viewProj.proj[1][1] *= -1.0;
@@ -76,15 +68,10 @@ static Camera create_camera(camera_type type,
 }
 
 
-Camera create_perspective_camera(camera_type type, const glm::vec3& position, float fov, float speed) {
-    return create_camera(type, camera_proj::perspective, position, speed, fov);
+Camera create_perspective_camera(const glm::vec3& position, float fov, float speed) {
+    return create_camera(position, speed, fov);
 }
 
-
-Camera create_orthographic_camera(camera_type type, const glm::vec3& position, float speed) {
-    // Note that an orthographic camera does not use FOV
-    return create_camera(type, camera_proj::orthographic, position, speed, 0.0f);
-}
 
 // Reversed Z infinite perspective
 // GLM provides various types of perspective functions including infinitePerspective()
@@ -129,47 +116,44 @@ void update_camera(Camera& camera, const glm::vec2& cursor_pos)
     camera.up_vector    = glm::conjugate(camera.orientation) * glm::vec3(0.0f, 1.0f, 0.0f);
     camera.right_vector = glm::conjugate(camera.orientation) * glm::vec3(1.0f, 0.0f, 0.0f);
 
-    if (camera.type == camera_type::first_person) {
-        // Create each of the orientations based on mouse offset and roll offset.
-        //
-        // This code snippet below locks the yaw to world coordinates.
-        const glm::quat pitch = glm::angleAxis(glm::radians(yoffset), glm::vec3(1.0f, 0.0f, 0.0f));
+    // Create each of the orientations based on mouse offset and roll offset.
+    //
+    // This code snippet below locks the yaw to world coordinates.
+    const glm::quat pitch = glm::angleAxis(glm::radians(yoffset), glm::vec3(1.0f, 0.0f, 0.0f));
 #define LOCK_YAW
 #if defined(LOCK_YAW)
-        const glm::quat yaw = glm::angleAxis(glm::radians(xoffset), camera.orientation * glm::vec3(0.0f, 1.0f, 0.0f));
+    const glm::quat yaw = glm::angleAxis(glm::radians(xoffset), camera.orientation * glm::vec3(0.0f, 1.0f, 0.0f));
 #else
-        const glm::quat yaw = glm::angleAxis(glm::radians(xoffset), glm::vec3(0.0f, 1.0f, 0.0f));
+    const glm::quat yaw = glm::angleAxis(glm::radians(xoffset), glm::vec3(0.0f, 1.0f, 0.0f));
 #endif
-        const glm::quat roll = glm::angleAxis(glm::radians(camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
+    const glm::quat roll = glm::angleAxis(glm::radians(camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
 
-        // Update the camera orientation based on pitch, yaw and roll
-        camera.orientation = (pitch * yaw * roll) * camera.orientation;
+    // Update the camera orientation based on pitch, yaw and roll
+    camera.orientation = (pitch * yaw * roll) * camera.orientation;
 
-        // Create the view and projection matrices
-        camera.viewProj.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
-        //camera.viewProj.proj[1][1] = -1.0;
+    // Create the view and projection matrices
+    camera.viewProj.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
+    //camera.viewProj.proj[1][1] = -1.0;
 
-        // Build final camera transform matrix
-        camera.roll = 0.0f;
-    } else if (camera.type == camera_type::look_at) {
-        camera.viewProj.view = glm::lookAt(camera.position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    }
+    // Build final camera transform matrix
+    camera.roll = 0.0f;
+
+    
+    //else if (camera.type == camera_type::look_at) {
+        //camera.viewProj.view = glm::lookAt(camera.position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    //}
 }
 
 
 void update_projection(Camera& cam)
 {
-    if (cam.projection == camera_proj::perspective) {
-        cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), (float)cam.width / cam.height, cam.far_plane, cam.near_plane);
-    } else if (cam.projection == camera_proj::orthographic) {
-        cam.viewProj.proj = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, cam.far_plane, cam.near_plane);
-    }
-
+    cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), (float)cam.width / cam.height, cam.far_plane, cam.near_plane);
     // Required if using Vulkan (left-handed coordinate-system)
     cam.viewProj.proj[1][1] *= -1.0;
 }
 
-void update_projection(Camera& camera, uint32_t width, uint32_t height) {
+void update_projection(Camera& camera, uint32_t width, uint32_t height)
+{
     camera.width = width;
     camera.height = height;
 

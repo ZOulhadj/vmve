@@ -94,7 +94,7 @@ void end_ui(std::vector<VkCommandBuffer>& buffers)
     ImGui::RenderPlatformWindowsDefault();
 
 
-    const uint32_t current_frame = get_frame_index();
+    const uint32_t current_frame = get_frame_buffer_index();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffers[current_frame]);
 }
 

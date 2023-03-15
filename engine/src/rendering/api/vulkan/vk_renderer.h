@@ -148,8 +148,8 @@ void submit_to_gpu(const std::function<void(VkCommandBuffer)>& submit_func);
 
 vk_renderer* get_vulkan_renderer();
 vk_context& get_vulkan_context();
-uint32_t get_frame_index(); // in order
-uint32_t get_swapchain_frame_index(); // out of order
+uint32_t get_frame_buffer_index(); // in order
+uint32_t get_frame_image_index(); // out of order
 uint32_t get_swapchain_image_count();
 
 

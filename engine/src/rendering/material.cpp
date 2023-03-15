@@ -23,6 +23,6 @@ void destroy_material(Material& material)
 
 void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, Material& material)
 {
-    uint32_t current_frame = get_frame_index();
+    uint32_t current_frame = get_frame_buffer_index();
     vkCmdBindDescriptorSets(buffers[current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, 1, &material.descriptor_set, 0, nullptr);
 }

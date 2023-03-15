@@ -40,7 +40,7 @@ int main()
     configure_ui();
 
     engine_create_camera(60.0f, 20.0f);
-    engine_set_environment_map("assets/models/skybox_sphere.obj");
+    //engine_set_environment_map("assets/models/skybox_sphere.obj");
 
     // Configure engine properties
     // TODO(zak): load settings file if it exists
@@ -63,7 +63,7 @@ int main()
             engine_update_camera_view();
         }
 
-        // Always update project as the user may update various camer settings per
+        // Always update project as the user may update various camera settings per
         // frame.
         engine_update_camera_projection(viewport_width, viewport_height);
 

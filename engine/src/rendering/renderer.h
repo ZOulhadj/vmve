@@ -25,7 +25,6 @@ enum class vsync_mode
 {
     disabled = 0,
     enabled = 1,
-    adaptive = 2
 };
 
 

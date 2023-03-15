@@ -190,7 +190,7 @@ static bool initialize_core(my_engine* engine, const char* name, int width, int 
     }
     engine->window->event_callback = event_callback;
 
-    engine->renderer = create_renderer(engine->window, buffer_mode::double_buffering, vsync_mode::enabled);
+    engine->renderer = create_renderer(engine->window, buffer_mode::triple_buffering, vsync_mode::enabled);
     if (!engine->renderer) {
         print_error("Failed to create renderer.\n");
         return false;
@@ -447,11 +447,6 @@ bool engine_update()
     set_buffer_data(g_engine->camera_buffer, &g_engine->camera.viewProj, sizeof(view_projection));
     set_buffer_data(g_engine->scene_buffer, &scene);
 
-
-    // update sound
-    //update_3d_audio(engine->audio, engine->object_audio, engine->camera);
-
-
     return g_engine->running;
 }
 
@@ -475,9 +470,9 @@ void engine_render()
 {
     begin_command_buffer(cmd_buffer);
     {
-        bind_descriptor_set(cmd_buffer, offscreen_pipeline_layout, offscreen_ds, { sizeof(view_projection) });
         begin_render_pass(cmd_buffer, offscreen_pass);
 
+        bind_descriptor_set(cmd_buffer, offscreen_pipeline_layout, offscreen_ds, { sizeof(view_projection) });
         bind_pipeline(cmd_buffer, *current_pipeline);
 
         // TODO: Currently we are rendering each instance individually
@@ -490,6 +485,8 @@ void engine_render()
         // near future.
         for (std::size_t i = 0; i < g_engine->entities.size(); ++i) {
             Entity& instance = g_engine->entities[i];
+
+            rotate_entity(instance, glm::vec3(0.0f, glfwGetTime() * 20.0f, 0.0f));
 
             apply_entity_transformation(instance);
 
@@ -861,7 +858,7 @@ void engine_set_environment_map(const char* path)
 
 void engine_create_camera(float fovy, float speed)
 {
-    g_engine->camera = create_perspective_camera(camera_type::first_person, { 0.0f, 0.0f, -2.0f }, fovy, speed);    
+    g_engine->camera = create_perspective_camera({ 0.0f, 0.0f, -2.0f }, fovy, speed);    
 }
 
 void engine_update_input()
@@ -976,7 +973,7 @@ void engine_end_ui_pass()
 
 void* engine_get_viewport_texture(my_engine_viewport_view view)
 {
-    const uint32_t current_image = get_swapchain_frame_index();
+    const uint32_t current_image = get_frame_image_index();
 
     if (view == my_engine_viewport_view::full)
         return viewport_ui[current_image];

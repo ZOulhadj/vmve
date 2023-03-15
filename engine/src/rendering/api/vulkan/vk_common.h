@@ -3,7 +3,7 @@
 
 
 // todo(zak): move this variable into the renderer
-constexpr uint32_t frames_in_flight = 2;
+constexpr uint32_t frames_in_flight = 3;
 
 #define vk_check(function)                                                  \
     if (function != VK_SUCCESS) {                                           \

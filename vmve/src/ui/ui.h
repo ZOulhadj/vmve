@@ -53,7 +53,6 @@ extern bool show_demo_window;
 
 
 // left panel
-extern bool lock_camera_frustum;
 extern int hours, minutes, seconds;
 extern float memoryUsage;
 extern unsigned int maxMemory;

@@ -18,16 +18,20 @@ static VkCommandPool g_cmd_pool;
 static std::vector<vk_frame> g_frames;
 
 // The frame and image index variables are NOT the same thing.
-// The currentFrame always goes 0..1..2 -> 0..1..2. The currentImage
+// The buffer_index always goes 0..1..2 -> 0..1..2. The image_index
 // however may not be in that order since Vulkan returns the next
 // available frame which may be like such 0..1..2 -> 0..2..1. Both
 // frame and image index often are the same but is not guaranteed.
 // 
-// The current frame is used for obtaining the correct resources in order.
-static uint32_t g_current_image = 0;
-static uint32_t g_current_frame = 0;
+// The current frame is used for obtaining the correct buffers in order.
+// The current image is used for obtaining the correct images in order
+//
+static uint32_t g_buffer_index = 0;
+static uint32_t g_image_index = 0;
 
-static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface) {
+
+static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface)
+{
     if (surface.currentExtent.width != std::numeric_limits<uint32_t>::max())
         return surface.currentExtent;
 
@@ -47,49 +51,55 @@ static VkExtent2D get_surface_size(const VkSurfaceCapabilitiesKHR& surface) {
     return actualExtent;
 }
 
-static uint32_t find_suitable_image_count(VkSurfaceCapabilitiesKHR capabilities, buffer_mode mode) {
+static uint32_t find_suitable_image_count(VkSurfaceCapabilitiesKHR capabilities, buffer_mode mode)
+{
     const uint32_t min = capabilities.minImageCount + 1;
     const uint32_t max = capabilities.maxImageCount;
 
+    // TODO: Need to check if requested is out of bounds 
+
     uint32_t requested = 0;
-    if (mode == buffer_mode::double_buffering)
-        requested = 2;
-    else if (mode == buffer_mode::triple_buffering)
-        requested = 3;
-
-    // check if requested image count
-    if (min <= requested)
-        return requested;
-
-    // todo: check if actual image count is not above max limit
-
-    //   if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
-    //    imageCount = swapChainSupport.capabilities.maxImageCount;
-    // 
-
-    assert("Code path not expected! Double check image values.");
+    if (mode == buffer_mode::double_buffering) {
+        return 2;
+    } else if (mode == buffer_mode::triple_buffering) {
+        return 3;
+    }
 
     return min;
 }
 
-static VkPresentModeKHR find_suitable_present_mode(const std::vector<VkPresentModeKHR>& present_modes, 
-                                                   vsync_mode vsync) {
-    if (vsync == vsync_mode::disabled)
-        return VK_PRESENT_MODE_IMMEDIATE_KHR;
+static VkSurfaceFormatKHR find_suitable_surface_format()
+{
+    uint32_t format_count = 0;
+    vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(g_rc->device->gpu, g_rc->surface, &format_count, nullptr));
+    std::vector<VkSurfaceFormatKHR> surface_formats(format_count);
+    vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(g_rc->device->gpu, g_rc->surface, &format_count, surface_formats.data()));
 
-    if (vsync == vsync_mode::enabled)
-        return VK_PRESENT_MODE_FIFO_KHR;
+    // TODO: Need to perform actual querying to find best possible surface formats
 
-    for (auto& present : present_modes) {
-        if (present == VK_PRESENT_MODE_MAILBOX_KHR)
-            return VK_PRESENT_MODE_MAILBOX_KHR;
+    return { VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+}
+
+static VkPresentModeKHR find_suitable_present_mode(vsync_mode vsync)
+{
+    uint32_t count = 0;
+    vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(g_rc->device->gpu, g_rc->surface, &count, nullptr));
+    std::vector<VkPresentModeKHR> modes(count);
+    vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(g_rc->device->gpu, g_rc->surface, &count, modes.data()));
+
+    // TODO: Double check if checking for immediate mode is required
+    if (vsync == vsync_mode::disabled) {
+        const auto it = std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR);
+        if (it != modes.end())
+            return VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
 
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 
-static bool is_depth(const vk_framebuffer_attachment& attachment) {
+static bool is_depth(const vk_framebuffer_attachment& attachment)
+{
     const std::vector<VkFormat> formats {
         VK_FORMAT_D16_UNORM,
         VK_FORMAT_X8_D24_UNORM_PACK32,
@@ -113,49 +123,36 @@ static vk_swapchain create_swapchain()
 {
     vk_swapchain swapchain{};
 
-
     // Get various capabilities of the surface including limits, formats and present modes
     //
     VkSurfaceCapabilitiesKHR surface_properties{};
     vk_check(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(g_rc->device->gpu, g_rc->surface, &surface_properties));
 
-    const uint32_t image_count = find_suitable_image_count(surface_properties, g_buffering);
-
-
-    uint32_t format_count = 0;
-    vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(g_rc->device->gpu, g_rc->surface, &format_count, nullptr));
-    std::vector<VkSurfaceFormatKHR> surface_formats(format_count);
-    vk_check(vkGetPhysicalDeviceSurfaceFormatsKHR(g_rc->device->gpu, g_rc->surface, &format_count, surface_formats.data()));
-
-    uint32_t present_count = 0;
-    vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(g_rc->device->gpu, g_rc->surface, &present_count, nullptr));
-    std::vector<VkPresentModeKHR> present_modes(present_count);
-    vk_check(vkGetPhysicalDeviceSurfacePresentModesKHR(g_rc->device->gpu, g_rc->surface, &present_count, present_modes.data()));
-
-    // Query surface capabilities
-    const VkPresentModeKHR present_mode = find_suitable_present_mode(present_modes, g_vsync);
+    const uint32_t buffer_count             = find_suitable_image_count(surface_properties, g_buffering);
+    const VkSurfaceFormatKHR surface_format = find_suitable_surface_format();
+    const VkPresentModeKHR present_mode     = find_suitable_present_mode(g_vsync);
 
     VkSwapchainCreateInfoKHR swapchain_info { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
-    swapchain_info.surface               = g_rc->surface;
-    swapchain_info.minImageCount         = image_count;
-    swapchain_info.imageFormat           = VK_FORMAT_R8G8B8A8_SRGB;
-    swapchain_info.imageColorSpace       = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-    swapchain_info.imageExtent           = get_surface_size(surface_properties);
-    swapchain_info.imageArrayLayers      = 1;
-    swapchain_info.imageUsage            = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    swapchain_info.preTransform          = surface_properties.currentTransform;
-    swapchain_info.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swapchain_info.presentMode           = present_mode;
-    swapchain_info.clipped               = true;
+    swapchain_info.surface          = g_rc->surface;
+    swapchain_info.minImageCount    = buffer_count;
+    swapchain_info.imageFormat      = surface_format.format;
+    swapchain_info.imageColorSpace  = surface_format.colorSpace;
+    swapchain_info.imageExtent      = get_surface_size(surface_properties);
+    swapchain_info.imageArrayLayers = 1;
+    swapchain_info.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_info.preTransform     = surface_properties.currentTransform;
+    swapchain_info.compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swapchain_info.presentMode      = present_mode;
+    swapchain_info.clipped          = true;
 
     // Specify how the swapchain should manage images if we have different rendering 
     // and presentation queues for our gpu.
     if (g_rc->device->graphics_index != g_rc->device->present_index) {
-        const uint32_t indices[2] {g_rc->device->graphics_index, g_rc->device->present_index };
-        
+        const std::array<uint32_t, 2> queues = { g_rc->device->graphics_index, g_rc->device->present_index };
+
         swapchain_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        swapchain_info.queueFamilyIndexCount = 2;
-        swapchain_info.pQueueFamilyIndices = indices;
+        swapchain_info.queueFamilyIndexCount = u32(queues.size());
+        swapchain_info.pQueueFamilyIndices = queues.data();
     } else {
         swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         swapchain_info.queueFamilyIndexCount = 0;
@@ -169,17 +166,15 @@ static vk_swapchain create_swapchain()
     // Get the image handles from the newly created swapchain. The number of
     // images that we get is guaranteed to be at least the minimum image count
     // specified.
-    uint32_t img_count = 0;
-    vk_check(vkGetSwapchainImagesKHR(g_rc->device->device, swapchain.handle,
-                                     &img_count, nullptr));
-    std::vector<VkImage> color_images(img_count);
-    vk_check(vkGetSwapchainImagesKHR(g_rc->device->device, swapchain.handle,
-                                     &img_count, color_images.data()));
+    uint32_t image_count = 0;
+    vk_check(vkGetSwapchainImagesKHR(g_rc->device->device, swapchain.handle, &image_count, nullptr));
+    std::vector<VkImage> images(image_count);
+    vk_check(vkGetSwapchainImagesKHR(g_rc->device->device, swapchain.handle, &image_count, images.data()));
 
 
     // create swapchain image views
-    swapchain.images.resize(img_count);
-    for (std::size_t i = 0; i < img_count; ++i) {
+    swapchain.images.resize(image_count);
+    for (std::size_t i = 0; i < image_count; ++i) {
         // Note that swapchain images are a special kind of image that cannot be owned.
         // Instead, we create a view into that image only and the swapchain manages
         // the actual image. Hence, we do not create an image buffer.
@@ -188,7 +183,7 @@ static vk_swapchain create_swapchain()
         // each image and a swapchain global format for them.
         vk_image& image = swapchain.images[i];
 
-        image.handle = color_images[i];
+        image.handle = images[i];
         image.view   = create_image_views(image.handle, swapchain_info.imageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 1);
         image.format = swapchain_info.imageFormat;
         image.extent = swapchain_info.imageExtent;
@@ -269,7 +264,7 @@ void vk_pipeline::enable_vertex_binding(const vk_vertex_binding<vertex>& binding
     for (std::size_t i = 0; i < 1; ++i) {
         VkVertexInputBindingDescription description{};
         description.binding = u32(i);
-        description.stride = binding.current_bytes;
+        description.stride = u32(binding.current_bytes);
         description.inputRate = binding.input_rate;
 
         bindingDescriptions.push_back(description);
@@ -878,16 +873,16 @@ std::vector<VkCommandBuffer> create_command_buffers()
 
 void begin_command_buffer(const std::vector<VkCommandBuffer>& cmdBuffer)
 {
-    vk_check(vkResetCommandBuffer(cmdBuffer[g_current_frame], 0));
+    vk_check(vkResetCommandBuffer(cmdBuffer[g_buffer_index], 0));
 
     VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vk_check(vkBeginCommandBuffer(cmdBuffer[g_current_frame], &begin_info));
+    vk_check(vkBeginCommandBuffer(cmdBuffer[g_buffer_index], &begin_info));
 }
 
 void end_command_buffer(const std::vector<VkCommandBuffer>& cmdBuffer)
 {
-    vk_check(vkEndCommandBuffer(cmdBuffer[g_current_frame]));
+    vk_check(vkEndCommandBuffer(cmdBuffer[g_buffer_index]));
 }
 
 
@@ -928,20 +923,20 @@ void begin_render_pass(const std::vector<VkCommandBuffer>& cmdBuffer,
 
     VkRenderPassBeginInfo begin_info{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
     begin_info.renderPass = fb.render_pass;
-    begin_info.framebuffer = fb.handle[g_current_image];
+    begin_info.framebuffer = fb.handle[g_image_index];
     begin_info.renderArea = render_area;
     begin_info.clearValueCount = u32(clearValues.size());
     begin_info.pClearValues = clearValues.data();
 
-    vkCmdSetViewport(cmdBuffer[g_current_frame], 0, 1, &viewport);
-    vkCmdSetScissor(cmdBuffer[g_current_frame], 0, 1, &scissor);
+    vkCmdSetViewport(cmdBuffer[g_buffer_index], 0, 1, &viewport);
+    vkCmdSetScissor(cmdBuffer[g_buffer_index], 0, 1, &scissor);
 
-    vkCmdBeginRenderPass(cmdBuffer[g_current_frame], &begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(cmdBuffer[g_buffer_index], &begin_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void end_render_pass(std::vector<VkCommandBuffer>& buffers)
 {
-    vkCmdEndRenderPass(buffers[g_current_frame]);
+    vkCmdEndRenderPass(buffers[g_buffer_index]);
 }
 
 VkPipelineLayout create_pipeline_layout(const std::vector<VkDescriptorSetLayout>& descriptor_sets, 
@@ -1200,14 +1195,14 @@ vk_context& get_vulkan_context()
     return *g_rc;
 }
 
-uint32_t get_frame_index()
+uint32_t get_frame_buffer_index()
 {
-    return g_current_frame;
+    return g_buffer_index;
 }
 
-uint32_t get_swapchain_frame_index()
+uint32_t get_frame_image_index()
 {
-    return g_current_image;
+    return g_image_index;
 }
 
 uint32_t get_swapchain_image_count()
@@ -1227,15 +1222,15 @@ void recreate_swapchain(buffer_mode bufferMode, vsync_mode vsync)
 bool get_next_swapchain_image()
 {
     // Wait for the GPU to finish all work before getting the next image
-    vk_check(vkWaitForFences(g_rc->device->device, 1, &g_frames[g_current_frame].submit_fence, VK_TRUE, UINT64_MAX));
+    vk_check(vkWaitForFences(g_rc->device->device, 1, &g_frames[g_buffer_index].submit_fence, VK_TRUE, UINT64_MAX));
 
     // Keep attempting to acquire the next frame.
     VkResult result = vkAcquireNextImageKHR(g_rc->device->device,
         g_swapchain.handle,
         UINT64_MAX,
-        g_frames[g_current_frame].image_ready_semaphore,
+        g_frames[g_buffer_index].image_ready_semaphore,
         nullptr,
-        &g_current_image);
+        &g_image_index);
 
 
     // TODO: Look into only resizing when VK_ERROR is returned. VK_SUBOPTIMAL 
@@ -1254,7 +1249,7 @@ bool get_next_swapchain_image()
         VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
         VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
         submit_info.waitSemaphoreCount = 1;
-        submit_info.pWaitSemaphores = &g_frames[g_current_frame].image_ready_semaphore;
+        submit_info.pWaitSemaphores = &g_frames[g_buffer_index].image_ready_semaphore;
         submit_info.pWaitDstStageMask = &waitStage;
         vk_check(vkQueueSubmit(g_rc->device->graphics_queue, 1, &submit_info, VK_NULL_HANDLE));
 #endif
@@ -1269,7 +1264,7 @@ bool get_next_swapchain_image()
     }
 
     // reset fence when about to submit work to the GPU
-    vk_check(vkResetFences(g_rc->device->device, 1, &g_frames[g_current_frame].submit_fence));
+    vk_check(vkResetFences(g_rc->device->device, 1, &g_frames[g_buffer_index].submit_fence));
 
     return true;
 }
@@ -1281,19 +1276,19 @@ void submit_gpu_work(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers
 
     std::vector<VkCommandBuffer> buffers(cmdBuffers.size());
     for (std::size_t i = 0; i < buffers.size(); ++i)
-        buffers[i] = cmdBuffers[i][g_current_frame];
+        buffers[i] = cmdBuffers[i][g_buffer_index];
 
     const VkPipelineStageFlags waitState = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &g_frames[g_current_frame].image_ready_semaphore;
+    submit_info.pWaitSemaphores = &g_frames[g_buffer_index].image_ready_semaphore;
     submit_info.pWaitDstStageMask = &waitState;
     submit_info.commandBufferCount = u32(buffers.size());
     submit_info.pCommandBuffers = buffers.data();
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &g_frames[g_current_frame].image_complete_semaphore;
+    submit_info.pSignalSemaphores = &g_frames[g_buffer_index].image_complete_semaphore;
 
-    vk_check(vkQueueSubmit(g_rc->device->graphics_queue, 1, &submit_info, g_frames[g_current_frame].submit_fence));
+    vk_check(vkQueueSubmit(g_rc->device->graphics_queue, 1, &submit_info, g_frames[g_buffer_index].submit_fence));
 }
 
 bool present_swapchain_image()
@@ -1304,10 +1299,10 @@ bool present_swapchain_image()
     // request the GPU to present the rendered image onto the screen
     VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &g_frames[g_current_frame].image_complete_semaphore;
+    present_info.pWaitSemaphores = &g_frames[g_buffer_index].image_complete_semaphore;
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &g_swapchain.handle;
-    present_info.pImageIndices = &g_current_image;
+    present_info.pImageIndices = &g_image_index;
     present_info.pResults = nullptr;
     VkResult result = vkQueuePresentKHR(g_rc->device->graphics_queue, &present_info);
 
@@ -1321,14 +1316,14 @@ bool present_swapchain_image()
 
     // Once the image has been shown onto the window, we can move onto the next
     // frame, and so we increment the frame index.
-    g_current_frame = (g_current_frame + 1) % frames_in_flight;
+    g_buffer_index = (g_buffer_index + 1) % frames_in_flight;
 
     return true;
 }
 
 void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& descriptorSets)
 {
-    vkCmdBindDescriptorSets(buffers[g_current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[g_current_frame], 0, nullptr);
+    vkCmdBindDescriptorSets(buffers[g_buffer_index], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[g_buffer_index], 0, nullptr);
 }
 
 
@@ -1339,30 +1334,30 @@ void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers,
 {
     std::vector<uint32_t> sz(sizes);
     for (std::size_t i = 0; i < sz.size(); ++i)
-        sz[i] = pad_uniform_buffer_size(sizes[i]) * g_current_frame;
+        sz[i] = static_cast<uint32_t>(pad_uniform_buffer_size(sizes[i])) * g_buffer_index;
 
-    vkCmdBindDescriptorSets(buffers[g_current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[g_current_frame], sz.size(), sz.data());
+    vkCmdBindDescriptorSets(buffers[g_buffer_index], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[g_buffer_index], static_cast<uint32_t>(sz.size()), sz.data());
 }
 
 void bind_pipeline(std::vector<VkCommandBuffer>& buffers, const vk_pipeline& pipeline)
 {
-    vkCmdBindPipeline(buffers[g_current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_Pipeline);
+    vkCmdBindPipeline(buffers[g_buffer_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_Pipeline);
 }
 
 void render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, const glm::mat4& matrix)
 {
-    vkCmdPushConstants(buffers[g_current_frame], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &matrix);
-    vkCmdDrawIndexed(buffers[g_current_frame], index_count, 1, 0, 0, 0);
+    vkCmdPushConstants(buffers[g_buffer_index], layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &matrix);
+    vkCmdDrawIndexed(buffers[g_buffer_index], index_count, 1, 0, 0, 0);
 }
 
 void render(const std::vector<VkCommandBuffer>& buffers, uint32_t index_count)
 {
-    vkCmdDrawIndexed(buffers[g_current_frame], index_count, 1, 0, 0, 0);
+    vkCmdDrawIndexed(buffers[g_buffer_index], index_count, 1, 0, 0, 0);
 }
 
 void render(const std::vector<VkCommandBuffer>& buffers)
 {
-    vkCmdDraw(buffers[g_current_frame], 3, 1, 0, 0);
+    vkCmdDraw(buffers[g_buffer_index], 3, 1, 0, 0);
 }
 
 void wait_for_gpu()

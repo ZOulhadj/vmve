@@ -7,9 +7,9 @@
 
 struct vk_vertex_array
 {
-    vk_buffer   vertex_buffer;
-    vk_buffer   index_buffer;
-    uint32_t index_count;
+    vk_buffer vertex_buffer;
+    vk_buffer index_buffer;
+    uint32_t  index_count;
 };
 
 vk_vertex_array create_vertex_array(const std::vector<vertex>& vertices, const std::vector<uint32_t>& indices);

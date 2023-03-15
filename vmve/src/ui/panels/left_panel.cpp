@@ -12,12 +12,27 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
             engine_get_uptime(&hours, &minutes, &seconds);
             engine_get_memory_status(&memoryUsage, &maxMemory);
 
-            ImGui::Text("Uptime: %d:%d:%d", hours, minutes, seconds);
 
-            ImGui::Text("Memory usage:");
+            if (ImGui::BeginTable("app", 2, ImGuiTableFlags_SizingStretchProp)) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
 
-            sprintf(memory_string, "%.1f GB/%lld GB", (memoryUsage * maxMemory), maxMemory);
-            ImGui::ProgressBar(memoryUsage, ImVec2(0.f, 0.f), memory_string);
+                ImGui::Text("Uptime");
+                ImGui::TableNextColumn();
+                ImGui::Text("%d:%d:%d", hours, minutes, seconds);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
+                ImGui::Text("Memory");
+                ImGui::TableNextColumn();
+                sprintf(memory_string, "%.1f GB/%lld GB", (memoryUsage * maxMemory), maxMemory);
+                ImGui::ProgressBar(memoryUsage, ImVec2(0.f, 0.f), memory_string);
+
+
+                ImGui::EndTable();
+            }
+          
         }
 
 #if 0
@@ -69,45 +84,79 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
             if (ImGui::RadioButton("Look at", engine->camera.type == CameraType::LookAt))
                 engine->camera.type = CameraType::LookAt;
 #endif
-            ImGui::Text("Position");
-            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
-            //ImGui::PopFont();
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraPosX);
-            ImGui::SameLine();
-            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
-            //ImGui::PopFont();
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraPosY);
-            ImGui::SameLine();
-            //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-            ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
-            //ImGui::PopFont();
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraPosZ);
 
-            ImGui::Text("Direction");
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraFrontX);
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraFrontY);
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
-            ImGui::SameLine();
-            ImGui::Text("%.2f", cameraFrontZ);
 
-            ImGui::SliderFloat("Speed", cameraSpeed, 0.0f, 20.0f, "%.1f m/s");
-            //ImGui::SliderFloat("Yaw Speed", cameraYawSpeed, 0.0f, 45.0f);
-            ImGui::SliderFloat("FOV", cameraFOV, 10.0f, 120.0f);
+            if (ImGui::BeginTable("camera", 2, ImGuiTableFlags_SizingStretchProp)) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
 
-            ImGui::SliderFloat("Near plane", cameraNearPlane, 0.1f, 10.0f, "%.1f m");
-            ImGui::SliderFloat("Far plane", cameraFarPlane, 10.0f, 2000.0f, "%.1f m");
-            ImGui::Checkbox("Lock frustum", &lock_camera_frustum);
+
+                ImGui::Text("Position");
+                ImGui::TableNextColumn();
+                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
+                ImGui::SameLine();
+                ImGui::Text("%.2f", cameraPosX);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
+                ImGui::SameLine();
+                ImGui::Text("%.2f", cameraPosY);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
+                ImGui::SameLine();
+                ImGui::Text("%.2f", cameraPosZ);
+
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
+                ImGui::Text("Direction");
+                ImGui::TableNextColumn();
+                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
+                ImGui::SameLine();
+                ImGui::Text("%.2f", cameraFrontX);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
+                ImGui::SameLine();
+                ImGui::Text("%.2f", cameraFrontY);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
+                ImGui::SameLine();
+                ImGui::Text("%.2f", cameraFrontZ);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
+                ImGui::Text("Speed");
+                ImGui::TableNextColumn();
+                ImGui::SliderFloat("##speed", cameraSpeed, 0.0f, 20.0f, "%.1f m/s");
+
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
+                //ImGui::SliderFloat("Yaw Speed", cameraYawSpeed, 0.0f, 45.0f);
+                ImGui::Text("FOV");
+                ImGui::TableNextColumn();
+                ImGui::SliderFloat("##fov", cameraFOV, 10.0f, 120.0f);
+
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
+                ImGui::Text("Near");
+                ImGui::TableNextColumn();
+                ImGui::SliderFloat("##near", cameraNearPlane, 0.1f, 10.0f, "%.1f m");
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
+                ImGui::Text("Far");
+                ImGui::TableNextColumn();
+                ImGui::SliderFloat("##far", cameraFarPlane, 10.0f, 2000.0f, "%.1f m");
+
+                ImGui::EndTable();
+            }
+
         }
     }
     ImGui::End();

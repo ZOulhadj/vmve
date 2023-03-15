@@ -81,7 +81,6 @@ bool show_demo_window = false;
 
 
 // left panel
-bool lock_camera_frustum = false;
 int hours = 0, minutes = 0, seconds = 0;
 float memoryUsage = 0.0f;
 unsigned int maxMemory = 0;

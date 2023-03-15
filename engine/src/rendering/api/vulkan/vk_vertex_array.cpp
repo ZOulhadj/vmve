@@ -7,8 +7,8 @@ vk_vertex_array create_vertex_array(const std::vector<vertex>& vertices, const s
 {
     vk_vertex_array vertexArray{};
 
-    const uint32_t vertices_size = vertices.size() * sizeof(vertex);
-    const uint32_t indices_size = indices.size() * sizeof(uint32_t);
+    const VkDeviceSize vertices_size = vertices.size() * sizeof(vertex);
+    const uint32_t indices_size = static_cast<uint32_t>(indices.size()) * sizeof(uint32_t);
 
     // Create a temporary "staging" buffer that will be used to copy the data
     // from CPU memory over to GPU memory.
@@ -17,13 +17,13 @@ vk_vertex_array create_vertex_array(const std::vector<vertex>& vertices, const s
 
     vertexArray.vertex_buffer = create_gpu_buffer(vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     vertexArray.index_buffer  = create_gpu_buffer(indices_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    vertexArray.index_count   = indices.size(); // todo: Maybe be unsafe for a hard coded type.
+    vertexArray.index_count   = static_cast<uint32_t>(indices.size());
 
     // Upload data to the GPU
     submit_to_gpu([&](VkCommandBuffer cmd_buffer) {
         VkBufferCopy vertex_copy_info{}, index_copy_info{};
         vertex_copy_info.size = vertices_size;
-        index_copy_info.size  = indices_size;
+        index_copy_info.size  = static_cast<VkDeviceSize>(indices_size);
 
         vkCmdCopyBuffer(cmd_buffer, vertexStagingBuffer.buffer,
                         vertexArray.vertex_buffer.buffer, 1,
@@ -47,7 +47,7 @@ void destroy_vertex_array(vk_vertex_array& vertexArray) {
 }
 
 void bind_vertex_array(const std::vector<VkCommandBuffer>& buffers, const vk_vertex_array& vertexArray) {
-    uint32_t current_frame = get_frame_index();
+    uint32_t current_frame = get_frame_buffer_index();
 
     const VkDeviceSize offset{ 0 };
     vkCmdBindVertexBuffers(buffers[current_frame], 0, 1, &vertexArray.vertex_buffer.buffer, &offset);

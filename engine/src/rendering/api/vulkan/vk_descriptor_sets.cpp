@@ -193,7 +193,7 @@ void bind_descriptor_set(const std::vector<VkCommandBuffer>& buffers,
                          VkDescriptorSet descriptor_set)
 {
 
-    uint32_t current_frame = get_frame_index();
+    uint32_t current_frame = get_frame_buffer_index();
     vkCmdBindDescriptorSets(buffers[current_frame],
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         layout,
