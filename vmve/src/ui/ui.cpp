@@ -126,7 +126,7 @@ static void set_default_styling()
 {
     ImGuiStyle& style = ImGui::GetStyle();
     style.FrameRounding = 0.0f;
-    style.TabRounding = 2.0f;
+    style.TabRounding = 0.0f;
     style.FrameBorderSize = 1.0f;
 }
 
@@ -389,7 +389,7 @@ static void render_preferences_window(bool* open)
         static int swapchain_images = 3;
         static int current_buffer_mode = 0;
         static std::array<const char*, 2> buf_mode_names = { "Double Buffering", "Triple Buffering" };
-        ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), buf_mode_names.size());
+        ImGui::Combo("Buffer mode", &current_buffer_mode, buf_mode_names.data(), static_cast<int>(buf_mode_names.size()));
 
         break;
     }
@@ -490,7 +490,7 @@ static void render_preferences_window(bool* open)
         ImGui::Text("Audio");
 
         if (ImGui::SliderInt("Main volume", &main_volume, 0, 100, "%d%%"))
-            engine_set_master_volume(main_volume);
+            engine_set_master_volume(static_cast<float>(main_volume));
         break;
     }
 
@@ -619,7 +619,7 @@ static void load_model_window(bool* open)
                 std::string raw_data;
                 bool file_read = vmve_read_from_file(raw_data, model_path.c_str());
                 if (file_read)
-                    engine_add_model(raw_data.c_str(), raw_data.size(), flip_uv);
+                    engine_add_model(raw_data.c_str(), static_cast<int>(raw_data.size()), flip_uv);
 
                 ImGui::CloseCurrentPopup();
                 file_encrypted = false;
@@ -663,8 +663,8 @@ static void vmve_creator_window(bool* open)
     info_marker("Should the model file be encrypted.");
 
     if (useEncryption) {
-        ImGui::Combo("Encryption method", &encryptionModeIndex, encryptionModes.data(), encryptionModes.size());
-        ImGui::Combo("Key length", &keyLengthIndex, keyLengths.data(), keyLengths.size());
+        ImGui::Combo("Encryption method", &encryptionModeIndex, encryptionModes.data(), static_cast<int>(encryptionModes.size()));
+        ImGui::Combo("Key length", &keyLengthIndex, keyLengths.data(), static_cast<int>(keyLengths.size()));
 
         if (ImGui::Button("Generate Key/IV")) {
             keyIV = generate_key_iv(keyLengthSizes[keyLengthIndex]);
@@ -809,7 +809,7 @@ static void render_audio_window(bool* open)
 
     ImGui::InputText("Audio Path", audio_path, 256);
     if (ImGui::SliderInt("Volume", &audio_volume, 0, 100, "%d%%"))
-        engine_set_audio_volume(audio_volume);
+        engine_set_audio_volume(static_cast<float>(audio_volume));
 
 
 
@@ -822,7 +822,6 @@ static void render_console_window(bool* open)
         return;
 
     static char command[256];
-
 
     resize_and_center_next_window(ImVec2(800, 600));
 

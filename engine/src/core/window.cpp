@@ -154,13 +154,18 @@ static void window_cursor_enter_callback(GLFWwindow* window, int entered)
 
 // Initialized the GLFW library and creates a window. Window callbacks send
 // events to the application callback.
-engine_window* create_window(const char* name, int width, int height)
+engine_window* create_window(const char* name, int width, int height, bool fullscreen)
 {
     print_log("Initializing window (%d, %d)\n", width, height);
 
     assert(width > 0 && height > 0);
 
     engine_window* window = new engine_window();
+    window->name       = name;
+    window->width      = width;
+    window->height     = height;
+    window->minimized  = false;
+    window->fullscreen = fullscreen;
 
     glfwSetErrorCallback(glfw_error_callback);
 
@@ -171,21 +176,23 @@ engine_window* create_window(const char* name, int width, int height)
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    //glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, true);
     glfwWindowHint(GLFW_VISIBLE, false);
 
     window->handle = glfwCreateWindow(width, height, name, nullptr, nullptr);
-    window->name   = name;
-    window->width  = width;
-    window->height = height;
-
     if (!window->handle) {
         print_error("Failed to create GLFW window.\n");   
         
         glfwTerminate();
 
         return nullptr;
+    }
+
+    if (window->fullscreen) {
+        int x = 0, y = 0;
+
+        glfwGetWindowPos(window->handle, &x, &y);
+        glfwSetWindowMonitor(window->handle, glfwGetPrimaryMonitor(), x, y, window->width, window->height, 0);
     }
 
     //glfwSetInputMode(window->handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);

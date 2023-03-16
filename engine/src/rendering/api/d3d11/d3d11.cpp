@@ -20,20 +20,20 @@ engine_renderer* initialize_renderer(engine_window* window)
     engine_renderer* renderer = new engine_renderer();
 
     DXGI_SWAP_CHAIN_DESC swapchain_info{};
-    swapchain_info.BufferDesc.Width = window->width;
-    swapchain_info.BufferDesc.Height = window->height;
-    swapchain_info.BufferDesc.RefreshRate.Numerator = 60;
+    swapchain_info.BufferDesc.Width                   = window->width;
+    swapchain_info.BufferDesc.Height                  = window->height;
+    swapchain_info.BufferDesc.RefreshRate.Numerator   = 60;
     swapchain_info.BufferDesc.RefreshRate.Denominator = 1;
-    swapchain_info.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-    swapchain_info.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-    swapchain_info.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-    swapchain_info.SampleDesc.Count = 1;
-    swapchain_info.SampleDesc.Quality = 0;
-    swapchain_info.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapchain_info.BufferCount = 1;
-    swapchain_info.OutputWindow = glfwGetWin32Window(window->handle);
-    swapchain_info.Windowed = false;
-    swapchain_info.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    swapchain_info.BufferDesc.Format                  = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    swapchain_info.BufferDesc.ScanlineOrdering        = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    swapchain_info.BufferDesc.Scaling                 = DXGI_MODE_SCALING_UNSPECIFIED;
+    swapchain_info.SampleDesc.Count                   = 1;
+    swapchain_info.SampleDesc.Quality                 = 0;
+    swapchain_info.BufferUsage                        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapchain_info.BufferCount                        = 1;
+    swapchain_info.OutputWindow                       = glfwGetWin32Window(window->handle);
+    swapchain_info.Windowed                           = !window->fullscreen;
+    swapchain_info.SwapEffect                         = DXGI_SWAP_EFFECT_DISCARD;
 
     HRESULT result = S_OK;
     result = D3D11CreateDeviceAndSwapChain(

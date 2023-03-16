@@ -11,7 +11,9 @@ struct engine_window
     const char* name;
     uint32_t    width;
     uint32_t    height;
+
     bool        minimized;
+    bool        fullscreen;
 
     Event_Func  event_callback;
 };
@@ -25,7 +27,7 @@ struct engine_window
 /// @param width  The window in pixels of the current window
 /// @param height The height in pixels of the current window
 ///
-engine_window* create_window(const char* name, int width, int height);
+engine_window* create_window(const char* name, int width, int height, bool fullscreen = false);
 
 
 ///
@@ -39,8 +41,6 @@ void set_window_icon(const engine_window* window, const std::filesystem::path& i
 void set_window_icon(const engine_window* window, unsigned char* data, int width, int height);
 
 float get_window_dpi_scale(const engine_window* window);
-
-
 
 void show_window(const engine_window* window);
 
