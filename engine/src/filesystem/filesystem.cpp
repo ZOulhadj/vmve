@@ -1,7 +1,9 @@
+#include "pch.h"
 #include "filesystem.h"
 
 
-std::vector<Directory_Item> get_directory_items(const std::string& directory) {
+std::vector<Directory_Item> get_directory_items(const std::string& directory)
+{
     std::vector<Directory_Item> items;
 
     std::filesystem::path current_path(directory);

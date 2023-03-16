@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -10,91 +18,27 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\core\windows\win32_audio.cpp" />
-    <ClCompile Include="src\core\input.cpp" />
-    <ClCompile Include="src\core\windows\win32_memory.cpp" />
-    <ClCompile Include="src\core\window.cpp" />
-    <ClCompile Include="src\engine.cpp" />
-    <ClCompile Include="src\filesystem\filesystem.cpp" />
-    <ClCompile Include="src\filesystem\vfs.cpp" />
-    <ClCompile Include="src\logging.cpp" />
-    <ClCompile Include="src\pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
-    </ClCompile>
-    <ClCompile Include="src\rendering\api\d3d11\d3d11.cpp" />
-    <ClCompile Include="src\rendering\api\d3d11\d3d11_vertex_buffer.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\vk_image.cpp" />
-    <ClCompile Include="src\rendering\camera.cpp" />
-    <ClCompile Include="src\rendering\entity.cpp" />
-    <ClCompile Include="src\rendering\material.cpp" />
-    <ClCompile Include="src\rendering\model.cpp" />
-    <ClCompile Include="src\rendering\vertex.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\vk_buffer.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\vk_common.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\vk_context.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\vk_descriptor_sets.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\vk_renderer.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\vk_shader.cpp" />
-    <ClCompile Include="src\rendering\api\vulkan\vk_vertex_array.cpp" />
-    <ClCompile Include="src\ui\ui.cpp" />
-    <ClCompile Include="src\utility.cpp" />
-    <ClCompile Include="vendor\imgui\imgui.cpp" />
-    <ClCompile Include="vendor\imgui\ImGuizmo.cpp" />
-    <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
-    <ClCompile Include="vendor\imgui\imgui_draw.cpp" />
-    <ClCompile Include="vendor\imgui\imgui_impl_glfw.cpp" />
-    <ClCompile Include="vendor\imgui\imgui_impl_vulkan.cpp" />
-    <ClCompile Include="vendor\imgui\imgui_tables.cpp" />
-    <ClCompile Include="vendor\imgui\imgui_widgets.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\engine.h" />
-    <ClInclude Include="src\core\audio.h" />
-    <ClInclude Include="src\core\input.h" />
-    <ClInclude Include="src\core\windows\win32_memory.h" />
-    <ClInclude Include="src\core\window.h" />
-    <ClInclude Include="src\events\event.h" />
-    <ClInclude Include="src\events\event_dispatcher.h" />
-    <ClInclude Include="src\events\key_event.h" />
-    <ClInclude Include="src\events\mouse_event.h" />
-    <ClInclude Include="src\events\window_event.h" />
-    <ClInclude Include="src\filesystem\filesystem.h" />
-    <ClInclude Include="src\filesystem\vfs.h" />
-    <ClInclude Include="src\logging.h" />
-    <ClInclude Include="src\math\math.h" />
-    <ClInclude Include="src\pch.h" />
-    <ClInclude Include="src\rendering\renderer.h" />
-    <ClInclude Include="src\rendering\api\vulkan\vk_image.h" />
-    <ClInclude Include="src\rendering\camera.h" />
-    <ClInclude Include="src\rendering\entity.h" />
-    <ClInclude Include="src\rendering\material.h" />
-    <ClInclude Include="src\rendering\model.h" />
-    <ClInclude Include="src\rendering\primitives\cube.h" />
-    <ClInclude Include="src\rendering\vertex.h" />
-    <ClInclude Include="src\rendering\api\vulkan\vk_buffer.h" />
-    <ClInclude Include="src\rendering\api\vulkan\vk_common.h" />
-    <ClInclude Include="src\rendering\api\vulkan\vk_context.h" />
-    <ClInclude Include="src\rendering\api\vulkan\vk_descriptor_sets.h" />
-    <ClInclude Include="src\rendering\api\vulkan\vk_renderer.h" />
-    <ClInclude Include="src\rendering\api\vulkan\vk_shader.h" />
-    <ClInclude Include="src\rendering\api\vulkan\vk_vertex_array.h" />
-    <ClInclude Include="src\rendering\shaders\shaders.h" />
-    <ClInclude Include="src\ui\ui.h" />
-    <ClInclude Include="src\utility.h" />
-    <ClInclude Include="vendor\volk\volk.h" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{ce66087c-d527-45c1-a97e-7530d9d6f2ae}</ProjectGuid>
+    <ProjectGuid>{7add1bbe-bc1c-4f83-bef5-445f5630f050}</ProjectGuid>
     <RootNamespace>engine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -113,6 +57,12 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -121,41 +71,65 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IntDir>build\$(Configuration)\obj\</IntDir>
+    <OutDir>$(SolutionDir)build\$(ProjectName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(ProjectName)\$(Configuration)\obj\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IntDir>build\$(Configuration)\obj\</IntDir>
+    <OutDir>$(SolutionDir)build\$(ProjectName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(ProjectName)\$(Configuration)\obj\</IntDir>
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions);
-_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)vendor/glfw/include/;$(ProjectDir)vendor/vma/include/;$(ProjectDir)vendor/glm/;$(ProjectDir)vendor/imgui/;$(ProjectDir)vendor/stb/;$(ProjectDir)vendor/assimp/include/;$(ProjectDir)vendor/volk/;C:\VulkanSDK\1.3.231.1\Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)src/;C:\VulkanSDK\1.3.231.1\Include/;$(SolutionDir)vendor/glfw/include/;$(SolutionDir)vendor/vma/include/;$(SolutionDir)vendor/glm/;$(SolutionDir)vendor/imgui/;$(SolutionDir)vendor/stb/;$(SolutionDir)vendor/assimp/include/;$(SolutionDir)vendor/volk/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalDependencies>glfw3_mt.lib;shaderc_shared.lib;xaudio2.lib;d3d11.lib;assimp-vc143-mtd.lib;zlibstaticd.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)vendor\shaderc\lib\$(Configuration);$(ProjectDir)vendor\glfw\lib\Release;$(ProjectDir)vendor\assimp\lib\$(Configuration);C:\VulkanSDK\1.3.231.1\Lib</AdditionalLibraryDirectories>
+    </Lib>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
-    <Lib>
-      <AdditionalDependencies>glfw3_mt.lib;shaderc_shared.lib;assimp-vc143-mtd.lib;zlibstaticd.lib;xaudio2.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
-    <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\shaderc\lib\$(Configuration);C:\VulkanSDK\1.3.231.1\Lib;$(SolutionDir)vendor\glfw\lib\Release;$(SolutionDir)vendor\assimp\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -163,33 +137,133 @@ _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions);
-_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)vendor/glfw/include/;$(ProjectDir)vendor/vma/include/;$(ProjectDir)vendor/glm/;$(ProjectDir)vendor/imgui/;$(ProjectDir)vendor/stb/;$(ProjectDir)vendor/assimp/include/;$(ProjectDir)vendor/volk/;C:\VulkanSDK\1.3.231.1\Include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)src/;C:\VulkanSDK\1.3.231.1\Include/;$(SolutionDir)vendor/glfw/include/;$(SolutionDir)vendor/vma/include/;$(SolutionDir)vendor/glm/;$(SolutionDir)vendor/imgui/;$(SolutionDir)vendor/stb/;$(SolutionDir)vendor/assimp/include/;$(SolutionDir)vendor/volk/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
-      <SubSystem>
-      </SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalDependencies>glfw3_mt.lib;shaderc_shared.lib;xaudio2.lib;d3d11.lib;assimp-vc143-mt.lib;zlibstatic.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)vendor\shaderc\lib\$(Configuration);$(ProjectDir)vendor\glfw\lib\Release;$(ProjectDir)vendor\assimp\lib\$(Configuration);C:\VulkanSDK\1.3.231.1\Lib</AdditionalLibraryDirectories>
+    </Lib>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
-    <Lib>
-      <AdditionalDependencies>glfw3_mt.lib;shaderc_shared.lib;assimp-vc143-mt.lib;zlibstatic.lib;xaudio2.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
-    <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\shaderc\lib\$(Configuration);C:\VulkanSDK\1.3.231.1\Lib;$(SolutionDir)vendor\glfw\lib\Release;$(SolutionDir)vendor\assimp\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Lib>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\core\input.cpp" />
+    <ClCompile Include="src\core\window.cpp" />
+    <ClCompile Include="src\core\windows\win32_audio.cpp" />
+    <ClCompile Include="src\core\windows\win32_memory.cpp" />
+    <ClCompile Include="src\core\windows\win32_window.cpp" />
+    <ClCompile Include="src\engine.cpp" />
+    <ClCompile Include="src\filesystem\filesystem.cpp" />
+    <ClCompile Include="src\filesystem\vfs.cpp" />
+    <ClCompile Include="src\logging.cpp" />
+    <ClCompile Include="src\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\rendering\api\vulkan\vk_buffer.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_common.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_context.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_descriptor_sets.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_image.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_renderer.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_shader.cpp" />
+    <ClCompile Include="src\rendering\api\vulkan\vk_vertex_array.cpp" />
+    <ClCompile Include="src\rendering\camera.cpp" />
+    <ClCompile Include="src\rendering\entity.cpp" />
+    <ClCompile Include="src\rendering\material.cpp" />
+    <ClCompile Include="src\rendering\model.cpp" />
+    <ClCompile Include="src\rendering\vertex.cpp" />
+    <ClCompile Include="src\ui\ui.cpp" />
+    <ClCompile Include="src\utility.cpp" />
+    <ClCompile Include="vendor\imgui\imgui.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\ImGuizmo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_demo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_draw.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_impl_glfw.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_impl_vulkan.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_stdlib.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_tables.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_widgets.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\engine.h" />
+    <ClInclude Include="src\core\audio.h" />
+    <ClInclude Include="src\core\input.h" />
+    <ClInclude Include="src\core\window.h" />
+    <ClInclude Include="src\core\windows\win32_memory.h" />
+    <ClInclude Include="src\core\windows\win32_window.h" />
+    <ClInclude Include="src\events\event.h" />
+    <ClInclude Include="src\events\event_dispatcher.h" />
+    <ClInclude Include="src\events\key_event.h" />
+    <ClInclude Include="src\events\mouse_event.h" />
+    <ClInclude Include="src\events\window_event.h" />
+    <ClInclude Include="src\filesystem\filesystem.h" />
+    <ClInclude Include="src\filesystem\vfs.h" />
+    <ClInclude Include="src\logging.h" />
+    <ClInclude Include="src\math\math.h" />
+    <ClInclude Include="src\pch.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_buffer.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_common.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_context.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_descriptor_sets.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_image.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_renderer.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_shader.h" />
+    <ClInclude Include="src\rendering\api\vulkan\vk_vertex_array.h" />
+    <ClInclude Include="src\rendering\camera.h" />
+    <ClInclude Include="src\rendering\entity.h" />
+    <ClInclude Include="src\rendering\material.h" />
+    <ClInclude Include="src\rendering\model.h" />
+    <ClInclude Include="src\rendering\primitives\cube.h" />
+    <ClInclude Include="src\rendering\renderer.h" />
+    <ClInclude Include="src\rendering\shaders\shaders.h" />
+    <ClInclude Include="src\rendering\vertex.h" />
+    <ClInclude Include="src\ui\ui.h" />
+    <ClInclude Include="src\utility.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

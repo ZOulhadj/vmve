@@ -26,7 +26,7 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
 
                 ImGui::Text("Memory");
                 ImGui::TableNextColumn();
-                sprintf(memory_string, "%.1f GB/%lld GB", (memoryUsage * maxMemory), maxMemory);
+                sprintf_s(memory_string, "%.1f GB/%lld GB", (memoryUsage * maxMemory), maxMemory);
                 ImGui::ProgressBar(memoryUsage, ImVec2(0.f, 0.f), memory_string);
 
 

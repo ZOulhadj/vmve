@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "../audio.h"
 
 #include <xaudio2.h>

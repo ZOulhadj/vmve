@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "entity.h"
 
 #include "api/vulkan/vk_renderer.h"

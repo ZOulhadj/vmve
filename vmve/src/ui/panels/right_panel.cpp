@@ -85,7 +85,7 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
             while (clipper.Step()) {
                 for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
                     char label[32];
-                    sprintf(label, "%04d", engine_get_instance_id(i));
+                    sprintf_s(label, "%04d", engine_get_instance_id(i));
 
                     bool isCurrentlySelected = (selectedInstanceIndex == i);
 

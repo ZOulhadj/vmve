@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "../include/engine.h"
 
 #include "../src/core/window.h"
@@ -387,9 +388,6 @@ static void configure_renderer(my_engine* engine)
         3, 2, 1
     };
 
-
-    engine_renderer* temp = initialize_renderer(engine->window);
-    terminate_renderer(temp);
 }
 
 bool engine_initialize(const char* name, int width, int height)

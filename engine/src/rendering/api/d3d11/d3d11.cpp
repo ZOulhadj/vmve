@@ -20,8 +20,8 @@ engine_renderer* initialize_renderer(engine_window* window)
     engine_renderer* renderer = new engine_renderer();
 
     DXGI_SWAP_CHAIN_DESC swapchain_info{};
-    swapchain_info.BufferDesc.Width = 1280;
-    swapchain_info.BufferDesc.Height = 720;
+    swapchain_info.BufferDesc.Width = window->width;
+    swapchain_info.BufferDesc.Height = window->height;
     swapchain_info.BufferDesc.RefreshRate.Numerator = 60;
     swapchain_info.BufferDesc.RefreshRate.Denominator = 1;
     swapchain_info.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;

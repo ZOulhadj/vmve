@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "logging.h"
 
 static constexpr uint32_t g_log_history = 10000;

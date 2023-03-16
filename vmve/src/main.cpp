@@ -16,6 +16,23 @@ bool notFullScreen = true;
 
 int main()
 {
+#if 0
+    // Configure engine properties
+    // TODO(zak): load settings file if it exists
+
+    std::vector<vmve_setting> settings = load_settings_file(app_settings_file);
+    if (!settings.empty()) {
+        // parse and apply default settings
+    }
+    else {
+        // set default settings if no settings file was found
+    }
+#endif
+
+
+
+
+
     bool initialized = engine_initialize(app_title, app_width, app_height);
     if (!initialized) {
         engine_export_logs_to_file(app_crash_file);
@@ -41,17 +58,6 @@ int main()
 
     engine_create_camera(60.0f, 20.0f);
     //engine_set_environment_map("assets/models/skybox_sphere.obj");
-
-    // Configure engine properties
-    // TODO(zak): load settings file if it exists
-
-    std::vector<vmve_setting> settings = load_settings_file(app_settings_file);
-    if (!settings.empty()) {
-        // parse and apply default settings
-    } else {
-        // set default settings if no settings file was found
-    }
-
 
     engine_show_window();
 
@@ -83,9 +89,7 @@ int main()
         
     }
 
-
-    export_settings_file(settings, app_settings_file);
-
+    // TODO: export settings file
 
     engine_terminate();
 

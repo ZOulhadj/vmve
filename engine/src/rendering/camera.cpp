@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "camera.h"
 
 static Frustum_Plane CreateFrustum(const glm::vec3& normal, const glm::vec3& point)
