@@ -140,18 +140,13 @@ struct vk_renderer
 vk_renderer* create_renderer(const engine_window* window, buffer_mode buffering_mode, vsync_mode sync_mode);
 void destroy_renderer(vk_renderer* renderer);
 
-
-
 void submit_to_gpu(const std::function<void(VkCommandBuffer)>& submit_func);
-
-
 
 vk_renderer* get_vulkan_renderer();
 vk_context& get_vulkan_context();
 uint32_t get_frame_buffer_index(); // in order
 uint32_t get_frame_image_index(); // out of order
 uint32_t get_swapchain_image_count();
-
 
 void recreate_swapchain(buffer_mode buffer_mode, vsync_mode vsync);
 

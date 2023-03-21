@@ -2,20 +2,20 @@
 #include "filesystem.h"
 
 
-std::vector<Directory_Item> get_directory_items(const std::string& directory)
+std::vector<directory_item> get_directory_items(const std::string& directory)
 {
-    std::vector<Directory_Item> items;
+    std::vector<directory_item> items;
 
     std::filesystem::path current_path(directory);
 
     if (current_path.has_parent_path()) {
-        Directory_Item item{};
+        directory_item item{};
 
         // TODO: Check if this creates a copy of the string or if the string
         // becomes invalid after std::filesystem::path goes out of scope.
         item.path = current_path.parent_path().string();
         item.name = "..";
-        item.type = Item_Type::folder;
+        item.type = item_type::folder;
         item.size = 0;
 
         items.push_back(item);
@@ -23,7 +23,7 @@ std::vector<Directory_Item> get_directory_items(const std::string& directory)
 
 
     for (const auto& entry : std::filesystem::directory_iterator(directory)) {
-        Directory_Item item{};
+        directory_item item{};
 
         current_path = entry.path();
 
@@ -35,10 +35,10 @@ std::vector<Directory_Item> get_directory_items(const std::string& directory)
         // Therefore, we need to check if the current entry is a directory or
         // file and set the file size accordingly.
         if (entry.is_directory()) {
-            item.type = Item_Type::folder;
+            item.type = item_type::folder;
             item.size = 0;
         } else {
-            item.type = Item_Type::file;
+            item.type = item_type::file;
             item.size = entry.file_size();
         }
 

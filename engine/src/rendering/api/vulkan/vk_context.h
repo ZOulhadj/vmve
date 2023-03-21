@@ -16,7 +16,8 @@ struct vk_device
     uint32_t present_index;
 };
 
-struct vk_context {
+struct vk_context
+{
     const engine_window* window;
 
     VkInstance      instance;

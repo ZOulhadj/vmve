@@ -18,7 +18,7 @@ static void window_close_callback(GLFWwindow* window)
 {
     engine_window* ptr = (engine_window*)glfwGetWindowUserPointer(window);
 
-    Window_Closed_Event e;
+    window_closed_event e;
     ptr->event_callback(e);
 }
 
@@ -27,10 +27,10 @@ static void window_focus_callback(GLFWwindow* window, int focused)
     engine_window* ptr = (engine_window*)glfwGetWindowUserPointer(window);
 
     if (focused) {
-        Window_Focused_Event e;
+        window_focused_event e;
         ptr->event_callback(e);
     } else {
-        Window_Lost_Focus_Event e;
+        window_lost_focus_event e;
         ptr->event_callback(e);
     }
 }
@@ -40,10 +40,10 @@ static void window_maximized_callback(GLFWwindow* window, int maximized)
     engine_window* ptr = (engine_window*)glfwGetWindowUserPointer(window);
 
     if (maximized) {
-        Window_Maximized_Event e;
+        window_maximized_event e;
         ptr->event_callback(e);
     } else {
-        Window_Restored_Event e;
+        window_restored_event e;
         ptr->event_callback(e);
     }
 }
@@ -53,10 +53,10 @@ static void window_minimized_callback(GLFWwindow* window, int minimized)
     engine_window* ptr = (engine_window*)glfwGetWindowUserPointer(window);
 
     if (minimized) {
-        Window_Minimized_Event e;
+        window_minimized_event e;
         ptr->event_callback(e);
     } else {
-        Window_Not_Minimized_Event e;
+        window_not_minimized_event e;
         ptr->event_callback(e);
     }
 }
@@ -74,7 +74,7 @@ static void window_framebuffer_resize_callback(GLFWwindow* window, int width, in
     ptr->width  = width;
     ptr->height = height;
 
-    Window_Resized_Event e(width, height);
+    window_resized_event e(width, height);
     ptr->event_callback(e);
 }
 
@@ -82,7 +82,7 @@ static void window_drop_callback(GLFWwindow* window, int path_count, const char*
 {
     engine_window* ptr = (engine_window*)glfwGetWindowUserPointer(window);
 
-    Window_Dropped_Event e(path_count, in_paths);
+    window_dropped_event e(path_count, in_paths);
     ptr->event_callback(e);
 }
 
@@ -91,13 +91,13 @@ static void window_key_callback(GLFWwindow* window, int key, int scancode, int a
     engine_window* ptr = (engine_window*)glfwGetWindowUserPointer(window);
 
     if (action == GLFW_PRESS) {
-        Key_Pressed_Event e(key);
+        key_pressed_event e(key);
         ptr->event_callback(e);
     } else if (action == GLFW_REPEAT) {
-        Key_Released_Event e(key);
+        key_released_event e(key);
         ptr->event_callback(e);
     } else if (action == GLFW_RELEASE) {
-        Key_Released_Event e(key);
+        key_released_event e(key);
         ptr->event_callback(e);
     }
 }
@@ -107,13 +107,13 @@ static void window_mouse_button_callback(GLFWwindow* window, int button, int act
     engine_window* ptr = (engine_window*)glfwGetWindowUserPointer(window);
 
     if (action == GLFW_PRESS) {
-        Mouse_Button_Pressed_Event e(button);
+        mouse_button_pressed_event e(button);
         ptr->event_callback(e);
     } else if (action == GLFW_REPEAT) {
-        Mouse_Button_Pressed_Event e(button);
+        mouse_button_pressed_event e(button);
         ptr->event_callback(e);
     } else if (action == GLFW_RELEASE) {
-        Mouse_Button_Released_Event e(button);
+        mouse_button_released_event e(button);
         ptr->event_callback(e);
     }
 }
@@ -123,10 +123,10 @@ static void window_mouse_scroll_callback(GLFWwindow* window, double xoffset, dou
     engine_window* ptr = (engine_window*)glfwGetWindowUserPointer(window);
 
     if (yoffset == 1.0) {
-        Mouse_Scrolled_Up_Event e;
+        mouse_scrolled_up_event e;
         ptr->event_callback(e);
     } else if (yoffset == -1.0) {
-        Mouse_Scrolled_Down_Event e;
+        mouse_scrolled_down_event e;
         ptr->event_callback(e);
     }
 }
@@ -135,7 +135,7 @@ static void window_cursor_position_callback(GLFWwindow* window, double xpos, dou
 {
     engine_window* ptr = (engine_window*)glfwGetWindowUserPointer(window);
 
-    Mouse_Moved_Event e(xpos, ypos);
+    mouse_moved_event e(xpos, ypos);
     ptr->event_callback(e);
 }
 
@@ -144,10 +144,10 @@ static void window_cursor_enter_callback(GLFWwindow* window, int entered)
     engine_window* ptr = (engine_window*)glfwGetWindowUserPointer(window);
 
     if (entered) {
-        Mouse_Entered_Event e;
+        mouse_entered_event e;
         ptr->event_callback(e);
     } else {
-        Mouse_Left_Event e;
+        mouse_left_event e;
         ptr->event_callback(e);
     }
 }

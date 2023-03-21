@@ -3,36 +3,44 @@
 
 #include "event.h"
 
-struct Window_Closed_Event : public basic_event {
+struct window_closed_event : public basic_event
+{
     EVENT_CLASS_TYPE(window_closed);
 };
 
-struct Window_Focused_Event : public basic_event {
+struct window_focused_event : public basic_event
+{
     EVENT_CLASS_TYPE(window_focused);
 };
 
-struct Window_Lost_Focus_Event : public basic_event {
+struct window_lost_focus_event : public basic_event
+{
     EVENT_CLASS_TYPE(window_lost_focus);
 };
 
-struct Window_Maximized_Event : public basic_event {
+struct window_maximized_event : public basic_event
+{
     EVENT_CLASS_TYPE(window_maximized);
 };
 
-struct Window_Restored_Event : public basic_event {
+struct window_restored_event : public basic_event
+{
     EVENT_CLASS_TYPE(window_restored);
 };
 
-struct Window_Minimized_Event : public basic_event {
+struct window_minimized_event : public basic_event
+{
     EVENT_CLASS_TYPE(window_minimized);
 };
 
-struct Window_Not_Minimized_Event : public basic_event {
+struct window_not_minimized_event : public basic_event
+{
     EVENT_CLASS_TYPE(window_not_minimized);
 };
 
-struct Window_Resized_Event : public basic_event {
-    Window_Resized_Event(uint32_t width, uint32_t height)
+struct window_resized_event : public basic_event
+{
+    window_resized_event(uint32_t width, uint32_t height)
         : m_Width(width), m_Height(height)
     {}
 
@@ -45,9 +53,9 @@ private:
     uint32_t m_Height;
 };
 
-struct Window_Dropped_Event : public basic_event
+struct window_dropped_event : public basic_event
 {
-    Window_Dropped_Event(int count, const char* paths[])
+    window_dropped_event(int count, const char* paths[])
         : path_count(count), _paths(paths)
     {
         

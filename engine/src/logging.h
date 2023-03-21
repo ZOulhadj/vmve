@@ -25,4 +25,5 @@ void get_log(uint32_t logIndex, const char** str, int* type);
 int get_log_count();
 
 void export_logs_to_file(const char* path);
+
 #endif

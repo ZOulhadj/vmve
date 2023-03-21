@@ -1,13 +1,14 @@
-#ifndef MYENGINE_VFS_HPP
-#define MYENGINE_VFS_HPP
+#ifndef MY_ENGINE_VFS_HPP
+#define MY_ENGINE_VFS_HPP
 
-class VFS {
+class virtual_fs
+{
 public:
-    VFS(VFS const&) = delete;
-    void operator=(VFS const&) = delete;
+    virtual_fs(virtual_fs const&) = delete;
+    void operator=(virtual_fs const&) = delete;
 
 
-    static VFS& get();
+    static virtual_fs& get();
 
     void mount(const std::string& virtual_path, const std::filesystem::path& real_path);
     void unmount(const std::string& virtual_path);
@@ -15,7 +16,7 @@ public:
     std::filesystem::path get_path(const std::string& virtual_path);
 
 private:
-    VFS() = default;
+    virtual_fs() = default;
 
 private:
     std::unordered_map<std::string, std::vector<std::filesystem::path>> mount_points;

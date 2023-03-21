@@ -3,8 +3,9 @@
 
 #include "event.h"
 
-struct Event_Dispatcher {
-    Event_Dispatcher(basic_event& e)
+struct event_dispatcher
+{
+    event_dispatcher(basic_event& e)
         : m_Event(e)
     {}
 

@@ -1045,7 +1045,7 @@ const char* engine_display_file_explorer(const char* path)
     static std::string current_dir = path;
     static std::string full_path;
 
-    static std::vector<Directory_Item> items = get_directory_items(current_dir);
+    static std::vector<directory_item> items = get_directory_items(current_dir);
     static int currentlySelected = 0;
 
     //ImGui::SameLine();
@@ -1055,7 +1055,7 @@ const char* engine_display_file_explorer(const char* path)
     // TODO: Convert to ImGuiClipper
     if (ImGui::BeginListBox("##empty", ImVec2(-FLT_MIN, 250))) {
         for (std::size_t i = 0; i < items.size(); ++i) {
-            Directory_Item item = items[i];
+            directory_item item = items[i];
 
             const ImVec2 combo_pos = ImGui::GetCursorScreenPos();
             ImGui::SetCursorScreenPos(ImVec2(combo_pos.x + ImGui::GetStyle().FramePadding.x, combo_pos.y));
@@ -1065,13 +1065,13 @@ const char* engine_display_file_explorer(const char* path)
 
 
 
-            if (item.type == Item_Type::file) {
+            if (item.type == item_type::file) {
                 if (selected) {
                     currentlySelected = static_cast<int>(i);
                     full_path = current_dir + '/' + item.name;
                 }
                 ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), item.name.c_str());
-            } else if (item.type == Item_Type::folder) {
+            } else if (item.type == item_type::folder) {
                 if (selected) {
                     current_dir = items[i].path;
                     full_path = current_dir;
@@ -1180,7 +1180,7 @@ void engine_set_audio_volume(float audio_volume)
 
 
 // TODO: Event system stuff
-static bool press(Key_Pressed_Event& e)
+static bool press(key_pressed_event& e)
 {
     if (!g_engine->callbacks.key_callback)
         return false;
@@ -1190,18 +1190,18 @@ static bool press(Key_Pressed_Event& e)
     return true;
 }
 
-static bool mouse_button_press(Mouse_Button_Pressed_Event& e) {
+static bool mouse_button_press(mouse_button_pressed_event& e) {
 
     return true;
 }
 
-static bool mouse_button_release(Mouse_Button_Released_Event& e)
+static bool mouse_button_release(mouse_button_released_event& e)
 {
 
     return true;
 }
 
-static bool mouse_moved(Mouse_Moved_Event& e)
+static bool mouse_moved(mouse_moved_event& e)
 {
     //update_camera_view(camera, event.GetX(), event.GetY());
 
@@ -1209,7 +1209,7 @@ static bool mouse_moved(Mouse_Moved_Event& e)
 }
 
 
-static bool resize(Window_Resized_Event& e)
+static bool resize(window_resized_event& e)
 {
     if (!g_engine->callbacks.resize_callback)
         return false;
@@ -1219,27 +1219,27 @@ static bool resize(Window_Resized_Event& e)
     return true;
 }
 
-static bool close_window(Window_Closed_Event& e)
+static bool close_window(window_closed_event& e)
 {
     g_engine->running = false;
 
     return true;
 }
 
-static bool minimized_window(Window_Minimized_Event& e)
+static bool minimized_window(window_minimized_event& e)
 {
     g_engine->window->minimized = true;
 
     return true;
 }
 
-static bool not_minimized_window(Window_Not_Minimized_Event& e)
+static bool not_minimized_window(window_not_minimized_event& e)
 {
     g_engine->window->minimized = false;
     return true;
 }
 
-static bool dropped_window(Window_Dropped_Event& e)
+static bool dropped_window(window_dropped_event& e)
 {
     if (!g_engine->callbacks.drop_callback)
         return false;
@@ -1251,17 +1251,17 @@ static bool dropped_window(Window_Dropped_Event& e)
 
 static void event_callback(basic_event& e)
 {
-    Event_Dispatcher dispatcher(e);
+    event_dispatcher dispatcher(e);
 
-    dispatcher.dispatch<Key_Pressed_Event>(press);
-    dispatcher.dispatch<Mouse_Button_Pressed_Event>(mouse_button_press);
-    dispatcher.dispatch<Mouse_Button_Released_Event>(mouse_button_release);
-    dispatcher.dispatch<Mouse_Moved_Event>(mouse_moved);
-    dispatcher.dispatch<Window_Resized_Event>(resize);
-    dispatcher.dispatch<Window_Closed_Event>(close_window);
-    dispatcher.dispatch<Window_Minimized_Event>(minimized_window);
-    dispatcher.dispatch<Window_Not_Minimized_Event>(not_minimized_window);
-    dispatcher.dispatch<Window_Dropped_Event>(dropped_window);
+    dispatcher.dispatch<key_pressed_event>(press);
+    dispatcher.dispatch<mouse_button_pressed_event>(mouse_button_press);
+    dispatcher.dispatch<mouse_button_released_event>(mouse_button_release);
+    dispatcher.dispatch<mouse_moved_event>(mouse_moved);
+    dispatcher.dispatch<window_resized_event>(resize);
+    dispatcher.dispatch<window_closed_event>(close_window);
+    dispatcher.dispatch<window_minimized_event>(minimized_window);
+    dispatcher.dispatch<window_not_minimized_event>(not_minimized_window);
+    dispatcher.dispatch<window_dropped_event>(dropped_window);
 }
 
 

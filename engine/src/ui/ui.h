@@ -5,12 +5,6 @@
 #include "rendering/api/vulkan/vk_renderer.h"
 #include "events/event.h"
 
-struct GUI
-{
-    Event_Func eventCallback;
-};
-
-
 ImGuiContext* create_ui(const vk_renderer* renderer, VkRenderPass renderPass);
 void create_font_textures();
 void destroy_ui(ImGuiContext* context);

@@ -1,25 +1,25 @@
 #include "pch.h"
 #include "vfs.h"
 
-VFS& VFS::get()
+virtual_fs& virtual_fs::get()
 {
-    static VFS instance;
+    static virtual_fs instance;
 
     return instance;
 }
 
 
-void VFS::mount(const std::string& virtual_path, const std::filesystem::path& real_path)
+void virtual_fs::mount(const std::string& virtual_path, const std::filesystem::path& real_path)
 {
     mount_points[virtual_path].push_back(real_path);
 }
 
-void VFS::unmount(const std::string& virtual_path)
+void virtual_fs::unmount(const std::string& virtual_path)
 {
     mount_points[virtual_path].clear();
 }
 
-std::filesystem::path VFS::get_path(const std::string& virtual_path)
+std::filesystem::path virtual_fs::get_path(const std::string& virtual_path)
 {
 
     std::string full_path = virtual_path;
@@ -88,10 +88,10 @@ std::filesystem::path VFS::get_path(const std::string& virtual_path)
 
 void mount_path(const std::string& virtual_path, const std::filesystem::path& real_path)
 {
-    VFS::get().mount(virtual_path, real_path);
+    virtual_fs::get().mount(virtual_path, real_path);
 }
 
 std::filesystem::path get_vfs_path(const std::string& virtual_path)
 {
-    return VFS::get().get_path(virtual_path);
+    return virtual_fs::get().get_path(virtual_path);
 }
