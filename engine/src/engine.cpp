@@ -169,6 +169,11 @@ static std::vector<VkCommandBuffer> ui_cmd_buffer;
 static float shadowNear = 1.0f, shadowFar = 2000.0f;
 static float sunDistance = 400.0f;
 
+
+Quad_Tree* quad_tree = nullptr;
+
+
+
 static void event_callback(basic_event& e);
 
 static std::string get_executable_directory()
@@ -423,11 +428,12 @@ bool engine_initialize(const char* name, int width, int height)
 
     Mesh terrain_mesh{};
 
-    int terrain_size = 500;
-    for (int z = -(terrain_size / 2); z <= terrain_size / 2; ++z) {
-        for (int x = -(terrain_size / 2); x <= terrain_size / 2; ++x) {
+    float terrain_size = 1.0f;
+    float terrain_scale = 500.0f;
+    for (float z = -(terrain_size / 2.0f); z <= terrain_size / 2.0f; ++z) {
+        for (float x = -(terrain_size / 2.0f); x <= terrain_size / 2.0f; ++x) {
             vertex v{};
-            v.position = { x, 0.0f, z };
+            v.position = { x * terrain_scale, 0.0f, z * terrain_scale };
             v.normal = { 0.0f, 1.0f, 0.0f };
 
             terrain_mesh.vertices.push_back(v);
@@ -465,13 +471,12 @@ bool engine_initialize(const char* name, int width, int height)
     g_engine->models.push_back(terrain_model);
     g_engine->entities.push_back(create_entity(g_engine->entity_id++, 0, g_engine->models[0].name, glm::vec3(0.0f, 0.0f, 0.0f)));
 #endif
-#if 0
-    Quad_Tree* quad_tree = create_quad_tree(500.0f, { 0.0f, 0.0f });
-    glm::vec2 pos = glm::vec2(g_engine->camera.position.x, g_engine->camera.position.z);
-    build_quad_tree(quad_tree,
-        quad_tree->root_node,
-        pos,
-        1.0f);
+
+
+#if 1
+    quad_tree = create_quad_tree({ 200, 200.0f }, { 0.0f, 0.0f, 0.0f });
+//    subdivide_node(quad_tree->root_node);
+
 #endif
 
     return true;
@@ -486,6 +491,8 @@ bool engine_update()
 
     set_buffer_data(g_engine->camera_buffer, &g_engine->camera.viewProj, sizeof(view_projection));
     set_buffer_data(g_engine->scene_buffer, &scene);
+
+    rebuild_quad_tree(quad_tree, { 600.0f, 600.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, }, g_engine->camera.position);
 
     return g_engine->running;
 }
@@ -998,6 +1005,12 @@ void engine_begin_ui_pass()
 
 void engine_end_ui_pass()
 {
+//    visualise_node(quad_tree->root_node);
+
+
+
+
+
     end_ui(ui_cmd_buffer);
     end_render_pass(ui_cmd_buffer);
     end_command_buffer(ui_cmd_buffer);

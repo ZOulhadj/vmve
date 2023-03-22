@@ -1,33 +1,31 @@
 #ifndef MY_ENGINE_QUAD_TREE_H
 #define MY_ENGINE_QUAD_TREE_H
 
+
 struct Quad_Tree_Node
 {
-    float     size;         // width and height
-    glm::vec2 center;       // world space center
+    glm::vec2 size;
+    glm::vec3 position;
 
-    Quad_Tree_Node* top_left;
-    Quad_Tree_Node* top_right;
-    Quad_Tree_Node* bottom_left;
-    Quad_Tree_Node* bottom_right;
-
-    // Actual data goes in here
-    // Such as Objects
-
+    std::array<Quad_Tree_Node*, 4> children;
 };
 
 struct Quad_Tree
 {
     Quad_Tree_Node* root_node;
-    uint32_t        node_count;
 };
 
-Quad_Tree_Node* create_node(Quad_Tree* quad_tree, float size, glm::vec2& center);
-void destroy_node(Quad_Tree_Node* root);
-void split_node(Quad_Tree* quad_tree, Quad_Tree_Node* node);
-Quad_Tree* create_quad_tree(float size, const glm::vec2& center);
-void build_quad_tree(Quad_Tree* quad_tree, Quad_Tree_Node* node, const glm::vec2& position, float min_node_size);
-void rebuild_quad_tree(Quad_Tree* quad_tree, float size, glm::vec2& center, float min_node_size, glm::vec2& position);
+Quad_Tree* create_quad_tree(const glm::vec2& size, const glm::vec3& position);
+void destroy_quad_tree(Quad_Tree* quad_tree);
+void update_node(Quad_Tree_Node* node, const glm::vec2& min_node_size, const glm::vec3& position);
+void rebuild_quad_tree(Quad_Tree* quad_tree, const glm::vec2& size, const glm::vec3& position, const glm::vec2& min_node_size, const glm::vec3& point);
 
+Quad_Tree_Node* create_node(const glm::vec2& size, const glm::vec3& position);
+void destroy_node(Quad_Tree_Node* node);
+void subdivide_node(Quad_Tree_Node* node);
+
+// temp
+
+void visualise_node(Quad_Tree_Node* node);
 
 #endif
