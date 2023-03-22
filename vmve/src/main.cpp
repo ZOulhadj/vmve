@@ -7,7 +7,6 @@
 #include "misc.h"
 #include "settings.h"
 
-
 static void key_callback(int keycode);
 static void resize_callback(int width, int height);
 static void drop_callback(int path_count, const char* paths[]);

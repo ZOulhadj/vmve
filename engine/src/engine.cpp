@@ -36,6 +36,9 @@
 #include "../src/utility.h"
 #include "../src/logging.h"
 
+
+#include "../src/rendering/terrain/quad_tree.h"
+
 struct my_engine
 {
     engine_window* window;
@@ -65,7 +68,7 @@ struct my_engine
 
     std::vector<Model> models;
     std::vector<Entity> entities;
-
+    int entity_id = 0;
 
     bool swapchain_ready;
 
@@ -373,21 +376,6 @@ static void configure_renderer(my_engine* engine)
     // Create required command buffers
     cmd_buffer = create_command_buffers();
     //composite_cmd_buffer = create_command_buffers();
-
-
-
-    // Built-in resources
-    const std::vector<vertex> quad_vertices{
-        {{  0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f} },
-        {{ -0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {1.0f, 0.0f} },
-        {{  0.5, 0.0,  0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 1.0f} },
-        {{ -0.5, 0.0,  0.5 }, { 0.0f, 1.0f, 0.0f }, {1.0f, 1.0f} }
-    };
-    const std::vector<uint32_t> quad_indices{
-        0, 1, 2,
-        3, 2, 1
-    };
-
 }
 
 bool engine_initialize(const char* name, int width, int height)
@@ -414,37 +402,87 @@ bool engine_initialize(const char* name, int width, int height)
 
     print_log("Successfully initialized engine.\n");
 
+
+
+
+    // Built-in resources
+    const std::vector<vertex> quad_vertices{
+        {{  0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f} },
+        {{ -0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {1.0f, 0.0f} },
+        {{  0.5, 0.0,  0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 1.0f} },
+        {{ -0.5, 0.0,  0.5 }, { 0.0f, 1.0f, 0.0f }, {1.0f, 1.0f} }
+    };
+    const std::vector<uint32_t> quad_indices{
+        0, 1, 2,
+        3, 2, 1
+    };
+
+#if 0
+    Model terrain_model{};
+    terrain_model.name = "terrain";
+
+    Mesh terrain_mesh{};
+
+    int terrain_size = 500;
+    for (int z = -(terrain_size / 2); z <= terrain_size / 2; ++z) {
+        for (int x = -(terrain_size / 2); x <= terrain_size / 2; ++x) {
+            vertex v{};
+            v.position = { x, 0.0f, z };
+            v.normal = { 0.0f, 1.0f, 0.0f };
+
+            terrain_mesh.vertices.push_back(v);
+        }
+    }
+
+
+    // indices
+    int i = 0;
+    for (float z = 0; z < terrain_size; ++z, ++i) {
+        for (float x = 0; x < terrain_size; ++x, ++i) {
+            int topLeft = terrain_size + i + 1;
+            int topRight = topLeft + 1;
+            int bottomLeft = i;
+            int bottomRight = bottomLeft + 1;
+
+            terrain_mesh.indices.push_back(bottomRight);
+            terrain_mesh.indices.push_back(bottomLeft);
+            terrain_mesh.indices.push_back(topRight);
+
+
+            terrain_mesh.indices.push_back(topLeft);
+            terrain_mesh.indices.push_back(topRight);
+            terrain_mesh.indices.push_back(bottomLeft);
+        }
+    }
+
+
+    create_fallback_albedo_texture(terrain_model, terrain_mesh);
+    create_fallback_normal_texture(terrain_model, terrain_mesh);
+    create_fallback_specular_texture(terrain_model, terrain_mesh);
+    
+    terrain_model.meshes.push_back(terrain_mesh);
+    upload_model_to_gpu(terrain_model, material_ds_layout, material_ds_binding);
+    g_engine->models.push_back(terrain_model);
+    g_engine->entities.push_back(create_entity(g_engine->entity_id++, 0, g_engine->models[0].name, glm::vec3(0.0f, 0.0f, 0.0f)));
+#endif
+#if 0
+    Quad_Tree* quad_tree = create_quad_tree(500.0f, { 0.0f, 0.0f });
+    glm::vec2 pos = glm::vec2(g_engine->camera.position.x, g_engine->camera.position.z);
+    build_quad_tree(quad_tree,
+        quad_tree->root_node,
+        pos,
+        1.0f);
+#endif
+
     return true;
 }
 
 bool engine_update()
 {
-
     // Calculate the amount that has passed since the last frame. This value
     // is then used with inputs and physics to ensure that the result is the
     // same no matter how fast the CPU is running.
     g_engine->delta_time = get_delta_time();
-
-#if 0
-    // Set sun view matrix
-    glm::mat4 sunProjMatrix = glm::ortho(-sunDistance / 2.0f, 
-                                          sunDistance / 2.0f, 
-                                          sunDistance / 2.0f, 
-                                         -sunDistance / 2.0f, 
-                                          shadowNear, shadowFar);
-
-    // TODO: Construct a dummy sun "position" for the depth calculation based on the direction vector and some random distance
-    scene.sun_pos = -scene.sun_dir * sunDistance;
-
-    glm::mat4 sunViewMatrix = glm::lookAt(scene.sun_pos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    sunData.view_proj = sunProjMatrix * sunViewMatrix;
-
-    scene.camera_pos = glm::vec4(engine->camera.position, 0.0f);
-
-    // copy data into uniform buffer
-    set_buffer_data(engine->sun_buffer, &sunData, sizeof(sun_data));
-#endif
-
 
     set_buffer_data(g_engine->camera_buffer, &g_engine->camera.viewProj, sizeof(view_projection));
     set_buffer_data(g_engine->scene_buffer, &scene);
@@ -488,17 +526,11 @@ void engine_render()
         for (std::size_t i = 0; i < g_engine->entities.size(); ++i) {
             Entity& instance = g_engine->entities[i];
 
-            rotate_entity(instance, glm::vec3(0.0f, glfwGetTime() * 20.0f, 0.0f));
-
             apply_entity_transformation(instance);
 
             render_model(g_engine->models[instance.model_index], instance.matrix, cmd_buffer, offscreen_pipeline_layout);
         }
         end_render_pass(cmd_buffer);
-
-
-
-
 
         begin_render_pass(cmd_buffer, composite_pass);
 
@@ -728,9 +760,7 @@ void engine_remove_model(int modelID)
 
 void engine_add_entity(int modelID, float x, float y, float z)
 {
-    static int instanceID = 0;
-
-    Entity entity = create_entity(instanceID++, modelID, g_engine->models[modelID].name, glm::vec3(x, y, z));
+    Entity entity = create_entity(g_engine->entity_id++, modelID, g_engine->models[modelID].name, glm::vec3(x, y, z));
 
     g_engine->entities.push_back(entity);
 }
@@ -860,7 +890,7 @@ void engine_set_environment_map(const char* path)
 
 void engine_create_camera(float fovy, float speed)
 {
-    g_engine->camera = create_perspective_camera({ 0.0f, 0.0f, -2.0f }, fovy, speed);    
+    g_engine->camera = create_perspective_camera({ 0.0f, 2.0f, -2.0f }, fovy, speed);    
 }
 
 void engine_update_input()

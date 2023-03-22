@@ -186,6 +186,7 @@
     <ClCompile Include="src\rendering\entity.cpp" />
     <ClCompile Include="src\rendering\material.cpp" />
     <ClCompile Include="src\rendering\model.cpp" />
+    <ClCompile Include="src\rendering\terrain\quad_tree.cpp" />
     <ClCompile Include="src\rendering\vertex.cpp" />
     <ClCompile Include="src\ui\ui.cpp" />
     <ClCompile Include="src\utility.cpp" />
@@ -260,6 +261,7 @@
     <ClInclude Include="src\rendering\primitives\cube.h" />
     <ClInclude Include="src\rendering\renderer.h" />
     <ClInclude Include="src\rendering\shaders\shaders.h" />
+    <ClInclude Include="src\rendering\terrain\quad_tree.h" />
     <ClInclude Include="src\rendering\vertex.h" />
     <ClInclude Include="src\ui\ui.h" />
     <ClInclude Include="src\utility.h" />

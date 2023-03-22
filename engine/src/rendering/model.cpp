@@ -79,7 +79,38 @@ static void create_fallback_mesh_texture(Model& model,
 
 }
 
+void create_fallback_albedo_texture(Model& model, Mesh& mesh)
+{
+    unsigned char defaultAlbedo[4];
+    defaultAlbedo[0] = (unsigned char)255;
+    defaultAlbedo[1] = (unsigned char)255;
+    defaultAlbedo[2] = (unsigned char)255;
+    defaultAlbedo[3] = (unsigned char)255;
 
+    create_fallback_mesh_texture(model, mesh, defaultAlbedo, "albedo_fallback");
+}
+
+void create_fallback_normal_texture(Model& model, Mesh& mesh)
+{
+    unsigned char defaultNormal[4];
+    defaultNormal[0] = (unsigned char)128;
+    defaultNormal[1] = (unsigned char)128;
+    defaultNormal[2] = (unsigned char)255;
+    defaultNormal[3] = (unsigned char)255;
+
+    create_fallback_mesh_texture(model, mesh, defaultNormal, "albedo_normal");
+}
+
+void create_fallback_specular_texture(Model& model, Mesh& mesh)
+{
+    unsigned char defaultSpecular[4];
+    defaultSpecular[0] = (unsigned char)0;
+    defaultSpecular[1] = (unsigned char)0;
+    defaultSpecular[2] = (unsigned char)0;
+    defaultSpecular[3] = (unsigned char)255;
+
+    create_fallback_mesh_texture(model, mesh, defaultSpecular, "albedo_specular");
+}
 
 
 static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* scene)
@@ -169,37 +200,18 @@ static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* sce
         // TODO: Instead of loading them textures again, we should use the default
         // existing textures
 
-
-        unsigned char defaultAlbedo[4];
-        defaultAlbedo[0] = (unsigned char)255;
-        defaultAlbedo[1] = (unsigned char)255;
-        defaultAlbedo[2] = (unsigned char)255;
-        defaultAlbedo[3] = (unsigned char)255;
-
-        unsigned char defaultNormal[4];
-        defaultNormal[0] = (unsigned char)128;
-        defaultNormal[1] = (unsigned char)128;
-        defaultNormal[2] = (unsigned char)255;
-        defaultNormal[3] = (unsigned char)255;
-
-        unsigned char defaultSpecular[4];
-        defaultSpecular[0] = (unsigned char)0;
-        defaultSpecular[1] = (unsigned char)0;
-        defaultSpecular[2] = (unsigned char)0;
-        defaultSpecular[3] = (unsigned char)255;
-
         if (diffuse_path.empty()) {
-            create_fallback_mesh_texture(model, mesh, defaultAlbedo, "albedo_fallback");
+            create_fallback_albedo_texture(model, mesh);
             print_log("%s using fallback albedo texture.\n", model.name.c_str());
         }
 
         if (normal_path.empty()) {
-            create_fallback_mesh_texture(model, mesh, defaultNormal, "normal_fallback");
+            create_fallback_normal_texture(model, mesh);
             print_log("%s using fallback normal texture.\n", model.name.c_str());
         }
 
         if (specular_path.empty()) {
-            create_fallback_mesh_texture(model, mesh, defaultSpecular, "specular_fallback");
+            create_fallback_specular_texture(model, mesh);
             print_log("%s using fallback specular texture.\n", model.name.c_str());
         }
     }

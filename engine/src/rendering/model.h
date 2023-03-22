@@ -40,4 +40,9 @@ void destroy_model(Model& model);
 void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings);
 
 
+// temp
+void create_fallback_albedo_texture(Model& model, Mesh& mesh);
+void create_fallback_normal_texture(Model& model, Mesh& mesh);
+void create_fallback_specular_texture(Model& model, Mesh& mesh);
+
 #endif
