@@ -1,33 +1,20 @@
 #ifndef MY_ENGINE_PCH_H
 #define MY_ENGINE_PCH_H
 
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstdint>
-#include <cstring>
-#include <ctime>
-
-#include <chrono>
 #include <iostream>
 #include <vector>
+#include <chrono>
 #include <string>
 #include <string_view>
 #include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <functional>
-#include <regex>
 #include <optional>
-#include <set>
 #include <array>
-#include <map>
 #include <filesystem>
-#include <unordered_map>
-#include <thread>
-#include <future>
-#include <format>
-#include <tuple>
+#include <set>
+
 
 // ensures that external code that calls vulkan.h does not give us symbol
 // conflicts.
