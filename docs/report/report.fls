@@ -1,6 +1,6 @@
-PWD s:\education\roehampton_university\2022-2023\final_year_project\report
+PWD c:\Users\zakar\Projects\vmve\docs\report
 INPUT C:\Users\zakar\AppData\Local\MiKTeX\miktex\data\le\pdftex\pdflatex.fmt
-INPUT s:\education\roehampton_university\2022-2023\final_year_project\report\report.tex
+INPUT c:\Users\zakar\Projects\vmve\docs\report\report.tex
 OUTPUT report.log
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\tex\latex\base\article.cls
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\tex\latex\base\article.cls

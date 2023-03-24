@@ -473,10 +473,8 @@ bool engine_initialize(const char* name, int width, int height)
 #endif
 
 
-#if 1
-    quad_tree = create_quad_tree({ 200, 200.0f }, { 0.0f, 0.0f, 0.0f });
-//    subdivide_node(quad_tree->root_node);
-
+#if 0
+    quad_tree = create_quad_tree({ 500.0f, 500.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f });
 #endif
 
     return true;
@@ -492,7 +490,9 @@ bool engine_update()
     set_buffer_data(g_engine->camera_buffer, &g_engine->camera.viewProj, sizeof(view_projection));
     set_buffer_data(g_engine->scene_buffer, &scene);
 
-    rebuild_quad_tree(quad_tree, { 600.0f, 600.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, }, g_engine->camera.position);
+#if 0
+    insert_point(quad_tree, g_engine->camera.position);
+#endif
 
     return g_engine->running;
 }
@@ -1005,9 +1005,22 @@ void engine_begin_ui_pass()
 
 void engine_end_ui_pass()
 {
-//    visualise_node(quad_tree->root_node);
+#if 0
+    static float scale = 1.0f;
+    //visualise_node(quad_tree->root_node, scale);
+    visualise_terrain(quad_tree->root_node, scale, 0);
 
 
+    static bool b = true;
+    ImGui::Begin("Quad Tree", &b);
+    ImGui::Text("Node count: %d", quad_tree->node_count);
+    ImGui::Text("Tile count: %d", count);
+    ImGui::SliderFloat("Scale", &scale, 1.0f, 600.0f);
+    count = 0;
+    ImGui::End();
+
+    //quad_tree = rebuild_quad_tree(quad_tree);
+#endif
 
 
 

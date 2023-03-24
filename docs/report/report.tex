@@ -126,18 +126,19 @@
 \pagebreak
 
 \section*{Abstract}
-Computer graphics is a rapidly growing field that is vital in many
-industries that rely on digital graphics. These industries include
-scientific research, simulations, education and training,
-entertainment and more. The flexibility of this field and the increase
-in computing resources is what makes it so powerful and provides
-real-world benefits in ways not previously observed prior to
-the use of graphics software.
+Computer graphics is a rapidly growing field that is vital in many industries
+that rely on digital graphics including scientific research, simulations,
+education and training, entertainment and more. The flexibility of this field
+and the increase in computing resources is what makes it so powerful and
+provides real-world benefits in ways not previously observed prior to the use of
+graphics software.
 
-\gls{vmve} is a 3D rendering application that provides a collection of tools for
-creating virtual environments. Users can take advantage of \glspl{vmve}
-simplicity, performance and ease of use for their specific needs that require
-the use of computer graphics.
+This report presents my final year project \gls{vmve}, a 3D rendering
+application built from the ground up using the latest technologies for virtual
+environment authoring. Its goal is to be easy to use, performant and include a
+collection of tools for graphics manipulation that users can take advantage of
+when designing and building virtual environments.
+
 
 \pagebreak
 
@@ -175,11 +176,11 @@ the award of any other degree or any other institution.
 \pagenumbering{arabic}
 
 \section{Introduction}
-This is the final year project report which is an extensive document that
+This is my final year project report which is an extensive document that
 discusses the projects development from beginning to end. The report is
 structured such that it outlines each aspect of the project in the order that it
 happened. There are a total of five key sections to this report. The
-introduction, design, implementation, evaluation and future work.
+introduction, design, implementation, evaluation and finally, future work.
 
 The introduction will introduce the project and discuss what the report will
 cover, the projects purpose and key objectives. The report will then focus on
@@ -187,32 +188,59 @@ the early stages of the project including design and requirements gathering. The
 main implementation section will follow this and provide detailed insights and
 technical implementation details into the project. In order to ensure that the
 project has met the requirements originally set out, an evaluation stage must
-undertaken. This will include discussions of various metrics, looking back on
-the project and understanding both the successful aspects as well the projects
-shortcomings.
-
-The project that is discussed throughout this report is officially named
-``VMVE'' which is an acronym for ``Vulkan Model Viewer and Exporter''. This is
-an application developed in the domain of computer graphics. Any mention of this
-application will simply be referred to as ``VMVE''.
+undertaken. This will include discussions of various metrics as well as
+reviewing the project and understanding its strengths and shortcomings.
 
 \subsection{Project}
-``VMVE'' is a real-time 3D rendering application designed for creating virtual
+The project that is discussed throughout this report is officially named
+\gls{vmve}. This is an application developed in the domain of computer
+graphics and is a real-time 3D rendering application designed for creating virtual
 environments.  
 
 \subsection{Purpose}
-From the very beginning, this project has had three main goals.
+Computer graphics is a large area within the field of computer science. Ever
+since its conception in the early 1960's it has been used for many different
+purposes from gaming, the film industry, scientific research, education,
+architecture, engineering, medicine and more recently within vehicles. This is a
+testament to how versatile this field is.
 
-The question therefore is, what is the purpose of \gls{vmve} and what can it
-provide that other existing applications cannot already do? To obtain the answer
-to these questions, we must first be aware of the applications that already
-exist.
+There are many different rendering application that already exist include Unreal
+Engine \cite{unreal_engine}, Unity \cite{unity} and RenderMan \cite{render_man}
+just to name a few. These applications as are known as ``3D creation tools''
+that provide a plethora of features and functionality giving the users the
+freedom when creating digital graphics.
 
-Computer graphics is not a new concept and has been around for decades. Examples
-of existing rendering applications include Unreal Engine \cite{unreal_engine},
-Unity \cite{unity} and RenderMan \cite{render_man} just to name a few. These
-applications as stated on Unreal Engines website are ``3D creation tools'' that
-provide a plethora of tools and features.
+However, a common theme found with these engines is that  they have been around
+for at least two decades meaning that they have a lot of different tools and
+features which comes with its own set of issues. For example, their relative
+complexity and steep learning curve.
+
+The goal of \gls{vmve} is not to replicate these existing applications but instead
+to purposely implement a small but specific subset of features that can be used
+for common graphics related tasks. This is beneficial for a number of reasons.
+Firstly, this will make \gls{vmve} easy to use as the number of features that the
+user must learn is significantly reduced and subsequently lowering the learning 
+curve. The combination of these two benefits will make the application far more
+accessible to the general public
+
+Since its conception, \gls{vmve} has three main goals. The first is to provide
+users with an easy to use platform that they can use for rendering digital
+assets in a virtual environment. In other words, users with little to no prior
+experience in computer graphics should be able to take advantage of \glspl{vmve} 
+capabilities.
+
+The second goal of the application is to 
+
+
+The last out of the three main goals is for the application to include its own
+model format that makes use of encryption to safely secure a users digital
+assets.
+
+
+% The question therefore
+% is, what is the purpose of \gls{vmve} and what can it provide that other
+% existing applications cannot already do? To obtain the answer to these
+% questions, we must first be aware of the applications that already exist.
 
 
 - State the problem being
@@ -752,6 +780,7 @@ int main()
   }
 
   // shutdown application
+  destroy_ui();
   destroy_audio();
   destroy_renderer();
   destroy_window();
