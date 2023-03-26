@@ -69,7 +69,8 @@ static Camera create_camera(const glm::vec3& pos,
 }
 
 
-Camera create_perspective_camera(const glm::vec3& position, float fov, float speed) {
+Camera create_perspective_camera(const glm::vec3& position, float fov, float speed)
+{
     return create_camera(position, speed, fov);
 }
 

@@ -14,7 +14,7 @@
 
 
 
-struct engine_renderer;
+struct Engine_Renderer;
 
 
 
@@ -31,9 +31,22 @@ enum class vsync_mode
 };
 
 
-engine_renderer* initialize_renderer(engine_window* window);
-void terminate_renderer(engine_renderer* renderer);
+Engine_Renderer* initialize_renderer(const engine_window* window);
+void terminate_renderer(Engine_Renderer* renderer);
 
-void create_vertex_buffer();
+template <typename T>
+void create_vertex_buffer(Engine_Renderer* renderer, const std::vector<T>& vertices);
+void create_index_buffer(Engine_Renderer* renderer, const std::vector<uint32_t>& indices);
+void create_uniform_buffer(Engine_Renderer* renderer, std::size_t size);
+
+void update_uniform_buffer(Engine_Renderer* renderer, void* buffer);
+
+bool initialize_renderer_scene(Engine_Renderer* renderer);
+void terminate_renderer_scene(Engine_Renderer* renderer);
+
+void renderer_clear(Engine_Renderer* renderer, const std::array<float, 4>& clear_color = { 0.1f, 0.1f, 0.1f, 1.0f });
+void renderer_draw(Engine_Renderer* renderer);
+void renderer_present(Engine_Renderer* renderer);
+
 
 #endif

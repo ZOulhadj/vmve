@@ -366,4 +366,11 @@ void engine_pause_audio(int audio_id);
 void engine_stop_audio(int audio_id);
 void engine_set_audio_volume(float audio_volume);
 
+
+
+
+// test
+void engine_test_render();
+
+
 #endif
