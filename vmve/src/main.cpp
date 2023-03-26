@@ -62,9 +62,6 @@ int main()
 
     while (engine_update()) {
 
-        engine_test_render();
-
-#if 0
         //  Only update the camera view if the viewport is currently in focus.
         if (viewport_active) {
             engine_update_input();
@@ -88,7 +85,6 @@ int main()
             // final result onto the screen.
             engine_present();
         }
-#endif
     }
 
     // TODO: export settings file

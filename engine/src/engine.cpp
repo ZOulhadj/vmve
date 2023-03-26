@@ -75,12 +75,6 @@ struct my_engine
 
     bool using_skybox;
     bool ui_pass_enabled;
-
-
-
-
-    // test
-    Engine_Renderer* test_renderer;
 };
 
 
@@ -483,13 +477,6 @@ bool engine_initialize(const char* name, int width, int height)
     quad_tree = create_quad_tree({ 500.0f, 500.0f }, { 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f });
 #endif
 
-
-
-    g_engine->test_renderer = initialize_renderer(g_engine->window);
-    initialize_renderer_scene(g_engine->test_renderer);
-
-    create_uniform_buffer(g_engine->test_renderer, sizeof(view_projection));
-
     return true;
 }
 
@@ -502,18 +489,7 @@ bool engine_update()
 
     set_buffer_data(g_engine->camera_buffer, &g_engine->camera.viewProj, sizeof(view_projection));
     set_buffer_data(g_engine->scene_buffer, &scene);
-
-#if 0
-    insert_point(quad_tree, g_engine->camera.position);
-#endif
-
-
-    update_camera(g_engine->camera, get_cursor_position());
-    update_projection(g_engine->camera);
-
-    update_uniform_buffer(g_engine->test_renderer, &g_engine->camera.viewProj);
-
-
+ 
     return g_engine->running;
 }
 
@@ -622,13 +598,6 @@ void engine_present()
 void engine_terminate()
 {
     assert(g_engine);
-
-
-    terminate_renderer_scene(g_engine->test_renderer);
-    terminate_renderer(g_engine->test_renderer);
-
-
-
 
     print_log("Terminating engine.\n");
 
@@ -1241,38 +1210,6 @@ void engine_set_audio_volume(float audio_volume)
     set_audio_volume(g_engine->audio_source, audio_volume);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void engine_test_render()
-{
-    renderer_clear(g_engine->test_renderer);
-
-    renderer_draw(g_engine->test_renderer);
-
-    renderer_present(g_engine->test_renderer);
-
-
-    update_window(g_engine->window);
-}
 
 // TODO: Event system stuff
 static bool press(key_pressed_event& e)
