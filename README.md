@@ -2,9 +2,6 @@
 
 # Vulkan Model Viewer and Exporter
 
-![overview_1](.git_assets/1.png)
-![overview_2](.git_assets/2.png)
-
 ## Features
 * Standalone application
 * Latest rendering API (Vulkan)
@@ -15,6 +12,12 @@
 * User Interface
 * Console logging
 
+# Documentation
+The VMVE docs are available [vmve-docs.rtfd.io](https://vmve-docs.rtfd.io)
 
 # Downloads
 All downloads can be found on the official [VMVE](https://zoulhadj.github.io/vmve_website/) website or in [releases](https://github.com/ZOulhadj/vmve/releases) section.
+
+![overview_1](.git_assets/1.png)
+![overview_2](.git_assets/2.png)
+

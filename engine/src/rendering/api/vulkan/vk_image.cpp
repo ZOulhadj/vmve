@@ -338,7 +338,7 @@ vk_image create_texture(unsigned char* texture, uint32_t width, uint32_t height,
 }
 
 
-vk_image create_texture(const std::filesystem::path& path, bool flip_y, VkFormat format)
+std::optional<vk_image> create_texture(const std::filesystem::path& path, bool flip_y, VkFormat format)
 {
     vk_image buffer{};
 
@@ -351,7 +351,7 @@ vk_image create_texture(const std::filesystem::path& path, bool flip_y, VkFormat
 
         stbi_image_free(texture);
 
-        return {};
+        return std::nullopt;
     }
 
     // Store texture data into GPU memory.

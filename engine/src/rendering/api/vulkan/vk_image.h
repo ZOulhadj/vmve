@@ -28,7 +28,7 @@ vk_image create_depth_image(VkExtent2D size);
 
 
 
-vk_image create_texture(const std::filesystem::path& path, bool flip_y = false, VkFormat format = VK_FORMAT_R8G8B8A8_SRGB);
+std::optional<vk_image> create_texture(const std::filesystem::path& path, bool flip_y = false, VkFormat format = VK_FORMAT_R8G8B8A8_SRGB);
 vk_image create_texture(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format);
 
 

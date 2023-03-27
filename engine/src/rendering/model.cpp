@@ -29,7 +29,7 @@ static std::vector<std::filesystem::path> get_texture_full_path(const aiMaterial
     return paths;
 }
 
-static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::filesystem::path>& paths)
+static bool load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::filesystem::path>& paths)
 {
     std::vector<std::filesystem::path>& uniques = model.unique_texture_paths;
 
@@ -38,8 +38,14 @@ static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::f
         const auto it = std::find(uniques.begin(), uniques.end(), paths[i]);
         
         if (it == uniques.end()) {
-            vk_image texture = create_texture(paths[i].string());
-            model.unique_textures.push_back(texture);
+            std::optional<vk_image> texture = create_texture(paths[i].string());
+
+            // TODO: Should return nullptr instead of object
+            if (!texture.has_value())
+                return false;
+
+
+            model.unique_textures.push_back(texture.value());
             uniques.push_back(paths[i]);
             index = model.unique_textures.size() - 1;
         } else {
@@ -50,6 +56,8 @@ static void load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::f
         // add it to the list of textures for the mesh 
         mesh.textures.push_back(index);
     }
+
+    return true;
 }
 
 static void create_fallback_mesh_texture(Model& model, 
@@ -188,29 +196,23 @@ static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* sce
         // TODO: Find out when there might be multiple textures of the same type.
         const auto& diffuse_path = get_texture_full_path(material, aiTextureType_DIFFUSE, model.path);
         const auto& normal_path = get_texture_full_path(material, aiTextureType_DISPLACEMENT, model.path);
-        const auto& specular_path = get_texture_full_path(material, aiTextureType_SPECULAR, model.path);
+        const auto& specular_path = get_texture_full_path(material, aiTextureType_METALNESS, model.path);
 
 
-        load_mesh_texture(model, mesh, diffuse_path);
-        load_mesh_texture(model, mesh, normal_path);
-        load_mesh_texture(model, mesh, specular_path);
 
+        // TODO: This whole section needs to be rewritten asap.
 
-        // TEMP: If any texture was not found then use the fallback textures
-        // TODO: Instead of loading them textures again, we should use the default
-        // existing textures
-
-        if (diffuse_path.empty()) {
+        if (diffuse_path.empty() || !load_mesh_texture(model, mesh, diffuse_path)) {
             create_fallback_albedo_texture(model, mesh);
             print_log("%s using fallback albedo texture.\n", model.name.c_str());
         }
 
-        if (normal_path.empty()) {
+        if (normal_path.empty() || !load_mesh_texture(model, mesh, normal_path)) {
             create_fallback_normal_texture(model, mesh);
             print_log("%s using fallback normal texture.\n", model.name.c_str());
         }
-
-        if (specular_path.empty()) {
+        
+        if (specular_path.empty() || !load_mesh_texture(model, mesh, specular_path)) {
             create_fallback_specular_texture(model, mesh);
             print_log("%s using fallback specular texture.\n", model.name.c_str());
         }

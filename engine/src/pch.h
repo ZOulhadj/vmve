@@ -14,7 +14,7 @@
 #include <array>
 #include <filesystem>
 #include <set>
-
+#include <expected>
 
 // ensures that external code that calls vulkan.h does not give us symbol
 // conflicts.
