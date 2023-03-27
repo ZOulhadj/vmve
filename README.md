@@ -4,18 +4,18 @@
 
 ## Features
 * Standalone application
-* Latest rendering API (Vulkan)
+* Built using Vulkan
 * Deferred Rendering
 * Supports multiple models
-* Mipmaps
-* Debug Rendering (Wireframe)
+* Texture mipmaps
+* Debug rendering tools
 * User Interface
-* Console logging
+* Internal logging
 
-# Documentation
-The VMVE docs are available [vmve-docs.rtfd.io](https://vmve-docs.rtfd.io)
+## Documentation
+VMVE documentation is available [here](https://vmve-docs.rtfd.io)
 
-# Downloads
+## Downloads
 All downloads can be found on the official [VMVE](https://zoulhadj.github.io/vmve_website/) website or in [releases](https://github.com/ZOulhadj/vmve/releases) section.
 
 ![overview_1](.git_assets/1.png)
