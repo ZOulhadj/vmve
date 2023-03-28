@@ -75,9 +75,9 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
         const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
 
         if (ImGui::BeginTable("Objects", 2, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f)) {
-            ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, 0.0f, 0);
-            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 0.0f, 1);
-            ImGui::TableSetupScrollFreeze(0, 1);
+            ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_DefaultSort, 0.0f, 0);
+            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_None, 0.0f, 1);
+            //ImGui::TableSetupScrollFreeze(0, 1);
             ImGui::TableHeadersRow();
 
             ImGuiListClipper clipper;

@@ -7,11 +7,11 @@ void menu_panel()
 {
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu(ICON_FA_FOLDER " File")) {
-            loadOpen = ImGui::MenuItem(ICON_FA_CUBE " Load model");
-            creator_open = ImGui::MenuItem(ICON_FA_KEY " VMVE creator");
+            load_model_open = ImGui::MenuItem(ICON_FA_CUBE " Load model", "Ctrl+L");
+            creator_open = ImGui::MenuItem(ICON_FA_KEY " VMVE creator", "Ctrl+E");
 
 
-            if (ImGui::MenuItem(ICON_FA_XMARK " Exit"))
+            if (ImGui::MenuItem(ICON_FA_XMARK " Exit", "Ctrl+Q"))
                 engine_should_terminate();
 
             ImGui::EndMenu();
@@ -64,8 +64,8 @@ void menu_panel()
 
                 ImGui::EndMenu();
             }
-            if (ImGui::MenuItem("Preferences"))
-                preferences_open = true;
+            if (ImGui::MenuItem("Preferences", "Ctrl+S"))
+                settings_open = true;
 
             ImGui::EndMenu();
         }
@@ -92,8 +92,6 @@ void menu_panel()
         if (ImGui::BeginMenu(ICON_FA_LIFE_RING " Help")) {
             if (ImGui::MenuItem("About"))
                 aboutOpen = true;
-            if (ImGui::MenuItem("Tutorial"))
-                tutorial_open = true;
 #if defined(_DEBUG)
             if (ImGui::MenuItem("Show demo window"))
                 show_demo_window = true;

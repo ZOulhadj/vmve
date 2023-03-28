@@ -95,7 +95,7 @@ struct scene_props
     glm::vec4 ambient_spec = glm::vec4(0.05f, 1.0f, 16.0f, 0.0f);
     glm::vec4 camera_pos = glm::vec4(0.0f, 2.0f, -5.0f, 0.0f);
 
-    glm::vec3 sun_dir = glm::vec3(0.01f, -1.0f, 0.01f);
+    glm::vec3 sun_dir = glm::vec3(0.01f, -0.5f, 0.01f);
     glm::vec3 sun_pos = glm::vec3(0.01f, 200.0f, 0.01f);
 } scene;
 
@@ -486,6 +486,10 @@ bool engine_update()
     // is then used with inputs and physics to ensure that the result is the
     // same no matter how fast the CPU is running.
     g_engine->delta_time = get_delta_time();
+
+
+    scene.sun_dir.x = glm::sin((float)glfwGetTime()) * 2.0f;
+    scene.sun_dir.z = glm::cos((float)glfwGetTime()) * 2.0f;
 
     set_buffer_data(g_engine->camera_buffer, &g_engine->camera.viewProj, sizeof(view_projection));
     set_buffer_data(g_engine->scene_buffer, &scene);
@@ -1210,14 +1214,13 @@ void engine_set_audio_volume(float audio_volume)
     set_audio_volume(g_engine->audio_source, audio_volume);
 }
 
-
 // TODO: Event system stuff
 static bool press(key_pressed_event& e)
 {
     if (!g_engine->callbacks.key_callback)
         return false;
 
-    g_engine->callbacks.key_callback(e.get_key_code());
+    g_engine->callbacks.key_callback(e.get_key_code(), e.is_control_down(), e.is_alt_down(), false);
 
     return true;
 }

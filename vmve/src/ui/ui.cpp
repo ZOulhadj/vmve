@@ -66,10 +66,9 @@ int guizmo_operation = -1;
 
 
 // menu options
-bool preferences_open = false;
+bool settings_open = false;
 bool aboutOpen = false;
-bool tutorial_open = false;
-bool loadOpen = false;
+bool load_model_open = false;
 bool creator_open = false;
 bool perfProfilerOpen = false;
 bool audio_window_open = false;
@@ -104,15 +103,6 @@ float resize_height = 0;
 
 bool drop_load_model = false;
 const char* drop_load_model_path = "";
-
-
-const char* tutorial_1_text = R"(Welcome to the tutorial! This tutorial is guide you and explain most features available to you can how they can be used.)";
-const char* tutorial_2_text = R"()";
-const char* tutorial_3_text = R"(The controls have been designed to be...)";
-const char* tutorial_4_text = R"()";
-const char* tutorial_5_text = R"()";
-const char* tutorial_6_text = R"(Although this application has been designed to be as easy to use)";
-
 
 enum class setting_options
 {
@@ -401,9 +391,14 @@ static void render_preferences_window(bool* open)
         {
             load_model,
             export_model,
+            settings_window,
             toggle_viewport,
-            maximize_viewport,
-            toggle_guizmo,
+            quit,
+
+
+            guizmo_translate,
+            guizmo_rotate,
+            guizmo_scale,
             camera_forward,
             camera_backward,
             camera_left,
@@ -420,17 +415,22 @@ static void render_preferences_window(bool* open)
         };
 
         static std::vector<mapping> mappings {
+            // Global controls
             { application_action::load_model, "Load Model", "Ctrl+L" },
             { application_action::export_model, "Export Model", "Ctrl+E" },
-            { application_action::toggle_viewport, "Toggle Viewport", "F1" },
-            { application_action::maximize_viewport, "Maximize Viewport", "F2" },
-            { application_action::toggle_guizmo, "Toggle Guizmo", "E" },
+            { application_action::toggle_viewport, "Toggle Viewport", "Ctrl+F" },
+            { application_action::quit, "Quit Application", "Ctrl+Q" },
+
+            // Viewport controls
+            { application_action::guizmo_translate, "Move Object", "F1" },
+            { application_action::guizmo_rotate, "Rotate Object", "F2" },
+            { application_action::guizmo_scale, "Scale Object", "F3" },
             { application_action::camera_forward, "Camera Forward", "W" },
             { application_action::camera_backward, "Camera Backwards", "S" },
             { application_action::camera_left, "Camera Left", "A" },
             { application_action::camera_right, "Camera Right", "D" },
             { application_action::camera_up, "Camera Up", "Space" },
-            { application_action::camera_down, "Camera Down", "Left Ctrl" },
+            { application_action::camera_down, "Camera Down", "Undefined" },
         };
 
         static mapping* active_mapping = nullptr;
@@ -529,42 +529,6 @@ static void render_about_window(bool* open)
 
         ImGui::EndPopup();
     }
-}
-
-static void render_tutorial_window(bool* open)
-{
-    if (!*open)
-        return;
-
-    resize_and_center_next_window(ImVec2(800, 600));
-
-    ImGui::Begin(ICON_FA_BOOK " Tutorial", open);
-
-    if (ImGui::CollapsingHeader("1. Basics")) {
-        ImGui::TextWrapped(tutorial_1_text);
-    }
-
-    if (ImGui::CollapsingHeader("2. Loading Models")) {
-        ImGui::TextWrapped(tutorial_2_text);
-    }
-
-    if (ImGui::CollapsingHeader("3. Controls")) {
-        ImGui::TextWrapped(tutorial_3_text);
-    }
-
-    if (ImGui::CollapsingHeader("4. Tools")) {
-        ImGui::TextWrapped(tutorial_4_text);
-    }
-
-    if (ImGui::CollapsingHeader("5. Configuration")) {
-        ImGui::TextWrapped(tutorial_5_text);
-    }
-
-    if (ImGui::CollapsingHeader("6. Advanced Topics")) {
-        ImGui::TextWrapped(tutorial_6_text);
-    }
-
-    ImGui::End();
 }
 
 static void load_model_window(bool* open)
@@ -834,10 +798,9 @@ static void render_console_window(bool* open)
 
 static void render_windows()
 {
-    render_preferences_window(&preferences_open);
+    render_preferences_window(&settings_open);
     render_about_window(&aboutOpen);
-    render_tutorial_window(&tutorial_open);
-    load_model_window(&loadOpen);
+    load_model_window(&load_model_open);
     vmve_creator_window(&creator_open);
     perf_window(&perfProfilerOpen);
     render_audio_window(&audio_window_open);

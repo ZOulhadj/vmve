@@ -73,6 +73,10 @@
 \bibitem{3d_projection}
 ``3d projection,'' \url{https://en.wikipedia.org/wiki/3D_projection}.
 
+\bibitem{coordinate_systems}
+``Coordinate systems,''
+  \url{https://learnopengl.com/Getting-started/Coordinate-Systems}.
+
 \bibitem{blinn}
 ``Blinn-phong reflection model,''
   \url{https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model}.

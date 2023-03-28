@@ -38,10 +38,9 @@ extern int guizmo_operation;
 
 
 // menu options
-extern bool preferences_open;
+extern bool settings_open;
 extern bool aboutOpen;
-extern bool tutorial_open;
-extern bool loadOpen;
+extern bool load_model_open;
 extern bool creator_open;
 extern bool perfProfilerOpen;
 extern bool audio_window_open;
@@ -82,13 +81,6 @@ extern int guizmo_operation;
 
 extern bool drop_load_model;
 extern const char* drop_load_model_path;
-
-extern const char* tutorial_1_text;
-extern const char* tutorial_2_text;
-extern const char* tutorial_3_text;
-extern const char* tutorial_4_text;
-extern const char* tutorial_5_text;
-extern const char* tutorial_6_text;
 
 void set_drop_model_path(const char* path);
 void info_marker(const char* desc);

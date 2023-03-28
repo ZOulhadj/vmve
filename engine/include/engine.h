@@ -23,7 +23,7 @@ enum struct my_engine_viewport_view
 
 struct my_engine_callbacks
 {
-    void (*key_callback)(int keycode);
+    void (*key_callback)(int keycode, bool control, bool alt, bool shift);
     void (*resize_callback)(int width, int height);
     void (*drop_callback)(int path_count, const char* paths[]);
 };
@@ -365,6 +365,5 @@ bool engine_play_audio(const char* path);
 void engine_pause_audio(int audio_id);
 void engine_stop_audio(int audio_id);
 void engine_set_audio_volume(float audio_volume);
-
 
 #endif

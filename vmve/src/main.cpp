@@ -7,11 +7,11 @@
 #include "misc.h"
 #include "settings.h"
 
-static void key_callback(int keycode);
+static void key_callback(int keycode, bool control, bool alt, bool shift);
 static void resize_callback(int width, int height);
 static void drop_callback(int path_count, const char* paths[]);
 
-bool notFullScreen = true;
+bool not_full_screen = true;
 
 int main()
 {
@@ -78,7 +78,7 @@ int main()
 
             // Render all UI elements 
             engine_begin_ui_pass();
-            render_ui(!notFullScreen);
+            render_ui(!not_full_screen);
             engine_end_ui_pass();
        
             // Request the GPU to execute all rendering operations and display
@@ -95,7 +95,7 @@ int main()
 }
 
 
-void key_callback(int keycode)
+void key_callback(int keycode, bool control, bool alt, bool shift)
 {
     // TODO: Engine should have its own keycodes
 #define KEY_F1 290
@@ -113,8 +113,26 @@ void key_callback(int keycode)
 #define KEY_TAB 258
 #define KEY_E 69
 #define KEY_T 84
+#define KEY_Q 81
 #define KEY_R 82
 #define KEY_S 83
+#define KEY_L 76
+#define KEY_F 70
+
+    if (control && keycode == KEY_Q)
+        engine_should_terminate();
+
+    if (control && keycode == KEY_L)
+        load_model_open = true;
+
+    if (control && keycode == KEY_S)
+        settings_open = true;
+
+    if (control && keycode == KEY_E)
+        creator_open = true;
+
+    if (control && keycode == KEY_F)
+        not_full_screen = !not_full_screen;
 
     if (keycode == KEY_F1) {
         viewport_active = !viewport_active;
@@ -122,9 +140,6 @@ void key_callback(int keycode)
         engine_set_cursor_mode(viewport_active);
     }
 
-    if (keycode == KEY_F2) {
-        notFullScreen = !notFullScreen;
-    }
 
     if (keycode == KEY_E) {
         object_edit_mode = !object_edit_mode;

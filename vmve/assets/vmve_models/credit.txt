@@ -1,0 +1,18 @@
+example_1:
+	source: https://sketchfab.com/3d-models/liverpool-street-station-south-entrance-5cd22bb8c5da48d792c5494a0fe7965f
+	author: artfletch
+example_2: 
+	source: https://sketchfab.com/3d-models/pirozhok-scan-retopo-free-scan-07bc48134b364d4f8a43d288b3a0282d
+	author: Renafox
+example_3:
+	source: https://sketchfab.com/3d-models/scottish-castle-777cefba8a804d42820d3b891f0a4299
+	author: ShutterCG
+example_4:
+	source: https://sketchfab.com/3d-models/free-quick-terrain-test-b0ad92e85bf242d9bf24009a40b4e4d2
+	author: Kris Teper
+example_5:
+	source: https://github.com/jimmiebergmann/Sponza
+	author: Jimmie Bergmann
+example_6:
+	source: https://sketchfab.com/3d-models/survival-guitar-backpack-799f8c4511f84fab8c3f12887f7e6b36
+	author: Berk Gedik

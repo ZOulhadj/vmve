@@ -68,6 +68,7 @@
 \newacronym{ide}{IDE}{Integrated Development Environment}
 \newacronym{vcs}{VCS}{Version Control System}
 \newacronym{msvc}{MSVC}{Microsoft Visual Compiler}
+\newacronym{stl}{STL}{C++ Standard Template Library}
 
 % end of preamble
 
@@ -339,13 +340,30 @@ The \gls{vmve} project is hosted on GitHub as a private repository
 
 GitHub as well as providing hosting for the repository also provides different
 features related to task management. One such feature is known as GitHub issues.
-I used this as my task tracker in which I create ``posts'' that would help me
-keep track of outstanding tasks including the priority, current progress and the
-expected deadline of the task.
+This will be used as the task tracker in which ``posts'' are created that would
+track outstanding tasks including the priority, current progress and the
+expected deadline. Figure \ref{fig:github_kanban} shows a preview of the Kanban
+board. It consists of three main columns used to categorize an issue including
+backlog, in progress and done. 
 
-In regards to the management of tasks during development, I used 
-- GitHub Kanban
+When an idea for a new feature is thought of or a bug within the application is
+discoverd a GitHub issue is created and moved to the ``Backlog''. This is used
+to document a particular task that needs to be worked on in the near future.
 
+Then once a specific issue is ready to be worked on/resolved, it's moved to the
+``In Progress'' column. As the issue is being addressed, key points of discussion
+are added as comments to the issue for documentation purposes.
+
+Lastly, once the task has been completed, the GitHub commit that includes the
+fix is referenced in the issue and is then finally marked as complete by being
+moved to the ``Done'' column.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/github_project.png}
+  \caption{GitHub Issues Kanban}
+  \label{fig:github_kanban}
+\end{figure}
 
 \subsubsection{Microsoft Visual Studio 2022}
 Developing a program that runs directly on the underlying operating system
@@ -405,10 +423,25 @@ seen in action in figure \ref{fig:amd_profiler}.
 
 
 \subsection{Programming Language}
-The programming language of choice was \gls{cpp}. Due to the nature of application,
-there were several requirements that had to be met such as a high performing
-programming language as well as low-level memory access in order to specifically
-manage how memory is handled within the application.
+Due to the nature of application, there were several requirements that had to be
+met such as a high performing programming language as well as low-level memory
+access in order to specifically manage how memory is handled within the
+application.
+
+The language chosen for this project was C++ 23.  There were two main reasons
+as to why this specific programming language was chosen. Firstly, it's the language
+that I have the most experience with which would significantly help during the 
+implementation stages of the project. The second reason is the \gls{stl} STL (Standard
+Template Library) was one of the key reasons as to why I ended up
+choosing this specific programming language. It provides many prebuilt
+data structures and containers including ``std::vector'', ``std::string'',
+``std::find'' etc. that are really helpfully in managing the data in the application.
+Furthermore, it saves time as I would not have to implement my own solution
+in the limited time-frame that I have.
+
+Other language features that solidified by choice include, function overloading,
+templates, compile-time expressions, direct memory access and generally faster
+performance.
 
 \subsection{Rendering API} \label{rendering_api}
 One of the core aspects of \gls{vmve} is making use of the underlying hardware and
@@ -492,9 +525,9 @@ Having discussed the different technologies being used in VMVE, they must now be
 evaluated and incorporated into the design of VMVE and its various subsystems.
 
 \subsection{Project Name}
-VMVE stands for "Vulkan Model Viewer and Exporter". The name is mainly split
-into two halves. The first is "Vulkan" and the other is "Model Viewer and
-Exporter". Fundamentally, the application revolves around the idea of being able
+VMVE stands for ``Vulkan Model Viewer and Exporter''. The name is mainly split
+into two halves. The first is ``Vulkan'' and the other is ``Model Viewer and
+Exporter''. Fundamentally, the application revolves around the idea of being able
 to view/manipulate 3D digital assets and export them into a custom file format
 as mentioned in section \ref{custom_file_format}.
 
@@ -550,7 +583,7 @@ project follows best practices.
 Significant amount of consideration was spent planning out a suitable project
 wide programming style. In regards to naming, section
 \href{http://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#nl10-prefer-underscore_style-names}{NL.10}
-of the core guidelines recommends using "underscore\_style" naming as it follows
+of the core guidelines recommends using ``underscore\_style'' naming as it follows
 the standard libraries naming convention. Since the VMVE project has no existing
 code base and therefore, no existing convention to follow, the project will
 make use of the underscore style for types, functions and variables. 
@@ -617,17 +650,7 @@ just VMVE but also other projects in the future.
 
 
 
-The language chosen for this project was C++ 20.  The STL (Standard
-Template Library) was one of the key reasons as to why I ended up
-choosing this specific programming language. It provides many prebuilt
-data structures and containers including ``std::vector'', ``std::string'',
-``std::find'' etc. that are really helpfully in managing the data in the application.
-Furthermore, it saves time as I would not have to implement my own solution
-in the limited time-frame that I have.
 
-Other language features that solidified by choice include, function overloading,
-templates, compile-time expressions, direct memory access and generally faster
-performance.
 
 - Reason for choosing 64bit program.
     goes beyond 4GB address space limit in 32bit programs.
@@ -747,6 +770,14 @@ must be used to decrypt the data.
 This section of the report presents the technical implementation details of
 VMVE. This section is presented in order of initialization i.e starting at
 the core of the application and discussing each subsequent system.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/rendering.png}
+  \caption{Liverpool Street Station renderer model}
+  \label{fig:renderer}
+\end{figure}
+
 
 \subsubsection{Overview}
 Figure \ref{fig:overview_pseudo_code} shows the general overview of the application and the various 
@@ -907,7 +938,7 @@ VkFence
 
 
 \subsubsection{Model}
-In the context of the rendering system, a "model" is a structure that represents
+In the context of the rendering system, a ``model'' is a structure that represents
 a 3D geometry object. This could be as simple as a cube or as complex as an
 entire scene.
 
@@ -916,7 +947,7 @@ and textures.
 
 Often times complex models are not singular pieces of geometry. Instead, artists
 combine multiple smaller objects together to form the final model. These smaller
-parts are known as "Meshes" within the application.
+parts are known as ``Meshes'' within the application.
 
 Figure \ref{fig:model} shows the internal structure of a example model which has been
 loaded into VMVE.
@@ -938,7 +969,16 @@ With all this data in place, the next step is to project this onto the users scr
 Ultimately all 3D geometry will be shown on a 2D monitor. Therefore, we must
 perform a series of mathematical calculations that will transform vertex points
 from a 3D ``world'' onto a 2D surface which is the monitor. This transformation
-is known as perspective projection \cite{3d_projection}.
+is known as perspective projection \cite{3d_projection}. Figure
+\ref{fig:mvp_projection} shows the calculation that performs this
+transformation. \(P\) is a 4x4 matrix that stores the projection. \(V\)
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/mvp.png}
+  \caption{MVP Transformation \cite{coordinate_systems}}
+  \label{fig:mvp_transformation} 
+\end{figure}
 
 Perspective projection
 
@@ -946,11 +986,19 @@ Perspective projection
 - Quaternion camera
 -    prevents gimbal locking
 
-\subsubsection{Lighting}
 
-\begin{equation}
-MVP = P \times V \times M \times Pos
-\end{equation}
+\begin{figure}[h!]
+  \centering  
+  \begin{equation}
+    MVP = P \times V \times M \times Pos
+  \end{equation}
+  \caption{MVP projection}
+  \label{fig:mvp_projection}
+\end{figure}
+
+  
+
+\subsubsection{Lighting}
 
 The lighting model that is implemented in Blinn-Phong which derives
 from the original Phong model developed by By Bui Tuong Phong in a
@@ -1008,6 +1056,13 @@ adds...
 The implementation of the user interface was the next major element. This is
 the frontend and how the users will be able to interact with the application.
 
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/ui_implementation.png}
+  \caption{UI implementation}
+  \label{fig:user_interface}
+\end{figure}
+
 
 
 
@@ -1055,6 +1110,15 @@ going all the back to the first official release (v0.0.1).
   \caption{VMVE website}
   \label{fig:website}
 \end{figure}
+
+
+\subsubsection{Example models}
+The VMVE website provides an additional download link to six different example
+models. These are provided by third parities (with appropriate credits) and are
+corrected to ensure they can be loaded into VMVE without any issues. The purpose
+of these example models is to allow users to easily test the application without
+needing to search the internet or create their own.
+
 
 \subsubsection{Documentation}
 In addition to a website, a documentation website was also created curticy of
@@ -1111,14 +1175,13 @@ necessary requirements of the project could be met on time. Failure to correctly
 manage this workload would result in key goals not being achieved and/or features
 not being implemented.
 
-The primary tool used throughout the project to manage these goals was GitHub issues.
 
 
-I believe the use of GitHub issues was highly effective in managing the projects
+The use of GitHub issues was highly effective in managing the projects
 constantly changing requirements especially as the project grew in size.
 
+Throughout the project, over 50 GitHub issues were resolved 
 
-- Have all outstanding GitHub issues been resolved?
 - How effective was the use of project management tools
 during development.
 - Key stages of the project
@@ -1170,7 +1233,7 @@ across compilations. This significantly reduces the amount of work the compiler
 needs to perform since it does not have to recompile the same sets of files
 needlessly each time.
 
-The way that this works is by including the "pch.h" header file at the top of
+The way that this works is by including the ``pch.h'' header file at the top of
 each translation unit (.cpp file) and before any other header file. This ensures
 that the necessary types can be found for both a header files and its
 corresponding source file.
@@ -1272,6 +1335,21 @@ undertaken.
 Could have planned better by designing systems before implementing them.
 
 
+\subsection{Choice of rendering API}
+This project was built on top of the Vulkan which as previously discussed is a
+low-level \gls{gpu} \gls{api}. One of major downsides to having chosen Vulkan as
+the \gls{api} of choice for this project was the significant amount of time had
+to be spent implementing the various rendering features due to how verbose and
+technical the \gls{api} is. The use of the API is only really beneficial if a
+developer wants to make full use of the additional performance through the use
+of multithreading, multiple command buffers and very specific memory allocation
+requirements.
+
+If given the choice, I would rewrite the renderer, using a far simpler \gls{api}
+such as DirectX11 or OpenGL as they provide same functionality but with
+significantly less work required. This would allow me to focus and spend more time 
+implementing the many other features required in such an application.
+
 \subsection{Development logs}
 At key stages of the projects development, development logs i.e. videos were
 recorded showcasing the state of development at that specific point in time. All
@@ -1298,14 +1376,14 @@ OpenGL and DirectX11.
 \subsubsection{Frustum Culling}
 Currently, VMVE sends all object data to the \gls{gpu} to be process and rendered. The
 \gls{gpu} then subsequently traverses each vertex in order to figure out if it needs
-to be "discarded". This process is part of the graphics pipeline and occurs for
+to be ``discarded''. This process is part of the graphics pipeline and occurs for
 each vertex. As the complexity of both the scene and the objects themselves
 increases, this starts to become a \gls{gpu} intensive task and results in increased
 \gls{gpu} usage and lower performance.
 
 To solve this, frustum culling must be implemented which is a rendering
-optimization in which objects not visible from the "cameras point of view" are
-discarded completely and not sent to the GPU entirely. The term "frustum" refers
+optimization in which objects not visible from the ``cameras point of view'' are
+discarded completely and not sent to the GPU entirely. The term ``frustum'' refers
 to the camera projection frustum which can be seen in figure
 \ref{fig:frustum_culling} and ``Culling'' simply means discarding.
 
@@ -1318,7 +1396,7 @@ to the camera projection frustum which can be seen in figure
 
 
 This technique significantly improves performance as each object in the world is
-contained within a "bounding box" which is often a cube or a sphere
+contained within a ``bounding box'' which is often a cube or a sphere
 \ref{fig:bounding_boxes}. Then for each object, a check is performed against the
 bounded box instead of the actual vertices. This allow for in the best case a
 single check or at its worst 8 checks per object. This is far better than
