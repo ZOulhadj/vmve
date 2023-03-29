@@ -8,7 +8,7 @@ void menu_panel()
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu(ICON_FA_FOLDER " File")) {
             load_model_open = ImGui::MenuItem(ICON_FA_CUBE " Load model", "Ctrl+L");
-            creator_open = ImGui::MenuItem(ICON_FA_KEY " VMVE creator", "Ctrl+E");
+            creator_open = ImGui::MenuItem(ICON_FA_KEY " Export model", "Ctrl+E");
 
 
             if (ImGui::MenuItem(ICON_FA_XMARK " Exit", "Ctrl+Q"))
