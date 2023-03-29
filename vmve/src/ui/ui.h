@@ -24,14 +24,11 @@ extern bool wireframe;
 extern bool vsync;
 extern bool display_stats;
 
-extern float temperature;
-extern float windSpeed;
-extern int timeOfDay;
 extern int renderMode;
 extern bool update_swapchain_vsync;
 
-extern bool firstTimeNormal;
-extern bool firstTimeFullScreen;
+extern bool first_non_fullscreen;
+extern bool first_fullscreen;
 extern bool object_edit_mode;
 extern int selectedInstanceIndex;
 extern int guizmo_operation;
@@ -39,10 +36,10 @@ extern int guizmo_operation;
 
 // menu options
 extern bool settings_open;
-extern bool aboutOpen;
+extern bool about_open;
 extern bool load_model_open;
 extern bool creator_open;
-extern bool perfProfilerOpen;
+extern bool perf_profiler_open;
 extern bool audio_window_open;
 extern bool console_window_open;
 
@@ -53,18 +50,18 @@ extern bool show_demo_window;
 
 // left panel
 extern int hours, minutes, seconds;
-extern float memoryUsage;
-extern unsigned int maxMemory;
+extern float memory_usage;
+extern unsigned int max_memory;
 extern char memory_string[32];
-extern float cameraPosX, cameraPosY, cameraPosZ;
-extern float cameraFrontX, cameraFrontY, cameraFrontZ;
-extern float* cameraFOV;
-extern float* cameraSpeed;
-extern float* cameraNearPlane;
-extern float* cameraFarPlane;
+extern float camera_pos_x, camera_pos_y, camera_pos_z;
+extern float camera_front_x, camera_front_y, camera_front_z;
+extern float* camera_fovy;
+extern float* camera_speed;
+extern float* camera_near_plane;
+extern float* camera_far_plane;
 
 // viewport
-extern bool viewport_active;
+//extern bool viewport_active;
 extern bool should_resize_viewport;
 extern int viewport_width;
 extern int viewport_height;
@@ -73,8 +70,8 @@ extern int old_viewport_height;
 extern float resize_width;
 extern float resize_height;
 
-extern bool firstTimeNormal;
-extern bool firstTimeFullScreen;
+extern bool first_non_fullscreen;
+extern bool first_fullscreen;
 
 extern bool object_edit_mode;
 extern int guizmo_operation;

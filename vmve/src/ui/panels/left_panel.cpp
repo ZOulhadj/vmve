@@ -10,8 +10,7 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
     {
         if (ImGui::CollapsingHeader("Application")) {
             engine_get_uptime(&hours, &minutes, &seconds);
-            engine_get_memory_status(&memoryUsage, &maxMemory);
-
+            engine_get_memory_status(&memory_usage, &max_memory);
 
             if (ImGui::BeginTable("app", 2, ImGuiTableFlags_SizingStretchProp)) {
                 ImGui::TableNextRow();
@@ -26,8 +25,8 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
 
                 ImGui::Text("Memory");
                 ImGui::TableNextColumn();
-                sprintf_s(memory_string, "%.1f GB/%lld GB", (memoryUsage * maxMemory), maxMemory);
-                ImGui::ProgressBar(memoryUsage, ImVec2(0.f, 0.f), memory_string);
+                sprintf_s(memory_string, "%.1f GB/%lld GB", (memory_usage * max_memory), max_memory);
+                ImGui::ProgressBar(memory_usage, ImVec2(0.f, 0.f), memory_string);
 
 
                 ImGui::EndTable();
@@ -35,42 +34,14 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
           
         }
 
-#if 0
-        if (ImGui::CollapsingHeader("Environment"))
-        {
-            float sun_direction[3];
-
-            //ImGui::SliderFloat3("Sun direction", glm::value_ptr(scene.sunDirection), -1.0f, 1.0f);
-
-            // todo: Maybe we could use std::chrono for the time here?
-            ImGui::SliderInt("Time of day", &timeOfDay, 0.0f, 23.0f, "%d:00");
-            ImGui::SliderFloat("Temperature", &temperature, -20.0f, 50.0f, "%.1f C");
-            ImGui::SliderFloat("Wind speed", &windSpeed, 0.0f, 15.0f, "%.1f m/s");
-            ImGui::Separator();
-            ImGui::SliderFloat("Ambient", &scene.ambientSpecular.x, 0.0f, 1.0f);
-            ImGui::SliderFloat("Specular strength", &scene.ambientSpecular.y, 0.0f, 1.0f);
-            ImGui::SliderFloat("Specular shininess", &scene.ambientSpecular.z, 0.0f, 512.0f);
-
-            ImGui::SliderFloat("Shadow map distance", &sunDistance, 1.0f, 2000.0f);
-            ImGui::SliderFloat("Shadow near", &shadowNear, 0.1f, 1.0f);
-            ImGui::SliderFloat("Shadow far", &shadowFar, 5.0f, 2000.0f);
-
-            ImGui::Text("Skybox");
-            //ImGui::SameLine();
-            //if (ImGui::ImageButton(skysphere_dset, { 64, 64 }))
-            //    skyboxWindowOpen = true;
-
-        }
-#endif
-
         if (ImGui::CollapsingHeader("Camera")) {
-            cameraFOV = engine_get_camera_fov();
-            cameraSpeed = engine_get_camera_speed();
-            cameraNearPlane = engine_get_camera_near();
-            cameraFarPlane = engine_get_camera_far();
+            camera_fovy = engine_get_camera_fov();
+            camera_speed = engine_get_camera_speed();
+            camera_near_plane = engine_get_camera_near();
+            camera_far_plane = engine_get_camera_far();
 
-            engine_get_camera_position(&cameraPosX, &cameraPosY, &cameraPosZ);
-            engine_get_camera_front_vector(&cameraFrontX, &cameraFrontY, &cameraFrontZ);
+            engine_get_camera_position(&camera_pos_x, &camera_pos_y, &camera_pos_z);
+            engine_get_camera_front_vector(&camera_front_x, &camera_front_y, &camera_front_z);
 
 #if 0
             if (ImGui::RadioButton("Perspective", engine->camera.projection == CameraProjection::Perspective))
@@ -95,15 +66,15 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
                 ImGui::TableNextColumn();
                 ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
                 ImGui::SameLine();
-                ImGui::Text("%.2f", cameraPosX);
+                ImGui::Text("%.2f", camera_pos_x);
                 ImGui::SameLine();
                 ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
                 ImGui::SameLine();
-                ImGui::Text("%.2f", cameraPosY);
+                ImGui::Text("%.2f", camera_pos_y);
                 ImGui::SameLine();
                 ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
                 ImGui::SameLine();
-                ImGui::Text("%.2f", cameraPosZ);
+                ImGui::Text("%.2f", camera_pos_z);
 
 
                 ImGui::TableNextRow();
@@ -113,22 +84,22 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
                 ImGui::TableNextColumn();
                 ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
                 ImGui::SameLine();
-                ImGui::Text("%.2f", cameraFrontX);
+                ImGui::Text("%.2f", camera_front_x);
                 ImGui::SameLine();
                 ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
                 ImGui::SameLine();
-                ImGui::Text("%.2f", cameraFrontY);
+                ImGui::Text("%.2f", camera_front_y);
                 ImGui::SameLine();
                 ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
                 ImGui::SameLine();
-                ImGui::Text("%.2f", cameraFrontZ);
+                ImGui::Text("%.2f", camera_front_z);
 
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
 
                 ImGui::Text("Speed");
                 ImGui::TableNextColumn();
-                ImGui::SliderFloat("##speed", cameraSpeed, 0.0f, 20.0f, "%.1f m/s");
+                ImGui::SliderFloat("##speed", camera_speed, 0.0f, 20.0f, "%.1f m/s");
 
 
                 ImGui::TableNextRow();
@@ -137,22 +108,23 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
                 //ImGui::SliderFloat("Yaw Speed", cameraYawSpeed, 0.0f, 45.0f);
                 ImGui::Text("FOV");
                 ImGui::TableNextColumn();
-                ImGui::SliderFloat("##fov", cameraFOV, 10.0f, 120.0f);
-
+                ImGui::SliderFloat("##fov", camera_fovy, 10.0f, 120.0f);
+                info_marker("The camera field of view in degrees");
 
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
 
                 ImGui::Text("Near");
                 ImGui::TableNextColumn();
-                ImGui::SliderFloat("##near", cameraNearPlane, 0.1f, 10.0f, "%.1f m");
-
+                ImGui::SliderFloat("##near", camera_near_plane, 0.1f, 10.0f, "%.1f m");
+                info_marker("The closest camera cutoff point");
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
 
                 ImGui::Text("Far");
                 ImGui::TableNextColumn();
-                ImGui::SliderFloat("##far", cameraFarPlane, 10.0f, 2000.0f, "%.1f m");
+                ImGui::SliderFloat("##far", camera_far_plane, 10.0f, 2000.0f, "%.1f m");
+                info_marker("The furthest camera cutoff point");
 
                 ImGui::EndTable();
             }

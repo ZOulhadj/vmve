@@ -1,6 +1,7 @@
 #ifndef MY_ENGINE_CAMERA_H
 #define MY_ENGINE_CAMERA_H
 
+#include "entity.h"
 
 struct Frustum_Plane
 {
@@ -55,7 +56,7 @@ struct Camera
     float near_plane;
     float far_plane;
 
-    view_projection viewProj;
+    view_projection view_proj;
 
     bool first_mouse;
 };
@@ -65,7 +66,6 @@ Frustum create_camera_frustum(const Camera& camera);
 
 Camera create_perspective_camera(const glm::vec3& position, float fov, float speed);
 
-//Camera CreateCamera(const glm::vec3& position, float fov, float speed);
 void update_camera(Camera& camera, const glm::vec2& cursor_pos);
 void update_projection(Camera& cam);
 void update_projection(Camera& camera, uint32_t width, uint32_t height);

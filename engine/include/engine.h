@@ -24,6 +24,8 @@ enum struct my_engine_viewport_view
 struct my_engine_callbacks
 {
     void (*key_callback)(int keycode, bool control, bool alt, bool shift);
+    void (*mouse_button_pressed_callback)(int button_code);
+    void (*mouse_button_released_callback)(int button_code);
     void (*resize_callback)(int width, int height);
     void (*drop_callback)(int path_count, const char* paths[]);
 };

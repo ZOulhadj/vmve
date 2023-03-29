@@ -22,6 +22,7 @@ void menu_panel()
                 ImGui::Checkbox("Lighting", &lighting);
                 info_marker("Toggle lighting in the main viewport");
 
+                // todo: convert views into bit field
                 if (ImGui::Checkbox("Positions", &positions)) {
                     normals = false;
                     speculars = false;
@@ -72,7 +73,7 @@ void menu_panel()
 
         if (ImGui::BeginMenu(ICON_FA_WRENCH " Tools")) {
             if (ImGui::MenuItem(ICON_FA_CLOCK " Performance Profiler")) {
-                perfProfilerOpen = true;
+                perf_profiler_open = true;
             }
 
             if (ImGui::MenuItem(ICON_FA_MUSIC " Audio player")) {
@@ -90,8 +91,8 @@ void menu_panel()
 
 
         if (ImGui::BeginMenu(ICON_FA_LIFE_RING " Help")) {
-            if (ImGui::MenuItem("About"))
-                aboutOpen = true;
+            if (ImGui::MenuItem("About", "Ctrl+H"))
+                about_open = true;
 #if defined(_DEBUG)
             if (ImGui::MenuItem("Show demo window"))
                 show_demo_window = true;

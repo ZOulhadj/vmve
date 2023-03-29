@@ -407,9 +407,6 @@ bool engine_initialize(const char* name, int width, int height)
 
     print_log("Successfully initialized engine.\n");
 
-
-
-
     // Built-in resources
     const std::vector<vertex> quad_vertices{
         {{  0.5, 0.0, -0.5 }, { 0.0f, 1.0f, 0.0f }, {0.0f, 0.0f} },
@@ -491,9 +488,9 @@ bool engine_update()
     scene.sun_dir.x = glm::sin((float)glfwGetTime()) * 2.0f;
     scene.sun_dir.z = glm::cos((float)glfwGetTime()) * 2.0f;
 
-    set_buffer_data(g_engine->camera_buffer, &g_engine->camera.viewProj, sizeof(view_projection));
+    set_buffer_data(g_engine->camera_buffer, &g_engine->camera.view_proj, sizeof(view_projection));
     set_buffer_data(g_engine->scene_buffer, &scene);
- 
+
     return g_engine->running;
 }
 
@@ -817,7 +814,11 @@ void engine_decompose_entity_matrix(int instanceIndex, float* pos, float* rot, f
 {
     assert(instanceIndex >= 0);
 
-    decompose_entity_matrix(&g_engine->entities[instanceIndex].matrix[0][0], pos, rot, scale);
+    get_entity_position(g_engine->entities[instanceIndex], pos);
+    get_entity_position(g_engine->entities[instanceIndex], rot);
+    get_entity_position(g_engine->entities[instanceIndex], scale);
+
+    //decompose_entity_matrix(, pos, rot, scale);
 }
 
 
@@ -918,12 +919,12 @@ void engine_update_camera_projection(int width, int height)
 
 float* engine_get_camera_view()
 {
-    return glm::value_ptr(g_engine->camera.viewProj.view);
+    return glm::value_ptr(g_engine->camera.view_proj.view);
 }
 
 float* engine_get_camera_projection()
 {
-    return glm::value_ptr(g_engine->camera.viewProj.proj);
+    return glm::value_ptr(g_engine->camera.view_proj.proj);
 }
 
 void engine_get_camera_position(float* x, float* y, float* z)
@@ -1225,13 +1226,22 @@ static bool press(key_pressed_event& e)
     return true;
 }
 
-static bool mouse_button_press(mouse_button_pressed_event& e) {
+static bool mouse_button_press(mouse_button_pressed_event& e)
+{
+    if (!g_engine->callbacks.mouse_button_pressed_callback)
+        return false;
+
+    g_engine->callbacks.mouse_button_pressed_callback(e.get_button_code());
 
     return true;
 }
 
 static bool mouse_button_release(mouse_button_released_event& e)
 {
+    if (!g_engine->callbacks.mouse_button_released_callback)
+        return false;
+
+    g_engine->callbacks.mouse_button_released_callback(e.get_button_code());
 
     return true;
 }

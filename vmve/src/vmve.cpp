@@ -1,11 +1,13 @@
 #include "pch.h"
 #include "vmve.h"
 
-encryption_keys generate_key_iv(unsigned char keyLength)
+encryption_keys generate_key_iv(unsigned int keyLength)
 {
     encryption_keys keys{};
 
     CryptoPP::AutoSeededRandomPool randomPool;
+
+    assert(keyLength == 16 || keyLength == 32);
 
     keys.key.resize(keyLength);
     keys.iv.resize(CryptoPP::AES::BLOCKSIZE);
@@ -38,7 +40,7 @@ encryption_keys key_iv_to_hex(encryption_keys& keyIV)
 }
 
 
-std::string encrypt_aes(const std::string& text, encryption_keys& keys)
+std::string encrypt_aes(const std::string& text, encryption_keys& keys, int key_size)
 {
     std::string encrypted_text;
 
@@ -46,7 +48,7 @@ std::string encrypt_aes(const std::string& text, encryption_keys& keys)
     CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
     encryption.SetKeyWithIV(
         reinterpret_cast<const CryptoPP::byte*>(keys.key.data()), 
-        keys.key.size(), 
+        key_size, 
         reinterpret_cast<const CryptoPP::byte*>(keys.iv.data())
     );
 

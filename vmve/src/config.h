@@ -13,7 +13,7 @@ constexpr const char* app_settings_file = "vmve_settings.txt";
 constexpr const char* app_dev_info = 
 R"(Author: Zakariya Oulhadj
 Email: oulhadjz@roehampton.ac.uk
-Website: https://zoulhadj/github.io/vmve_website)";
+Website: https://zoulhadj.github.io/vmve_website)";
 
 
 #endif

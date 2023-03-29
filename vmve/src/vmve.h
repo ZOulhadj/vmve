@@ -53,12 +53,12 @@ struct vmve_file
     }
 };
 
-encryption_keys generate_key_iv(unsigned char keyLength);
+encryption_keys generate_key_iv(unsigned int keyLength);
 encryption_keys key_iv_to_hex(encryption_keys& keys);
 
 // AES
 
-std::string encrypt_aes(const std::string& text, encryption_keys& keys);
+std::string encrypt_aes(const std::string& text, encryption_keys& keys, int key_size);
 std::string encrypt_aes(const std::string& text, unsigned char keyLength);
 std::string decrypt_aes(const std::string& encrypted_text, const encryption_keys& keys);
 

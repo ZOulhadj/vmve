@@ -56,13 +56,13 @@ static Camera create_camera(const glm::vec3& pos,
     cam.type = camera_type::first_person;
 
 
-    cam.viewProj.view = glm::mat4_cast(glm::quat(cam.orientation)) *
+    cam.view_proj.view = glm::mat4_cast(glm::quat(cam.orientation)) *
         glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
-    cam.viewProj.proj = glm::perspective(glm::radians(fov), (float)cam.width / cam.height, cam.far_plane, cam.near_plane);
+    cam.view_proj.proj = glm::perspective(glm::radians(fov), (float)cam.width / cam.height, cam.far_plane, cam.near_plane);
     //cam.viewProj.proj = infinite_perspective(glm::radians(cam.fov), { cam.width, cam.height }, cam.near);
 
     // Required if using Vulkan (left-handed coordinate-system)
-    cam.viewProj.proj[1][1] *= -1.0;
+    cam.view_proj.proj[1][1] *= -1.0;
 
 
     return cam;
@@ -73,7 +73,6 @@ Camera create_perspective_camera(const glm::vec3& position, float fov, float spe
 {
     return create_camera(position, speed, fov);
 }
-
 
 // Reversed Z infinite perspective
 // GLM provides various types of perspective functions including infinitePerspective()
@@ -113,6 +112,7 @@ void update_camera(Camera& camera, const glm::vec2& cursor_pos)
     last_x = cursor_pos.x;
     last_y = cursor_pos.y;
 
+#if 1
     // Get the camera current direction vectors based on orientation
     camera.front_vector = glm::conjugate(camera.orientation) * glm::vec3(0.0f, 0.0f, 1.0f);
     camera.up_vector    = glm::conjugate(camera.orientation) * glm::vec3(0.0f, 1.0f, 0.0f);
@@ -134,24 +134,19 @@ void update_camera(Camera& camera, const glm::vec2& cursor_pos)
     camera.orientation = (pitch * yaw * roll) * camera.orientation;
 
     // Create the view and projection matrices
-    camera.viewProj.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
+    camera.view_proj.view = glm::mat4_cast(glm::quat(camera.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(camera.position));
     //camera.viewProj.proj[1][1] = -1.0;
 
-    // Build final camera transform matrix
     camera.roll = 0.0f;
-
-    
-    //else if (camera.type == camera_type::look_at) {
-        //camera.viewProj.view = glm::lookAt(camera.position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    //}
+#endif
 }
 
 
 void update_projection(Camera& cam)
 {
-    cam.viewProj.proj = glm::perspective(glm::radians(cam.fov), (float)cam.width / cam.height, cam.far_plane, cam.near_plane);
+    cam.view_proj.proj = glm::perspective(glm::radians(cam.fov), (float)cam.width / cam.height, cam.far_plane, cam.near_plane);
     // Required if using Vulkan (left-handed coordinate-system)
-    cam.viewProj.proj[1][1] *= -1.0;
+    cam.view_proj.proj[1][1] *= -1.0;
 }
 
 void update_projection(Camera& camera, uint32_t width, uint32_t height)

@@ -109,11 +109,21 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
         if (engine_get_instance_count() > 0) {
             ImGui::BeginChild("Object Properties");
 
-            ImGui::Button(ICON_FA_UP_DOWN_LEFT_RIGHT);
+            if (ImGui::Button(ICON_FA_UP_DOWN_LEFT_RIGHT)) {
+                object_edit_mode = true;
+                guizmo_operation = ImGuizmo::OPERATION::TRANSLATE;
+            }
             ImGui::SameLine();
-            ImGui::Button(ICON_FA_ARROWS_UP_TO_LINE);
+            if (ImGui::Button(ICON_FA_ARROWS_UP_TO_LINE)) {
+                object_edit_mode = true;
+                guizmo_operation = ImGuizmo::OPERATION::SCALE;
+            }
             ImGui::SameLine();
-            ImGui::Button(ICON_FA_ROTATE);
+            if (ImGui::Button(ICON_FA_ROTATE)) {
+                object_edit_mode = true;
+                guizmo_operation = ImGuizmo::OPERATION::ROTATE;
+            }
+
 
             ImGui::Text("ID: %04d", engine_get_instance_id(selectedInstanceIndex));
             ImGui::Text("Name: %s", engine_get_instance_name(selectedInstanceIndex));
@@ -131,15 +141,19 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
 
 
             static bool uniformScale = true;
-            if (ImGui::SliderFloat3("Scale", scale, 0.1f, 100.0f)) {
-                if (uniformScale)
+            if (uniformScale) {
+                if (ImGui::SliderFloat("Scale", scale, 0.1f, 100.0f))
                     engine_set_instance_scale(selectedInstanceIndex, scale[0]);
-                else
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FA_LOCK))
+                    uniformScale = false;
+            } else {
+                if (ImGui::SliderFloat3("Scale", scale, 0.1f, 100.0f))
                     engine_set_instance_scale(selectedInstanceIndex, scale[0], scale[1], scale[2]);
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FA_UNLOCK))
+                    uniformScale = true;
             }
-            ImGui::SameLine();
-            if (ImGui::Button(uniformScale ? ICON_FA_LOCK : ICON_FA_UNLOCK))
-                uniformScale = !uniformScale;
 
             ImGui::EndChild();
         }

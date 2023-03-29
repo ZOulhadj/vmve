@@ -48,18 +48,12 @@ bool display_stats = false;
 
 // temp
 
-
-
-
-float temperature = 23.5;
-float windSpeed = 2.0f;
-int timeOfDay = 10;
 int renderMode = 0;
 bool update_swapchain_vsync = false;
 
 
-bool firstTimeNormal = true;
-bool firstTimeFullScreen = !firstTimeNormal;
+bool first_non_fullscreen = true;
+bool first_fullscreen = !first_non_fullscreen;
 bool object_edit_mode = false;
 extern int selectedInstanceIndex = 0;
 int guizmo_operation = -1;
@@ -67,10 +61,10 @@ int guizmo_operation = -1;
 
 // menu options
 bool settings_open = false;
-bool aboutOpen = false;
+bool about_open = false;
 bool load_model_open = false;
 bool creator_open = false;
-bool perfProfilerOpen = false;
+bool perf_profiler_open = false;
 bool audio_window_open = false;
 bool console_window_open = false;
 
@@ -81,18 +75,18 @@ bool show_demo_window = false;
 
 // left panel
 int hours = 0, minutes = 0, seconds = 0;
-float memoryUsage = 0.0f;
-unsigned int maxMemory = 0;
+float memory_usage = 0.0f;
+unsigned int max_memory = 0;
 char memory_string[32];
-float cameraPosX, cameraPosY, cameraPosZ;
-float cameraFrontX, cameraFrontY, cameraFrontZ;
-float* cameraFOV = nullptr;
-float* cameraSpeed = nullptr;
-float* cameraNearPlane = nullptr;
-float* cameraFarPlane = nullptr;
+float camera_pos_x, camera_pos_y, camera_pos_z;
+float camera_front_x, camera_front_y, camera_front_z;
+float* camera_fovy = nullptr;
+float* camera_speed = nullptr;
+float* camera_near_plane = nullptr;
+float* camera_far_plane = nullptr;
 
 
-bool viewport_active = false;
+//bool viewport_active = false;
 bool should_resize_viewport = false;
 int viewport_width = 1280;
 int viewport_height = 720;
@@ -386,55 +380,33 @@ static void render_preferences_window(bool* open)
     case setting_options::input: {
         ImGui::Text("Input");
 
-
-        enum class application_action
-        {
-            load_model,
-            export_model,
-            settings_window,
-            toggle_viewport,
-            quit,
-
-
-            guizmo_translate,
-            guizmo_rotate,
-            guizmo_scale,
-            camera_forward,
-            camera_backward,
-            camera_left,
-            camera_right,
-            camera_up,
-            camera_down,
-        };
-
         struct mapping
         {
-            application_action action;
             std::string name;
             std::string shortcut;
         };
 
         static std::vector<mapping> mappings {
             // Global controls
-            { application_action::load_model, "Load Model", "Ctrl+L" },
-            { application_action::export_model, "Export Model", "Ctrl+E" },
-            { application_action::toggle_viewport, "Toggle Viewport", "Ctrl+F" },
-            { application_action::quit, "Quit Application", "Ctrl+Q" },
+            { "Open load model window", "Ctrl+L" },
+            { "Open export model window", "Ctrl+E" },
+            { "Open settings window", "Ctrl+S" },
+            { "Open help window", "Ctrl+H" },
+            { "Toggle fullscreen viewport", "Ctrl+F" },
+            { "Quit Application", "Ctrl+Q" },
 
             // Viewport controls
-            { application_action::guizmo_translate, "Move Object", "F1" },
-            { application_action::guizmo_rotate, "Rotate Object", "F2" },
-            { application_action::guizmo_scale, "Scale Object", "F3" },
-            { application_action::camera_forward, "Camera Forward", "W" },
-            { application_action::camera_backward, "Camera Backwards", "S" },
-            { application_action::camera_left, "Camera Left", "A" },
-            { application_action::camera_right, "Camera Right", "D" },
-            { application_action::camera_up, "Camera Up", "Space" },
-            { application_action::camera_down, "Camera Down", "Undefined" },
+            { "Camera movement", "W, A, S, D"},
+            { "Move Object", "ALT+M" },
+            { "Rotate Object", "ALT+R" },
+            { "Scale Object", "ALT+S" },
+            { "Toggle lighting", "F1"},
+            { "Positions view", "F2"},
+            { "Normals view", "F3"},
+            { "Specular view", "F4"},
+            { "Depth view", "F5"},
+            { "Toggle wireframe", "F6"}
         };
-
-        static mapping* active_mapping = nullptr;
-        static bool active_shortcut = false;
 
         // Options
         static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | 
@@ -455,35 +427,11 @@ static void render_preferences_window(bool* open)
                 ImGui::TableNextColumn();
                 ImGui::Text(mappings[i].name.c_str());
                 ImGui::TableNextColumn();
-                if (ImGui::Button(mappings[i].shortcut.c_str(), button_size)) {
-                    active_mapping = &mappings[i];
-                    active_shortcut = true;
-                }
+                ImGui::Text(mappings[i].shortcut.c_str());
             }
 
             ImGui::EndTable();
         }
-
-        if (active_shortcut) {
-            ImGui::SetNextWindowSize(ImGui::GetContentRegionAvail());
-            ImGui::Begin(active_mapping->name.c_str(), &active_shortcut);
-            ImGui::Text("Current shortcut: ");
-            ImGui::SameLine();
-            ImGui::Text(active_mapping->shortcut.c_str());
-            ImGui::SameLine();
-            ImGui::Text("New shortcut");
-            ImGui::SameLine();
-            if (ImGui::Button("Click me")) {
-
-            }
-
-            if (ImGui::Button("Apply", ImVec2(ImGui::GetContentRegionAvail().x, 0.0f))) {
-                // TODO: Parse shortcut and figure out if it's valid
-                // checks should include: if shortcut already exists
-            }
-            ImGui::End();
-        }
-        
 
         break;
     } case setting_options::audio:
@@ -536,7 +484,7 @@ static void load_model_window(bool* open)
     if (!*open)
         return;
 
-    static bool flip_uv = false;
+    static bool flip_uv = true;
     static bool file_encrypted = false;
     static bool decrypt_modal_open = false;
 
@@ -554,7 +502,6 @@ static void load_model_window(bool* open)
     // TODO: instead of simply checking for file extension, we need to properly
     // parse the file to ensure it is in the correct format.
     const std::filesystem::path model(model_path);
-
 
     ImGui::Checkbox("Flip UVs", &flip_uv);
     info_marker("Orientation of texture coordinates for a model");
@@ -604,19 +551,17 @@ static void vmve_creator_window(bool* open)
 
     static std::array<const char*, 4> encryptionModes = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
     static std::array<const char*, 2> keyLengths = { "256 bits", "128 bit" };
-    static std::array<unsigned char, 2> keyLengthSizes = { 32, 16 };
-    static std::array<unsigned char, 2> keyLengthsCharacters = { 64, 32 };
+    static std::array<int, 2> keyLengthSizes = { 32, 16 };
     static int keyLengthIndex = 0;
-    int key_size = keyLengthsCharacters[keyLengthIndex];
-    static const int iv_size = 32;
-
+    int key_size = keyLengthSizes[keyLengthIndex];
+    static bool generated = false;
 
     static encryption_keys keyIV;
+    static encryption_keys keyIVString;
 
     resize_and_center_next_window(ImVec2(800, 600));
 
-    ImGui::Begin(ICON_FA_KEY " VMVE Creator", open);
-
+    ImGui::Begin(ICON_FA_KEY " Export model", open);
 
     static const char* exportPath = engine_get_executable_directory();
     std::string current_path = engine_display_file_explorer(exportPath);
@@ -631,50 +576,28 @@ static void vmve_creator_window(bool* open)
         ImGui::Combo("Key length", &keyLengthIndex, keyLengths.data(), static_cast<int>(keyLengths.size()));
 
         if (ImGui::Button("Generate Key/IV")) {
-            keyIV = generate_key_iv(keyLengthSizes[keyLengthIndex]);
-            keyIV = key_iv_to_hex(keyIV);
+            keyIV = generate_key_iv(key_size);
+            keyIVString = key_iv_to_hex(keyIV);
+            generated = true;
         }
 
         ImGui::SameLine();
 
         if (ImGui::Button("Copy to clipboard")) {
-            const std::string clipboard("Key: " + keyIV.key + "\n" +
-                "IV: " + keyIV.iv);
+            const std::string clipboard("Key: " + keyIVString.key + "\n" +
+                "IV: " + keyIVString.iv);
 
             ImGui::SetClipboardText(clipboard.c_str());
         }
 
-        if (ImGui::InputText("Key", &keyIV.key)) {
-//            keyIV.key = CryptoPP::SecByteBlock((const CryptoPP::byte*)keyIVString.key.data(), keyIVString.key.size());
-        }
-
-
-        if (keyIV.key.size() != key_size) {
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
-                ICON_FA_CIRCLE_EXCLAMATION " Key must be at exactly %d characters long",
-                key_size);
-        }
-
-        if (ImGui::InputText("IV", &keyIV.iv)) {
-//            keyIV.iv = CryptoPP::SecByteBlock((const CryptoPP::byte*)keyIVString.iv.data(), keyIVString.iv.size());
-        }
-
-        if (keyIV.iv.size() != iv_size) {
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), 
-                ICON_FA_CIRCLE_EXCLAMATION " IV must be exactly %d characters long",
-                iv_size);
-        }
+        ImGui::Text("Key: %s", keyIVString.key.c_str());
+        ImGui::Text("IV: %s", keyIVString.iv.c_str());
 
     }
 
 
     static bool successfully_exported = false;
-
-    const bool encryption_ready = keyIV.key.size() == key_size && keyIV.iv.size() == iv_size;
-
-    ImGui::BeginDisabled(!encryption_ready);
+    ImGui::BeginDisabled(!generated);
     if (ImGui::Button("Encrypt")) {
 
         // First we must load the contents of the model file
@@ -693,7 +616,7 @@ static void vmve_creator_window(bool* open)
                 file_structure.header.encrypt_mode = encryption_mode::aes;
                 file_structure.header.keys = keyIV;
                 // data
-                file_structure.data.encrypted_data = encrypt_aes(contents, keyIV);
+                file_structure.data.encrypted_data = encrypt_aes(contents, keyIV, key_size);
 
                 const std::filesystem::path model_path(current_path);
                 const std::string model_parent_path = model_path.parent_path().string();
@@ -799,10 +722,10 @@ static void render_console_window(bool* open)
 static void render_windows()
 {
     render_preferences_window(&settings_open);
-    render_about_window(&aboutOpen);
+    render_about_window(&about_open);
     load_model_window(&load_model_open);
     vmve_creator_window(&creator_open);
-    perf_window(&perfProfilerOpen);
+    perf_window(&perf_profiler_open);
     render_audio_window(&audio_window_open);
     render_console_window(&console_window_open);
 
@@ -929,7 +852,7 @@ void render_ui(bool fullscreen)
     if (dockspaceFlags & ImGuiDockNodeFlags_PassthruCentralNode)
         dockspaceWindowFlags |= ImGuiWindowFlags_NoBackground;
 
-    if (firstTimeNormal) {
+    if (first_non_fullscreen) {
         ImGui::DockBuilderRemoveNodeChildNodes(dockspace_id);
         ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
         ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->Size);
@@ -945,14 +868,14 @@ void render_ui(bool fullscreen)
         ImGui::DockBuilderDockWindow(viewport_window, dock_main_id);
 
         //ImGui::DockBuilderFinish(dock_main_id);
-        firstTimeNormal = false;
-    } else if (firstTimeFullScreen) {
+        first_non_fullscreen = false;
+    } else if (first_fullscreen) {
         ImGui::DockBuilderRemoveNodeChildNodes(dockspace_id);
         ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->Size);
         ImGui::DockBuilderDockWindow(viewport_window, dockspace_id);
 
         //ImGui::DockBuilderFinish(dock_main_id);
-        firstTimeFullScreen = false;
+        first_fullscreen = false;
     }
 
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspaceFlags);

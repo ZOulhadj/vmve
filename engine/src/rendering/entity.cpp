@@ -65,9 +65,31 @@ void apply_entity_transformation(Entity& e)
     e.matrix = glm::scale(e.matrix, e.scale);
 
     // TODO: Figure out how to rotate object without needing to rotate axis that are not used.
-    e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    //e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    //e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    //e.matrix = glm::rotate(e.matrix, glm::radians(e.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+}
+
+
+void get_entity_position(Entity& e, float* pos)
+{
+    pos[0] = e.position.x;
+    pos[0] = e.position.y;
+    pos[0] = e.position.z;
+}
+
+void get_entity_rotation(Entity& e, float* rot)
+{
+    rot[0] = e.rotation.x;
+    rot[1] = e.rotation.y;
+    rot[2] = e.rotation.z;
+}
+
+void get_entity_scale(Entity& e, float* scale)
+{
+    scale[0] = e.scale.x;
+    scale[1] = e.scale.y;
+    scale[2] = e.scale.z;
 }
 
 void decompose_entity_matrix(const float* matrix, float* pos, float* rot, float* scale)
@@ -78,14 +100,18 @@ void decompose_entity_matrix(const float* matrix, float* pos, float* rot, float*
     scale[1] = glm::length(mat[1]);
     scale[2] = glm::length(mat[2]);
 
+
+    glm::vec3 r = glm::vec3(mat[0][0], mat[0][1], mat[0][1]) / scale[0];
+    print_log("%s\n", glm::to_string(r).c_str());
+
 #if 1
-    mat[0] = glm::normalize(mat[0]);
-    mat[1] = glm::normalize(mat[1]);
-    mat[2] = glm::normalize(mat[2]);
+    rot[0] = r.x;
+    rot[1] = r.y;
+    rot[2] = r.z;
 #else
-    mat[0] = glm::length(mat[0]) > FLT_EPSILON ? glm::vec4(1.0f / glm::length(mat[0])) : glm::vec4(1.0f / FLT_EPSILON);
-    mat[1] = glm::length(mat[1]) > FLT_EPSILON ? glm::vec4(1.0f / glm::length(mat[1])) : glm::vec4(1.0f / FLT_EPSILON);
-    mat[2] = glm::length(mat[2]) > FLT_EPSILON ? glm::vec4(1.0f / glm::length(mat[2])) : glm::vec4(1.0f / FLT_EPSILON);
+    rot[0] = glm::length(mat[0]) > FLT_EPSILON ? glm::vec4(1.0f / glm::length(mat[0])) : glm::vec4(1.0f / FLT_EPSILON);
+    rot[1] = glm::length(mat[1]) > FLT_EPSILON ? glm::vec4(1.0f / glm::length(mat[1])) : glm::vec4(1.0f / FLT_EPSILON);
+    rot[2] = glm::length(mat[2]) > FLT_EPSILON ? glm::vec4(1.0f / glm::length(mat[2])) : glm::vec4(1.0f / FLT_EPSILON);
 #endif
 
     pos[0] = mat[3][0];
