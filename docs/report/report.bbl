@@ -77,6 +77,9 @@
 ``Coordinate systems,''
   \url{https://learnopengl.com/Getting-started/Coordinate-Systems}.
 
+\bibitem{camera_projection}
+``Model view projection,'' \url{https://jsantell.com/model-view-projection/}.
+
 \bibitem{blinn}
 ``Blinn-phong reflection model,''
   \url{https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model}.

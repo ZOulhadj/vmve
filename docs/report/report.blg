@@ -18,45 +18,45 @@ Warning--empty journal in indentation
 Warning--empty year in indentation
 
 Done.
-You've used 20 entries,
+You've used 21 entries,
             4087 wiz_defined-function locations,
-            883 strings with 8924 characters,
-and the built_in function-call counts, 5393 in all, are:
-= -- 314
-> -- 20
+            886 strings with 9011 characters,
+and the built_in function-call counts, 5659 in all, are:
+= -- 330
+> -- 21
 < -- 0
-+ -- 20
++ -- 21
 - -- 0
-* -- 146
-:= -- 806
-add.period$ -- 40
-call.type$ -- 20
-change.case$ -- 20
+* -- 152
+:= -- 845
+add.period$ -- 42
+call.type$ -- 21
+change.case$ -- 21
 chr.to.int$ -- 0
-cite$ -- 23
-duplicate$ -- 559
-empty$ -- 675
+cite$ -- 24
+duplicate$ -- 587
+empty$ -- 709
 format.name$ -- 0
-if$ -- 1230
+if$ -- 1292
 int.to.chr$ -- 0
-int.to.str$ -- 20
-missing$ -- 118
-newline$ -- 83
+int.to.str$ -- 21
+missing$ -- 124
+newline$ -- 86
 num.names$ -- 0
-pop$ -- 378
+pop$ -- 397
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 471
+skip$ -- 495
 stack$ -- 0
-substring$ -- 20
-swap$ -- 236
+substring$ -- 21
+swap$ -- 248
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 20
+type$ -- 21
 warning$ -- 3
 while$ -- 0
-width$ -- 22
-write$ -- 141
+width$ -- 23
+write$ -- 147
 (There were 3 warnings)

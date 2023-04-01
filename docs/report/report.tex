@@ -963,15 +963,12 @@ loaded into VMVE.
 
 
 \subsubsection{Camera}
-
-With all this data in place, the next step is to project this onto the users screen.
-
-Ultimately all 3D geometry will be shown on a 2D monitor. Therefore, we must
-perform a series of mathematical calculations that will transform vertex points
-from a 3D ``world'' onto a 2D surface which is the monitor. This transformation
-is known as perspective projection \cite{3d_projection}. Figure
-\ref{fig:mvp_projection} shows the calculation that performs this
-transformation. \(P\) is a 4x4 matrix that stores the projection. \(V\)
+3D geometry data must be transformed through a series of mathematical
+calculations that will take vertex points from a 3D ``world'' and them convert
+them onto a 2D image for it to then be displayed on a monitor. This
+transformation is known as perspective projection \cite{3d_projection} and is
+accomplished by computing several intermediate coordinate spaces as seen in
+figure \ref{fig:mvp_projection}.
 
 \begin{figure}[h!]
   \centering
@@ -980,23 +977,86 @@ transformation. \(P\) is a 4x4 matrix that stores the projection. \(V\)
   \label{fig:mvp_transformation} 
 \end{figure}
 
-Perspective projection
+Geometric data is first created within a local coordinate space. This ``space''
+is positions relative to the object. In other words, the model data imported by
+VMVE will be in this local coordinate system often created by a 3D modelling
+program such as Blender or 3DSMax.
+
+The next step is to convert these local coordinates to ``world'' space. This is
+the actual virtual environment that an object will live in. The transformation
+to this space is done by constructing a 4x4 matrix and performing a combination
+of translation, rotation and scaling. A pseudo code example can be seen in
+\ref{fig:local_to_world}.
+
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=C++]
+    mat4 model = mat4(1.0f);       // Identity matrix
+    model = translate(position);   // Move object
+    model = rotate(radians, axis); // Rotate object
+    model = scale(scale);          // Scale object
+  \end{lstlisting}
+  \caption{Model matrix construction}
+  \label{fig:local_to_world}
+\end{figure}
+  
+
+The next step is transforming the world space positions to view space or also
+known as camera space. This is important as how the virtual scene is displayed
+depends on the properties of the camera. In the context of graphics rendering
+the concept of a ``camera'' does not exist and is only really an illusion. In
+reality, all points/vertex positions in the world space are transformed relative
+to the ``camera''. For example, if the cameras position along the z axis
+increases i.e. we move forward then all objects in the world will be moved
+towards us. A nice visualization of this is shown in figure
+\ref{fig:camera_projection} curtesy of a blog post by \href{Jordan
+Santell}{https://jsantell.com/model-view-projection/}.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/camera_space.png}
+  \caption{Camera/view projection \cite{camera_projection}}
+  \label{fig:camera_projection} 
+\end{figure}
+
+\gls{vmve} makes use of a quaternion to perform the view projection. This is an
+alternative to euler angles and has several benefits including, preventing gimbal
+lock and easier interpolation between orientations.
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=C++]
+    mat4 view = lookAt(camera_position, view_direction, camera_up);
+  \end{lstlisting}
+  \caption{View matrix construction}
+  \label{fig:world_to_view}
+\end{figure}
 
 
-- Quaternion camera
--    prevents gimbal locking
+The final step in calculating the MVP matrix is the projection which converts
+points from local space to clip space. This involves projecting the points to
+either a perspective or orthographic projection.
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=C++]
+    mat4 proj = perspective(fovy, aspect, near, far);
+  \end{lstlisting}
+  \caption{Projection matrix construction}
+  \label{fig:local_to_projection}
+\end{figure}
 
-
+With the fully constructed mvp matrix, this can now be multiplied with each
+vertex position and it will display onto the screen as expected.
 \begin{figure}[h!]
   \centering  
   \begin{equation}
-    MVP = P \times V \times M \times Pos
+    Output = MVP \times Vertex
   \end{equation}
   \caption{MVP projection}
   \label{fig:mvp_projection}
 \end{figure}
 
-  
+A more detailed code example can be seen in figure
+\ref{fig:local_to_world_appendix} in the appendix.
 
 \subsubsection{Lighting}
 
@@ -1498,6 +1558,31 @@ throughout the development of VMVE.
 
 \section{Appendices}
 Code snippets, images and other resources
+
+
+
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=C++]
+    // Construct M (model)
+    glm::mat4 m = glm::mat4(1.0f);
+    m = glm::translate(m, world_position);   
+    m = glm::rotate(m, radians, rotation_axis); 
+    m = glm::scale(m, scale_amount);
+
+    // Construct V (view)
+    glm::mat4 v = glm::lookAt(camera_position, camera_direction, camera_up);
+
+    // Construct P (projection)
+    glm::mat4 p = glm::perspective(field_of_view, aspect_ratio, near, far);
+
+    // Construct MVP
+    glm::mat4 mvp = p * v * m; // Order is important
+
+  \end{lstlisting}
+  \caption{Complete MVP example}
+  \label{fig:local_to_world_appendix}
+\end{figure}
 
 
 \end{document}
