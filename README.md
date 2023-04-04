@@ -1,5 +1,7 @@
 ![logo](.git_assets/logo.svg)
 
+![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/ZOulhadj/vmve)
+
 # Vulkan Model Viewer and Exporter
 
 ## Features

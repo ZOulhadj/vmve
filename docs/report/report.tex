@@ -13,8 +13,8 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage[acronym]{glossaries}
-
-
+\usepackage[all]{hypcap}
+%\hypersetup{colorlinks=true, pdfstartview=FitV, linkcolor=blue, citecolor=black, plainpages=false, pdfpagelabels=true, urlcolor=blue}
 
 
 
@@ -69,6 +69,7 @@
 \newacronym{vcs}{VCS}{Version Control System}
 \newacronym{msvc}{MSVC}{Microsoft Visual Compiler}
 \newacronym{stl}{STL}{C++ Standard Template Library}
+\newacronym{lod}{LOD}{Level of Detail}
 
 % end of preamble
 
@@ -177,28 +178,7 @@ the award of any other degree or any other institution.
 \pagenumbering{arabic}
 
 \section{Introduction}
-This is my final year project report which is an extensive document that
-discusses the projects development from beginning to end. The report is
-structured such that it outlines each aspect of the project in the order that it
-happened. There are a total of five key sections to this report. The
-introduction, design, implementation, evaluation and finally, future work.
 
-The introduction will introduce the project and discuss what the report will
-cover, the projects purpose and key objectives. The report will then focus on
-the early stages of the project including design and requirements gathering. The
-main implementation section will follow this and provide detailed insights and
-technical implementation details into the project. In order to ensure that the
-project has met the requirements originally set out, an evaluation stage must
-undertaken. This will include discussions of various metrics as well as
-reviewing the project and understanding its strengths and shortcomings.
-
-\subsection{Project}
-The project that is discussed throughout this report is officially named
-\gls{vmve}. This is an application developed in the domain of computer
-graphics and is a real-time 3D rendering application designed for creating virtual
-environments.  
-
-\subsection{Purpose}
 Computer graphics is a large area within the field of computer science. Ever
 since its conception in the early 1960's it has been used for many different
 purposes from gaming, the film industry, scientific research, education,
@@ -211,18 +191,42 @@ just to name a few. These applications as are known as ``3D creation tools''
 that provide a plethora of features and functionality giving the users the
 freedom when creating digital graphics.
 
-However, a common theme found with these engines is that  they have been around
-for at least two decades meaning that they have a lot of different tools and
-features which comes with its own set of issues. For example, their relative
-complexity and steep learning curve.
+A common theme found within these engines as a result of being around for a
+couple of decades is that they have a lot of different tools and features which
+introduces their own set of issues such as  relative complexity and a steep
+learning curve.
 
-The goal of \gls{vmve} is not to replicate these existing applications but instead
-to purposely implement a small but specific subset of features that can be used
-for common graphics related tasks. This is beneficial for a number of reasons.
-Firstly, this will make \gls{vmve} easy to use as the number of features that the
-user must learn is significantly reduced and subsequently lowering the learning 
-curve. The combination of these two benefits will make the application far more
-accessible to the general public
+Throughout this document, I present my final year project \gls{vmve}. An
+application developed in the domain of computer graphics and is a real-time 3D
+rendering application designed for creating virtual environments. The goal of
+\gls{vmve} is not to replicate these existing applications but instead to
+purposely implement a small but specific subset of features that can be used for
+common graphics related tasks. This is beneficial for a number of reasons.
+Firstly, this will make \gls{vmve} easy to use as the number of features that
+the user must learn is significantly reduced and subsequently lowering the
+learning curve. The combination of these two benefits will make the application
+far more accessible to the general public.
+
+
+This report will discuss projects development from beginning
+to end. The report is structured such that it outlines each aspect of the
+project in the order that it happened. There are a total of five key sections to
+this report. The introduction, design, implementation, evaluation and finally,
+future work.
+
+The introduction will introduce the project and discuss what the report will
+cover, the projects purpose and key objectives. The report will then focus on
+the early stages of the project including design and requirements gathering. The
+main implementation section will follow this and provide detailed insights and
+technical implementation details into the project. In order to ensure that the
+project has met the requirements originally set out, an evaluation stage must
+undertaken. This will include discussions of various metrics as well as
+reviewing the project and understanding its strengths and shortcomings.
+
+
+\subsection{Goals and Requirements}
+In order to address these issues in this domain, a set of requirements
+must be defined that aims to achieve the desired goal of this project.
 
 Since its conception, \gls{vmve} has three main goals. The first is to provide
 users with an easy to use platform that they can use for rendering digital
@@ -236,6 +240,9 @@ The second goal of the application is to
 The last out of the three main goals is for the application to include its own
 model format that makes use of encryption to safely secure a users digital
 assets.
+
+\subsection{Aims and Objectives}
+- Refer to milestone 2 document.
 
 
 % The question therefore
@@ -251,32 +258,41 @@ steep learning curve.
 
 - Key stakeholders
 
-\subsection{Goals and Requirements}
-In order to address these issues in this domain, a set of requirements
-must be defined that aims to achieve the desired goal of this project.
-
-\subsection{Aims and Objectives}
-- Refer to milestone 2 document.
 
 \begin{description}
-\item[Lightweight] meaning application should be highly
-  efficient in regards to rendering and memory usage.
-\item[Ease of use] so that users with no prior experience
-\item[Useful]
-  Another vital requirement is that it should be useful
-\end{description}
+  \item[Lightweight] meaning application should be highly
+    efficient in regards to rendering and memory usage.
+  \item[Ease of use] so that users with no prior experience
+  \item[Useful]
+    Another vital requirement is that it should be useful
+  \end{description}
+  
+  - Lightweight model viewer - No need to install heavy
+  applications such as Blender/Unity/Unreal - Easy to use - No technical
+  knowledge required
 
-- Lightweight model viewer - No need to install heavy
-applications such as Blender/Unity/Unreal - Easy to use - No technical
-knowledge required
+
+\subsection{Milestones}
+Milestone 1
+Milestone 2
+Milestone 3
+Milestone 4
+Milestone 5
+Milestone 7
+Milestone 8
+
 
 \subsection{Considerations}
 
 \subsubsection{BSc Justification}
 This project incorporates many aspects taught throughout the BSc course.
 
+The \gls{vmve} project was also officially approved by my supervisors
+
 \subsubsection{Legal}
+
 \subsubsection{Social}
+
 \subsubsection{Ethical}
 Additionally, ethical considerations must be taken into account when developing
 the application. As mentioned earlier, \gls{vmve} will include the ability to secure
@@ -286,7 +302,6 @@ making use of a secret key and initialization vector.
 We developing the system, it is therefore, important to ask questions such as
 ``How will this data be kept secure?'' and ``Does the application store or send any
 private data?''. 
-
 
 \gls{vmve} throughout its development for this project will not contain any networking
 functionality. This ensures that all data remains local to the users device and
@@ -305,7 +320,6 @@ directly responsible in the projects outcome.
 
 
 \subsection{Tools}
-
 
 \subsubsection{Project Management}
 A \gls{vcs} is a tool used for backing up and/or collaborating with developers
@@ -1124,6 +1138,93 @@ the frontend and how the users will be able to interact with the application.
 \end{figure}
 
 
+\subsubsection{Fonts and Icons}
+The font used for the user interface is Open Sans which provides a simple and
+easy to read font.
+
+\gls{vmve} also uses icons throughout the user interface and is an important
+aspect in conveying key information such as the task being performed or for
+additional information. The icon font used is provided by Font Awesome
+\cite{font-awesome}.
+
+Typically, data for fonts and icons are stored in a font file which end using
+extensions such as ``.ttf'' or ``.otf''. However, one of \glspl{vmve} goals is
+to be distributed as a single executable file. Therefore, we cannot depend on
+external font files. Instead, data for fonts and icons are stored directly in
+the application in a continuous array of bytes and are encoded in base85. An
+small example of what this looks like can be seen in figure
+\ref{fig:base85_font}. The full version of this is over 3000 lines long due to
+the vast of amount of data stored within the font.
+
+\begin{figure}[h!]
+  \centering
+  \begin{lstlisting}[language=C++]
+    // 206 out of 201650 characters are shown
+
+    const char open_sans_regular[201650 + 1] =
+    "7])#######2Pc7('/###I),##d-LhLjKI##4%1S:`*]n8)K.v5*8_c)iZ;99=$$$$c(m]4pKdp/(RdL<snZo'oI,hLNDnx4Uu/>8Q7oo^eFb3hB4JYc'Tx-3l_wgd2Tf._r+&sAqV,-G"":F8LD=5,n]A&aA+<gXG-<iobW&>$>QJ8Z.W$jg0Fv-o^(^JJnf4T"
+  \end{lstlisting}
+  \caption{Base85 encoded font}
+  \label{fig:base85_font}
+\end{figure}
+
+\subsubsection{Menu Bar}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/menu_bar.png}
+  \caption{Menu Bar}
+  \label{fig:menu_bar}
+\end{figure}
+
+
+\subsubsection{Load Model Window}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/load_model_window.png}
+  \caption{Load Model Window}
+  \label{fig:load_model_window}
+\end{figure}
+
+
+\subsubsection{Export Model Window}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/encryption_system.png}
+  \caption{Export Model Window}
+  \label{fig:encryption_window}
+\end{figure}
+
+\subsubsection{Settings Window}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/settings_window.png}
+  \caption{Settings Window}
+  \label{fig:settings_window}
+\end{figure}
+
+\subsubsection{Gizmo}
+An additional feature that is part of the user interface is the gizmo. This is a
+visualization of one of three operations is the main method of interaction that
+a user has with an object and is used to specify the exact location and
+orientation within the virtual environment. The operations are translation
+(moving), rotation and scaling and can be seen in figure \ref{fig:gizmo}
+respectively.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/gizmo.png}
+  \caption{Gizmo operations}
+  \label{fig:gizmo}
+\end{figure}
+
+This functionality is implemented by taking the matrix transformation of an
+object and feeding that information to ImGuizmo \cite{imguizmo}. It will then
+perform the necessary mathematical calculations to convert from the objects
+world space to screen space. In other words, no matter where is the virtual
+environment the object is located, it will always be shown relative to the users
+screen.
+
 
 
 \subsection{Logging system}
@@ -1135,6 +1236,7 @@ the frontend and how the users will be able to interact with the application.
 -- AES (key and initialization vector)
 -- Image of how the system works 
   -- Loads model file, encrypts it and then writes it back out
+
 
 \subsection{Custom File Format}
 -- File Format structure
@@ -1471,7 +1573,34 @@ needing to perform thousands of checks for all the vertices of an object.
 
 
 \subsubsection{Spatial Acceleration Structures}
-Quad Tree
+\gls{vmve} only supports loading basic models however, in the future many other
+features need to be implemented. One such feature is large scale terrain as seen
+in figure \ref{fig:quad_tree_terrain}.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/quad_tree_terrain.png}
+  \caption{Large scale terrain}
+  \label{fig:quad_tree_terrain}
+\end{figure}
+
+Currently, \gls{vmve} would struggle to render such objects due to its
+complexity in terms of the number of vertices required. For example, an area of
+20x20km with a resolution of 1 meter would require 400 million vertices. Each
+vertex, if packed efficiently could be 32 bytes each that includes positions (12
+bytes), normals (12 bytes) and texture coordinates (8 bytes). In terms of
+memory, this would require 12.8GB of data just for the terrain.
+
+A common solution to this, is implementing a type of spatial acceleration
+structure also known as \gls{lod}. These structures are designed as the name
+suggests, to increase the speed for algorithms in the spatial domain including
+images and environments.
+
+A quad tree is a type of spatial acceleration structure which stores a
+hierarchical collection of nodes that each represent a 2D area (and an octree in
+the case of 3D). Figure \ref{fig:quad_tree} visualizes a quad tree that shows
+the resolution of each tile and how there are fewer tiles the further away from
+the camera they are.
 
 \begin{figure}[h!]
   \centering
@@ -1480,17 +1609,28 @@ Quad Tree
   \label{fig:quad_tree}
 \end{figure}
 
+The benefit of using this technique is that the number of vertices are
+significantly reduced saving on performance and memory usage.
+
+
 \subsubsection{glTF Support}
 Currently, the engine only really supports the VMVE and OBJ model formats for
-importing. glTF is a new model format by The Khronos Group that has many useful
+importing. The main issue with the OBJ file format is its size since the data is
+stored in a text format which subsequently increases the assets file size. glTF
+\cite{gltf} is a new model format by The Khronos Group that has many useful
 features such as compression, binary representation, scene hierarchy and more.
 
-
 \subsection{Cross Platform}
-Windows is the only operating system that VMVE officially supports. Implementing
-cross platform support would greatly benefit the application as it would
-increase flexibility in terms of which systems its able to run on and
-subsequently, increase the potential user base.
+Windows is the only operating system that \gls{vmve} officially supports.
+Implementing cross platform support would greatly benefit the application as it
+would increase flexibility in terms of which systems its able to run on and
+subsequently, increase the potential user base. Implementing such functionality
+would require significant changes to the underlying architecture of the
+application such as implementing opaque types for structures that have a
+different implementation depending on the operating system being used.
+
+Additionally, a different build system has to be used that is cross platform.
+The most commonly used cross platform build system is CMake \cite{cmake}.
 
 \subsection{Networking Support}
 VMVE is a virtual environment editor and as such can be significantly improved

@@ -110,15 +110,12 @@ void center_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
                 float matrix[16];
                 engine_get_entity_matrix(selectedInstanceIndex, matrix);
 
-                //ImGuizmo::Enable(true);
-                ImGuizmo::SetDrawlist();
-                ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, viewport_width, viewport_height);
-                //ImGuizmo::SetOrthographic(false);
 
                 //ImGuizmo::SetID(0);
+                ImGuizmo::SetDrawlist();
+                ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, viewport_width, viewport_height);
 
                 ImGuizmo::Manipulate(view, proj, (ImGuizmo::OPERATION)guizmo_operation, ImGuizmo::MODE::WORLD, matrix);
-
 
                 if (ImGuizmo::IsUsing()) {
                     float position[3];
@@ -147,6 +144,7 @@ void center_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
                     engine_set_instance_rotation(selectedInstanceIndex, rotation[0], rotation[1], rotation[2]);
                     engine_set_instance_scale(selectedInstanceIndex, scale[0], scale[1], scale[2]);
                 }
+                
             }
         }
 

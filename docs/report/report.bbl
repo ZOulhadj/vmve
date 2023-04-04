@@ -84,6 +84,12 @@
 ``Blinn-phong reflection model,''
   \url{https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model}.
 
+\bibitem{font-awesome}
+``Font awesome,'' \url{https://fontawesome.com/}.
+
+\bibitem{imguizmo}
+``Imguizmo,'' \url{https://github.com/CedricGuillemet/ImGuizmo}.
+
 \bibitem{frustum_culling}
 ``High-level strategic tools for fast rendering,''
   \url{https://techpubs.jurassic.nl/manuals/nt/developer/Optimizer_PG/sgi_html/ch05.html}.
@@ -91,5 +97,12 @@
 \bibitem{bounding_boxes}
 ``Mdn web docs, 3d collision detection,''
   \url{https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection}.
+
+\bibitem{gltf}
+``gltf runtime 3d asset delivery,'' \url{https://www.khronos.org/gltf/}.
+
+\bibitem{cmake}
+``Cmake, open source and cross platform build system,''
+  \url{https://cmake.org/}.
 
 \end{thebibliography}

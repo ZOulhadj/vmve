@@ -199,7 +199,7 @@ static bool initialize_core(my_engine* engine, const char* name, int width, int 
     }
     engine->window->event_callback = event_callback;
 
-    engine->renderer = create_renderer(engine->window, buffer_mode::triple_buffering, vsync_mode::enabled);
+    engine->renderer = create_renderer(engine->window, buffer_mode::double_buffering, vsync_mode::enabled);
     if (!engine->renderer) {
         print_error("Failed to create renderer.\n");
         return false;

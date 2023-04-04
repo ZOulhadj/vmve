@@ -42,7 +42,7 @@ ImGuiContext* create_ui(const vk_renderer* renderer, VkRenderPass renderPass)
     init_info.PipelineCache   = nullptr;
     init_info.DescriptorPool  = renderer->descriptor_pool;
     init_info.Subpass         = 0;
-    init_info.MinImageCount   = 3;
+    init_info.MinImageCount   = 2;
     init_info.ImageCount      = get_swapchain_image_count();
     init_info.MSAASamples     = VK_SAMPLE_COUNT_1_BIT;
     init_info.Allocator       = nullptr;

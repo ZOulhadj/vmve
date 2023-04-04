@@ -174,7 +174,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\rendering\api\d3d11\d3d11.cpp" />
     <ClCompile Include="src\rendering\api\vulkan\vk_buffer.cpp" />
     <ClCompile Include="src\rendering\api\vulkan\vk_common.cpp" />
     <ClCompile Include="src\rendering\api\vulkan\vk_context.cpp" />
