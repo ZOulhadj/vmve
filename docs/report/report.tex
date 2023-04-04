@@ -70,6 +70,7 @@
 \newacronym{msvc}{MSVC}{Microsoft Visual Compiler}
 \newacronym{stl}{STL}{C++ Standard Template Library}
 \newacronym{lod}{LOD}{Level of Detail}
+\newacronym{ip}{IP}{Intellectual Property}
 
 % end of preamble
 
@@ -198,7 +199,7 @@ learning curve.
 
 Throughout this document, I present my final year project \gls{vmve}. An
 application developed in the domain of computer graphics and is a real-time 3D
-rendering application designed for creating virtual environments. The goal of
+rendering application designed for creating virtual environments. The aim of
 \gls{vmve} is not to replicate these existing applications but instead to
 purposely implement a small but specific subset of features that can be used for
 common graphics related tasks. This is beneficial for a number of reasons.
@@ -208,20 +209,46 @@ learning curve. The combination of these two benefits will make the application
 far more accessible to the general public.
 
 
-This report will discuss projects development from beginning
-to end. The report is structured such that it outlines each aspect of the
-project in the order that it happened. There are a total of five key sections to
-this report. The introduction, design, implementation, evaluation and finally,
-future work.
+\subsection{Overview}
+This report will discuss the projects development from beginning to end and is
+is structured such that it outlines each aspect of the project in chronological
+order. There are a total of five key sections to this report. The introduction,
+design, implementation, evaluation and finally, future work.
 
-The introduction will introduce the project and discuss what the report will
-cover, the projects purpose and key objectives. The report will then focus on
-the early stages of the project including design and requirements gathering. The
-main implementation section will follow this and provide detailed insights and
-technical implementation details into the project. In order to ensure that the
-project has met the requirements originally set out, an evaluation stage must
-undertaken. This will include discussions of various metrics as well as
-reviewing the project and understanding its strengths and shortcomings.
+The report will focus on the early stages of the project including design and
+requirements gathering. The main implementation section will follow this and
+provide detailed insights and technical implementation details into the project.
+In order to ensure that the project has met the requirements originally set out,
+an evaluation stage must undertaken. This will include discussions of various
+metrics as well as reviewing the project and understanding its strengths and
+shortcomings. Lastly, future work will outline additional work that needs to be
+undertaken and the projects overall future.
+
+\subsection{Aims and Objectives}
+As mentioned previously, the key aim of \gls{vmve} is to implement a subset of 
+specific rendering features which includes a 3D renderer, an visual editor
+and lastly a custom file format for digital assets.
+
+- Refer to milestone 2 document.
+- State the problem being
+addressed and why it is important to address it - large applications
+consist of many requirements such as powerful hardware, applications,
+steep learning curve.
+
+- Key stakeholders
+
+
+\begin{description}
+  \item[Lightweight] meaning application should be highly
+    efficient in regards to rendering and memory usage.
+  \item[Ease of use] so that users with no prior experience
+  \item[Useful]
+    Another vital requirement is that it should be useful
+\end{description}
+  
+  - Lightweight model viewer - No need to install heavy
+  applications such as Blender/Unity/Unreal - Easy to use - No technical
+  knowledge required
 
 
 \subsection{Goals and Requirements}
@@ -241,83 +268,65 @@ The last out of the three main goals is for the application to include its own
 model format that makes use of encryption to safely secure a users digital
 assets.
 
-\subsection{Aims and Objectives}
-- Refer to milestone 2 document.
+
+\subsection{Stakeholders}
+Users
 
 
-% The question therefore
-% is, what is the purpose of \gls{vmve} and what can it provide that other
-% existing applications cannot already do? To obtain the answer to these
-% questions, we must first be aware of the applications that already exist.
 
+\subsection{Legal}
+Legal considerations are important when distributing an application indented to
+be used in production. The project and subsequently the application must abide by
+local laws and regulations.
 
-- State the problem being
-addressed and why it is important to address it - large applications
-consist of many requirements such as powerful hardware, applications,
-steep learning curve.
+\subsubsection{License}
+\gls{vmve} is to be licensed under the MIT license \cite{mit}. This ensures the
+application can be used without restriction allowing for it to be copied,
+modified as well as distributed.
 
-- Key stakeholders
-
-
-\begin{description}
-  \item[Lightweight] meaning application should be highly
-    efficient in regards to rendering and memory usage.
-  \item[Ease of use] so that users with no prior experience
-  \item[Useful]
-    Another vital requirement is that it should be useful
-  \end{description}
-  
-  - Lightweight model viewer - No need to install heavy
-  applications such as Blender/Unity/Unreal - Easy to use - No technical
-  knowledge required
-
-
-\subsection{Milestones}
-Milestone 1
-Milestone 2
-Milestone 3
-Milestone 4
-Milestone 5
-Milestone 7
-Milestone 8
-
-
-\subsection{Considerations}
-
-\subsubsection{BSc Justification}
-This project incorporates many aspects taught throughout the BSc course.
-
-The \gls{vmve} project was also officially approved by my supervisors
-
-\subsubsection{Legal}
-
-\subsubsection{Social}
-
-\subsubsection{Ethical}
-Additionally, ethical considerations must be taken into account when developing
-the application. As mentioned earlier, \gls{vmve} will include the ability to secure
+\subsubsection{Security}
+Additionally, security must be taken into account when developing the
+application. As mentioned earlier, \gls{vmve} will include the ability to secure
 critical assets including 3D models. This will be achieved using encryption by
 making use of a secret key and initialization vector.
 
-We developing the system, it is therefore, important to ask questions such as
-``How will this data be kept secure?'' and ``Does the application store or send any
-private data?''. 
+When developing the system, it is therefore, important to ask questions such as
+``How will this data be kept secure?'' and ``Does the application store or send
+any private data?''. 
 
-\gls{vmve} throughout its development for this project will not contain any networking
-functionality. This ensures that all data remains local to the users device and
-thus, is kept secure.
+Throughout the development of this project, the application will not contain any
+networking functionality. This ensures that all data remains local to the
+application and users device.
 
+\subsubsection{Intellectual property}
+Given the application use case, it will be handling third party 3D assets such
+as importing and exporting. It is therefore, important that \gls{vmve} does not
+infringe upon the copyright of those who own the models. One such example
+includes not modifying the geometry data unless specified by the user. Since
+this will be a new application, a lot of the intricacies behind \gls{ip} needs
+to be further defined and take into account based on user feedback. \gls{vmve}
+will not modify any of the data being imported and only change the visual
+appearance based on several factors including rendering settings, translation,
+rotation and scaling. 
+
+\subsection{Social}
+\gls{vmve} must also take into account social considerations for those using the
+application to provide a consistent user experience.
+
+\subsubsection{Accessibility}
+Accessibility is a vital aspect that needs to be addressed throughout the
+development to ensure the application is useable for those with disabilities.
 
 \section{Technology Review}
 This project made use of various technologies at different stages throughout the
-development process and was a key aspect in helping achieve the final goal.
+development process and was a key aspect in helping achieve the final goal of
+developing a 3D model viewer and exporter.
 
 Technologies are categorized into two areas based on the impact they have on the
 project such as direct and indirect influence. A technology that has direct
-impact means that it assisted in some way the implementation of the project.
+impact means that it assisted in some way to the implementation of the project.
 Whereas, indirect impact are technologies that are used in some areas not
-directly responsible in the projects outcome.
-
+directly responsible in the projects outcome such as project management.
 
 \subsection{Tools}
 
@@ -455,7 +464,7 @@ in the limited time-frame that I have.
 
 Other language features that solidified by choice include, function overloading,
 templates, compile-time expressions, direct memory access and generally faster
-performance.
+performance compared to higher level languages such as Python and Javascript.
 
 \subsection{Rendering API} \label{rendering_api}
 One of the core aspects of \gls{vmve} is making use of the underlying hardware and
@@ -793,7 +802,7 @@ the core of the application and discussing each subsequent system.
 \end{figure}
 
 
-\subsubsection{Overview}
+\subsection{Overview}
 Figure \ref{fig:overview_pseudo_code} shows the general overview of the application and the various 
 stages that occur during initialization, runtime and shutting down.
 
@@ -1662,7 +1671,7 @@ look like with the addition of a ``Beta'' branch.
 \end{figure}
 
 \subsection{Reduce library dependencies}
-VMVE makes use of several libraries which allows specific functionality to be
+\gls{vmve} makes use of several libraries which allows specific functionality to be
 added quickly. This is ideal given the projects time constrains and
 requirements. However, going forward the aim will be to reduce the number of
 external libraries being used.
@@ -1674,15 +1683,29 @@ therefore, more control, smaller
 -- Replace libraries with a custom solution --
 Lower footprint as only the required features are implemented.
 
+\subsection{Accessibility}
+Another aspect that needs to be addressed in the near future is improved
+accessibility. The application includes some features that addresses this such
+as icons, a tutorial, documentation as well as additional information. However,
+some of the features that \gls{vmve} does not include is taking into account
+color blindness and text to speech. The reason for this is that these are more
+complex topics and required additional time and research to ensure a proper 
+implementation is released.
+
+Another task that must be considered is localization. \gls{vmve} only supports
+the English language and has no way of adapting to other languages. Therefore,
+the internal structure of the application must be redesigned to allow for
+other languages to be added and thus, improving accessibility.
+
 \section{Conclusion}
 
-VMVE has been designed to be a platform in which users are provided easy to use
+\gls{vmve} has been designed to be a platform in which users are provided easy to use
 3D graphics tools without needing to know the complex details that come with
 that. This allows users to worry less about technicalities and more about their
-specific needs and requirements when using VMVE.
+specific needs and requirements when using \gls{vmve}.
 
 This has been a long journey that has presented me with various challenges
-throughout the development of VMVE.
+throughout the development of \gls{vmve}.
 
 
 \clearpage
@@ -1697,10 +1720,6 @@ throughout the development of VMVE.
 
 
 \section{Appendices}
-Code snippets, images and other resources
-
-
-
 \begin{figure}[ht]
   \centering
   \begin{lstlisting}[language=C++]
