@@ -57,40 +57,40 @@
 \contentsline {subsubsection}{\numberline {4.4.3}Load Model Window}{28}{subsubsection.4.4.3}%
 \contentsline {subsubsection}{\numberline {4.4.4}Export Model Window}{29}{subsubsection.4.4.4}%
 \contentsline {subsubsection}{\numberline {4.4.5}Settings Window}{29}{subsubsection.4.4.5}%
-\contentsline {subsubsection}{\numberline {4.4.6}Gizmo}{30}{subsubsection.4.4.6}%
-\contentsline {subsection}{\numberline {4.5}Logging system}{30}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}Encryption System}{30}{subsection.4.6}%
-\contentsline {subsection}{\numberline {4.7}Custom File Format}{30}{subsection.4.7}%
+\contentsline {subsubsection}{\numberline {4.4.6}Object gizmo}{30}{subsubsection.4.4.6}%
+\contentsline {subsection}{\numberline {4.5}Logging system}{31}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Encryption System}{31}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Custom File Format}{31}{subsection.4.7}%
 \contentsline {subsection}{\numberline {4.8}Distribution}{31}{subsection.4.8}%
 \contentsline {subsubsection}{\numberline {4.8.1}Versions}{31}{subsubsection.4.8.1}%
-\contentsline {subsubsection}{\numberline {4.8.2}Website}{31}{subsubsection.4.8.2}%
-\contentsline {subsubsection}{\numberline {4.8.3}Example models}{31}{subsubsection.4.8.3}%
-\contentsline {subsubsection}{\numberline {4.8.4}Documentation}{31}{subsubsection.4.8.4}%
+\contentsline {subsubsection}{\numberline {4.8.2}Website}{32}{subsubsection.4.8.2}%
+\contentsline {subsubsection}{\numberline {4.8.3}Example models}{32}{subsubsection.4.8.3}%
+\contentsline {subsubsection}{\numberline {4.8.4}Documentation}{33}{subsubsection.4.8.4}%
 \contentsline {section}{\numberline {5}Evaluation}{33}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Distribution}{33}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Programming language}{33}{subsection.5.2}%
-\contentsline {subsection}{\numberline {5.3}Time Management}{33}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.1}Distribution}{34}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Programming language}{34}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Time Management}{34}{subsection.5.3}%
 \contentsline {subsection}{\numberline {5.4}Performance}{34}{subsection.5.4}%
-\contentsline {subsubsection}{\numberline {5.4.1}Compilation Performance}{34}{subsubsection.5.4.1}%
+\contentsline {subsubsection}{\numberline {5.4.1}Compilation Performance}{35}{subsubsection.5.4.1}%
 \contentsline {subsubsection}{\numberline {5.4.2}Runtime Performance}{35}{subsubsection.5.4.2}%
-\contentsline {subsubsection}{\numberline {5.4.3}Hardware}{35}{subsubsection.5.4.3}%
-\contentsline {subsection}{\numberline {5.5}User Feedback}{35}{subsection.5.5}%
-\contentsline {section}{\numberline {6}Related Work}{36}{section.6}%
-\contentsline {section}{\numberline {7}Reflection}{36}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Choice of rendering API}{36}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Development logs}{37}{subsection.7.2}%
-\contentsline {section}{\numberline {8}Future Work}{37}{section.8}%
-\contentsline {subsection}{\numberline {8.1}Rendering}{37}{subsection.8.1}%
-\contentsline {subsubsection}{\numberline {8.1.1}Multiple rendering APIs}{37}{subsubsection.8.1.1}%
-\contentsline {subsubsection}{\numberline {8.1.2}Frustum Culling}{37}{subsubsection.8.1.2}%
+\contentsline {subsubsection}{\numberline {5.4.3}Hardware}{36}{subsubsection.5.4.3}%
+\contentsline {subsection}{\numberline {5.5}User Feedback}{36}{subsection.5.5}%
+\contentsline {section}{\numberline {6}Related Work}{37}{section.6}%
+\contentsline {section}{\numberline {7}Reflection}{37}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Choice of rendering API}{37}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Development logs}{38}{subsection.7.2}%
+\contentsline {section}{\numberline {8}Future Work}{38}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Rendering}{38}{subsection.8.1}%
+\contentsline {subsubsection}{\numberline {8.1.1}Multiple rendering APIs}{38}{subsubsection.8.1.1}%
+\contentsline {subsubsection}{\numberline {8.1.2}Frustum Culling}{38}{subsubsection.8.1.2}%
 \contentsline {subsubsection}{\numberline {8.1.3}Spatial Acceleration Structures}{39}{subsubsection.8.1.3}%
-\contentsline {subsubsection}{\numberline {8.1.4}glTF Support}{40}{subsubsection.8.1.4}%
-\contentsline {subsection}{\numberline {8.2}Cross Platform}{40}{subsection.8.2}%
-\contentsline {subsection}{\numberline {8.3}Networking Support}{41}{subsection.8.3}%
+\contentsline {subsubsection}{\numberline {8.1.4}glTF Support}{42}{subsubsection.8.1.4}%
+\contentsline {subsection}{\numberline {8.2}Cross Platform}{42}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Networking Support}{42}{subsection.8.3}%
 \contentsline {subsection}{\numberline {8.4}Encryption}{42}{subsection.8.4}%
 \contentsline {subsection}{\numberline {8.5}Version Control}{42}{subsection.8.5}%
-\contentsline {subsection}{\numberline {8.6}Reduce library dependencies}{42}{subsection.8.6}%
+\contentsline {subsection}{\numberline {8.6}Reduce library dependencies}{43}{subsection.8.6}%
 \contentsline {subsection}{\numberline {8.7}Accessibility}{43}{subsection.8.7}%
-\contentsline {section}{\numberline {9}Conclusion}{43}{section.9}%
-\contentsline {section}{\numberline {10}References}{45}{section.10}%
-\contentsline {section}{\numberline {11}Appendices}{46}{section.11}%
+\contentsline {section}{\numberline {9}Conclusion}{44}{section.9}%
+\contentsline {section}{\numberline {10}References}{46}{section.10}%
+\contentsline {section}{\numberline {11}Appendices}{47}{section.11}%

@@ -1213,7 +1213,7 @@ the vast of amount of data stored within the font.
   \label{fig:settings_window}
 \end{figure}
 
-\subsubsection{Gizmo}
+\subsubsection{Object gizmo}
 An additional feature that is part of the user interface is the gizmo. This is a
 visualization of one of three operations is the main method of interaction that
 a user has with an object and is used to specify the exact location and
@@ -1230,9 +1230,24 @@ respectively.
 This functionality is implemented by taking the matrix transformation of an
 object and feeding that information to ImGuizmo \cite{imguizmo}. It will then
 perform the necessary mathematical calculations to convert from the objects
-world space to screen space. In other words, no matter where is the virtual
+world space to screen space. In other words, no matter where in the virtual
 environment the object is located, it will always be shown relative to the users
-screen.
+screen. A small code snippet can be seen below \ref{fig:imguizmo_code} where
+\(M\) represents the model in the \(MVP\) projection.
+
+
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=C++]
+    const auto& operation = static_cast<ImGuizmo::OPERATION>(guizmo_operation);
+    const auto& mode = ImGuizmo::MODE::WORLD;
+    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(x, y, viewport_x, viewport_y);
+    ImGuizmo::Manipulate(view, proj, operation, mode, m);
+  \end{lstlisting}
+  \caption{ImGuizmo world to screen space}
+  \label{fig:imguizmo_code}
+\end{figure}
 
 
 
@@ -1240,6 +1255,13 @@ screen.
 - Buffer based logging system
 - buffer is preallocated ahead of time to increase performance (must be tested)
 - once buffer is filled, the oldest log message is deleted
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/logging.png}
+  \caption{Logging FIFO system}
+  \label{fig:logging_system}
+\end{figure}
 
 \subsection{Encryption System}
 -- AES (key and initialization vector)
@@ -1258,17 +1280,21 @@ screen.
 - Windows only currently
 
 \subsubsection{Versions}
-VMVE follows the major, minor and patch system of versioning and is used as
-follows [Major].[Minor].[Patch]. The use of versions is important in
-differentiating between VMVE releases. With each new versions comes new features
-as well as bug fixes that aim to improve the software over time. 
+\gls{vmve} follows the major, minor and patch system of versioning and is used
+as follows [Major].[Minor].[Patch]. The use of versions is important in
+differentiating between VMVE releases. Each new version of the application comes
+new features as well as bug fixes that aim to improve the software over time.
+Due to the rapid development of new features and functionaility, backwards
+compatibility cannot be guaranteed. The current official release of \gls{vmve}
+is v0.0.4.
 
 \subsubsection{Website}
-Alongside the application, a website was created as a platform for easily distributing VMVE.
-It includes a features section that showcases and gives users a preview of the application
-through the use of images and videos. Futhermore, a download link is provided
-giving users an easy way of obtaining the executable without needing to
-understand the technicalities of GitHub as it is designed with programmers in mind.
+Alongside the application, a website was created as a platform for easily
+distributing the application. It includes a features section that showcases and
+gives users a preview of the application through the use of images and videos.
+Futhermore, a download link is provided giving users an easy way of obtaining
+the executable without needing to understand the technicalities of GitHub as it
+is designed with programmers in mind.
 
 In regards to downloads, there are two types. The first is an active development
 version which is regularly updated and acts as a beta release for versions that
