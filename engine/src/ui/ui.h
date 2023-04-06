@@ -5,7 +5,7 @@
 #include "rendering/api/vulkan/vk_renderer.h"
 #include "events/event.h"
 
-ImGuiContext* create_ui(const vk_renderer* renderer, VkRenderPass renderPass);
+ImGuiContext* create_ui(const Vk_Renderer* renderer, VkRenderPass renderPass);
 void create_font_textures();
 void destroy_ui(ImGuiContext* context);
 

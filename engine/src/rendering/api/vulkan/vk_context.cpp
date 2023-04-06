@@ -325,7 +325,7 @@ bool create_vulkan_context(vk_context& context,
     std::vector<const char*>& requested_extensions,
     const std::vector<const char*>& requested_device_extensions,
     const VkPhysicalDeviceFeatures& requested_gpu_features,
-    const engine_window* window)
+    const Engine_Window* window)
 {
     if (volkInitialize() != VK_SUCCESS) {
         print_log("Failed to load Vulkan loader. Is Vulkan installed?\n");

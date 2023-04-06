@@ -62,6 +62,10 @@
 \bibitem{cryptopp}
 ``Crypto++ library,'' \url{https://www.cryptopp.com/}.
 
+\bibitem{cereal}
+``cereal - a c++11 library for serialization,''
+  \url{https://uscilab.github.io/cereal/}.
+
 \bibitem{cpp-guidelines}
 ``C++ core guidelines,''
   \url{https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines}.

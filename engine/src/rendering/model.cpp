@@ -38,7 +38,7 @@ static bool load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::f
         const auto it = std::find(uniques.begin(), uniques.end(), paths[i]);
         
         if (it == uniques.end()) {
-            std::optional<vk_image> texture = create_texture(paths[i].string());
+            std::optional<Vk_Image> texture = create_texture(paths[i].string());
 
             // TODO: Should return nullptr instead of object
             if (!texture.has_value())
@@ -72,7 +72,7 @@ static void create_fallback_mesh_texture(Model& model,
     const auto it = std::find(uniques.begin(), uniques.end(), path);
 
     if (it == uniques.end()) {
-        vk_image image = create_texture(texture, 1, 1, VK_FORMAT_R8G8B8A8_SRGB);
+        Vk_Image image = create_texture(texture, 1, 1, VK_FORMAT_R8G8B8A8_SRGB);
         model.unique_textures.push_back(image);
         uniques.push_back(path);
         index = model.unique_textures.size() - 1;

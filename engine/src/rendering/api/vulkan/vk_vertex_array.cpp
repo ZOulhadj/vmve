@@ -13,8 +13,8 @@ vk_vertex_array create_vertex_array(const std::vector<vertex>& vertices, const s
 
     // Create a temporary "staging" buffer that will be used to copy the data
     // from CPU memory over to GPU memory.
-    vk_buffer vertexStagingBuffer = create_staging_buffer((void*)vertices.data(), vertices_size);
-    vk_buffer indexStagingBuffer  = create_staging_buffer((void*)indices.data(), indices_size);
+    Vk_Buffer vertexStagingBuffer = create_staging_buffer((void*)vertices.data(), vertices_size);
+    Vk_Buffer indexStagingBuffer  = create_staging_buffer((void*)indices.data(), indices_size);
 
     vertexArray.vertex_buffer = create_gpu_buffer(vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     vertexArray.index_buffer  = create_gpu_buffer(indices_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);

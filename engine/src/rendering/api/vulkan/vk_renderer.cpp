@@ -6,7 +6,7 @@
 
 #include "vk_descriptor_sets.h"
 
-static vk_renderer* g_r = nullptr;
+static Vk_Renderer* g_r = nullptr;
 static vk_context* g_rc  = nullptr;
 
 static buffer_mode g_buffering{};
@@ -182,7 +182,7 @@ static vk_swapchain create_swapchain()
         //
         // Also, since all color images have the same format there will be a format for
         // each image and a swapchain global format for them.
-        vk_image& image = swapchain.images[i];
+        Vk_Image& image = swapchain.images[i];
 
         image.handle = images[i];
         image.view   = create_image_views(image.handle, swapchain_info.imageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 1);
@@ -259,7 +259,7 @@ static void destroy_command_pool()
     vkDestroyCommandPool(g_rc->device->device, g_cmd_pool, nullptr);
 }
 
-void vk_pipeline::enable_vertex_binding(const vk_vertex_binding<vertex>& binding)
+void Vk_Pipeline::enable_vertex_binding(const vk_vertex_binding<vertex>& binding)
 {
     // TODO: Add support for multiple bindings
     for (std::size_t i = 0; i < 1; ++i) {
@@ -293,7 +293,7 @@ void vk_pipeline::enable_vertex_binding(const vk_vertex_binding<vertex>& binding
 }
 
 
-void vk_pipeline::set_shader_pipeline(std::vector<vk_shader> shaders)
+void Vk_Pipeline::set_shader_pipeline(std::vector<vk_shader> shaders)
 {
     // TODO: Ensure only unique shader types are used. For example we cannot
     // have two vertex shaders in the same pipeline.
@@ -309,14 +309,14 @@ void vk_pipeline::set_shader_pipeline(std::vector<vk_shader> shaders)
 }
 
 
-void vk_pipeline::set_input_assembly(VkPrimitiveTopology topology, bool primitiveRestart /*= false*/)
+void Vk_Pipeline::set_input_assembly(VkPrimitiveTopology topology, bool primitiveRestart /*= false*/)
 {
     m_InputAssemblyInfo = VkPipelineInputAssemblyStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
     m_InputAssemblyInfo.topology = topology;
     m_InputAssemblyInfo.primitiveRestartEnable = primitiveRestart;
 }
 
-void vk_pipeline::set_rasterization(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace)
+void Vk_Pipeline::set_rasterization(VkPolygonMode polygonMode, VkCullModeFlags cullMode, VkFrontFace frontFace)
 {
     m_RasterizationInfo = VkPipelineRasterizationStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
     m_RasterizationInfo.depthClampEnable = VK_FALSE;
@@ -332,7 +332,7 @@ void vk_pipeline::set_rasterization(VkPolygonMode polygonMode, VkCullModeFlags c
 }
 
 
-void vk_pipeline::enable_depth_stencil(VkCompareOp compare)
+void Vk_Pipeline::enable_depth_stencil(VkCompareOp compare)
 {
     m_DepthStencilInfo = VkPipelineDepthStencilStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
     m_DepthStencilInfo->depthTestEnable = VK_TRUE;
@@ -344,7 +344,7 @@ void vk_pipeline::enable_depth_stencil(VkCompareOp compare)
     m_DepthStencilInfo->stencilTestEnable = VK_FALSE;
 }
 
-void vk_pipeline::enable_multisampling(VkSampleCountFlagBits samples)
+void Vk_Pipeline::enable_multisampling(VkSampleCountFlagBits samples)
 {
     m_MultisampleInfo = VkPipelineMultisampleStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
     m_MultisampleInfo->sampleShadingEnable = VK_TRUE;
@@ -352,7 +352,7 @@ void vk_pipeline::enable_multisampling(VkSampleCountFlagBits samples)
 }
 
 
-void vk_pipeline::set_color_blend(uint32_t blendCount)
+void Vk_Pipeline::set_color_blend(uint32_t blendCount)
 {
     blends.resize(blendCount);
 
@@ -386,7 +386,7 @@ void vk_pipeline::set_color_blend(uint32_t blendCount)
     m_BlendInfo.blendConstants[3] = 0.0f;
 }
 
-void vk_pipeline::create_pipeline()
+void Vk_Pipeline::create_pipeline()
 {
     // Default states that are present in all pipelines
     VkPipelineVertexInputStateCreateInfo defaultVertex{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
@@ -446,7 +446,7 @@ void vk_pipeline::create_pipeline()
 
 
 
-static void create_framebuffer(vk_render_pass& rp)
+static void create_framebuffer(Vk_Render_Pass& rp)
 {
     rp.handle.resize(get_swapchain_image_count());
 
@@ -475,7 +475,7 @@ static void create_framebuffer(vk_render_pass& rp)
     }
 }
 
-static void destroy_framebuffer(vk_render_pass& rp)
+static void destroy_framebuffer(Vk_Render_Pass& rp)
 {
     for (std::size_t i = 0; i < rp.handle.size(); ++i) {
         for (std::size_t j = 0; j < rp.attachments.size(); ++j) {
@@ -488,7 +488,7 @@ static void destroy_framebuffer(vk_render_pass& rp)
 }
 
 
-void add_framebuffer_attachment(vk_render_pass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent)
+void add_framebuffer_attachment(Vk_Render_Pass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent)
 {
     // Check if color or depth
     vk_framebuffer_attachment attachment{};
@@ -508,7 +508,7 @@ void add_framebuffer_attachment(vk_render_pass& fb, VkImageUsageFlags usage, VkF
     fb.height = extent.height;
 }
 
-void create_offscreen_render_pass(vk_render_pass& rp)
+void create_offscreen_render_pass(Vk_Render_Pass& rp)
 {
     // attachment descriptions
     std::vector<VkAttachmentDescription> descriptions;
@@ -595,7 +595,7 @@ void create_offscreen_render_pass(vk_render_pass& rp)
     create_framebuffer(rp);
 }
 
-void create_composite_render_pass(vk_render_pass& rp)
+void create_composite_render_pass(Vk_Render_Pass& rp)
 {
     // attachment descriptions
     std::vector<VkAttachmentDescription> descriptions;
@@ -674,7 +674,7 @@ void create_composite_render_pass(vk_render_pass& rp)
 }
 
 
-void create_skybox_render_pass(vk_render_pass& rp)
+void create_skybox_render_pass(Vk_Render_Pass& rp)
 {
     // attachment descriptions
     std::vector<VkAttachmentDescription> descriptions;
@@ -753,7 +753,7 @@ void create_skybox_render_pass(vk_render_pass& rp)
     create_framebuffer(rp);
 }
 
-void create_ui_render_pass(vk_render_pass& rp)
+void create_ui_render_pass(Vk_Render_Pass& rp)
 {
     // attachment descriptions
     std::vector<VkAttachmentDescription> descriptions;
@@ -833,7 +833,7 @@ void create_ui_render_pass(vk_render_pass& rp)
     create_framebuffer(rp);
 }
 
-void destroy_render_pass(vk_render_pass& fb)
+void destroy_render_pass(Vk_Render_Pass& fb)
 {
     destroy_framebuffer(fb);
 
@@ -841,7 +841,7 @@ void destroy_render_pass(vk_render_pass& fb)
 }
 
 
-void resize_framebuffer(vk_render_pass& fb, VkExtent2D extent)
+void resize_framebuffer(Vk_Render_Pass& fb, VkExtent2D extent)
 {
     std::vector<vk_framebuffer_attachment> old_attachments = fb.attachments;
 
@@ -888,7 +888,7 @@ void end_command_buffer(const std::vector<VkCommandBuffer>& cmdBuffer)
 
 
 void begin_render_pass(const std::vector<VkCommandBuffer>& cmdBuffer, 
-    const vk_render_pass& fb,
+    const Vk_Render_Pass& fb,
     const VkClearColorValue& clear_color,
     const VkClearDepthStencilValue& depth_stencil)
 {
@@ -1053,11 +1053,11 @@ static VkBool32 debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT       mess
 
 
 
-vk_renderer* create_renderer(const engine_window* window, buffer_mode buffering_mode, vsync_mode sync_mode)
+Vk_Renderer* create_renderer(const Engine_Window* window, buffer_mode buffering_mode, vsync_mode sync_mode)
 {
     print_log("Initializing Vulkan renderer\n");
 
-    vk_renderer* renderer = new vk_renderer();
+    Vk_Renderer* renderer = new Vk_Renderer();
 
     // NOTE: layers and extensions lists are non-const as the renderer might add
     // additional layers/extensions based on system configuration.
@@ -1132,7 +1132,7 @@ vk_renderer* create_renderer(const engine_window* window, buffer_mode buffering_
     return renderer;
 }
 
-void destroy_renderer(vk_renderer* renderer)
+void destroy_renderer(Vk_Renderer* renderer)
 {
     print_log("Terminating Vulkan renderer\n");
 
@@ -1186,7 +1186,7 @@ void submit_to_gpu(const std::function<void(VkCommandBuffer)>& submit_func)
 
 
 
-vk_renderer* get_vulkan_renderer()
+Vk_Renderer* get_vulkan_renderer()
 {
     return g_r;
 }
@@ -1340,7 +1340,7 @@ void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers,
     vkCmdBindDescriptorSets(buffers[g_buffer_index], VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &descriptorSets[g_buffer_index], static_cast<uint32_t>(sz.size()), sz.data());
 }
 
-void bind_pipeline(std::vector<VkCommandBuffer>& buffers, const vk_pipeline& pipeline)
+void bind_pipeline(std::vector<VkCommandBuffer>& buffers, const Vk_Pipeline& pipeline)
 {
     vkCmdBindPipeline(buffers[g_buffer_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_Pipeline);
 }

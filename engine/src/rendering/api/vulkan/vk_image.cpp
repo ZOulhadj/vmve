@@ -112,9 +112,9 @@ VkImageView create_image_views(VkImage image, VkFormat format, VkImageUsageFlags
     return view;
 }
 
-vk_image create_image(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage, uint32_t mip_levels)
+Vk_Image create_image(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage, uint32_t mip_levels)
 {
-    vk_image image{};
+    Vk_Image image{};
 
     const vk_context& rc = get_vulkan_context();
 
@@ -143,7 +143,7 @@ vk_image create_image(VkExtent2D extent, VkFormat format, VkImageUsageFlags usag
 }
 
 
-void destroy_image(vk_image& image)
+void destroy_image(Vk_Image& image)
 {
     const vk_context& rc = get_vulkan_context();
 
@@ -152,7 +152,7 @@ void destroy_image(vk_image& image)
     vmaDestroyImage(rc.allocator, image.handle, image.allocation);
 }
 
-void destroy_images(std::vector<vk_image>& images)
+void destroy_images(std::vector<Vk_Image>& images)
 {
     for (auto& image : images) {
         destroy_image(image);
@@ -165,9 +165,9 @@ void destroy_images(std::vector<vk_image>& images)
 
 
 
-std::vector<vk_image> create_color_images(VkExtent2D size)
+std::vector<Vk_Image> create_color_images(VkExtent2D size)
 {
-    std::vector<vk_image> images(get_swapchain_image_count());
+    std::vector<Vk_Image> images(get_swapchain_image_count());
 
     for (auto& image : images)
         image = create_image(size, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -175,7 +175,7 @@ std::vector<vk_image> create_color_images(VkExtent2D size)
     return images;
 }
 
-vk_image create_depth_image(VkExtent2D size)
+Vk_Image create_depth_image(VkExtent2D size)
 {
     return create_image(size, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
@@ -265,14 +265,14 @@ static void generate_mip_maps(VkImage image, uint32_t width, uint32_t height, ui
 }
 
 
-vk_image create_texture(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
+Vk_Image create_texture(unsigned char* texture, uint32_t width, uint32_t height, VkFormat format)
 {
-    vk_image buffer{};
+    Vk_Image buffer{};
 
     const vk_context& rc = get_vulkan_context();
 
     // We do "* 4" because each pixel has four channels red, green, blue and alpha
-    vk_buffer staging_buffer = create_staging_buffer(texture, (width * height) * 4);
+    Vk_Buffer staging_buffer = create_staging_buffer(texture, (width * height) * 4);
 
     const uint32_t mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
@@ -338,9 +338,9 @@ vk_image create_texture(unsigned char* texture, uint32_t width, uint32_t height,
 }
 
 
-std::optional<vk_image> create_texture(const std::filesystem::path& path, bool flip_y, VkFormat format)
+std::optional<Vk_Image> create_texture(const std::filesystem::path& path, bool flip_y, VkFormat format)
 {
-    vk_image buffer{};
+    Vk_Image buffer{};
 
     // Load the texture from the file system.
     int width, height, channels;

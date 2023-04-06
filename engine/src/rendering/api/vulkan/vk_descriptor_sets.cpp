@@ -59,7 +59,7 @@ void destroy_descriptor_layout(VkDescriptorSetLayout layout)
 }
 
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout) {
-    const vk_renderer* r = get_vulkan_renderer();
+    const Vk_Renderer* r = get_vulkan_renderer();
     const vk_context& rc = get_vulkan_context();
 
     VkDescriptorSet descriptor_sets{};
@@ -74,7 +74,7 @@ VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout layout) {
 }
 
 std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layout) {
-    const vk_renderer* r = get_vulkan_renderer();
+    const Vk_Renderer* r = get_vulkan_renderer();
     const vk_context& rc = get_vulkan_context();
 
     std::vector<VkDescriptorSet> descriptor_sets(get_swapchain_image_count());
@@ -93,7 +93,7 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(VkDescriptorSetLayout layo
 
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
     const VkDescriptorSetLayoutBinding& binding,
-    vk_buffer& buffer,
+    Vk_Buffer& buffer,
     std::size_t size)
 {
     const vk_context& rc = get_vulkan_context();
@@ -119,7 +119,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
 
 void update_binding(VkDescriptorSet descriptor_set,
     const VkDescriptorSetLayoutBinding& binding,
-    vk_image& buffer,
+    Vk_Image& buffer,
     VkImageLayout layout,
     VkSampler sampler)
 {
@@ -142,7 +142,7 @@ void update_binding(VkDescriptorSet descriptor_set,
 
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
     const VkDescriptorSetLayoutBinding& binding,
-    vk_image& buffer,
+    Vk_Image& buffer,
     VkImageLayout layout,
     VkSampler sampler) {
     const vk_context& rc = get_vulkan_context();
@@ -166,7 +166,7 @@ void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets,
 
 void update_binding(const std::vector<VkDescriptorSet>& descriptor_sets, 
                     const VkDescriptorSetLayoutBinding& binding,
-                    std::vector<vk_image>& buffer, 
+                    std::vector<Vk_Image>& buffer, 
                     VkImageLayout layout, 
                     VkSampler sampler)
 {

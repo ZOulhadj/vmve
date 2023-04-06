@@ -19,7 +19,7 @@ struct vk_swapchain
 {
     VkSwapchainKHR handle;
 
-    std::vector<vk_image> images;
+    std::vector<Vk_Image> images;
 };
 
 struct vk_frame
@@ -38,11 +38,11 @@ struct vk_frame
 struct vk_framebuffer_attachment
 {
     // TEMP: Can this be a single image instead of multiple frames?
-    std::vector<vk_image> image;
+    std::vector<Vk_Image> image;
     VkImageUsageFlags usage;
 };
 
-struct vk_render_pass
+struct Vk_Render_Pass
 {
     std::vector<VkFramebuffer> handle;
     std::vector<vk_framebuffer_attachment> attachments;
@@ -87,7 +87,7 @@ struct vk_vertex_binding
 
 // Set... Functions are required
 // Enable... Functions are optional
-struct vk_pipeline
+struct Vk_Pipeline
 {
     void enable_vertex_binding(const vk_vertex_binding<vertex>& binding);
     void set_shader_pipeline(std::vector<vk_shader> shaders);
@@ -102,7 +102,7 @@ struct vk_pipeline
 
     VkPipelineLayout m_Layout;
     VkPipeline m_Pipeline;
-    vk_render_pass* m_RenderPass;
+    Vk_Render_Pass* m_RenderPass;
 
     // temp
     std::vector<VkVertexInputBindingDescription> bindingDescriptions;
@@ -125,7 +125,7 @@ struct vk_upload_context
     VkCommandBuffer CmdBuffer;
 };
 
-struct vk_renderer
+struct Vk_Renderer
 {
     vk_context ctx;
 
@@ -137,12 +137,12 @@ struct vk_renderer
     VkDebugUtilsMessengerEXT messenger;
 };
 
-vk_renderer* create_renderer(const engine_window* window, buffer_mode buffering_mode, vsync_mode sync_mode);
-void destroy_renderer(vk_renderer* renderer);
+Vk_Renderer* create_renderer(const Engine_Window* window, buffer_mode buffering_mode, vsync_mode sync_mode);
+void destroy_renderer(Vk_Renderer* renderer);
 
 void submit_to_gpu(const std::function<void(VkCommandBuffer)>& submit_func);
 
-vk_renderer* get_vulkan_renderer();
+Vk_Renderer* get_vulkan_renderer();
 vk_context& get_vulkan_context();
 uint32_t get_frame_buffer_index(); // in order
 uint32_t get_frame_image_index(); // out of order
@@ -150,16 +150,16 @@ uint32_t get_swapchain_image_count();
 
 void recreate_swapchain(buffer_mode buffer_mode, vsync_mode vsync);
 
-void add_framebuffer_attachment(vk_render_pass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
+void add_framebuffer_attachment(Vk_Render_Pass& fb, VkImageUsageFlags usage, VkFormat format, VkExtent2D extent);
 
-void create_offscreen_render_pass(vk_render_pass& rp);
-void create_composite_render_pass(vk_render_pass& rp);
-void create_skybox_render_pass(vk_render_pass& rp);
-void create_ui_render_pass(vk_render_pass& rp);
+void create_offscreen_render_pass(Vk_Render_Pass& rp);
+void create_composite_render_pass(Vk_Render_Pass& rp);
+void create_skybox_render_pass(Vk_Render_Pass& rp);
+void create_ui_render_pass(Vk_Render_Pass& rp);
 
-void destroy_render_pass(vk_render_pass& fb);
+void destroy_render_pass(Vk_Render_Pass& fb);
 
-void resize_framebuffer(vk_render_pass& fb, VkExtent2D extent);
+void resize_framebuffer(Vk_Render_Pass& fb, VkExtent2D extent);
 
 
 std::vector<VkCommandBuffer> create_command_buffers();
@@ -169,7 +169,7 @@ void begin_command_buffer(const std::vector<VkCommandBuffer>& cmd_buffer);
 void end_command_buffer(const std::vector<VkCommandBuffer>& cmd_buffer);
 
 void begin_render_pass(const std::vector<VkCommandBuffer>& cmd_buffer,
-    const vk_render_pass& fb,
+    const Vk_Render_Pass& fb,
     const VkClearColorValue& clear_color = { 0.0f, 0.0f, 0.0f, 1.0f },
     const VkClearDepthStencilValue& depth_stencil = { 0.0f, 0 });
 void end_render_pass(std::vector<VkCommandBuffer>& buffers);
@@ -189,7 +189,7 @@ void bind_descriptor_set(std::vector<VkCommandBuffer>& buffers,
     VkPipelineLayout layout, 
     const std::vector<VkDescriptorSet>& descriptorSets, 
     std::vector<uint32_t> sizes);
-void bind_pipeline(std::vector<VkCommandBuffer>& buffers, const vk_pipeline& pipeline);
+void bind_pipeline(std::vector<VkCommandBuffer>& buffers, const Vk_Pipeline& pipeline);
 void render(const std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, uint32_t index_count, const glm::mat4& matrix);
 void render(const std::vector<VkCommandBuffer>& buffers, uint32_t index_count);
 void render(const std::vector<VkCommandBuffer>& buffers);
@@ -200,7 +200,7 @@ void wait_for_gpu();
 
 const auto attachments_to_images = [](const std::vector<vk_framebuffer_attachment>& attachments, uint32_t index)
 {
-    std::vector<vk_image> images(attachments[index].image.size());
+    std::vector<Vk_Image> images(attachments[index].image.size());
 
     for (std::size_t i = 0; i < images.size(); ++i) {
         images[i] = attachments[index].image[i];

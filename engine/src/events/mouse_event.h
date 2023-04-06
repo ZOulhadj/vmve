@@ -3,7 +3,7 @@
 
 #include "event.h"
 
-struct mouse_button_event : public basic_event
+struct mouse_button_event : public Basic_Event
 {
     int get_button_code() const { return m_ButtonCode; }
 
@@ -35,7 +35,7 @@ struct mouse_button_released_event : public mouse_button_event
 };
 
 
-struct mouse_moved_event : public basic_event
+struct mouse_moved_event : public Basic_Event
 {
     mouse_moved_event(double x, double y)
         : m_XPos(x), m_YPos(y)
@@ -51,22 +51,22 @@ private:
     double m_YPos;
 };
 
-struct mouse_entered_event : public basic_event
+struct mouse_entered_event : public Basic_Event
 {
     EVENT_CLASS_TYPE(mouse_entered);
 };
 
-struct mouse_left_event : public basic_event
+struct mouse_left_event : public Basic_Event
 {
     EVENT_CLASS_TYPE(mouse_left);
 };
 
-struct mouse_scrolled_up_event : public basic_event
+struct mouse_scrolled_up_event : public Basic_Event
 {
     EVENT_CLASS_TYPE(mouse_scrolled_up);
 };
 
-struct mouse_scrolled_down_event : public basic_event
+struct mouse_scrolled_down_event : public Basic_Event
 {
     EVENT_CLASS_TYPE(mouse_scrolled_down);
 };

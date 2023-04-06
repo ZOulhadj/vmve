@@ -5,7 +5,7 @@
 
 struct event_dispatcher
 {
-    event_dispatcher(basic_event& e)
+    event_dispatcher(Basic_Event& e)
         : m_Event(e)
     {}
 
@@ -20,7 +20,7 @@ struct event_dispatcher
     }
 
 private:
-    basic_event& m_Event;
+    Basic_Event& m_Event;
 };
 
 #endif

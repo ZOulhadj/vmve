@@ -19,7 +19,7 @@ struct Material
 {
     VkDescriptorSet descriptor_set = nullptr;
 
-    std::vector<vk_image> textures;
+    std::vector<Vk_Image> textures;
 
 };
 

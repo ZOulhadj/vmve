@@ -9,7 +9,7 @@
 
 #include "logging.h"
 
-ImGuiContext* create_ui(const vk_renderer* renderer, VkRenderPass renderPass)
+ImGuiContext* create_ui(const Vk_Renderer* renderer, VkRenderPass renderPass)
 {
     print_log("Initializing user interface\n");
 

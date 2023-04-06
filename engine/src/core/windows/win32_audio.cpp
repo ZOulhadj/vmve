@@ -27,13 +27,13 @@
 #define fourccDPDS 'sdpd'
 #endif
 
-struct engine_audio
+struct Engine_Audio
 {
     IXAudio2* ix_audio;
     IXAudio2MasteringVoice* master_voice;
 };
 
-struct engine_audio_source
+struct Engine_Audio_Source
 {
     IXAudio2SourceVoice* source_voice;
 };
@@ -104,11 +104,11 @@ static HRESULT read_chunk_data(HANDLE hFile, void* buffer, DWORD buffersize, DWO
     return hr;
 }
 
-engine_audio* initialize_audio()
+Engine_Audio* initialize_audio()
 {
     print_log("Initializing audio\n");
 
-    engine_audio* audio = new engine_audio();
+    Engine_Audio* audio = new Engine_Audio();
 
     // Initialize COM
     HRESULT hr = S_OK;
@@ -137,7 +137,7 @@ engine_audio* initialize_audio()
     return audio;
 }
 
-void terminate_audio(engine_audio* audio)
+void terminate_audio(Engine_Audio* audio)
 {
     if (!audio)
         return;
@@ -155,9 +155,9 @@ void terminate_audio(engine_audio* audio)
 
 
 
-bool create_audio_source(const engine_audio* audio, engine_audio_source** source, const char* path)
+bool create_audio_source(const Engine_Audio* audio, Engine_Audio_Source** source, const char* path)
 {
-    *source = new engine_audio_source();
+    *source = new Engine_Audio_Source();
 
 
     HRESULT hr = S_OK;
@@ -226,7 +226,7 @@ bool create_audio_source(const engine_audio* audio, engine_audio_source** source
     return true;
 }
 
-void terminate_audio_source(engine_audio_source* audio_source)
+void terminate_audio_source(Engine_Audio_Source* audio_source)
 {
     audio_source->source_voice->DestroyVoice();
 
@@ -234,7 +234,7 @@ void terminate_audio_source(engine_audio_source* audio_source)
 }
 
 
-void start_audio_source(engine_audio_source* audio_source)
+void start_audio_source(Engine_Audio_Source* audio_source)
 {
     HRESULT hr = audio_source->source_voice->Start(0);
     if (FAILED(hr))
@@ -243,7 +243,7 @@ void start_audio_source(engine_audio_source* audio_source)
     print_log("Audio source playing sound.\n");
 }
 
-void stop_audio_source(engine_audio_source* audio_source)
+void stop_audio_source(Engine_Audio_Source* audio_source)
 {
     HRESULT hr = audio_source->source_voice->Stop();
     if (FAILED(hr))
@@ -252,13 +252,13 @@ void stop_audio_source(engine_audio_source* audio_source)
     print_log("Audio source stopped playing sound.\n");
 }
 
-void set_audio_volume(engine_audio* audio, float volume)
+void set_audio_volume(Engine_Audio* audio, float volume)
 {
     const float actual_vol = std::clamp(volume, 0.0f, 100.0f) / 100.0f;
     audio->master_voice->SetVolume(actual_vol);
 }
 
-void set_audio_volume(engine_audio_source* source, float volume)
+void set_audio_volume(Engine_Audio_Source* source, float volume)
 {
     const float actual_vol = std::clamp(volume, 0.0f, 100.0f) / 100.0f;
     source->source_voice->SetVolume(actual_vol);

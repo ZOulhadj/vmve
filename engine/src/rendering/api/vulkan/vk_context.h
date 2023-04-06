@@ -18,7 +18,7 @@ struct vk_device
 
 struct vk_context
 {
-    const engine_window* window;
+    const Engine_Window* window;
 
     VkInstance      instance;
     VkSurfaceKHR    surface;
@@ -30,7 +30,7 @@ bool create_vulkan_context(vk_context& context, const std::vector<const char*>& 
                                                    std::vector<const char*>& requested_extensions,
                                                    const std::vector<const char*>& requested_device_extensions,
                                                    const VkPhysicalDeviceFeatures& requested_gpu_features,
-                                                   const engine_window* window);
+                                                   const Engine_Window* window);
 void destroy_vulkan_context(vk_context& rc);
 
 

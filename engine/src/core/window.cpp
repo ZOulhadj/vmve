@@ -16,7 +16,7 @@ static void glfw_error_callback(int code, const char* description)
 
 static void window_close_callback(GLFWwindow* window)
 {
-    const auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    const auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
 
     window_closed_event e;
     ptr->event_callback(e);
@@ -24,7 +24,7 @@ static void window_close_callback(GLFWwindow* window)
 
 static void window_focus_callback(GLFWwindow* window, int focused)
 {
-    const auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    const auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
 
     if (focused) {
         window_focused_event e;
@@ -37,7 +37,7 @@ static void window_focus_callback(GLFWwindow* window, int focused)
 
 static void window_maximized_callback(GLFWwindow* window, int maximized)
 {
-    const auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    const auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
 
     if (maximized) {
         window_maximized_event e;
@@ -50,7 +50,7 @@ static void window_maximized_callback(GLFWwindow* window, int maximized)
 
 static void window_minimized_callback(GLFWwindow* window, int minimized)
 {
-    const auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    const auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
 
     if (minimized) {
         window_minimized_event e;
@@ -70,7 +70,7 @@ static void window_resize_callback(GLFWwindow* window, int width, int height)
 
 static void window_framebuffer_resize_callback(GLFWwindow* window, int width, int height)
 {
-    auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
     ptr->width  = width;
     ptr->height = height;
 
@@ -80,7 +80,7 @@ static void window_framebuffer_resize_callback(GLFWwindow* window, int width, in
 
 static void window_drop_callback(GLFWwindow* window, int path_count, const char* in_paths[])
 {
-    const auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    const auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
 
     window_dropped_event e(path_count, in_paths);
     ptr->event_callback(e);
@@ -88,7 +88,7 @@ static void window_drop_callback(GLFWwindow* window, int path_count, const char*
 
 static void window_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    const auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    const auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
 
     if (action == GLFW_PRESS) {
         key_pressed_event e(key, mods);
@@ -104,7 +104,7 @@ static void window_key_callback(GLFWwindow* window, int key, int scancode, int a
 
 static void window_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    const auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    const auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
 
     if (action == GLFW_PRESS) {
         mouse_button_pressed_event e(button);
@@ -120,7 +120,7 @@ static void window_mouse_button_callback(GLFWwindow* window, int button, int act
 
 static void window_mouse_scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    const auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    const auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
 
     if (yoffset == 1.0) {
         mouse_scrolled_up_event e;
@@ -133,7 +133,7 @@ static void window_mouse_scroll_callback(GLFWwindow* window, double xoffset, dou
 
 static void window_cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    const auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    const auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
 
     mouse_moved_event e(xpos, ypos);
     ptr->event_callback(e);
@@ -141,7 +141,7 @@ static void window_cursor_position_callback(GLFWwindow* window, double xpos, dou
 
 static void window_cursor_enter_callback(GLFWwindow* window, int entered)
 {
-    const auto ptr = static_cast<engine_window*>(glfwGetWindowUserPointer(window));
+    const auto ptr = static_cast<Engine_Window*>(glfwGetWindowUserPointer(window));
 
     if (entered) {
         mouse_entered_event e;
@@ -154,13 +154,13 @@ static void window_cursor_enter_callback(GLFWwindow* window, int entered)
 
 // Initialized the GLFW library and creates a window. Window callbacks send
 // events to the application callback.
-engine_window* create_window(const char* name, int width, int height, bool fullscreen)
+Engine_Window* create_window(const char* name, int width, int height, bool fullscreen)
 {
     print_log("Initializing window (%d, %d)\n", width, height);
 
     assert(width > 0 && height > 0);
 
-    engine_window* window = new engine_window();
+    Engine_Window* window = new Engine_Window();
     window->name       = name;
     window->width      = width;
     window->height     = height;
@@ -217,7 +217,7 @@ engine_window* create_window(const char* name, int width, int height, bool fulls
     return window;
 }
 
-void set_window_icon(const engine_window* window, const std::filesystem::path& iconPath)
+void set_window_icon(const Engine_Window* window, const std::filesystem::path& iconPath)
 {
     GLFWimage images[1]{};
     images[0].pixels = stbi_load(iconPath.string().c_str(), &images[0].width, &images[0].height, 0, STBI_rgb_alpha);
@@ -234,7 +234,7 @@ void set_window_icon(const engine_window* window, const std::filesystem::path& i
     stbi_image_free(images[0].pixels);
 }
 
-void set_window_icon(const engine_window* window, unsigned char* data, int width, int height)
+void set_window_icon(const Engine_Window* window, unsigned char* data, int width, int height)
 {
     GLFWimage image[1];
     image[0].width = width;
@@ -244,7 +244,7 @@ void set_window_icon(const engine_window* window, unsigned char* data, int width
     glfwSetWindowIcon(window->handle, 1, image);
 }
 
-float get_window_dpi_scale(const engine_window* window)
+float get_window_dpi_scale(const Engine_Window* window)
 {
     GLFWmonitor* monitor = glfwGetWindowMonitor(window->handle);
 
@@ -264,13 +264,13 @@ float get_window_dpi_scale(const engine_window* window)
     return x;
 }
 
-void show_window(const engine_window* window)
+void show_window(const Engine_Window* window)
 {
     glfwShowWindow(window->handle);
 }
 
 // Destroys the window and terminates the GLFW library.
-void destroy_window(engine_window* window)
+void destroy_window(Engine_Window* window)
 {
     if (!window)
         return;
@@ -285,7 +285,7 @@ void destroy_window(engine_window* window)
 
 // Updates a window by polling for any new events since the last window update
 // function call.
-void update_window(engine_window* window)
+void update_window(Engine_Window* window)
 {
     glfwPollEvents();
 

@@ -21,7 +21,7 @@ enum struct my_engine_viewport_view
 };
 
 
-struct my_engine_callbacks
+struct My_Engine_Callbacks
 {
     void (*key_callback)(int keycode, bool control, bool alt, bool shift);
     void (*mouse_button_pressed_callback)(int button_code);
@@ -58,7 +58,7 @@ float engine_get_window_scale();
 
 void engine_show_window();
 
-void engine_set_callbacks(my_engine_callbacks callbacks);
+void engine_set_callbacks(My_Engine_Callbacks callbacks);
 
 // Rendering
 

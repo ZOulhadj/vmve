@@ -20,9 +20,9 @@ VkDeviceSize pad_uniform_buffer_size(VkDeviceSize original_size)
     return (original_size + minUboAlignment - 1) & ~(minUboAlignment - 1);
 }
 
-vk_buffer create_buffer(VkDeviceSize size, VkBufferUsageFlags type)
+Vk_Buffer create_buffer(VkDeviceSize size, VkBufferUsageFlags type)
 {
-    vk_buffer buffer{};
+    Vk_Buffer buffer{};
 
     const vk_context& rc = get_vulkan_context();
 
@@ -47,21 +47,21 @@ vk_buffer create_buffer(VkDeviceSize size, VkBufferUsageFlags type)
     return buffer;
 }
 
-vk_buffer create_uniform_buffer(VkDeviceSize buffer_size)
+Vk_Buffer create_uniform_buffer(VkDeviceSize buffer_size)
 {
     // Automatically align buffer to correct alignment
     const VkDeviceSize size = static_cast<VkDeviceSize>(frames_in_flight) * pad_uniform_buffer_size(buffer_size);
 
-    vk_buffer buffer = create_buffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    Vk_Buffer buffer = create_buffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     return buffer;
 }
 
-std::vector<vk_buffer> create_uniform_buffers(VkDeviceSize buffer_size)
+std::vector<Vk_Buffer> create_uniform_buffers(VkDeviceSize buffer_size)
 {
-    std::vector<vk_buffer> buffers(frames_in_flight);
+    std::vector<Vk_Buffer> buffers(frames_in_flight);
 
-    for (vk_buffer& buffer : buffers) {
+    for (Vk_Buffer& buffer : buffers) {
         buffer = create_uniform_buffer(buffer_size);
     }
 
@@ -69,7 +69,7 @@ std::vector<vk_buffer> create_uniform_buffers(VkDeviceSize buffer_size)
 }
 
 // Maps/Fills an existing buffer with data.
-void set_buffer_data(std::vector<vk_buffer>& buffers, void* data)
+void set_buffer_data(std::vector<Vk_Buffer>& buffers, void* data)
 {
     const vk_context& rc = get_vulkan_context();
 
@@ -81,7 +81,7 @@ void set_buffer_data(std::vector<vk_buffer>& buffers, void* data)
     vmaUnmapMemory(rc.allocator, buffers[current_frame].allocation);
 }
 
-void set_buffer_data(vk_buffer& buffer, void* data)
+void set_buffer_data(Vk_Buffer& buffer, void* data)
 {
     const vk_context& rc = get_vulkan_context();
 
@@ -92,7 +92,7 @@ void set_buffer_data(vk_buffer& buffer, void* data)
 }
 
 
-void set_buffer_data(vk_buffer& buffer, void* data, std::size_t size)
+void set_buffer_data(Vk_Buffer& buffer, void* data, std::size_t size)
 {
     const vk_context& rc = get_vulkan_context();
     const uint32_t current_frame = get_frame_buffer_index();
@@ -107,9 +107,9 @@ void set_buffer_data(vk_buffer& buffer, void* data, std::size_t size)
 // Creates and fills a buffer that is CPU accessible. A staging
 // buffer is most often used as a temporary buffer when copying
 // data from the CPU to the GPU.
-vk_buffer create_staging_buffer(void* data, VkDeviceSize size)
+Vk_Buffer create_staging_buffer(void* data, VkDeviceSize size)
 {
-    vk_buffer buffer{};
+    Vk_Buffer buffer{};
 
     const vk_context& rc = get_vulkan_context();
 
@@ -139,9 +139,9 @@ vk_buffer create_staging_buffer(void* data, VkDeviceSize size)
 
 // Creates an empty buffer on the GPU that will need to be filled by
 // calling SubmitToGPU.
-vk_buffer create_gpu_buffer(VkDeviceSize size, VkBufferUsageFlags type)
+Vk_Buffer create_gpu_buffer(VkDeviceSize size, VkBufferUsageFlags type)
 {
-    vk_buffer buffer{};
+    Vk_Buffer buffer{};
 
     const vk_context& rc = get_vulkan_context();
 
@@ -166,17 +166,17 @@ vk_buffer create_gpu_buffer(VkDeviceSize size, VkBufferUsageFlags type)
     return buffer;
 }
 
-void destroy_buffer(vk_buffer& buffer)
+void destroy_buffer(Vk_Buffer& buffer)
 {
     const vk_context& rc = get_vulkan_context();
 
     vmaDestroyBuffer(rc.allocator, buffer.buffer, buffer.allocation);
 }
 
-void destroy_buffers(std::vector<vk_buffer>& buffers)
+void destroy_buffers(std::vector<Vk_Buffer>& buffers)
 {
     const vk_context& rc = get_vulkan_context();
 
-    for (vk_buffer& buffer : buffers)
+    for (Vk_Buffer& buffer : buffers)
         vmaDestroyBuffer(rc.allocator, buffer.buffer, buffer.allocation);
 }

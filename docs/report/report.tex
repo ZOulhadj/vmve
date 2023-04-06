@@ -85,7 +85,7 @@
   \vspace{1cm}
 	{\huge\textbf{Optimizing workflow for virtual environments using Vulkan Model Viewer and Exporter}\par}
   \vspace{1cm}
-  University of Roehampton\\
+  The University of Roehampton\\
   Department of Arts and Digital Industries\\
   London, United Kingdom
   \vspace{1cm}
@@ -121,7 +121,7 @@
 \begin{center}
 \thispagestyle{empty}  
 \vspace*{\fill}
-\textit{I would like to dedicate this report to my family, friends and lecturers who have have supported me throughout my degree}
+\textit{I would like to dedicate this report to my family, friends and lecturers who have supported me throughout my degree}
 \vspace*{\fill}
 \end{center}
 
@@ -133,7 +133,7 @@ Computer graphics is a rapidly growing field that is vital in many industries
 that rely on digital graphics including scientific research, simulations,
 education and training, entertainment and more. The flexibility of this field
 and the increase in computing resources is what makes it so powerful and
-provides real-world benefits in ways not previously observed prior to the use of
+provides real-world benefits in ways not previously observed before the use of
 graphics software.
 
 This report presents my final year project \gls{vmve}, a 3D rendering
@@ -155,7 +155,7 @@ the award of any other degree or any other institution.
 
 \noindent
 \begin{tabular}[b]{@{} p{6cm} @{}}
-\date{\today} \\
+\today \\
 \hline
 \scriptsize Date
 \end{tabular}\qquad
@@ -181,66 +181,77 @@ the award of any other degree or any other institution.
 \section{Introduction}
 
 Computer graphics is a large area within the field of computer science. Ever
-since its conception in the early 1960's it has been used for many different
+since its conception in the early 1960s, it has been used for many different
 purposes from gaming, the film industry, scientific research, education,
 architecture, engineering, medicine and more recently within vehicles. This is a
 testament to how versatile this field is.
 
-There are many different rendering application that already exist include Unreal
+Many different rendering applications already exist including Unreal
 Engine \cite{unreal_engine}, Unity \cite{unity} and RenderMan \cite{render_man}
-just to name a few. These applications as are known as ``3D creation tools''
+just to name a few. These applications are known as ``3D creation tools''
 that provide a plethora of features and functionality giving the users the
 freedom when creating digital graphics.
 
-A common theme found within these engines as a result of being around for a
-couple of decades is that they have a lot of different tools and features which
-introduces their own set of issues such as  relative complexity and a steep
-learning curve.
+A common theme that can be observed with these engines is that they have a lot
+of different tools and features as a result of decades of work. This
+inadvertently introduces several issues such as increased complexity and a steep
+learning curve for new users.
 
-Throughout this document, I present my final year project \gls{vmve}. An
-application developed in the domain of computer graphics and is a real-time 3D
-rendering application designed for creating virtual environments. The aim of
+Throughout this document, I present my final year project, \gls{vmve}. An
+application developed in the domain of computer graphics including a real-time
+3D rendering renderer designed for creating virtual environments. The aim of
 \gls{vmve} is not to replicate these existing applications but instead to
-purposely implement a small but specific subset of features that can be used for
-common graphics related tasks. This is beneficial for a number of reasons.
-Firstly, this will make \gls{vmve} easy to use as the number of features that
-the user must learn is significantly reduced and subsequently lowering the
-learning curve. The combination of these two benefits will make the application
-far more accessible to the general public.
-
+purposely implement a small but specific subset of features that are used for
+common graphics-related tasks. This is beneficial for several reasons. Firstly,
+this will make \gls{vmve} easy to use as the number of features that the user
+must learn is significantly reduced and subsequently lowering the learning
+curve. The combination of these two benefits will make the application far more
+accessible to the general public whose aim is to take advantage of the
+ever-increasing importance of computer graphics.
 
 \subsection{Overview}
-This report will discuss the projects development from beginning to end and is
+This report will discuss the development of the project from beginning to end and 
 is structured such that it outlines each aspect of the project in chronological
-order. There are a total of five key sections to this report. The introduction,
+order. There are a total of five key sections in this report. The introduction,
 design, implementation, evaluation and finally, future work.
 
 The report will focus on the early stages of the project including design and
 requirements gathering. The main implementation section will follow this and
-provide detailed insights and technical implementation details into the project.
-In order to ensure that the project has met the requirements originally set out,
-an evaluation stage must undertaken. This will include discussions of various
+provide detailed insights and technical details into the project and
+application. To ensure the initial project requirements have been achieved, an
+evaluation stage must be conducted. This will include discussions of various
 metrics as well as reviewing the project and understanding its strengths and
-shortcomings. Lastly, future work will outline additional work that needs to be
-undertaken and the projects overall future.
+shortcomings. Lastly, the future work section will propose additional work that
+needs to be implemented as well as the project's overall future.
+
 
 \subsection{Aims and Objectives}
+To address these issues in this domain, a set of requirements
+must be defined that aims to achieve the desired goal of this project.
+
+Since its conception, \gls{vmve} has three main goals. 
+
+\subsubsection{Easy-to-use platform}
+The first is to provide users with an easy-to-use platform that they can use for
+rendering digital assets in a virtual environment. In other words, users with
+little to no prior experience in computer graphics should be able to take
+advantage of \glspl{vmve} capabilities.
+
+\subsubsection{TODO}
+The second goal of the application is to 
+
+\subsubsection{Custom model format}
+The last of the three main goals is for the application to include its own
+model format that makes use of encryption to safely secure a user's digital
+assets.
+
 As mentioned previously, the key aim of \gls{vmve} is to implement a subset of 
-specific rendering features which includes a 3D renderer, an visual editor
-and lastly a custom file format for digital assets.
-
-- Refer to milestone 2 document.
-- State the problem being
-addressed and why it is important to address it - large applications
-consist of many requirements such as powerful hardware, applications,
-steep learning curve.
-
-- Key stakeholders
-
+specific rendering features which include a 3D renderer, a visual editor
+and lastly a custom file format for securing digital assets.
 
 \begin{description}
   \item[Lightweight] meaning application should be highly
-    efficient in regards to rendering and memory usage.
+    efficient regarding rendering and memory usage.
   \item[Ease of use] so that users with no prior experience
   \item[Useful]
     Another vital requirement is that it should be useful
@@ -249,24 +260,6 @@ steep learning curve.
   - Lightweight model viewer - No need to install heavy
   applications such as Blender/Unity/Unreal - Easy to use - No technical
   knowledge required
-
-
-\subsection{Goals and Requirements}
-In order to address these issues in this domain, a set of requirements
-must be defined that aims to achieve the desired goal of this project.
-
-Since its conception, \gls{vmve} has three main goals. The first is to provide
-users with an easy to use platform that they can use for rendering digital
-assets in a virtual environment. In other words, users with little to no prior
-experience in computer graphics should be able to take advantage of \glspl{vmve} 
-capabilities.
-
-The second goal of the application is to 
-
-
-The last out of the three main goals is for the application to include its own
-model format that makes use of encryption to safely secure a users digital
-assets.
 
 
 \subsection{Stakeholders}
@@ -290,24 +283,24 @@ application. As mentioned earlier, \gls{vmve} will include the ability to secure
 critical assets including 3D models. This will be achieved using encryption by
 making use of a secret key and initialization vector.
 
-When developing the system, it is therefore, important to ask questions such as
+When developing the system, it is, therefore, important to ask questions such as
 ``How will this data be kept secure?'' and ``Does the application store or send
 any private data?''. 
 
 Throughout the development of this project, the application will not contain any
 networking functionality. This ensures that all data remains local to the
-application and users device.
+application and user's device.
 
 \subsubsection{Intellectual property}
-Given the application use case, it will be handling third party 3D assets such
-as importing and exporting. It is therefore, important that \gls{vmve} does not
-infringe upon the copyright of those who own the models. One such example
-includes not modifying the geometry data unless specified by the user. Since
-this will be a new application, a lot of the intricacies behind \gls{ip} needs
-to be further defined and take into account based on user feedback. \gls{vmve}
-will not modify any of the data being imported and only change the visual
-appearance based on several factors including rendering settings, translation,
-rotation and scaling. 
+Given the domain in which the application is intended to be used, such as
+handling third-party 3D assets by importing and exporting geometry data.
+\gls{vmve} mustn't infringe upon the copyright of those who own the models. One
+such example includes not modifying the geometry data unless specified by the
+user. Since this will be a new application, a lot of the intricacies behind
+\gls{ip} needs to be further defined and taken into account based on user
+feedback. \gls{vmve} will not modify any of the data being imported and only
+change the visual appearance based on several factors including rendering
+settings, lighting, translation, rotation and scaling. 
 
 \subsection{Social}
 \gls{vmve} must also take into account social considerations for those using the
@@ -317,24 +310,25 @@ application to provide a consistent user experience.
 Accessibility is a vital aspect that needs to be addressed throughout the
 development to ensure the application is useable for those with disabilities.
 
-\section{Technology Review}
+\section{Technology Review} \label{technology_review}
 This project made use of various technologies at different stages throughout the
 development process and was a key aspect in helping achieve the final goal of
 developing a 3D model viewer and exporter.
 
 Technologies are categorized into two areas based on the impact they have on the
-project such as direct and indirect influence. A technology that has direct
-impact means that it assisted in some way to the implementation of the project.
-Whereas, indirect impact are technologies that are used in some areas not
-directly responsible in the projects outcome such as project management.
+project such as direct and indirect influence. A technology that has a direct
+impact means that it assisted in some way in the implementation of the project.
+Whereas, indirect impacts are technologies that are used in some areas not
+directly responsible for the outcome of the project such as project management.
 
 \subsection{Tools}
+-- TODO: Explain the types of tools used and their significance.
 
 \subsubsection{Project Management}
 A \gls{vcs} is a tool used for backing up and/or collaborating with developers
 on a project. The use of a \gls{vcs} was an obvious choice as this would provide
 a platform on which the project source code could be hosted. This gives me the
-peace of mind knowing that if for some reason a local copy of the project is
+peace of mind of knowing that if for some reason a local copy of the project is
 lost or corrupted then another copy is safely hosted on the servers managed by
 the \gls{vcs}.
 
@@ -342,19 +336,19 @@ Another key feature of a \gls{vcs} is project management. These types of systems
 provide various tools that greatly benefit developers. One such feature is known
 as a ``commit'' which records any changes made to a particular repository at
 that moment in time. Developers use commits to view changes that occur at each
-stage but also, provides means of reverting to previous states of particular
+stage but also, provide means of reverting to previous versions of particular
 sections, files or even an entire repository. Due to the length and complexity
-of this project, tools such as this provided by \gls{vcs} are invaluable throughout
-the development process.
+of this project, tools such as this provided by a \gls{vcs} are invaluable
+throughout the development process.
 
-The specific version control system that was chosen was Git \cite{gitvcs}. This
-is the most popular free and open-source \gls{vcs} and is highly recommended.
-
-Git can be used in several different ways such as installing Git onto a server
-manually and interacting with Git through that server. Another way is by using
-existing platforms that are built on top of Git. A few examples include GitHub,
-GitLab and Bitbucket. By far the most popular option is GitHub and is the
-platform that I am most familiar with.
+The version control system that was chosen was Git \cite{gitvcs}. This is the
+most widely-used, free and open-source \gls{vcs}. Git can be used in several
+ways such as by installing Git onto a server manually or by using existing
+platforms that are built on top of Git. A few examples include
+\href{http://github.com}{GitHub}, \href{http://gitlab.com}{GitLab} and
+\href{https://bitbucket.org/}{Bitbucket}. By far the most popular option is
+GitHub which is the platform that I am most familiar with and therefore, GitHub
+will be the platform of choice for this project.
 
 
 The \gls{vmve} project is hosted on GitHub as a private repository
@@ -365,7 +359,7 @@ GitHub as well as providing hosting for the repository also provides different
 features related to task management. One such feature is known as GitHub issues.
 This will be used as the task tracker in which ``posts'' are created that would
 track outstanding tasks including the priority, current progress and the
-expected deadline. Figure \ref{fig:github_kanban} shows a preview of the Kanban
+expected deadline. Figure \ref{fig:kanban_design} shows a preview of the Kanban
 board. It consists of three main columns used to categorize an issue including
 backlog, in progress and done. 
 
@@ -383,9 +377,9 @@ moved to the ``Done'' column.
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=\textwidth]{images/github_project.png}
-  \caption{GitHub Issues Kanban}
-  \label{fig:github_kanban}
+  \includegraphics[width=\textwidth]{images/kanban_design.png}
+  \caption{Kanban design}
+  \label{fig:kanban_design}
 \end{figure}
 
 \subsubsection{Microsoft Visual Studio 2022}
@@ -522,6 +516,8 @@ adhere to the OpenGL specification
 
 
 \subsection{Libraries}
+The application will make use of different external libraries to speed up 
+development due to the short timeframe.
 
 \subsubsection{User Interface}
 Users will need a way of interacting with \gls{vmve} and the 3D environment.
@@ -533,29 +529,50 @@ particular aspect of the application, the decision was made to make use of a
 preexisting library.
 
 The library of choice was Dear ImGui \cite{imgui}. This is an immediate-mode
-user interface library that provides an \gls{api} in order render UI elements. 
+user interface library that provides an \gls{api} in order to render UI elements. 
 
 \subsubsection{Encryption} \label{custom_file_format} VMVE will include its own
 model file format. This is a special format that will be encrypted as standard.
 Implementing encryption is a very complex area that can be considered an entire
-project on its down. Instead, the project will make use of a well known
+project on its own. Instead, the project will make use of a well-known
 encryption library known as Crypto++ \cite{cryptopp}. This is a C++ library that
 provides various algorithms including AES, Diffie-Helm, 
+
+\subsubsection{Serialisation}
+In addition to encrypting the model data, the custom file format will need to
+store additional information such as application version and encryption type.
+Therefore, \gls{vmve} must be able to serialize the data when saving to disk as
+well as deserialize when loading a ``.vmve'' model. To achieve this, the cereal
+C++ library will be used \cite{cereal}. This library allows for fast and
+efficient data serialization into different formats such as compact binary
+encodings, XML or JSON.
+
+\subsubsection{Additional libraries}
+The other libraries used in \gls{vmve} can be seen in the list below.
+\begin{description}
+  \item[assimp] Model loading
+  \item[glm] Mathematics
+  \item[stb] Image loading
+  \item[vma] Vulkan memory allocator
+  \item[volk] Vulkan meta-loader
+\end{description}
 
 \section{Design}
 
 Having discussed the different technologies being used in VMVE, they must now be
 evaluated and incorporated into the design of VMVE and its various subsystems.
 
-\subsection{Project Name}
+\subsection{Branding}
+
+
+\subsubsection{Project Name}
 VMVE stands for ``Vulkan Model Viewer and Exporter''. The name is mainly split
 into two halves. The first is ``Vulkan'' and the other is ``Model Viewer and
 Exporter''. Fundamentally, the application revolves around the idea of being able
 to view/manipulate 3D digital assets and export them into a custom file format
 as mentioned in section \ref{custom_file_format}.
 
-\subsection{Branding}
-
+\subsubsection{Logo}
 There are two versions of the VMVE logo that were designed and are intended to
 be used in different situations. The first is the complete large logo as seen
 below in figure {}
@@ -598,31 +615,35 @@ will be made from develop to main and this will be tagged as v0.0.1 and likewise
   \label{fig:brancharch}
 \end{figure}
 
+
+
 \subsection{Programming Conventions}
-From the beginning, the projects source code and overall architecture was to
+From the beginning, the projects source code and overall architecture were to
 adhere to the C++ Core Guidelines \cite{cpp-guidelines} to ensure that the
 project follows best practices.
 
-Significant amount of consideration was spent planning out a suitable project
-wide programming style. In regards to naming, section
+A significant amount of consideration was spent planning out a suitable
+project-wide programming style. In regards to naming, section
 \href{http://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#nl10-prefer-underscore_style-names}{NL.10}
-of the core guidelines recommends using ``underscore\_style'' naming as it follows
-the standard libraries naming convention. Since the VMVE project has no existing
-code base and therefore, no existing convention to follow, the project will
-make use of the underscore style for types, functions and variables. 
+of the core guidelines recommend using the snake case style as it follows the
+standard libraries naming convention. Since the project has no existing code
+base and therefore, no existing convention to follow, the project will make use
+of the underscore style for types, functions and variables. 
 
 Additionally, section
 \href{https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#nl17-use-kr-derived-layout}{NL.17}
 states that the use of the ``K\&R''  indentation style \cite{indentation} should
 be used as it preserves vertical space whilst maintaining readability. In other
-words, reduces vertical line height for code blocks such as ``if, else, while,
-for'' allowing for more lines of code to be visible at any given point whilst
-allowing for a more distinct separation for structures and functions.
+words, reducing vertical line height for code blocks such as ``if, else, while
+and for'' allowing for more lines of code to be visible at any given point
+whilst allowing for a more distinct separation of structures and functions.
 
-The combination of these two specific conventions in regards to source
-code style can be seen in figure \ref{fig:convention}.
-\begin{figure}[h!]
-  \begin{verbatim}
+The combination of these two specific conventions in regards to source code
+style can be seen in figure \ref{fig:convention}.
+
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=C++]
     struct foo
     {
         int a;
@@ -636,23 +657,17 @@ code style can be seen in figure \ref{fig:convention}.
             printf("This is another example.\n");
         }
     }
-  \end{verbatim}
-  \caption{Example code structure}
+  \end{lstlisting}
+  \caption{Source code convention}
   \label{fig:convention}
-\end{figure}
+  \end{figure}
 
 
 
 \subsection{Project Architecture}
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=\textwidth]{images/project_architecture.png}
-  \caption{Project Architecture}
-  \label{fig:projarch}
-\end{figure}
-VMVE will be a combination of two projects. The ``Engine'' project
-also known as the core of VMVE will contain the fundamental
+\gls{vmve} will be a combination of two projects. The ``Engine'' project
+also known as the core of \gls{vmve} will contain the fundamental
 implementation details. This includes the window, renderer, ui and
 other subsystems. This project will be distributed as a library
 file (.lib) that other projects can import for specific use cases.
@@ -663,17 +678,17 @@ the .lib file.
 A high-level overview of the project architecture can be seen in
 figure \ref{fig:projarch}.
 
-There is another key reason as to why, I will isolate the core of VMVE
+There is another key reason why, I will isolate the core of VMVE
 into its own project instead of combining it into one program. The
 reason being is have the core be a library that can be used in not
 just VMVE but also other projects in the future.
 
-
-
-
-
-
-
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/project_architecture.png}
+  \caption{Project Architecture}
+  \label{fig:projarch}
+\end{figure}
 
 - Reason for choosing 64bit program.
     goes beyond 4GB address space limit in 32bit programs.
@@ -720,9 +735,9 @@ architecture which makes distinctive boundaries and encapsulates key systems.
 Designing the user interface was the next step as part of the design stage of
 the project. Figure \ref{fig:ui_design} shows the initial user interface
 wireframe that includes four main elements titled ``Global Controls'', ``Logs'',
-``Model Controls'' and ``Main Viewport''. Each of these UI elements are located
-in their respective windows which are designed in such a way that common controls are group
-together and located appropriately if not within the same panel.
+``Model Controls'' and ``Main Viewport''. Each of these UI elements is located
+in their respective windows which are designed in such a way that common
+controls are grouped and located appropriately if not within the same panel.
 
 \begin{figure}[ht]
   \centering
@@ -739,8 +754,8 @@ of the user interface. The viewport displays the virtual environment and
 
 \subsubsection{Model Controls}
 
-For each model loaded into the application and currently highlighted, is shown
-model specific information within the model controls panel. This panel will include various 
+Each model loaded into the application and currently highlighted is shown
+model-specific information within the model controls panel. This panel will include various 
 
 
 \subsubsection{Logs}
@@ -758,9 +773,9 @@ of the application.
 \subsubsection{File format}
 VMVE will include its own file format that allows for model data to be encrypted for security purposes.
 Figure \ref{fig:vmve_file_structure} shows the proposed internal structure of the custom file format.
-It includes a 48 byte header that will consist of a version and the method used for encryption.
+It includes a 48-byte header that will consist of a version and the method used for encryption.
 The purpose of the version is to check for compatibility between different VMVE versions. In addition to this,
-this can used to convert older versions of a VMVE to newer versions.
+this can be used to convert older versions of a VMVE to newer versions.
 
 The second item in the VMVE header is the encryption mode. This allows for the VMVE to know which algorithm
 must be used to decrypt the data.
@@ -854,28 +869,21 @@ responsible for creating a desktop window based on a series of configuration
 options specified at the start of the application. These options include the
 window width, height and name. Internally, VMVE uses the lightweight GLFW
 library to handle window creation. The purpose of this library is to provide an
-API which is cross platform and allows applications to easily create windows on
+API which is cross-platform and allows applications to easily create windows on
 different operating systems. 
 
 Under the hood, on Windows, GLFW uses the Win32 API provided by Microsoft.
 
 In addition to the window creation, various function callbacks are created
-which allow VMVE to handle specific events such as window resizing, input,
+which allows \gls{vmve} to handle specific events such as window resizing, input,
 cursor position etc.
 
 \subsection{Rendering System}
+The implementation of the rendering system was one of the key areas worked on
+throughout the project. This system is responsible for communicating with the
+\gls{gpu} and rendering objects onto the screen. As discussed in the
+\ref{technology_review}, Vulkan was the renderer API of choice. 
 
-The implementation of the rendering system was one of the key areas
-I worked on throughout the course of the project.
-
-The 
-
-This is one of the key systems of the engine and subsequently VMVE.
- Linking against actual driver function calls instead of linking to
- the common Vulkan loader.  \cite{volk}
-
-- Renderer context Combine Vulkan resource allocating objects into
--   single object for increased clarity 
     Frames in flight 
     Double and
 
@@ -890,8 +898,14 @@ Delta Time
 
 
 \subsubsection{Renderer Context}
-\begin{lstlisting}[language=C++]
+The first step in creating the renderer is initializing an object called
+``vk\_context''. This object is created within the application that groups Vulkan
+handles that are responsible for initializing resources. In other words, the
+``vk\_context'' structure is used to allocate \gls{gpu} resources. The handles
+within the context structure can be seen in the code snippet below and a diagram
+can be seen in figure \ref{fig:rendererarch}.
 
+\begin{lstlisting}[language=C++]
 struct vk_context
 {
   VkInstance         // Initializes Vulkan library
@@ -901,9 +915,29 @@ struct vk_context
   VkQueue            // Presentation queue
   VmaAllocator       // VMA memory allocator
 };
-
-
 \end{lstlisting}
+
+Linking against actual driver function calls instead of linking to
+the common Vulkan loader.  \cite{volk}
+
+
+- Renderer context Combine Vulkan resource allocating objects into
+-   single object for increased clarity 
+
+\subsubsection{Frame synchronization}
+-- How frames are handles
+
+VkSemaphore
+VkFence
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/frame_sync.png}
+  \caption{Frame Synchronization}
+  \label{fig:frame_sync}
+\end{figure}
+
+
 
 \subsubsection{Presenation}
 
@@ -911,6 +945,8 @@ struct vk_context
 - VSync
 
 \subsubsection{Framebuffers}
+The term ``Framebuffer'' refers to a region of memory that stores frame data i.e pixel colors.
+Framebuffers are a fundamental concept in graphics rendering that stores the data for each frame.
 
 \subsubsection{Texture sampling}
 
@@ -945,21 +981,6 @@ better performance and are accessed by using a frame index counter
 \end{figure}
 
 
-\subsubsection{Frame synchronization}
--- How frames are handles
-
-VkSemaphore
-VkFence
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=\textwidth]{images/frame_sync.png}
-  \caption{Frame Synchronization}
-  \label{fig:frame_sync}
-\end{figure}
-
-
-
 \subsubsection{Model}
 In the context of the rendering system, a ``model'' is a structure that represents
 a 3D geometry object. This could be as simple as a cube or as complex as an
@@ -972,8 +993,8 @@ Often times complex models are not singular pieces of geometry. Instead, artists
 combine multiple smaller objects together to form the final model. These smaller
 parts are known as ``Meshes'' within the application.
 
-Figure \ref{fig:model} shows the internal structure of a example model which has been
-loaded into VMVE.
+Figure \ref{fig:model} shows the internal structure of an example model which has been
+loaded into \gls{vmve}.
 \begin{figure}[h!]
   \centering
   \includegraphics[width=\textwidth]{images/model.png}
@@ -1002,13 +1023,13 @@ figure \ref{fig:mvp_projection}.
 
 Geometric data is first created within a local coordinate space. This ``space''
 is positions relative to the object. In other words, the model data imported by
-VMVE will be in this local coordinate system often created by a 3D modelling
+VMVE will be in this local coordinate system often created by a 3D modeling
 program such as Blender or 3DSMax.
 
 The next step is to convert these local coordinates to ``world'' space. This is
 the actual virtual environment that an object will live in. The transformation
 to this space is done by constructing a 4x4 matrix and performing a combination
-of translation, rotation and scaling. A pseudo code example can be seen in
+of translation, rotation and scaling. A pseudo-code example can be seen in
 \ref{fig:local_to_world}.
 
 \begin{figure}[ht]
@@ -1029,7 +1050,7 @@ known as camera space. This is important as how the virtual scene is displayed
 depends on the properties of the camera. In the context of graphics rendering
 the concept of a ``camera'' does not exist and is only really an illusion. In
 reality, all points/vertex positions in the world space are transformed relative
-to the ``camera''. For example, if the cameras position along the z axis
+to the ``camera''. For example, if the position of the camera along the z axis
 increases i.e. we move forward then all objects in the world will be moved
 towards us. A nice visualization of this is shown in figure
 \ref{fig:camera_projection} curtesy of a blog post by \href{Jordan
@@ -1136,8 +1157,10 @@ adds...
 
 
 \subsection{User Interface}
-The implementation of the user interface was the next major element. This is
+The implementation of the user interface was the next major system. This is
 the frontend and how the users will be able to interact with the application.
+The user interface is built on top of the Vulkan renderer.
+
 
 \begin{figure}[h!]
   \centering
@@ -1145,6 +1168,24 @@ the frontend and how the users will be able to interact with the application.
   \caption{UI implementation}
   \label{fig:user_interface}
 \end{figure}
+
+
+\subsubsection{Controls}
+The term ``Controls'' refers to a combination of keys also known as
+``Shortcuts'' that are used to perform specific actions within the application.
+There are various  built-in controls that aim to increase the productivity for
+the user by reducing the amount of clicking and menu interaction for repeating tasks.
+
+Controls are split into two categories which are Global and Viewport. Global controls
+are controls that can be activated at any point. Viewport controls however, can only 
+be activated whilst using the viewport i.e the camera.
+
+This distinction for controls between different modes allows for greater context and
+better usability. 
+
+
+
+
 
 
 \subsubsection{Fonts and Icons}
@@ -1249,12 +1290,24 @@ screen. A small code snippet can be seen below \ref{fig:imguizmo_code} where
   \label{fig:imguizmo_code}
 \end{figure}
 
-
-
 \subsection{Logging system}
-- Buffer based logging system
-- buffer is preallocated ahead of time to increase performance (must be tested)
-- once buffer is filled, the oldest log message is deleted
+Due to the relative complexity of the underlying application and number of
+moving components a logging system was developed to provide a clear
+understanding of the current state of \gls{vmve}. 
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/logging_window.png}
+  \caption{Logging window}
+  \label{fig:logging_window}
+\end{figure}
+
+Messages are stored in a fixed size array that is preallocated. This ensures
+that there are no potential allocations occurring each time ``print\_log''  is
+called. By default \gls{vmve} allows for a maximum of 10,000 log messages before
+the buffer becomes full. In the event that the buffer does become full, the
+first log message i.e the oldest one is overwritten when a new log message is
+created \ref{fig:logging_system}. 
 
 \begin{figure}[h!]
   \centering
@@ -1358,6 +1411,16 @@ Some examples of these inconsistencies include the application crashing when
 resizing the window, crashes if audio is disabled on a system as well as frame
 stuttering.
 
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/multiple_systems.png}
+  \caption{Working on distribution}
+  \label{fig:multiple_systems}
+\end{figure}
+
+
+
+
 - Redesigned logging system to take crashes into account by creating crash logs
  and then using this to find out exactly what error was being printed.
 
@@ -1385,6 +1448,16 @@ during development.
     - Initial core systems/graphics development stage
     - System redesign
     - Encryption development stage
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/github_project.png}
+  \caption{GitHub Issues Kanban}
+  \label{fig:github_kanban}
+\end{figure}
+    
+
+
 
 \subsection{Performance}
 Measuring the performance of \gls{vmve} is another key aspect of evaluation that

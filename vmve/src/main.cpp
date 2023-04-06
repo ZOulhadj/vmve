@@ -78,7 +78,7 @@ int main()
     engine_set_window_icon(app_icon, icon_width, icon_height);
 
     // Register application event callbacks with the engine.
-    my_engine_callbacks callbacks;
+    My_Engine_Callbacks callbacks;
     callbacks.key_callback    = key_callback;
     callbacks.mouse_button_pressed_callback = mouse_button_pressed_callback;
     callbacks.mouse_button_released_callback = mouse_button_released_callback;

@@ -110,12 +110,11 @@ void center_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
                 float matrix[16];
                 engine_get_entity_matrix(selectedInstanceIndex, matrix);
 
+                const auto& operation = static_cast<ImGuizmo::OPERATION>(guizmo_operation);
 
-                //ImGuizmo::SetID(0);
                 ImGuizmo::SetDrawlist();
                 ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, viewport_width, viewport_height);
-
-                ImGuizmo::Manipulate(view, proj, (ImGuizmo::OPERATION)guizmo_operation, ImGuizmo::MODE::WORLD, matrix);
+                ImGuizmo::Manipulate(view, proj, operation, ImGuizmo::MODE::WORLD, matrix);
 
                 if (ImGuizmo::IsUsing()) {
                     float position[3];

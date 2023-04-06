@@ -227,5 +227,8 @@
     <ClInclude Include="src\rendering\terrain\quad_tree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\rendering\ui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

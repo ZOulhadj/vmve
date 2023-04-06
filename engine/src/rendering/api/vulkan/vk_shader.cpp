@@ -62,7 +62,7 @@ static vk_shader create_shader(VkShaderStageFlagBits type, const std::string& co
 {
     vk_shader shader{};
 
-    const vk_renderer* renderer = get_vulkan_renderer();
+    const Vk_Renderer* renderer = get_vulkan_renderer();
 
     shaderc_compilation_result_t result;
     shaderc_compilation_status status;

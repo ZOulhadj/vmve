@@ -3,29 +3,13 @@
 
 #include "entity.h"
 
-struct Frustum_Plane
-{
-    glm::vec3 normal;
-    float distance_from_origin;
-};
-
-struct Frustum
-{
-    Frustum_Plane top;
-    Frustum_Plane bottom;
-    Frustum_Plane left;
-    Frustum_Plane right;
-    Frustum_Plane near_plane;
-    Frustum_Plane far_plane;
-};
-
-enum class camera_type
+enum class Camera_Type
 {
     first_person,
     look_at
 };
 
-struct view_projection
+struct View_Projection
 {
     glm::mat4 view;
     glm::mat4 proj;
@@ -33,7 +17,7 @@ struct view_projection
 
 struct Camera
 {
-    camera_type type;
+    Camera_Type type;
 
     glm::vec3 position;
     glm::vec3 front_vector;
@@ -41,12 +25,6 @@ struct Camera
     glm::vec3 up_vector;
     float roll;
     glm::quat orientation;
-
-
-    //float aspect_ratio;
-    uint32_t width;
-    uint32_t height;
-
 
     float speed;
     float view_speed;
@@ -56,18 +34,14 @@ struct Camera
     float near_plane;
     float far_plane;
 
-    view_projection view_proj;
+    View_Projection vp;
 
     bool first_mouse;
 };
 
-
-Frustum create_camera_frustum(const Camera& camera);
-
 Camera create_perspective_camera(const glm::vec3& position, float fov, float speed);
 
-void update_camera(Camera& camera, const glm::vec2& cursor_pos);
-void update_projection(Camera& cam);
+void update_camera_view(Camera& camera, const glm::vec2& cursor_pos);
 void update_projection(Camera& camera, uint32_t width, uint32_t height);
 
 

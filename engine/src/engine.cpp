@@ -39,17 +39,17 @@
 
 #include "../src/rendering/terrain/quad_tree.h"
 
-struct my_engine
+struct My_Engine
 {
-    engine_window* window;
-    vk_renderer* renderer;
+    Engine_Window* window;
+    Vk_Renderer* renderer;
     ImGuiContext* ui;
 
-    engine_audio* audio;
-    engine_audio_source* audio_source;
+    Engine_Audio* audio;
+    Engine_Audio_Source* audio_source;
 
 
-    my_engine_callbacks callbacks;
+    My_Engine_Callbacks callbacks;
 
     std::string execPath;
     bool running;
@@ -57,9 +57,9 @@ struct my_engine
     double delta_time;
 
     // Resources
-    vk_buffer scene_buffer;
-    vk_buffer sun_buffer;
-    vk_buffer camera_buffer;
+    Vk_Buffer scene_buffer;
+    Vk_Buffer sun_buffer;
+    Vk_Buffer camera_buffer;
 
 
     // Scene information
@@ -78,7 +78,7 @@ struct my_engine
 };
 
 
-static my_engine* g_engine = nullptr;
+static My_Engine* g_engine = nullptr;
 
 //
 // Global scene information that will be accessed by the shaders to perform
@@ -89,7 +89,7 @@ static my_engine* g_engine = nullptr;
 //
 // Padding is equally important and hence the usage of the "alignas" keyword.
 //
-struct scene_props
+struct Scene_Data
 {
     // ambient Strength, specular strength, specular shininess, empty
     glm::vec4 ambient_spec = glm::vec4(0.05f, 1.0f, 16.0f, 0.0f);
@@ -114,9 +114,9 @@ static VkExtent2D framebuffer_size = { 1920, 1080 };
 static VkSampler g_framebuffer_sampler;
 
 
-static vk_render_pass offscreen_pass{};
-static vk_render_pass composite_pass{};
-static vk_render_pass skybox_pass{};
+static Vk_Render_Pass offscreen_pass{};
+static Vk_Render_Pass composite_pass{};
+static Vk_Render_Pass skybox_pass{};
 
 static VkDescriptorSetLayout offscreen_ds_layout;
 static std::vector<VkDescriptorSet> offscreen_ds;
@@ -124,12 +124,12 @@ static std::vector<VkDescriptorSet> offscreen_ds;
 static VkDescriptorSetLayout composite_ds_layout;
 static std::vector<VkDescriptorSet> composite_ds;
 
-static std::vector<vk_image> viewport;
-static std::vector<vk_image> positions;
-static std::vector<vk_image> normals;
-static std::vector<vk_image> colors;
-static std::vector<vk_image> speculars;
-static std::vector<vk_image> depths;
+static std::vector<Vk_Image> viewport;
+static std::vector<Vk_Image> positions;
+static std::vector<Vk_Image> normals;
+static std::vector<Vk_Image> colors;
+static std::vector<Vk_Image> speculars;
+static std::vector<Vk_Image> depths;
 
 static VkDescriptorSetLayout skybox_ds_layout;
 static std::vector<VkDescriptorSet> skybox_ds;
@@ -141,12 +141,12 @@ static VkPipelineLayout offscreen_pipeline_layout;
 static VkPipelineLayout composite_pipeline_layout;
 static VkPipelineLayout skybox_pipeline_layout;
 
-static vk_pipeline offscreen_pipeline;
-static vk_pipeline wireframe_pipeline;
-static vk_pipeline composite_pipeline;
-static vk_pipeline skybox_pipeline;
+static Vk_Pipeline offscreen_pipeline;
+static Vk_Pipeline wireframe_pipeline;
+static Vk_Pipeline composite_pipeline;
+static Vk_Pipeline skybox_pipeline;
 
-static vk_pipeline* current_pipeline = &offscreen_pipeline;
+static Vk_Pipeline* current_pipeline = &offscreen_pipeline;
 
 static std::vector<VkCommandBuffer> cmd_buffer;
 //static std::vector<VkCommandBuffer> composite_cmd_buffer;
@@ -157,7 +157,7 @@ static Model skybox_model;
 
 
 // UI related stuff
-static vk_render_pass ui_pass{};
+static Vk_Render_Pass ui_pass{};
 static std::vector<VkDescriptorSet> viewport_ui;
 static std::vector<VkDescriptorSet> positions_ui;
 static std::vector<VkDescriptorSet> colors_ui;
@@ -174,7 +174,7 @@ Quad_Tree* quad_tree = nullptr;
 
 
 
-static void event_callback(basic_event& e);
+static void event_callback(Basic_Event& e);
 
 static std::string get_executable_directory()
 {
@@ -189,7 +189,7 @@ static std::string get_executable_directory()
     return std::filesystem::path(directory).parent_path().string();
 }
 
-static bool initialize_core(my_engine* engine, const char* name, int width, int height)
+static bool initialize_core(My_Engine* engine, const char* name, int width, int height)
 {
     // Initialize core systems
     engine->window = create_window(name, width, height);
@@ -219,7 +219,7 @@ static bool initialize_core(my_engine* engine, const char* name, int width, int 
     return true;
 }
 
-static void configure_renderer(my_engine* engine)
+static void configure_renderer(My_Engine* engine)
 {
     // Create rendering passes and render targets
     g_framebuffer_sampler = create_image_sampler(VK_FILTER_LINEAR, 0, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER);
@@ -244,8 +244,8 @@ static void configure_renderer(my_engine* engine)
 
 
     //out_engine->sun_buffer = create_uniform_buffer(sizeof(sun_data));
-    engine->camera_buffer = create_uniform_buffer(sizeof(view_projection));
-    engine->scene_buffer = create_uniform_buffer(sizeof(scene_props));
+    engine->camera_buffer = create_uniform_buffer(sizeof(View_Projection));
+    engine->scene_buffer = create_uniform_buffer(sizeof(Scene_Data));
 
 
     const std::vector<VkDescriptorSetLayoutBinding> offscreen_bindings{
@@ -254,7 +254,7 @@ static void configure_renderer(my_engine* engine)
 
     offscreen_ds_layout = create_descriptor_layout(offscreen_bindings);
     offscreen_ds = allocate_descriptor_sets(offscreen_ds_layout);
-    update_binding(offscreen_ds, offscreen_bindings[0], engine->camera_buffer, sizeof(view_projection));
+    update_binding(offscreen_ds, offscreen_bindings[0], engine->camera_buffer, sizeof(View_Projection));
 
     //////////////////////////////////////////////////////////////////////////
     const std::vector<VkDescriptorSetLayoutBinding> composite_bindings{
@@ -279,7 +279,7 @@ static void configure_renderer(my_engine* engine)
     update_binding(composite_ds, composite_bindings[2], colors, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(composite_ds, composite_bindings[3], speculars, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
     update_binding(composite_ds, composite_bindings[4], depths, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, g_framebuffer_sampler);
-    update_binding(composite_ds, composite_bindings[5], engine->scene_buffer, sizeof(scene_props));
+    update_binding(composite_ds, composite_bindings[5], engine->scene_buffer, sizeof(Scene_Data));
 
 
     const std::vector<VkDescriptorSetLayoutBinding> skybox_bindings{
@@ -289,7 +289,7 @@ static void configure_renderer(my_engine* engine)
 
     skybox_ds_layout = create_descriptor_layout(skybox_bindings);
     skybox_ds = allocate_descriptor_sets(skybox_ds_layout);
-    update_binding(skybox_ds, skybox_bindings[0], engine->camera_buffer, sizeof(view_projection));
+    update_binding(skybox_ds, skybox_bindings[0], engine->camera_buffer, sizeof(View_Projection));
 
     //////////////////////////////////////////////////////////////////////////
     material_ds_binding = {
@@ -385,7 +385,7 @@ static void configure_renderer(my_engine* engine)
 
 bool engine_initialize(const char* name, int width, int height)
 {
-    g_engine = new my_engine();
+    g_engine = new My_Engine();
 
     g_engine->start_time = std::chrono::high_resolution_clock::now();
     g_engine->execPath = get_executable_directory();
@@ -484,11 +484,10 @@ bool engine_update()
     // same no matter how fast the CPU is running.
     g_engine->delta_time = get_delta_time();
 
-
     scene.sun_dir.x = glm::sin((float)glfwGetTime()) * 2.0f;
     scene.sun_dir.z = glm::cos((float)glfwGetTime()) * 2.0f;
 
-    set_buffer_data(g_engine->camera_buffer, &g_engine->camera.view_proj, sizeof(view_projection));
+    set_buffer_data(g_engine->camera_buffer, &g_engine->camera.vp, sizeof(View_Projection));
     set_buffer_data(g_engine->scene_buffer, &scene);
 
     return g_engine->running;
@@ -516,7 +515,7 @@ void engine_render()
     {
         begin_render_pass(cmd_buffer, offscreen_pass);
 
-        bind_descriptor_set(cmd_buffer, offscreen_pipeline_layout, offscreen_ds, { sizeof(view_projection) });
+        bind_descriptor_set(cmd_buffer, offscreen_pipeline_layout, offscreen_ds, { sizeof(View_Projection) });
         bind_pipeline(cmd_buffer, *current_pipeline);
 
         // TODO: Currently we are rendering each instance individually
@@ -548,7 +547,7 @@ void engine_render()
         if (g_engine->using_skybox) {
             begin_render_pass(cmd_buffer, skybox_pass);
 
-            bind_descriptor_set(cmd_buffer, skybox_pipeline_layout, skybox_ds, { sizeof(view_projection) });
+            bind_descriptor_set(cmd_buffer, skybox_pipeline_layout, skybox_ds, { sizeof(View_Projection) });
             bind_pipeline(cmd_buffer, skybox_pipeline);
             render_model(skybox_model, cmd_buffer, skybox_pipeline_layout);
             end_render_pass(cmd_buffer);
@@ -705,7 +704,7 @@ void engine_show_window()
     show_window(g_engine->window);
 }
 
-void engine_set_callbacks(my_engine_callbacks callbacks)
+void engine_set_callbacks(My_Engine_Callbacks callbacks)
 {
     g_engine->callbacks = callbacks;
 }
@@ -908,7 +907,7 @@ void engine_update_input()
 
 void engine_update_camera_view()
 {
-    update_camera(g_engine->camera, get_cursor_position());
+    update_camera_view(g_engine->camera, get_cursor_position());
 }
 
 void engine_update_camera_projection(int width, int height)
@@ -919,12 +918,12 @@ void engine_update_camera_projection(int width, int height)
 
 float* engine_get_camera_view()
 {
-    return glm::value_ptr(g_engine->camera.view_proj.view);
+    return glm::value_ptr(g_engine->camera.vp.view);
 }
 
 float* engine_get_camera_projection()
 {
-    return glm::value_ptr(g_engine->camera.view_proj.proj);
+    return glm::value_ptr(g_engine->camera.vp.proj);
 }
 
 void engine_get_camera_position(float* x, float* y, float* z)
@@ -1294,7 +1293,7 @@ static bool dropped_window(window_dropped_event& e)
     return true;
 }
 
-static void event_callback(basic_event& e)
+static void event_callback(Basic_Event& e)
 {
     event_dispatcher dispatcher(e);
 

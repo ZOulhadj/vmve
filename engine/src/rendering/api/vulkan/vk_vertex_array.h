@@ -7,8 +7,8 @@
 
 struct vk_vertex_array
 {
-    vk_buffer vertex_buffer;
-    vk_buffer index_buffer;
+    Vk_Buffer vertex_buffer;
+    Vk_Buffer index_buffer;
     uint32_t  index_count;
 };
 

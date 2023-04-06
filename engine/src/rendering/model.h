@@ -27,7 +27,7 @@ struct Model
 
     // A list of all the unique textures
     std::vector<std::filesystem::path> unique_texture_paths;
-    std::vector<vk_image> unique_textures;
+    std::vector<Vk_Image> unique_textures;
 
     std::vector<Mesh> meshes;
     std::string name;

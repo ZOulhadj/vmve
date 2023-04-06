@@ -31,7 +31,7 @@ enum class vsync_mode
 };
 
 
-Engine_Renderer* initialize_renderer(const engine_window* window);
+Engine_Renderer* initialize_renderer(const Engine_Window* window);
 void terminate_renderer(Engine_Renderer* renderer);
 
 template <typename T>

@@ -3,7 +3,7 @@
 
 #include "event.h"
 
-struct key_event : public basic_event
+struct key_event : public Basic_Event
 {
     int get_key_code() const { return m_KeyCode; }
     int get_mods() const { return m_Modifiers; }
