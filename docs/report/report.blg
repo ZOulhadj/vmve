@@ -3,16 +3,20 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: report.aux
 Reallocating 'name_of_file' (item size: 1) to 9 items.
 The style file: IEEEtran.bst
+Reallocating 'name_of_file' (item size: 1) to 9 items.
 Reallocating 'name_of_file' (item size: 1) to 5 items.
 Reallocating 'singl_function' (item size: 4) to 100 items.
 Reallocating 'singl_function' (item size: 4) to 100 items.
 Reallocating 'singl_function' (item size: 4) to 100 items.
 Reallocating 'wiz_functions' (item size: 4) to 6000 items.
 Reallocating 'singl_function' (item size: 4) to 100 items.
-Database file #1: refs.bib
+Database file #1: IEEEabrv.bib
+Database file #2: refs.bib
 -- IEEEtran.bst version 1.14 (2015/08/26) by Michael Shell.
 -- http://www.michaelshell.org/tex/ieeetran/bibtex/
 -- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
+Warning--empty journal in RDNA
+Warning--empty journal in ADA
 Warning--empty author in indentation
 Warning--empty journal in indentation
 Warning--empty year in indentation
@@ -20,43 +24,43 @@ Warning--empty year in indentation
 Done.
 You've used 27 entries,
             4087 wiz_defined-function locations,
-            904 strings with 9424 characters,
-and the built_in function-call counts, 7255 in all, are:
-= -- 426
-> -- 27
+            1434 strings with 19896 characters,
+and the built_in function-call counts, 7570 in all, are:
+= -- 474
+> -- 36
 < -- 0
-+ -- 27
-- -- 0
-* -- 188
-:= -- 1079
++ -- 30
+- -- 3
+* -- 210
+:= -- 1177
 add.period$ -- 54
 call.type$ -- 27
-change.case$ -- 27
+change.case$ -- 30
 chr.to.int$ -- 0
-cite$ -- 30
-duplicate$ -- 755
+cite$ -- 32
+duplicate$ -- 771
 empty$ -- 913
-format.name$ -- 0
-if$ -- 1664
+format.name$ -- 3
+if$ -- 1722
 int.to.chr$ -- 0
 int.to.str$ -- 27
-missing$ -- 160
+missing$ -- 162
 newline$ -- 104
-num.names$ -- 0
-pop$ -- 511
+num.names$ -- 3
+pop$ -- 504
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 639
+skip$ -- 657
 stack$ -- 0
-substring$ -- 27
-swap$ -- 320
+substring$ -- 33
+swap$ -- 336
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 5
 type$ -- 27
-warning$ -- 3
-while$ -- 0
+warning$ -- 5
+while$ -- 3
 width$ -- 29
-write$ -- 183
-(There were 3 warnings)
+write$ -- 190
+(There were 5 warnings)

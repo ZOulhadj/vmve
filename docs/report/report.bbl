@@ -49,12 +49,12 @@
 ``Amd radeon gpu profiler,'' \url{https://gpuopen.com/rgp/}.
 
 \bibitem{RDNA}
-``Rdna architecture,''
-  \url{https://www.amd.com/system/files/documents/rdna-whitepaper.pdf}.
+{AMD}, ``{RDNA architecture - The all new Radeon gaming architecture powering
+  ``Navi''},'' 2019, [Online; accessed 23-January-2023].
 
 \bibitem{ADA}
-``Nvidia ada science,''
-  \url{https://images.nvidia.com/aem-dam/Solutions/geforce/ada/ada-lovelace-architecture/nvidia-ada-gpu-science.pdf}.
+{Henry C Lin and Andrew Burnes}, ``{How Ada advances the science of graphics
+  with DLSS 3.}'' 2022, [Online; accessed 2-May-2023].
 
 \bibitem{imgui}
 ``Imgui,'' \url{https://github.com/ocornut/imgui/}.
@@ -78,7 +78,10 @@
   \url{https://gpuopen.com/learn/reducing-vulkan-api-call-overhead/}.
 
 \bibitem{3d_projection}
-``3d projection,'' \url{https://en.wikipedia.org/wiki/3D_projection}.
+{Wikipedia contributors}, ``3d projection --- {Wikipedia}{,} the free
+  encyclopedia,''
+  \url{https://en.wikipedia.org/w/index.php?title=3D_projection&oldid=1148285432},
+  2023, [Online; accessed 6-April-2023].
 
 \bibitem{coordinate_systems}
 ``Coordinate systems,''

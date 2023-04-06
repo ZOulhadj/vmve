@@ -14,6 +14,8 @@
 \usepackage{xcolor}
 \usepackage[acronym]{glossaries}
 \usepackage[all]{hypcap}
+\usepackage{textcomp}
+\usepackage{url}
 %\hypersetup{colorlinks=true, pdfstartview=FitV, linkcolor=blue, citecolor=black, plainpages=false, pdfpagelabels=true, urlcolor=blue}
 
 
@@ -43,7 +45,7 @@
 \lstset{style=mystyle}
 \setcounter{secnumdepth}{5}
 
-\makeglossaries
+\makenoidxglossaries
 
 \newglossaryentry{vulkan}{name=Vulkan, description={Low-level GPU application programmable interface}}
 \newglossaryentry{cpp}{name=C++,description={Low-level programming language}}
@@ -54,6 +56,7 @@
 \newacronym{cpu}{CPU}{Central Processing Unit}
 \newacronym{gpu}{GPU}{Graphics Processing Unit}
 \newacronym{ram}{RAM}{Random Access Memory}
+\newacronym{vram}{VRAM}{Video Random Access Memory}
 \newacronym{wsi}{WSI}{Window System Integration}
 \newacronym{aes}{AES}{Advanced Encryption Standard}
 \newacronym{glsl}{GLSL}{OpenGL Shading Language}
@@ -71,6 +74,8 @@
 \newacronym{stl}{STL}{C++ Standard Template Library}
 \newacronym{lod}{LOD}{Level of Detail}
 \newacronym{ip}{IP}{Intellectual Property}
+
+
 
 % end of preamble
 
@@ -917,15 +922,31 @@ struct vk_context
 };
 \end{lstlisting}
 
-Linking against actual driver function calls instead of linking to
-the common Vulkan loader.  \cite{volk}
+The initialization of the renderer context can be broken down into several
+stages. The first of these states is acquiring the function pointers into the
+Vulkan loader which contains the implementation details for the \gls{gpu}
+driver. This is achieved by statically linking a ``stub'' library file into the
+executable. However, as discussed in a blog post by Arseny Kapoulkine titled
+\textit{``Reducing Vulkan\textsuperscript{\textregistered} API call overhead''}
+\cite{volk}, he finds that this method has some overhead due to how function
+calls are dispatched. To reduce this overhead, a meta-loader called Volk is used
+which contains pointers to the real implementation and is dynamically loaded at
+runtime.
+
+The next step is acquiring a \gls{gpu} with a specific set of requirements that
+can be used for rendering. This step involves querying all available \glspl{gpu}
+their names, hardware capabilities as well as if it supports basic screen
+rendering.
 
 
-- Renderer context Combine Vulkan resource allocating objects into
--   single object for increased clarity 
+
+
 
 \subsubsection{Frame synchronization}
--- How frames are handles
+Once the renderer context has been fully initialized, the renderer can now start
+creating the necessary resources required for frame synchronization.
+
+
 
 VkSemaphore
 VkFence
@@ -967,6 +988,15 @@ The key benefit of deferred rendering is increased performance
 \end{figure}
 
 \subsubsection{Dynamic Uniform Buffers}
+Uniform buffers are regions of memory located in \gls{vram} on the \gls{gpu}.
+This memory can be accessed by shaders when creating a frame. These buffers can
+contain any sort of data including camera information, light properties, object
+transformations etc.
+
+\gls{vmve} makes use of two dynamic uniform buffers one for the camera
+projection and the other for scene information such as lights.
+
+
 -- Per frame uniform buffers consist of data packaged into a single buffer for 
 better performance and are accessed by using a frame index counter
 -- reduces the need to manage unique buffers, fewer state changes (binding).
@@ -1008,7 +1038,7 @@ loaded into \gls{vmve}.
 
 \subsubsection{Camera}
 3D geometry data must be transformed through a series of mathematical
-calculations that will take vertex points from a 3D ``world'' and them convert
+calculations that will take vertex points from a 3D ``world'' and then convert
 them onto a 2D image for it to then be displayed on a monitor. This
 transformation is known as perspective projection \cite{3d_projection} and is
 accomplished by computing several intermediate coordinate spaces as seen in
@@ -1053,8 +1083,8 @@ reality, all points/vertex positions in the world space are transformed relative
 to the ``camera''. For example, if the position of the camera along the z axis
 increases i.e. we move forward then all objects in the world will be moved
 towards us. A nice visualization of this is shown in figure
-\ref{fig:camera_projection} curtesy of a blog post by \href{Jordan
-Santell}{https://jsantell.com/model-view-projection/}.
+\ref{fig:camera_projection} courtesy of a blog post by Jordan Santell
+\href{https://jsantell.com/model-view-projection/}{https://jsantell.com/model-view-projection/}.
 
 \begin{figure}[h!]
   \centering
@@ -1064,7 +1094,7 @@ Santell}{https://jsantell.com/model-view-projection/}.
 \end{figure}
 
 \gls{vmve} makes use of a quaternion to perform the view projection. This is an
-alternative to euler angles and has several benefits including, preventing gimbal
+alternative to Euler angles and has several benefits including, preventing gimbal
 lock and easier interpolation between orientations.
 \begin{figure}[ht]
   \centering
@@ -1808,14 +1838,14 @@ throughout the development of \gls{vmve}.
 
 
 \clearpage
-\printglossary
+\printnoidxglossary
 
 \clearpage
-\printglossary[type=\acronymtype]
+\printnoidxglossary[type=\acronymtype]
 
-
+\clearpage
 \bibliographystyle{IEEEtran}
-\bibliography{refs}
+\bibliography{IEEEabrv, refs}
 
 
 \section{Appendices}
