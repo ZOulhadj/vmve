@@ -220,13 +220,13 @@ static std::vector<vk_frame> create_frames(uint32_t frames_in_flight)
 
     for (vk_frame& frame : frames) {
         vk_check(vkCreateFence(g_rc->device->device, &fence_info, nullptr, &frame.submit_fence));
-        vk_check(vkCreateSemaphore(g_rc->device->device, &semaphore_info, nullptr, &frame.image_ready_semaphore));
-        vk_check(vkCreateSemaphore(g_rc->device->device, &semaphore_info, nullptr, &frame.image_complete_semaphore));
+        vk_check(vkCreateSemaphore(g_rc->device->device, &semaphore_info, nullptr, &frame.image_ready));
+        vk_check(vkCreateSemaphore(g_rc->device->device, &semaphore_info, nullptr, &frame.image_complete));
 
 
         // temp
-        vk_check(vkCreateSemaphore(g_rc->device->device, &semaphore_info, nullptr, &frame.offscreen_semaphore));
-        vk_check(vkCreateSemaphore(g_rc->device->device, &semaphore_info, nullptr, &frame.composite_semaphore));
+        //vk_check(vkCreateSemaphore(g_rc->device->device, &semaphore_info, nullptr, &frame.offscreen_semaphore));
+        //vk_check(vkCreateSemaphore(g_rc->device->device, &semaphore_info, nullptr, &frame.composite_semaphore));
     }
 
     return frames;
@@ -236,10 +236,10 @@ static std::vector<vk_frame> create_frames(uint32_t frames_in_flight)
 static void destroy_frames(std::vector<vk_frame>& frames)
 {
     for (vk_frame& frame : frames) {
-        vkDestroySemaphore(g_rc->device->device, frame.composite_semaphore, nullptr);
-        vkDestroySemaphore(g_rc->device->device, frame.offscreen_semaphore, nullptr);
-        vkDestroySemaphore(g_rc->device->device, frame.image_complete_semaphore, nullptr);
-        vkDestroySemaphore(g_rc->device->device, frame.image_ready_semaphore, nullptr);
+        //vkDestroySemaphore(g_rc->device->device, frame.composite_semaphore, nullptr);
+        //vkDestroySemaphore(g_rc->device->device, frame.offscreen_semaphore, nullptr);
+        vkDestroySemaphore(g_rc->device->device, frame.image_complete, nullptr);
+        vkDestroySemaphore(g_rc->device->device, frame.image_ready, nullptr);
         vkDestroyFence(g_rc->device->device, frame.submit_fence, nullptr);
     }
 }
@@ -1229,7 +1229,7 @@ bool get_next_swapchain_image()
     VkResult result = vkAcquireNextImageKHR(g_rc->device->device,
         g_swapchain.handle,
         UINT64_MAX,
-        g_frames[g_buffer_index].image_ready_semaphore,
+        g_frames[g_buffer_index].image_ready,
         nullptr,
         &g_image_index);
 
@@ -1250,7 +1250,7 @@ bool get_next_swapchain_image()
         VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
         VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
         submit_info.waitSemaphoreCount = 1;
-        submit_info.pWaitSemaphores = &g_frames[g_buffer_index].image_ready_semaphore;
+        submit_info.pWaitSemaphores = &g_frames[g_buffer_index].image_ready;
         submit_info.pWaitDstStageMask = &waitStage;
         vk_check(vkQueueSubmit(g_rc->device->graphics_queue, 1, &submit_info, VK_NULL_HANDLE));
 #endif
@@ -1282,12 +1282,12 @@ void submit_gpu_work(const std::vector<std::vector<VkCommandBuffer>>& cmdBuffers
     const VkPipelineStageFlags waitState = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &g_frames[g_buffer_index].image_ready_semaphore;
+    submit_info.pWaitSemaphores = &g_frames[g_buffer_index].image_ready;
     submit_info.pWaitDstStageMask = &waitState;
     submit_info.commandBufferCount = u32(buffers.size());
     submit_info.pCommandBuffers = buffers.data();
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &g_frames[g_buffer_index].image_complete_semaphore;
+    submit_info.pSignalSemaphores = &g_frames[g_buffer_index].image_complete;
 
     vk_check(vkQueueSubmit(g_rc->device->graphics_queue, 1, &submit_info, g_frames[g_buffer_index].submit_fence));
 }
@@ -1300,7 +1300,7 @@ bool present_swapchain_image()
     // request the GPU to present the rendered image onto the screen
     VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &g_frames[g_buffer_index].image_complete_semaphore;
+    present_info.pWaitSemaphores = &g_frames[g_buffer_index].image_complete;
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &g_swapchain.handle;
     present_info.pImageIndices = &g_image_index;

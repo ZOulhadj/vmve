@@ -28,11 +28,11 @@ struct vk_frame
     VkFence submit_fence;
 
     // Frame -> Frame sync (GPU)
-    VkSemaphore image_ready_semaphore;
-    VkSemaphore image_complete_semaphore;
+    VkSemaphore image_ready;
+    VkSemaphore image_complete;
 
-    VkSemaphore offscreen_semaphore;
-    VkSemaphore composite_semaphore;
+    //VkSemaphore offscreen_semaphore;
+    //VkSemaphore composite_semaphore;
 };
 
 struct vk_framebuffer_attachment

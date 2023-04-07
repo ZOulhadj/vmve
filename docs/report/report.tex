@@ -563,25 +563,32 @@ The other libraries used in \gls{vmve} can be seen in the list below.
 \end{description}
 
 \section{Design}
+The next stage of the project was designed and occurred between milestones two
+and three. 
 
-Having discussed the different technologies being used in VMVE, they must now be
-evaluated and incorporated into the design of VMVE and its various subsystems.
+Having discussed the different technologies being used in VMVE, they must
+now be evaluated and incorporated into the design of VMVE and its various
+subsystems.
 
 \subsection{Branding}
-
+The branding i.e the look of the application was an important factor during the
+design as it will be presented to users and can directly influence the user
+experience. Furthermore, being recognizable can result in greater number of
+users.
 
 \subsubsection{Project Name}
-VMVE stands for ``Vulkan Model Viewer and Exporter''. The name is mainly split
-into two halves. The first is ``Vulkan'' and the other is ``Model Viewer and
-Exporter''. Fundamentally, the application revolves around the idea of being able
-to view/manipulate 3D digital assets and export them into a custom file format
+VMVE stands for ``Vulkan Model Viewer and Exporter''. The name is split into
+two. The first is ``Vulkan'' the other is ``Model Viewer and Exporter''. The
+rendering API used to render 3D digital assets is \gls{vulkan} and hence the
+first part of the name. The second part is because the application will include
+functionality such as importing and exporting models into a custom file format
 as mentioned in section \ref{custom_file_format}.
 
 \subsubsection{Logo}
-There are two versions of the VMVE logo that were designed and are intended to
-be used in different situations. The first is the complete large logo as seen
-below in figure {}
-
+There are two versions of the \gls{vmve} logo that was designed and intended to
+be used in different situations. The first is the complete logo as seen below in
+figure \ref{fig:project_logo_large} which is referred to as the ``large logo''.
+It contains the icon and the name of the application.
 \begin{figure}[h!]
   \centering
   \includegraphics{images/project_logo.png}
@@ -938,18 +945,49 @@ can be used for rendering. This step involves querying all available \glspl{gpu}
 their names, hardware capabilities as well as if it supports basic screen
 rendering.
 
+\subsubsection{Swapchain}
+
+- Double, Triple Buffering
+- VSync
 
 
 
 
 \subsubsection{Frame synchronization}
-Once the renderer context has been fully initialized, the renderer can now start
-creating the necessary resources required for frame synchronization.
+Once the swapchain has been fully initialized, the renderer can now start
+creating the necessary resources required for frame synchronization. Vulkan has
+two concepts that relate to synchronization which are VkFence and VkSemaphore.
 
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=C++]
+    struct vk_frame
+    {
+        VkFence submit_fence;
 
+        VkSemaphore image_ready;
+        VkSemaphore image_complete;
+    };
+  \end{lstlisting}
+  \caption{Frame sync structure}
+  \label{fig:local_to_world}
+\end{figure}
 
-VkSemaphore
-VkFence
+The \gls{vulkan} 1.3.246 specification states that  ``\lstinline{VkFence} is a
+synchronization primitive that can be used between queue submissions and the
+host''
+[\href{https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkFence.html}{7.3
+Fences}]. In other words, a fence can be signaled on the \gls{cpu} to indicate
+in this case, when a new image from the presentation engine has been acquired
+via the \lstinline{vkAcquireNextImageKHR} function call.
+
+Similarly, ``\lstinline{VkSemaphore} is a synchronization primitive that can be
+used between queue operations''
+[\href{https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkSemaphore.html}{7.4
+Semaphores}]. For the application, this means that rendering operations can
+occur simultaneously for multiple frames while ensuring that frames
+``in-flight'' are not interrupted.
+
 
 \begin{figure}[h!]
   \centering
@@ -957,13 +995,6 @@ VkFence
   \caption{Frame Synchronization}
   \label{fig:frame_sync}
 \end{figure}
-
-
-
-\subsubsection{Presenation}
-
-- Double, Triple Buffering
-- VSync
 
 \subsubsection{Framebuffers}
 The term ``Framebuffer'' refers to a region of memory that stores frame data i.e pixel colors.
@@ -994,14 +1025,12 @@ contain any sort of data including camera information, light properties, object
 transformations etc.
 
 \gls{vmve} makes use of two dynamic uniform buffers one for the camera
-projection and the other for scene information such as lights.
-
-
--- Per frame uniform buffers consist of data packaged into a single buffer for 
-better performance and are accessed by using a frame index counter
--- reduces the need to manage unique buffers, fewer state changes (binding).
-
--   Triple Buffering Buffers Single large buffer rather than multiple buffers for each frame
+projection and the other for scene information such as lights. A dynamic buffer
+is a buffer that is large enough to store per-frame data and each frame of data
+can be accessed using an offset into the buffer and the current frame index.
+\ref{fig:dynamic_uniform_buffer} shows the internal structure of a dynamic
+uniform buffer that stores three sub-regions of memory in a triple-buffered
+frame setup.
 
 \begin{figure}[h!]
   \centering
@@ -1010,8 +1039,13 @@ better performance and are accessed by using a frame index counter
   \label{fig:dynamic_uniform_buffer}
 \end{figure}
 
+The use of dynamic uniform buffers provides several benefits compared to using a
+unique buffer handle for each frame.
 
-\subsubsection{Model}
+
+-- reduces the need to manage unique buffers, fewer state changes (binding).
+
+\subsubsection{Models}
 In the context of the rendering system, a ``model'' is a structure that represents
 a 3D geometry object. This could be as simple as a cube or as complex as an
 entire scene.
@@ -1019,9 +1053,9 @@ entire scene.
 The data structure contains several key pieces of information such as geometry data
 and textures. 
 
-Often times complex models are not singular pieces of geometry. Instead, artists
-combine multiple smaller objects together to form the final model. These smaller
-parts are known as ``Meshes'' within the application.
+Complex models are not singular pieces of geometry. Instead, artists combine
+multiple smaller objects to form the final model. These smaller parts are known
+as ``Meshes'' within the application.
 
 Figure \ref{fig:model} shows the internal structure of an example model which has been
 loaded into \gls{vmve}.
@@ -1032,11 +1066,28 @@ loaded into \gls{vmve}.
   \label{fig:model}
 \end{figure}
 
-\subsubsection{Entity}
--- Contains information about what model is being used and a transformation
+All uniquely loaded models within the application are stored in a contiguous
+array. 
 
+\subsubsection{Entities}
+An entity represents an instance of the model in the virtual environment. There
+can be many different entities using the same model. An example of this can be
+seen in figure \ref{fig:entities} which shows four entities using the same 
+backpack model.
 
-\subsubsection{Camera}
+This is achieved by storing a model index that indicates which model the entity
+refers to within the contiguous array of models. Secondly, an entity contains a
+transformation matrix that positions the entity in the world. A more in-depth
+explanation of the model matrix can be found in section \ref{camera}.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/entities.png}
+  \caption{Multiple entities in virtual environment}
+  \label{fig:entities}
+\end{figure}
+
+\subsubsection{Camera} \label{camera}
 3D geometry data must be transformed through a series of mathematical
 calculations that will take vertex points from a 3D ``world'' and then convert
 them onto a 2D image for it to then be displayed on a monitor. This
@@ -1259,6 +1310,11 @@ the vast of amount of data stored within the font.
 
 
 \subsubsection{Load Model Window}
+The load model window is accessed through \lstinline{File > Load Model} or by
+pressing the \lstinline{Ctrl + L} shortcut. This window allows the user to load
+a 3D model at runtime by traversing the file system and selecting a model to
+load.
+
 \begin{figure}[h!]
   \centering
   \includegraphics[width=\textwidth]{images/load_model_window.png}
@@ -1365,11 +1421,11 @@ created \ref{fig:logging_system}.
 \subsubsection{Versions}
 \gls{vmve} follows the major, minor and patch system of versioning and is used
 as follows [Major].[Minor].[Patch]. The use of versions is important in
-differentiating between VMVE releases. Each new version of the application comes
-new features as well as bug fixes that aim to improve the software over time.
-Due to the rapid development of new features and functionaility, backwards
-compatibility cannot be guaranteed. The current official release of \gls{vmve}
-is v0.0.4.
+differentiating between \gls{vmve} releases. Each new version of the application
+comes with new features as well as bug fixes that aim to improve the software
+over time. Due to the rapid development of new features and functionality,
+backward compatibility cannot be guaranteed. The current official release of
+\gls{vmve} is v0.0.4.
 
 \subsubsection{Website}
 Alongside the application, a website was created as a platform for easily
