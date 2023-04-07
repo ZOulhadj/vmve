@@ -503,6 +503,14 @@ constraints this is simply not feasible. Instead, both need to be evaluated with
 the aim of choosing one.
 
 
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/api_comparison.png}
+  \caption{Rendering API comparison}
+  \label{fig:api_comparison}
+\end{figure}
+
+
 
 // CONTINUE FROM HERE
 
@@ -591,7 +599,7 @@ figure \ref{fig:project_logo_large} which is referred to as the ``large logo''.
 It contains the icon and the name of the application.
 \begin{figure}[h!]
   \centering
-  \includegraphics{images/project_logo.png}
+  \includegraphics[width=\textwidth]{images/project_logo.png}
   \caption{VMVE Large Logo}
   \label{fig:project_logo_large}
 \end{figure}
@@ -601,7 +609,7 @@ icons itself.
 
 \begin{figure}[h!]
   \centering
-  \includegraphics{images/project_icon.png}
+  \includegraphics[width=\textwidth]{images/project_icon.png}
   \caption{VMVE Small Logo}
   \label{fig:project_logo_small}
 \end{figure}
@@ -1388,7 +1396,7 @@ understanding of the current state of \gls{vmve}.
   \label{fig:logging_window}
 \end{figure}
 
-Messages are stored in a fixed size array that is preallocated. This ensures
+Messages are stored in a fixed-size array that is preallocated. This ensures
 that there are no potential allocations occurring each time ``print\_log''  is
 called. By default \gls{vmve} allows for a maximum of 10,000 log messages before
 the buffer becomes full. In the event that the buffer does become full, the
@@ -1402,7 +1410,8 @@ created \ref{fig:logging_system}.
   \label{fig:logging_system}
 \end{figure}
 
-\subsection{Encryption System}
+\subsection{Encryption and custom System}
+
 -- AES (key and initialization vector)
 -- Image of how the system works 
   -- Loads model file, encrypts it and then writes it back out
@@ -1450,7 +1459,7 @@ going all the back to the first official release (v0.0.1).
 
 \subsubsection{Example models}
 The VMVE website provides an additional download link to six different example
-models. These are provided by third parities (with appropriate credits) and are
+models. These are provided by third parties (with appropriate credits) and are
 corrected to ensure they can be loaded into VMVE without any issues. The purpose
 of these example models is to allow users to easily test the application without
 needing to search the internet or create their own.
@@ -1460,11 +1469,8 @@ needing to search the internet or create their own.
 In addition to a website, a documentation website was also created curticy of
 Read the Docs (\href{https://readthedocs.org}{https://readthedocs.org}). The
 purpose of this site is to provide additional information about \gls{vmve} and
-also provide an in depth tutorial that aims to help users understand and how to
-use the application.
-
-This significantly reduces the learning curve and allows new users to quickly
-start using \gls{vmve}.
+also, provide an in-depth tutorial that aims to help users understand how to use
+the application.
 
 \begin{figure}[h!]
   \centering
@@ -1478,23 +1484,23 @@ start using \gls{vmve}.
 The completion of the project transitions into the evaluation stage where the
 project is evaluated against the original goals and requirements in order to
 judge if those requirements have been met. When evaluating the project there are
-two distinct categories. The first is self evaluation and the other is user
-feedback. 
+two distinct categories. The first is self-evaluation and the other is user
+feedback.
 
 
 \subsection{Distribution}
 In hindsight, the most challenging aspect of the entire project was by far,
 distribution and more specifically ensuring that VMVE was able to run on all
-supported systems as expected. Throughout the applications development there
-were points where VMVE would work on the development machine however, crash on
-other systems. These inconsistencies paired with the lack of reproducibility
-made these issues quite difficult to debug. The majority of these
-inconsistencies between different systems occurred during the initialization
-stages. This would include creating the window, initializing the renderer,
-initializing the UI, creating the audio system etc.
+supported systems as expected. Throughout the applications development, there
+were points where \gls{vmve} would work on the development machine, however,
+throw an exception error on other systems. These inconsistencies paired with the
+lack of reproducibility made these issues quite difficult to debug. The majority
+of these inconsistencies between different systems occurred during the
+initialization stages. This would include creating the window, initializing the
+renderer, initializing the UI, creating the audio system etc.
 
 Some examples of these inconsistencies include the application crashing when
-resizing the window, crashes if audio is disabled on a system as well as frame
+resizing the window, crashing if audio is disabled on a system as well as frame
 stuttering.
 
 \begin{figure}[h!]
@@ -1512,7 +1518,7 @@ stuttering.
 
 \subsection{Programming language}
 - Functional style
-- C++ 20
+- C++ 23
 - Checking for error codes first programming style
 
 \subsection{Time Management}
