@@ -128,6 +128,8 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
             ImGui::Text("ID: %04d", engine::get_instance_id(selectedInstanceIndex));
             ImGui::Text("Name: %s", engine::get_instance_name(selectedInstanceIndex));
 
+
+            // todo(zak): undefined values being returned for entity.
             float instancePos[3];
             float instanceRot[3];
             float scale[3];
