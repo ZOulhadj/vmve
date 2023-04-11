@@ -141,22 +141,20 @@ and the increase in computing resources is what makes it so powerful and
 provides real-world benefits in ways not previously observed before the use of
 graphics software.
 
-This report presents my final year project \gls{vmve}, a 3D rendering
-application built from the ground up using the latest technologies for virtual
-environment authoring. Its goal is to be easy to use, performant and include a
-collection of tools for graphics manipulation that users can take advantage of
-when designing and building virtual environments.
-
+This report presents my final year project an application built from the ground
+up using the latest technologies for 3D graphics rendering. Its goal is to be
+easy to use, and performant and include a collection of tools for graphics
+manipulation that users can take advantage of when designing and building
+virtual environments.
 
 \pagebreak
 
 \section*{Declaration}
-I hereby certify that this report constitutes my own work, that where
-the language of others is used, quotation marks so indicate, and that
-appropriate credit is given where I have used the language, ideas,
-expressions, or writings of others. I declare that this report
-describes the original work that has not been previously presented for
-the award of any other degree or any other institution.
+I hereby certify that this report constitutes my work, that where the language
+of others is used, quotation marks so indicate, and that appropriate credit is
+given where I have used the language, ideas, expressions, or writings of others.
+I declare that this report describes the original work that has not been
+previously presented for the award of any other degree or institution.
 
 \noindent
 \begin{tabular}[b]{@{} p{6cm} @{}}
@@ -170,8 +168,6 @@ the award of any other degree or any other institution.
 \scriptsize Signature
 \end{tabular}
 
-
-
 \pagebreak
 \tableofcontents
 \addtocontents{toc}{~\hfill\textbf{Page}\par}
@@ -179,96 +175,101 @@ the award of any other degree or any other institution.
 
 
 \pagebreak
-
 \pagestyle{fancy}
 \pagenumbering{arabic}
 
 \section{Introduction}
 
-Computer graphics is a large area within the field of computer science. Ever
-since its conception in the early 1960s, it has been used for many different
-purposes from gaming, the film industry, scientific research, education,
-architecture, engineering, medicine and more recently within vehicles. This is a
-testament to how versatile this field is.
+Computer graphics is a vast area within the field of Computer Science. Since its
+conception in the early 1960s, it has been used for different purposes including
+gaming, film, scientific research, education, architecture, engineering,
+medicine and more recently within vehicles. This is a testament to how versatile
+this field has become.
 
-Many different rendering applications already exist including Unreal
-Engine \cite{unreal_engine}, Unity \cite{unity} and RenderMan \cite{render_man}
-just to name a few. These applications are known as ``3D creation tools''
-that provide a plethora of features and functionality giving the users the
-freedom when creating digital graphics.
+Many different rendering applications already exist including Unreal Engine
+\cite{unreal_engine}, Unity \cite{unity} and RenderMan \cite{render_man} just to
+name a few. These applications are known as ``3D creation tools'' that provide a
+plethora of features and functionality giving the users the freedom to create
+anything they need.
 
 A common theme that can be observed with these engines is that they have a lot
 of different tools and features as a result of decades of work. This
-inadvertently introduces several issues such as increased complexity and a steep
-learning curve for new users.
+inadvertently introduces several issues such as increased complexity, a steep
+learning curve as well as high-end hardware requirements.
 
-Throughout this document, I present my final year project, \gls{vmve}. An
-application developed in the domain of computer graphics including a real-time
-3D rendering renderer designed for creating virtual environments. The aim of
-\gls{vmve} is not to replicate these existing applications but instead to
-purposely implement a small but specific subset of features that are used for
-common graphics-related tasks. This is beneficial for several reasons. Firstly,
-this will make \gls{vmve} easy to use as the number of features that the user
-must learn is significantly reduced and subsequently lowering the learning
-curve. The combination of these two benefits will make the application far more
-accessible to the general public whose aim is to take advantage of the
-ever-increasing importance of computer graphics.
+To address these issues, I introduce my final year project, \gls{vmve}. An
+application developed in the domain of Computer Graphics to provide an
+easy-to-use and efficient platform for 3D graphics rendering. The project does
+not aim to replicate the functionality of existing rendering engines but instead
+to purposely implement a small but specific subset of features that are used for
+common graphics-related tasks. These include constructing virtual environments,
+simulating the effect of light on 3D geometry and securing digital assets
+through the use of encryption.
+
+
+% will make the application far more
+% accessible to the general public whose aim is to take advantage of the
+% ever-increasing importance of computer graphics.
 
 \subsection{Overview}
-This report will discuss the development of the project from beginning to end and 
-is structured such that it outlines each aspect of the project in chronological
-order. There are a total of five key sections in this report. The introduction,
-design, implementation, evaluation and finally, future work.
-
-The report will focus on the early stages of the project including design and
-requirements gathering. The main implementation section will follow this and
-provide detailed insights and technical details into the project and
-application. To ensure the initial project requirements have been achieved, an
-evaluation stage must be conducted. This will include discussions of various
-metrics as well as reviewing the project and understanding its strengths and
-shortcomings. Lastly, the future work section will propose additional work that
-needs to be implemented as well as the project's overall future.
-
+This report presents the development of the project from start to finish and is
+structured such that it outlines each aspect of the project's development in
+chronological order. There are a total of five key sections in this report. The
+introduction, design, implementation, evaluation and finally, future work.
 
 \subsection{Aims and Objectives}
-To address these issues in this domain, a set of requirements
-must be defined that aims to achieve the desired goal of this project.
+Successfully designing, implementing and evaluating a project relies on a set of
+aims and objectives to be fully defined. \gls{vmve} has three main aims and
+consists of several objectives that outline the concrete steps required to
+achieve those aforementioned aims.
 
-Since its conception, \gls{vmve} has three main goals. 
+\subsubsection{Easy-to-use}
+The first goal of \gls{vmve} is to be ``easy-to-use''. This means that the
+application should not have a steep learning curve and users with little to no
+prior experience with 3D rendering software and the underlying technology can
+use the application to achieve their intended goals.
 
-\subsubsection{Easy-to-use platform}
-The first is to provide users with an easy-to-use platform that they can use for
-rendering digital assets in a virtual environment. In other words, users with
-little to no prior experience in computer graphics should be able to take
-advantage of \glspl{vmve} capabilities.
+Ensuring that this aim can be achieved comes down to various design decisions
+related to the user interface, the language used and documentation. In regards
+to the application user interface, it must be designed intuitively and reduce
+the amount of friction between the user and their end goal.
 
-\subsubsection{TODO}
-The second goal of the application is to 
+Furthermore, the language used throughout the user interface must reduce if not
+eliminate jargon. A simple example could be to use the word ``Move'' instead of
+``Translate'' when referring to objects in the virtual environment and as such,
+would make the application more accessible.
 
-\subsubsection{Custom model format}
-The last of the three main goals is for the application to include its own
-model format that makes use of encryption to safely secure a user's digital
-assets.
+\subsubsection{Efficient}
+The second aim of the application is to be as efficient as possible and
+subsequently lower the hardware requirements. The application's efficiency and
+aims vary based on the component in question.
 
-As mentioned previously, the key aim of \gls{vmve} is to implement a subset of 
-specific rendering features which include a 3D renderer, a visual editor
-and lastly a custom file format for securing digital assets.
 
-\begin{description}
-  \item[Lightweight] meaning application should be highly
-    efficient regarding rendering and memory usage.
-  \item[Ease of use] so that users with no prior experience
-  \item[Useful]
-    Another vital requirement is that it should be useful
-\end{description}
-  
-  - Lightweight model viewer - No need to install heavy
-  applications such as Blender/Unity/Unreal - Easy to use - No technical
-  knowledge required
+-- CPU
+-- GPU
+-- Memory
+-- Storage
 
+\subsubsection{Encryption and model format}
+The last of the three main goals is for the application to include its own model
+format that makes use of encryption to safely secure a user's digital assets as
+previously mentioned. The motivation for this functionality formed as a result
+of the increase in theft regarding digital assets. A prime example of this was
+the recent data leak that affected Rockstar Studios and their upcoming game
+(Grand Theft Auto 6) \cite{gta_leak}.
+
+\gls{vmve} would be able to provide a platform to encrypt these assets and only
+unlock them using a special key that only the user will know. This ensures that
+in the event of digital assets begin obtained by third parties, they cannot be
+used. This requires several key elements to work together to achieve this aim.
+
+The raw model must be able to be encrypted using different types of encryption
+algorithms. In addition to this, \gls{vmve} must include a parser that can read
+the internal structure of the encrypted file format and successfully load the
+model.
 
 \subsection{Stakeholders}
-Users
+-- TODO: Users
 
 
 
@@ -294,7 +295,7 @@ any private data?''.
 
 Throughout the development of this project, the application will not contain any
 networking functionality. This ensures that all data remains local to the
-application and user's device.
+application and the user's device.
 
 \subsubsection{Intellectual property}
 Given the domain in which the application is intended to be used, such as
@@ -302,7 +303,7 @@ handling third-party 3D assets by importing and exporting geometry data.
 \gls{vmve} mustn't infringe upon the copyright of those who own the models. One
 such example includes not modifying the geometry data unless specified by the
 user. Since this will be a new application, a lot of the intricacies behind
-\gls{ip} needs to be further defined and taken into account based on user
+\gls{ip} need to be further defined and taken into account based on user
 feedback. \gls{vmve} will not modify any of the data being imported and only
 change the visual appearance based on several factors including rendering
 settings, lighting, translation, rotation and scaling. 
@@ -314,6 +315,29 @@ application to provide a consistent user experience.
 \subsubsection{Accessibility}
 Accessibility is a vital aspect that needs to be addressed throughout the
 development to ensure the application is useable for those with disabilities.
+
+\subsection{Ethical}
+
+
+\subsubsection{Software}
+One of the main ethical considerations that must be taken into account is the
+computation that the application will perform internally. The technical
+implementation details are not accessible to users as the source code is not
+open source. Therefore, individuals do not know exactly what the software is
+doing during runtime.
+
+To ensure that \gls{vmve} remains ethical, the application will not perform any
+additional computations that are not strictly required for 3D rendering.
+Furthermore, the application will not store or send any data as this is not
+required.
+
+\subsubsection{Deceptive design}
+Deceptive design also known as ``Dark patterns'' refers to designs/tricks that
+manipulate users into performing certain actions without their informed consent.
+\gls{vmve} will make use of a user interface, however, during the design and
+implementation stages extra effort will be spent on ensuring that no such design
+pattern is introduced. This will greatly benefit users and thus, increase the
+overall user experience.
 
 \section{Technology Review} \label{technology_review}
 This project made use of various technologies at different stages throughout the
@@ -414,14 +438,16 @@ outlining, quick file searching and much more.
 
 
 \subsubsection{RenderDoc}
-Having discussed the various debugging tools available for \gls{cpu} debugging
-there are also a couple of \gls{gpu} tools that allows for analyzing per frame
-data as well as detailed frame synchronization metrics.
+As well as using software for debugging on the \gls{cpu}, there also exists
+software that allows for debugging the \gls{gpu}. More specifically, these tools
+allow for analyzing per-frame data as well as detailed frame synchronization
+metrics.
 
-On such tool is called RenderDoc \cite{renderdoc} and is used to inspect
-individual frames including its entire state and ensures that you can debug
-particular \gls{gpu} related bugs.
-
+RenderDoc developed by Baldur Karlsson can be used to inspect different
+rendering \glspl{api} including individual frames and the entire state
+\cite{renderdoc}. This ensures that you can debug specific \gls{gpu} related
+bugs such as model data, textures, rendering commands etc. An example of this
+can be seen in figure \ref{fig:renderdoc}
 \begin{figure}[h!]
   \centering
   \includegraphics[width=\textwidth]{images/renderdoc.png}
@@ -430,11 +456,12 @@ particular \gls{gpu} related bugs.
 \end{figure}
 
 \subsubsection{AMD Radeon GPU Profiler}
-Similarly, AMD has their own \gls{gpu} profiling tool called ``AMD Radeon GPU
-Profiler'' \cite{rgp}. As mentioned above, the hardware used for development
-made use of a AMD \gls{gpu}. Therefore, in order to access insightful
-performance metrics on a per-frame basis this tool was required and can be 
-seen in action in figure \ref{fig:amd_profiler}.
+Similarly to RenderDoc, AMD has its own \gls{gpu} profiling tool called ``AMD
+Radeon GPU Profiler'' \cite{rgp}. This tool is only available for AMD-supported
+\glspl{gpu} which is ideal as the hardware going to be used throughout
+development meets this requirement. The tool analyzes per-frame data which
+subsequently provides insightful performance metrics and can be seen in action
+in figure \ref{fig:amd_profiler}.
 
 \begin{figure}[h!]
   \centering
@@ -445,64 +472,36 @@ seen in action in figure \ref{fig:amd_profiler}.
 
 
 \subsection{Programming Language}
-Due to the nature of application, there were several requirements that had to be
-met such as a high performing programming language as well as low-level memory
-access in order to specifically manage how memory is handled within the
-application.
+The application needs certain requirements to be met regarding performance. For
+example, the application must use a high-performing programming language, allows
+for low-level memory access and can be compiled into an executable.
 
 The language chosen for this project was C++ 23.  There were two main reasons
-as to why this specific programming language was chosen. Firstly, it's the language
-that I have the most experience with which would significantly help during the 
-implementation stages of the project. The second reason is the \gls{stl} STL (Standard
-Template Library) was one of the key reasons as to why I ended up
-choosing this specific programming language. It provides many prebuilt
-data structures and containers including ``std::vector'', ``std::string'',
-``std::find'' etc. that are really helpfully in managing the data in the application.
-Furthermore, it saves time as I would not have to implement my own solution
-in the limited time-frame that I have.
+why this specific programming language was chosen. Firstly, it's the language
+that I have the most experience with which will significantly help during the
+implementation stages of the project. Secondly, the \gls{stl}  was one of the
+key reasons as to why C++ will be used. It provides many prebuilt data
+structures, containers and algorithms including ``std::vector'', ``std::string''
+and ``std::find'' to name a few. Furthermore, it saves time as I would not have
+to implement a custom solution in the limited time frame.
 
 Other language features that solidified by choice include, function overloading,
 templates, compile-time expressions, direct memory access and generally faster
-performance compared to higher level languages such as Python and Javascript.
+performance compared to higher-level languages such as Python and Javascript.
 
 \subsection{Rendering API} \label{rendering_api}
-One of the core aspects of \gls{vmve} is making use of the underlying hardware and
-more specifically the GPU (Graphics Processing Unit) which will be primarily
-used for rendering. Taking advantage of the GPUs hardware capabilities requires
-low-level access to the hardware and is not as straightforward as one would
-hope. To understand why, we must first understand how Graphics Processing Units
-function.
 
-There are different types of GPUs such as dedicated or onboard, different
-architectures including AMDs RDNA \cite{RDNA} or NVIDIAs ADA \cite{ADA} as well
-as various capabilities that differ between hardware vendors. An application
-attempting to target GPUs would need to take this all into consideration
-including having access to the GPU drivers (Low-level software that allows a
-specific piece of hardware to function). Often times, drivers are considered
-trade secrets that companies do not want freely available. Given the complexity
-and variations of modern GPUs this is simply not feasible.
+A rendering \gls{api} is a set of instructions that acts as an intermediary and
+allows for an application to make use of a systems \gls{gpu}. There are several
+different rendering \glspl{api} that exist including OpenGL, \gls{vulkan},
+Direct3D 11 and Direct3D 12. Appendix section \ref{rendering_api_appendix} goes
+into great detail explaining the history of rendering \glspl{api} and the
+differences between them.
 
-Companies from across the different industries solved this issue by creating
-an open, non-profit consortium in early 2000s called The Khronos Group. This
-organization develops, publishes and maintains standards for different areas
-but most notably for 3D Graphics and Computation. Companies follow these 
-standards when developing software allowing for interoperability across
-hardware. As of 2023, The Khronos Group actively maintains 16 different
-standards. Out of all those standards, there are two which are the most
-suitable for VMVE, OpenGL and \gls{vulkan}.
-
-OpenGL and \gls{vulkan} are two types of rendering APIs that designed based on
-The Khronos Group specifications. When attempting to provide graphics support
-for a particular \gls{gpu}, hardware vendors follow the OpenGL and/or \gls{vulkan}
-specifications when implementing their drivers. For applications, a
-\acrfull{api} is provided allowing for direct control of the \gls{gpu}.
-
-\gls{vmve} could support both OpenGL and \gls{vulkan} however, due to the vasts
-amount of work required to accomplish this as well as the projects time
-constraints this is simply not feasible. Instead, both need to be evaluated with
-the aim of choosing one.
-
-
+OpenGL and Direct3D 11 are previous generation \glspl{api} whereas \gls{vulkan}
+and Direct3D 12 are using the latest technologies. Each of these has its
+benefits and disadvantages. The image below shows a table that compares each of
+these with specific types of functionality. 
 \begin{figure}[h!]
   \centering
   \includegraphics[width=\textwidth]{images/api_comparison.png}
@@ -510,23 +509,20 @@ the aim of choosing one.
   \label{fig:api_comparison}
 \end{figure}
 
+Figure \ref{fig:api_comparison} shows that \gls{vulkan} has the most amount
+functionality including the ability to run on different operating systems, 
+finer rendering control and support for multithreading.
 
-
-// CONTINUE FROM HERE
-
-adhere to the OpenGL specification
-
-- Why am I going to be using Vulkan instead of OpenGL?
--   Finer control of rendering pipeline
--   Aiming to learn and have a deeper understanding of low-level GPU architecture
--   Using Vulkan means that we avoid OpenGLs state machine architecture.
-    can introduce bugs
--   Reduced driver overhead
--   Allows for finer control of multithreading
--   Better performance potential
--   Error checking can be disabled when shipping application.
-
-
+In addition to \gls{vulkan} inhibiting the most functionality, there are
+numerous other reasons why this \gls{api} is the most suitable for \gls{vmve}.
+Firstly, \gls{vulkan} is extremely verbose as it exposes the technicalities
+related to the \gls{gpu} and requires the application to implement the basic
+functionality as opposed to the driver. This reduces the complexity of the
+display driver and can potentially increase performance as it no longer needs to
+make assumptions about the application and the commands being issued as the
+entire state of the rendering pipeline is predefined. Using \gls{vulkan} also
+implicitly helps understand the complex inner workings of graphics development
+and working with the \gls{gpu}.
 
 \subsection{Libraries}
 The application will make use of different external libraries to speed up 
@@ -535,19 +531,19 @@ development due to the short timeframe.
 \subsubsection{User Interface}
 Users will need a way of interacting with \gls{vmve} and the 3D environment.
 This will be achieved through the use of a user interface in which the user can
-directly manipulate the application. As mentioned earlier, \gls{vmve} is a
+directly manipulate the application. As mentioned earlier, \gls{vmve} is an
 application that uses the \gls{gpu} for rendering and therefore, the UI will
 have to interact with the \gls{gpu}. To reduce the development time of this
 particular aspect of the application, the decision was made to make use of a
 preexisting library.
 
 The library of choice was Dear ImGui \cite{imgui}. This is an immediate-mode
-user interface library that provides an \gls{api} in order to render UI elements. 
+user interface library that provides an \gls{api} to render UI elements. 
 
-\subsubsection{Encryption} \label{custom_file_format} VMVE will include its own
-model file format. This is a special format that will be encrypted as standard.
-Implementing encryption is a very complex area that can be considered an entire
-project on its own. Instead, the project will make use of a well-known
+\subsubsection{Encryption} \label{custom_file_format} \gls{vmve} will include
+its own model file format. This is a special format that will be encrypted as
+standard. Implementing encryption is a very complex area that can be considered
+an entire project on its own. Instead, the project will make use of a well-known
 encryption library known as Crypto++ \cite{cryptopp}. This is a C++ library that
 provides various algorithms including AES, Diffie-Helm, 
 
@@ -574,8 +570,8 @@ The other libraries used in \gls{vmve} can be seen in the list below.
 The next stage of the project was designed and occurred between milestones two
 and three. 
 
-Having discussed the different technologies being used in VMVE, they must
-now be evaluated and incorporated into the design of VMVE and its various
+Having discussed the different technologies being used in \gls{vmve}, they must
+now be evaluated and incorporated into the design of \gls{vmve} and its various
 subsystems.
 
 \subsection{Branding}
@@ -698,10 +694,10 @@ the .lib file.
 A high-level overview of the project architecture can be seen in
 figure \ref{fig:projarch}.
 
-There is another key reason why, I will isolate the core of VMVE
+There is another key reason why, I will isolate the core of \gls{vmve}
 into its own project instead of combining it into one program. The
 reason being is have the core be a library that can be used in not
-just VMVE but also other projects in the future.
+just \gls{vmve} but also other projects in the future.
 
 \begin{figure}[h!]
   \centering
@@ -735,10 +731,10 @@ just VMVE but also other projects in the future.
 \subsection{Renderer Architecture}
 
 As mentioned in section \ref{rendering_api}. Vulkan will be the rendering API of choice
-for VMVE. The API is extremely verbose giving the programmer the flexibility to
+for \gls{vmve}. The API is extremely verbose giving the programmer the flexibility to
 control every aspect of the GPU. When interacting with Vulkan throughout the engine
 a certain degree of encapsulation is necessary to reduce the amount of effort required to 
-implement functionality as a result of Vulkans' verbose API.
+implement functionality as a result of \glspl{vmve} verbose API.
 
 To achieve this, the renderer must be properly designed so that flexibility is not lost
 whilst still simplifying the API. Figure \ref{fig:rendererarch} shows the proposed renderer
@@ -791,13 +787,13 @@ of the application.
 \subsection{Custom file format and encryption}
 
 \subsubsection{File format}
-VMVE will include its own file format that allows for model data to be encrypted for security purposes.
+\gls{vmve} will include its own file format that allows for model data to be encrypted for security purposes.
 Figure \ref{fig:vmve_file_structure} shows the proposed internal structure of the custom file format.
 It includes a 48-byte header that will consist of a version and the method used for encryption.
-The purpose of the version is to check for compatibility between different VMVE versions. In addition to this,
-this can be used to convert older versions of a VMVE to newer versions.
+The purpose of the version is to check for compatibility between different \gls{vmve} versions. In addition to this,
+this can be used to convert older versions of \gls{vmve} to newer versions.
 
-The second item in the VMVE header is the encryption mode. This allows for the VMVE to know which algorithm
+The second item in the \gls{vmve} header is the encryption mode. This allows for the \gls{vmve} to know which algorithm
 must be used to decrypt the data.
 
 -- TODO: Update picture to use a smaller header size by using a packed uint32\_t for the version
@@ -826,7 +822,7 @@ must be used to decrypt the data.
 
 \section{Implementation}
 This section of the report presents the technical implementation details of
-VMVE. This section is presented in order of initialization i.e starting at
+\gls{vmve}. This section is presented in order of initialization i.e starting at
 the core of the application and discussing each subsequent system.
 
 \begin{figure}[h!]
@@ -884,10 +880,10 @@ int main()
   
 
 \subsection{Window System}
-The first system within VMVE that gets initialized is the window. This system is
+The first system within \gls{vmve} that gets initialized is the window. This system is
 responsible for creating a desktop window based on a series of configuration
 options specified at the start of the application. These options include the
-window width, height and name. Internally, VMVE uses the lightweight GLFW
+window width, height and name. Internally, \gls{vmve} uses the lightweight GLFW
 library to handle window creation. The purpose of this library is to provide an
 API which is cross-platform and allows applications to easily create windows on
 different operating systems. 
@@ -1112,7 +1108,7 @@ figure \ref{fig:mvp_projection}.
 
 Geometric data is first created within a local coordinate space. This ``space''
 is positions relative to the object. In other words, the model data imported by
-VMVE will be in this local coordinate system often created by a 3D modeling
+\gls{vmve} will be in this local coordinate system often created by a 3D modeling
 program such as Blender or 3DSMax.
 
 The next step is to convert these local coordinates to ``world'' space. This is
@@ -1446,7 +1442,7 @@ is designed with programmers in mind.
 
 In regards to downloads, there are two types. The first is an active development
 version which is regularly updated and acts as a beta release for versions that
-have not yet been officially released. The second is current and past VMVE versions
+have not yet been officially released. The second is current and past \gls{vmve} versions
 going all the back to the first official release (v0.0.1).
 
 \begin{figure}[h!]
@@ -1458,9 +1454,9 @@ going all the back to the first official release (v0.0.1).
 
 
 \subsubsection{Example models}
-The VMVE website provides an additional download link to six different example
+The \gls{vmve} website provides an additional download link to six different example
 models. These are provided by third parties (with appropriate credits) and are
-corrected to ensure they can be loaded into VMVE without any issues. The purpose
+corrected to ensure they can be loaded into \gls{vmve} without any issues. The purpose
 of these example models is to allow users to easily test the application without
 needing to search the internet or create their own.
 
@@ -1490,7 +1486,7 @@ feedback.
 
 \subsection{Distribution}
 In hindsight, the most challenging aspect of the entire project was by far,
-distribution and more specifically ensuring that VMVE was able to run on all
+distribution and more specifically ensuring that \gls{vmve} was able to run on all
 supported systems as expected. Throughout the applications development, there
 were points where \gls{vmve} would work on the development machine, however,
 throw an exception error on other systems. These inconsistencies paired with the
@@ -1686,7 +1682,7 @@ Computer graphics is a large field
 
 One of the major downsides that this project suffers from is the projects time
 constraints. Given the relative complexity of the project many of the features
-implemented in VMVE are quite rudimentary and serves as a basic prototype that
+implemented in \gls{vmve} are quite rudimentary and serves as a basic prototype that
 showcases the underlying technology and the potential future work that can be
 undertaken.
 
@@ -1721,17 +1717,17 @@ videos were uploaded and are hosted on the Zakariya Oulhadj YouTube channel
 \section{Future Work}
 Going forward there are various features that are currently being evaluated as
 potentially implemented in the near future. These features aim to greatly
-increase VMVEs usability and provide a whole host of new features.
+increase \glspl{vmve} usability and provide a whole host of new features.
 
 \subsection{Rendering}
 
 \subsubsection{Multiple rendering APIs}
-VMVE currently only supports one rendering API which is Vulkan. As discussed in
-the technology review section, Vulkan is officially supported on Windows, Linux
-and macOS (through MoltenVK). However, in order to support additional operating
-system as well as hardware that does not support Vulkan, more rendering APIs
-should be supported including DirectX12 and previous generation APIs such as
-OpenGL and DirectX11.
+\gls{vmve} currently only supports one rendering API which is Vulkan. As
+discussed in the technology review section, Vulkan is officially supported on
+Windows, Linux and macOS (through MoltenVK). However, in order to support
+additional operating system as well as hardware that does not support Vulkan,
+more rendering APIs should be supported including DirectX12 and previous
+generation APIs such as OpenGL and DirectX11.
 
 -- Graph for showing how APis can be changed during compilation
 
@@ -1814,7 +1810,7 @@ significantly reduced saving on performance and memory usage.
 
 
 \subsubsection{glTF Support}
-Currently, the engine only really supports the VMVE and OBJ model formats for
+Currently, the engine only really supports the \gls{vmve} and OBJ model formats for
 importing. The main issue with the OBJ file format is its size since the data is
 stored in a text format which subsequently increases the assets file size. glTF
 \cite{gltf} is a new model format by The Khronos Group that has many useful
@@ -1833,15 +1829,16 @@ Additionally, a different build system has to be used that is cross platform.
 The most commonly used cross platform build system is CMake \cite{cmake}.
 
 \subsection{Networking Support}
-VMVE is a virtual environment editor and as such can be significantly improved
-by adding support for networking. The ideas is that there would be a server
-running which would keep track of the virtual world and multiple clients via
-VMVE would be able to connect and interact with the environment simultaneously.
+\gls{vmve} is a virtual environment editor and as such can be significantly
+improved by adding support for networking. The ideas is that there would be a
+server running which would keep track of the virtual world and multiple clients
+via \gls{vmve} would be able to connect and interact with the environment
+simultaneously.
 
 This would allow for greater efficiency and speed up various tasks.
 
 \subsection{Encryption}
-VMVE supports both AES and Diffie-Helm encryption algorithms out of the box.
+\gls{vmve} supports both AES and Diffie-Helm encryption algorithms out of the box.
 Additional work should be carried out to add more algorithms such as.....
 
 \subsection{Version Control}
@@ -1875,13 +1872,13 @@ therefore, more control, smaller
 Lower footprint as only the required features are implemented.
 
 \subsection{Accessibility}
-Another aspect that needs to be addressed in the near future is improved
-accessibility. The application includes some features that addresses this such
-as icons, a tutorial, documentation as well as additional information. However,
-some of the features that \gls{vmve} does not include is taking into account
-color blindness and text to speech. The reason for this is that these are more
-complex topics and required additional time and research to ensure a proper 
-implementation is released.
+Another aspect that needs to be addressed soon is improved accessibility. The
+application includes some features that address this such as icons, a tutorial,
+documentation as well as additional information. However, some of the features
+that \gls{vmve} does not include is taking into account color blindness and
+text-to-speech. The reason for this is that these are more complex topics and
+required additional time and research to ensure a proper implementation is
+released.
 
 Another task that must be considered is localization. \gls{vmve} only supports
 the English language and has no way of adapting to other languages. Therefore,
@@ -1911,6 +1908,46 @@ throughout the development of \gls{vmve}.
 
 
 \section{Appendices}
+
+\subsection{Rendering API history} \label{rendering_api_appendix}
+One of the core aspects of \gls{vmve} is making use of the underlying hardware and
+more specifically the GPU (Graphics Processing Unit) which will be primarily
+used for rendering. Taking advantage of the GPUs hardware capabilities requires
+low-level access to the hardware and is not as straightforward as one would
+hope. To understand why, we must first understand how Graphics Processing Units
+function.
+
+There are different types of GPUs such as dedicated or onboard, different
+architectures including AMDs RDNA \cite{RDNA} or NVIDIAs ADA \cite{ADA} as well
+as various capabilities that differ between hardware vendors. An application
+attempting to target GPUs would need to consider this including having access to
+the GPU drivers (Low-level software that allows a specific piece of hardware to
+function). Oftentimes, drivers are considered trade secrets that companies do
+not want freely available. Given the complexity and variations of modern
+\glspl{gpu} this is simply not feasible.
+
+Companies from across different industries solved this issue by creating
+an open, non-profit consortium in the early 2000s called The Khronos Group. This
+organization develops, publishes and maintains standards for different areas
+but most notably for 3D Graphics and Computation. Companies follow these 
+standards when developing software allowing for interoperability across
+hardware. As of 2023, The Khronos Group actively maintains 16 different
+standards. Out of all those standards, there are two which are the most
+suitable for \gls{vmve}, OpenGL and \gls{vulkan}.
+
+OpenGL and \gls{vulkan} are two types of rendering APIs that are designed based on
+The Khronos Group specifications. When attempting to provide graphics support
+for a particular \gls{gpu}, hardware vendors follow the OpenGL and/or \gls{vulkan}
+specifications when implementing their drivers. For applications, a
+\acrfull{api} is provided allowing for direct control of the \gls{gpu}.
+
+\gls{vmve} could support both OpenGL and \gls{vulkan} however, due to the vast
+amount of work required to accomplish this as well as the project's time
+constraints this is simply not feasible. Instead, both need to be evaluated to
+choose one.
+
+
+\subsection{Camera transformation code}
 \begin{figure}[ht]
   \centering
   \begin{lstlisting}[language=C++]

@@ -15,52 +15,52 @@ Database file #2: refs.bib
 -- IEEEtran.bst version 1.14 (2015/08/26) by Michael Shell.
 -- http://www.michaelshell.org/tex/ieeetran/bibtex/
 -- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
-Warning--empty journal in RDNA
-Warning--empty journal in ADA
 Warning--empty author in indentation
 Warning--empty journal in indentation
 Warning--empty year in indentation
+Warning--empty journal in RDNA
+Warning--empty journal in ADA
 
 Done.
-You've used 27 entries,
+You've used 28 entries,
             4087 wiz_defined-function locations,
-            1434 strings with 19896 characters,
-and the built_in function-call counts, 7570 in all, are:
-= -- 474
-> -- 36
+            1440 strings with 20076 characters,
+and the built_in function-call counts, 7882 in all, are:
+= -- 495
+> -- 40
 < -- 0
-+ -- 30
-- -- 3
-* -- 210
-:= -- 1177
-add.period$ -- 54
-call.type$ -- 27
++ -- 32
+- -- 4
+* -- 216
+:= -- 1231
+add.period$ -- 55
+call.type$ -- 28
 change.case$ -- 30
 chr.to.int$ -- 0
-cite$ -- 32
-duplicate$ -- 771
-empty$ -- 913
-format.name$ -- 3
-if$ -- 1722
+cite$ -- 33
+duplicate$ -- 800
+empty$ -- 948
+format.name$ -- 4
+if$ -- 1792
 int.to.chr$ -- 0
-int.to.str$ -- 27
-missing$ -- 162
-newline$ -- 104
-num.names$ -- 3
-pop$ -- 504
+int.to.str$ -- 28
+missing$ -- 169
+newline$ -- 107
+num.names$ -- 4
+pop$ -- 524
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 657
+skip$ -- 684
 stack$ -- 0
 substring$ -- 33
-swap$ -- 336
+swap$ -- 353
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 27
+type$ -- 28
 warning$ -- 5
-while$ -- 3
-width$ -- 29
-write$ -- 190
+while$ -- 4
+width$ -- 30
+write$ -- 197
 (There were 5 warnings)

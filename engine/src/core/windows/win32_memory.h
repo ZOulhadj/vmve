@@ -4,6 +4,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-MEMORYSTATUSEX get_windows_memory_status();
+namespace engine {
+    MEMORYSTATUSEX get_windows_memory_status();
+}
 
 #endif

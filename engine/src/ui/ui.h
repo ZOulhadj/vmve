@@ -5,14 +5,17 @@
 #include "rendering/api/vulkan/vk_renderer.h"
 #include "events/event.h"
 
-ImGuiContext* create_ui(const Vk_Renderer* renderer, VkRenderPass renderPass);
-void create_font_textures();
-void destroy_ui(ImGuiContext* context);
+namespace engine {
+    ImGuiContext* create_ui(const Vk_Renderer* renderer, VkRenderPass renderPass);
+    void create_font_textures();
+    void destroy_ui(ImGuiContext* context);
 
-void begin_ui();
-void end_ui(std::vector<VkCommandBuffer>& buffers);
+    void begin_ui();
+    void end_ui(std::vector<VkCommandBuffer>& buffers);
 
-void recreate_ui_texture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler, bool depth = false);
+    void recreate_ui_texture(std::vector<VkDescriptorSet>& texture_id, VkImageView view, VkSampler sampler, bool depth = false);
+
+}
 
 
 

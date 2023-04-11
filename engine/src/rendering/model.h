@@ -7,42 +7,45 @@
 
 // One material per mesh
 
-struct Mesh
-{
-    std::string name;
+namespace engine {
+    struct Mesh
+    {
+        std::string name;
 
-    std::vector<vertex> vertices;
-    std::vector<uint32_t> indices;
-    
-    // A list of indices so we know we textures this mesh uses
-    std::vector<uint32_t> textures;
+        std::vector<vertex> vertices;
+        std::vector<uint32_t> indices;
 
-    vk_vertex_array vertex_array;
-    VkDescriptorSet descriptor_set;
-};
+        // A list of indices so we know we textures this mesh uses
+        std::vector<uint32_t> textures;
 
-struct Model
-{
-    std::string path;
+        vk_vertex_array vertex_array;
+        VkDescriptorSet descriptor_set;
+    };
 
-    // A list of all the unique textures
-    std::vector<std::filesystem::path> unique_texture_paths;
-    std::vector<Vk_Image> unique_textures;
+    struct Model
+    {
+        std::string path;
 
-    std::vector<Mesh> meshes;
-    std::string name;
-};
+        // A list of all the unique textures
+        std::vector<std::filesystem::path> unique_texture_paths;
+        std::vector<Vk_Image> unique_textures;
 
-bool load_model(Model& model, const std::filesystem::path& path, bool flipUVs = true);
-bool create_model(Model& model, const char* data, std::size_t len, bool flipUVs = true);
-void destroy_model(Model& model);
+        std::vector<Mesh> meshes;
+        std::string name;
+    };
 
-void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings);
+    bool load_model(Model& model, const std::filesystem::path& path, bool flipUVs = true);
+    bool create_model(Model& model, const char* data, std::size_t len, bool flipUVs = true);
+    void destroy_model(Model& model);
+
+    void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings);
 
 
-// temp
-void create_fallback_albedo_texture(Model& model, Mesh& mesh);
-void create_fallback_normal_texture(Model& model, Mesh& mesh);
-void create_fallback_specular_texture(Model& model, Mesh& mesh);
+    // temp
+    void create_fallback_albedo_texture(Model& model, Mesh& mesh);
+    void create_fallback_normal_texture(Model& model, Mesh& mesh);
+    void create_fallback_specular_texture(Model& model, Mesh& mesh);
+}
+
 
 #endif

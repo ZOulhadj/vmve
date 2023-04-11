@@ -14,19 +14,19 @@
 // specular
 // ... 
 
-
-struct Material
-{
-    VkDescriptorSet descriptor_set = nullptr;
-
-    std::vector<Vk_Image> textures;
-
-};
+namespace engine {
+    struct Material
+    {
+        VkDescriptorSet descriptor_set = nullptr;
+        std::vector<Vk_Image> textures;
+    };
 
 
-void create_material(Material& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler);
-void destroy_material(Material& material);
+    void create_material(Material& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler);
+    void destroy_material(Material& material);
 
-void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, Material& material);
+    void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, Material& material);
+
+}
 
 #endif

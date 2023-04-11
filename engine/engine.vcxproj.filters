@@ -24,10 +24,7 @@
     <ClCompile Include="src\core\windows\win32_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\input.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\window.cpp">
+    <ClCompile Include="src\core\platform_input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\filesystem\filesystem.cpp">
@@ -120,21 +117,21 @@
     <ClCompile Include="src\rendering\terrain\quad_tree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\time.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\windows\win32_memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\windows\win32_window.h">
+    <ClInclude Include="src\core\platform_audio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\audio.h">
+    <ClInclude Include="src\core\platform_input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\input.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\window.h">
+    <ClInclude Include="src\core\platform_window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\events\event.h">
@@ -228,6 +225,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\ui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\logging.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

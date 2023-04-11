@@ -3,72 +3,74 @@
 
 #include "event.h"
 
-struct mouse_button_event : public Basic_Event
-{
-    int get_button_code() const { return m_ButtonCode; }
+namespace engine {
+    struct mouse_button_event : public Basic_Event
+    {
+        int get_button_code() const { return m_ButtonCode; }
 
-protected:
-    mouse_button_event(int buttonCode)
-        : m_ButtonCode(buttonCode)
-    {}
+    protected:
+        mouse_button_event(int buttonCode)
+            : m_ButtonCode(buttonCode)
+        {}
 
-private:
-    int m_ButtonCode;
-};
+    private:
+        int m_ButtonCode;
+    };
 
-struct mouse_button_pressed_event : public mouse_button_event
-{
-    mouse_button_pressed_event(int buttonCode)
-        : mouse_button_event(buttonCode)
-    {}
+    struct mouse_button_pressed_event : public mouse_button_event
+    {
+        mouse_button_pressed_event(int buttonCode)
+            : mouse_button_event(buttonCode)
+        {}
 
-    EVENT_CLASS_TYPE(mouse_button_pressed);
-};
+        EVENT_CLASS_TYPE(mouse_button_pressed);
+    };
 
-struct mouse_button_released_event : public mouse_button_event
-{
-    mouse_button_released_event(int buttonCode)
-        : mouse_button_event(buttonCode)
-    {}
+    struct mouse_button_released_event : public mouse_button_event
+    {
+        mouse_button_released_event(int buttonCode)
+            : mouse_button_event(buttonCode)
+        {}
 
-    EVENT_CLASS_TYPE(mouse_button_released);
-};
+        EVENT_CLASS_TYPE(mouse_button_released);
+    };
 
 
-struct mouse_moved_event : public Basic_Event
-{
-    mouse_moved_event(double x, double y)
-        : m_XPos(x), m_YPos(y)
-    {}
+    struct mouse_moved_event : public Basic_Event
+    {
+        mouse_moved_event(double x, double y)
+            : m_XPos(x), m_YPos(y)
+        {}
 
-    double get_x() const { return m_XPos; }
-    double get_y() const { return m_YPos; }
+        double get_x() const { return m_XPos; }
+        double get_y() const { return m_YPos; }
 
-    EVENT_CLASS_TYPE(mouse_moved);
+        EVENT_CLASS_TYPE(mouse_moved);
 
-private:
-    double m_XPos;
-    double m_YPos;
-};
+    private:
+        double m_XPos;
+        double m_YPos;
+    };
 
-struct mouse_entered_event : public Basic_Event
-{
-    EVENT_CLASS_TYPE(mouse_entered);
-};
+    struct mouse_entered_event : public Basic_Event
+    {
+        EVENT_CLASS_TYPE(mouse_entered);
+    };
 
-struct mouse_left_event : public Basic_Event
-{
-    EVENT_CLASS_TYPE(mouse_left);
-};
+    struct mouse_left_event : public Basic_Event
+    {
+        EVENT_CLASS_TYPE(mouse_left);
+    };
 
-struct mouse_scrolled_up_event : public Basic_Event
-{
-    EVENT_CLASS_TYPE(mouse_scrolled_up);
-};
+    struct mouse_scrolled_up_event : public Basic_Event
+    {
+        EVENT_CLASS_TYPE(mouse_scrolled_up);
+    };
 
-struct mouse_scrolled_down_event : public Basic_Event
-{
-    EVENT_CLASS_TYPE(mouse_scrolled_down);
-};
+    struct mouse_scrolled_down_event : public Basic_Event
+    {
+        EVENT_CLASS_TYPE(mouse_scrolled_down);
+    };
+}
 
 #endif

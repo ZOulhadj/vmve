@@ -30,6 +30,11 @@
 \bibitem{render_man}
 ``Renderman,'' \url{https://renderman.pixar.com/}.
 
+\bibitem{gta_leak}
+{Keza MacDonald, Keith Stuart and Alex Hern},
+  \url{https://www.theguardian.com/games/2022/sep/19/grand-theft-auto-6-leak-who-hacked-rockstar-and-what-was-stolen},
+  {9} {2022}.
+
 \bibitem{mit}
 ``The mit license,'' \url{https://opensource.org/license/mit/}.
 
@@ -47,14 +52,6 @@
 
 \bibitem{rgp}
 ``Amd radeon gpu profiler,'' \url{https://gpuopen.com/rgp/}.
-
-\bibitem{RDNA}
-{AMD}, ``{RDNA architecture - The all new Radeon gaming architecture powering
-  ``Navi''},'' 2019, [Online; accessed 23-January-2023].
-
-\bibitem{ADA}
-{Henry C Lin and Andrew Burnes}, ``{How Ada advances the science of graphics
-  with DLSS 3.}'' 2022, [Online; accessed 2-May-2023].
 
 \bibitem{imgui}
 ``Imgui,'' \url{https://github.com/ocornut/imgui/}.
@@ -114,5 +111,13 @@
 \bibitem{cmake}
 ``Cmake, open source and cross platform build system,''
   \url{https://cmake.org/}.
+
+\bibitem{RDNA}
+{AMD}, ``{RDNA architecture - The all new Radeon gaming architecture powering
+  ``Navi''},'' 2019, [Online; accessed 23-January-2023].
+
+\bibitem{ADA}
+{Henry C Lin and Andrew Burnes}, ``{How Ada advances the science of graphics
+  with DLSS 3.}'' 2022, [Online; accessed 2-May-2023].
 
 \end{thebibliography}

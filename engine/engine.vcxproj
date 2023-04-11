@@ -161,8 +161,7 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\input.cpp" />
-    <ClCompile Include="src\core\window.cpp" />
+    <ClCompile Include="src\core\platform_input.cpp" />
     <ClCompile Include="src\core\windows\win32_audio.cpp" />
     <ClCompile Include="src\core\windows\win32_memory.cpp" />
     <ClCompile Include="src\core\windows\win32_window.cpp" />
@@ -190,6 +189,7 @@
     <ClCompile Include="src\rendering\vertex.cpp" />
     <ClCompile Include="src\ui\ui.cpp" />
     <ClCompile Include="src\utility.cpp" />
+    <ClCompile Include="src\utils\time.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -231,11 +231,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\engine.h" />
-    <ClInclude Include="src\core\audio.h" />
-    <ClInclude Include="src\core\input.h" />
-    <ClInclude Include="src\core\window.h" />
+    <ClInclude Include="src\core\platform_audio.h" />
+    <ClInclude Include="src\core\platform_input.h" />
+    <ClInclude Include="src\core\platform_window.h" />
     <ClInclude Include="src\core\windows\win32_memory.h" />
-    <ClInclude Include="src\core\windows\win32_window.h" />
     <ClInclude Include="src\events\event.h" />
     <ClInclude Include="src\events\event_dispatcher.h" />
     <ClInclude Include="src\events\key_event.h" />
@@ -266,6 +265,8 @@
     <ClInclude Include="src\rendering\vertex.h" />
     <ClInclude Include="src\ui\ui.h" />
     <ClInclude Include="src\utility.h" />
+    <ClInclude Include="src\utils\logging.h" />
+    <ClInclude Include="src\utils\time.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
