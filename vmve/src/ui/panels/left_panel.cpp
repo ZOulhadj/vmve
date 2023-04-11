@@ -9,8 +9,8 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
     ImGui::Begin(title.c_str(), is_open, flags);
     {
         if (ImGui::CollapsingHeader("Application")) {
-            engine_get_uptime(&hours, &minutes, &seconds);
-            engine_get_memory_status(&memory_usage, &max_memory);
+            engine::get_uptime(&hours, &minutes, &seconds);
+            engine::get_memory_status(&memory_usage, &max_memory);
 
             if (ImGui::BeginTable("app", 2, ImGuiTableFlags_SizingStretchProp)) {
                 ImGui::TableNextRow();
@@ -35,13 +35,13 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
         }
 
         if (ImGui::CollapsingHeader("Camera")) {
-            camera_fovy = engine_get_camera_fov();
-            camera_speed = engine_get_camera_speed();
-            camera_near_plane = engine_get_camera_near();
-            camera_far_plane = engine_get_camera_far();
+            camera_fovy = engine::get_camera_fov();
+            camera_speed = engine::get_camera_speed();
+            camera_near_plane = engine::get_camera_near();
+            camera_far_plane = engine::get_camera_far();
 
-            engine_get_camera_position(&camera_pos_x, &camera_pos_y, &camera_pos_z);
-            engine_get_camera_front_vector(&camera_front_x, &camera_front_y, &camera_front_z);
+            engine::get_camera_position(&camera_pos_x, &camera_pos_y, &camera_pos_z);
+            engine::get_camera_front_vector(&camera_front_x, &camera_front_y, &camera_front_z);
 
 #if 0
             if (ImGui::RadioButton("Perspective", engine->camera.projection == CameraProjection::Perspective))

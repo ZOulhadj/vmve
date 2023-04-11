@@ -24,9 +24,9 @@ static void display_renderer_stats(bool* open)
     if (ImGui::Begin("Renderer Stats", open, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
     {
         ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::Text("Delta time: %.4f ms/frame", engine_get_delta_time());
+        ImGui::Text("Delta time: %.4f ms/frame", engine::get_frame_delta());
 
-        static const char* gpu_name = engine_get_gpu_name();
+        static const char* gpu_name = engine::get_gpu_name();
         ImGui::Text("GPU: %s", gpu_name);
     }
     ImGui::End();
@@ -77,38 +77,38 @@ void center_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
 
 
         // change viewport view based on various settings
-        my_engine_viewport_view viewport_view = my_engine_viewport_view::full;
+        engine::Viewport_View viewport_view = engine::Viewport_View::full;
         if (lighting)
-            viewport_view = my_engine_viewport_view::full;
+            viewport_view = engine::Viewport_View::full;
         else
-            viewport_view = my_engine_viewport_view::colors;
+            viewport_view = engine::Viewport_View::colors;
 
         if (positions)
-            viewport_view = my_engine_viewport_view::positions;
+            viewport_view = engine::Viewport_View::positions;
         else if (normals)
-            viewport_view = my_engine_viewport_view::normals;
+            viewport_view = engine::Viewport_View::normals;
         else if (speculars)
-            viewport_view = my_engine_viewport_view::specular;
+            viewport_view = engine::Viewport_View::specular;
         else if (depth)
-            viewport_view = my_engine_viewport_view::depth;
+            viewport_view = engine::Viewport_View::depth;
 
 
 
         ImGui::Image(engine_get_viewport_texture(viewport_view), ImVec2(viewport_width, viewport_height));
 
         // todo(zak): move this into its own function
-        float* view = engine_get_camera_view();
-        float* proj = engine_get_camera_projection();
+        float* view = engine::get_camera_view();
+        float* proj = engine::get_camera_projection();
 
         // note: proj[5] == proj[1][1]
         proj[5] *= -1.0f;
 
         if (object_edit_mode) {
-            if (engine_get_instance_count() > 0 && guizmo_operation != -1) {
+            if (engine::get_instance_count() > 0 && guizmo_operation != -1) {
                 ImGuiIO& io = ImGui::GetIO();
 
                 float matrix[16];
-                engine_get_entity_matrix(selectedInstanceIndex, matrix);
+                engine::get_entity_matrix(selectedInstanceIndex, matrix);
 
                 const auto& operation = static_cast<ImGuizmo::OPERATION>(guizmo_operation);
 
@@ -139,9 +139,9 @@ void center_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
                     current_rotation[1] += rotation_delta[1];
                     current_rotation[2] += rotation_delta[2];
 #endif
-                    engine_set_instance_position(selectedInstanceIndex, position[0], position[1], position[2]);
-                    engine_set_instance_rotation(selectedInstanceIndex, rotation[0], rotation[1], rotation[2]);
-                    engine_set_instance_scale(selectedInstanceIndex, scale[0], scale[1], scale[2]);
+                    engine::set_instance_position(selectedInstanceIndex, position[0], position[1], position[2]);
+                    engine::set_instance_rotation(selectedInstanceIndex, rotation[0], rotation[1], rotation[2]);
+                    engine::set_instance_scale(selectedInstanceIndex, scale[0], scale[1], scale[2]);
                 }
                 
             }

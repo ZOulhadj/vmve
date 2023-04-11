@@ -47,10 +47,10 @@ static bool camera_activated = false;
 
 int main()
 {
-    bool initialized = engine_initialize(app_title, app_width, app_height);
+    bool initialized = engine::initialize(app_title, app_width, app_height);
     if (!initialized) {
-        engine_export_logs_to_file(app_crash_file);
-        engine_terminate();
+        engine::export_logs_to_file(app_crash_file);
+        engine::terminate();
 
         return -1;
     }
@@ -58,54 +58,53 @@ int main()
     // Set application icon
     int icon_width, icon_height;
     unsigned char* app_icon = get_app_icon(&icon_width, &icon_height);
-    engine_set_window_icon(app_icon, icon_width, icon_height);
+    engine::set_window_icon(app_icon, icon_width, icon_height);
 
     // Register application event callbacks with the engine.
-    My_Engine_Callbacks callbacks;
+    engine::Callbacks callbacks;
     callbacks.key_callback    = key_callback;
     callbacks.mouse_button_pressed_callback = mouse_button_pressed_callback;
     callbacks.mouse_button_released_callback = mouse_button_released_callback;
     callbacks.resize_callback = resize_callback;
     callbacks.drop_callback   = drop_callback;
-    engine_set_callbacks(callbacks);
+    engine::set_callbacks(callbacks);
     
-    engine_enable_ui();
+    engine::enable_ui();
     configure_ui();
 
-    engine_create_camera(60.0f, 20.0f);
+    engine::create_camera(60.0f, 20.0f);
+    engine::show_window();
 
-    engine_show_window();
-
-    while (engine_update()) {
+    while (engine::update()) {
 
         //  Only update the camera view if the viewport is currently in focus.
-        if (engine_get_instance_count() > 0 && camera_activated) {
-            engine_update_input();
-            engine_update_camera_view();
+        if (engine::get_instance_count() > 0 && camera_activated) {
+            engine::update_input();
+            engine::update_camera_view();
         }
 
         // Always update project as the user may update various camera settings per
         // frame.
-        engine_update_camera_projection(viewport_width, viewport_height);
+        engine::update_camera_projection(viewport_width, viewport_height);
 
-        if (engine_begin_render()) {
+        if (engine::begin_render()) {
             // Main render pass that renders the scene geometry.
-            engine_render();
+            engine::render();
 
             // Render all UI elements 
-            engine_begin_ui_pass();
+            engine::begin_ui_pass();
             render_ui(!not_full_screen);
-            engine_end_ui_pass();
+            engine::end_ui_pass();
        
             // Request the GPU to execute all rendering operations and display
             // final result onto the screen.
-            engine_present();
+            engine::present();
         }
     }
 
     // TODO: export settings file
 
-    engine_terminate();
+    engine::terminate();
 
     return 0;
 }
@@ -125,13 +124,13 @@ void key_callback(int keycode, bool control, bool alt, bool shift)
     else if (control && keycode == KEY_F)
         not_full_screen = !not_full_screen;
     else if (control && keycode == KEY_Q)
-        engine_should_terminate();
+        engine::should_terminate();
 
 
     // viewport controls
     else if (alt && keycode == KEY_C) {
         camera_activated = !camera_activated;
-        engine_set_cursor_mode(camera_activated);
+        engine::set_cursor_mode(camera_activated);
     }
         
     else if (alt && keycode == KEY_M) {
@@ -157,7 +156,7 @@ void key_callback(int keycode, bool control, bool alt, bool shift)
         depth = !depth;
     } else if (keycode == KEY_F6) {
         wireframe = !wireframe;
-        engine_set_render_mode(wireframe ? 1 : 0);
+        engine::set_render_mode(wireframe ? 1 : 0);
     } else if (keycode == KEY_F7) {
         display_stats = !display_stats;
     }

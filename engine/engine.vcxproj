@@ -168,7 +168,7 @@
     <ClCompile Include="src\engine.cpp" />
     <ClCompile Include="src\filesystem\filesystem.cpp" />
     <ClCompile Include="src\filesystem\vfs.cpp" />
-    <ClCompile Include="src\logging.cpp" />
+    <ClCompile Include="src\utils\logging.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -182,13 +182,13 @@
     <ClCompile Include="src\rendering\api\vulkan\vk_shader.cpp" />
     <ClCompile Include="src\rendering\api\vulkan\vk_vertex_array.cpp" />
     <ClCompile Include="src\rendering\camera.cpp" />
+    <ClCompile Include="src\rendering\common.cpp" />
     <ClCompile Include="src\rendering\entity.cpp" />
     <ClCompile Include="src\rendering\material.cpp" />
     <ClCompile Include="src\rendering\model.cpp" />
     <ClCompile Include="src\rendering\terrain\quad_tree.cpp" />
     <ClCompile Include="src\rendering\vertex.cpp" />
-    <ClCompile Include="src\ui\ui.cpp" />
-    <ClCompile Include="src\utility.cpp" />
+    <ClCompile Include="src\rendering\ui\ui.cpp" />
     <ClCompile Include="src\utils\time.cpp" />
     <ClCompile Include="vendor\imgui\imgui.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -242,7 +242,6 @@
     <ClInclude Include="src\events\window_event.h" />
     <ClInclude Include="src\filesystem\filesystem.h" />
     <ClInclude Include="src\filesystem\vfs.h" />
-    <ClInclude Include="src\logging.h" />
     <ClInclude Include="src\math\math.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\rendering\api\vulkan\vk_buffer.h" />
@@ -254,6 +253,7 @@
     <ClInclude Include="src\rendering\api\vulkan\vk_shader.h" />
     <ClInclude Include="src\rendering\api\vulkan\vk_vertex_array.h" />
     <ClInclude Include="src\rendering\camera.h" />
+    <ClInclude Include="src\rendering\common.h" />
     <ClInclude Include="src\rendering\entity.h" />
     <ClInclude Include="src\rendering\material.h" />
     <ClInclude Include="src\rendering\model.h" />
@@ -263,8 +263,7 @@
     <ClInclude Include="src\rendering\terrain\quad_tree.h" />
     <ClInclude Include="src\rendering\ui.h" />
     <ClInclude Include="src\rendering\vertex.h" />
-    <ClInclude Include="src\ui\ui.h" />
-    <ClInclude Include="src\utility.h" />
+    <ClInclude Include="src\rendering\ui\ui.h" />
     <ClInclude Include="src\utils\logging.h" />
     <ClInclude Include="src\utils\time.h" />
   </ItemGroup>

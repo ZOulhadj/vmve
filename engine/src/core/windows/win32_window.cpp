@@ -5,7 +5,7 @@
 #include "events/key_event.h"
 #include "events/mouse_event.h"
 
-#include "logging.h"
+#include "utils/logging.h"
 
 namespace engine {
 

@@ -438,7 +438,7 @@ static void render_preferences_window(bool* open)
         ImGui::Text("Audio");
 
         if (ImGui::SliderInt("Main volume", &main_volume, 0, 100, "%d%%"))
-            engine_set_master_volume(static_cast<float>(main_volume));
+            engine::set_master_volume(static_cast<float>(main_volume));
         break;
     }
 
@@ -496,8 +496,8 @@ static void load_model_window(bool* open)
 
     ImGui::Begin(ICON_FA_CUBE " Load Model", open);
 
-    static const char* modelPath = engine_get_executable_directory();
-    std::string model_path = engine_display_file_explorer(modelPath);
+    static const char* modelPath = engine::get_executable_directory();
+    std::string model_path = engine::display_file_explorer(modelPath);
 
     // TODO: instead of simply checking for file extension, we need to properly
     // parse the file to ensure it is in the correct format.
@@ -514,7 +514,7 @@ static void load_model_window(bool* open)
         if (model.extension() == ".vmve") {
             file_encrypted = true;
         } else {
-            engine_load_model(model_path.c_str(), flip_uv);
+            engine::load_model(model_path.c_str(), flip_uv);
         }
 #endif
     }
@@ -530,7 +530,7 @@ static void load_model_window(bool* open)
                 std::string raw_data;
                 bool file_read = vmve_read_from_file(raw_data, model_path.c_str());
                 if (file_read)
-                    engine_add_model(raw_data.c_str(), static_cast<int>(raw_data.size()), flip_uv);
+                    engine::add_model(raw_data.c_str(), static_cast<int>(raw_data.size()), flip_uv);
 
                 ImGui::CloseCurrentPopup();
                 file_encrypted = false;
@@ -563,8 +563,8 @@ static void vmve_creator_window(bool* open)
 
     ImGui::Begin(ICON_FA_KEY " Export model", open);
 
-    static const char* exportPath = engine_get_executable_directory();
-    std::string current_path = engine_display_file_explorer(exportPath);
+    static const char* exportPath = engine::get_executable_directory();
+    std::string current_path = engine::display_file_explorer(exportPath);
 
     ImGui::Text(current_path.c_str());
 
@@ -677,12 +677,12 @@ static void render_audio_window(bool* open)
     static int audio_volume = 50;
     // TODO: disable buttons if not a valid audio path
     if (ImGui::Button(ICON_FA_PLAY))
-        engine_play_audio(audio_path);
+        engine::play_audio(audio_path);
     ImGui::SameLine();
     ImGui::Button(ICON_FA_PAUSE);
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_STOP))
-        engine_stop_audio(0);
+        engine::stop_audio(0);
     ImGui::SameLine();
 
     if (audio_volume >= 66.6)
@@ -696,7 +696,7 @@ static void render_audio_window(bool* open)
 
     ImGui::InputText("Audio Path", audio_path, 256);
     if (ImGui::SliderInt("Volume", &audio_volume, 0, 100, "%d%%"))
-        engine_set_audio_volume(static_cast<float>(audio_volume));
+        engine::set_audio_volume(static_cast<float>(audio_volume));
 
 
 
@@ -741,7 +741,7 @@ static void render_windows()
 
             ImGui::Checkbox("Flip UVs", &flip_uvs);
             if (ImGui::Button("Load Model", ImVec2(120, 0))) {
-                engine_load_model(drop_load_model_path, flip_uvs);
+                engine::load_model(drop_load_model_path, flip_uvs);
 
                 ImGui::CloseCurrentPopup();
                 drop_load_model = false;
@@ -815,7 +815,7 @@ void configure_ui()
     set_default_styling();
     set_default_theme();
 
-    const float base_scaling_factor = engine_get_window_scale();
+    const float base_scaling_factor = engine::get_window_scale();
     const float base_font_size = 16.0f * base_scaling_factor;
     const float base_icon_size = base_font_size * 2.0f / 3.0f; // Required by FontAwesome for correct alignment.
 
@@ -838,7 +838,7 @@ void configure_ui()
     io.Fonts->AddFontFromMemoryCompressedBase85TTF(get_fa_solid_900_compressed_ttf(), icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
 
     // Upload font textures to the engine (GPU memory)
-    engine_set_ui_font_texture();
+    engine::set_ui_font_texture();
 }
 
 void render_ui(bool fullscreen)

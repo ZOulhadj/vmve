@@ -1,9 +1,7 @@
 #include "pch.h"
 #include "quad_tree.h"
 
-
-#include "utility.h"
-#include "logging.h"
+#include "utils/logging.h"
 
 
 namespace engine {

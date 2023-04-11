@@ -12,7 +12,7 @@ void menu_panel()
 
 
             if (ImGui::MenuItem(ICON_FA_XMARK " Exit", "Ctrl+Q"))
-                engine_should_terminate();
+                engine::should_terminate();
 
             ImGui::EndMenu();
         }
@@ -53,11 +53,11 @@ void menu_panel()
 
 
                 if (ImGui::Checkbox("Wireframe", &wireframe))
-                    engine_set_render_mode(wireframe ? 1 : 0);
+                    engine::set_render_mode(wireframe ? 1 : 0);
                 info_marker("Toggles rendering mode to visualize individual vertices");
 
                 if (ImGui::Checkbox("VSync", &vsync))
-                    engine_set_vsync(vsync);
+                    engine::set_vsync(vsync);
                 info_marker("Limits frame rate to your displays refresh rate");
 
                 ImGui::Checkbox("Display stats", &display_stats);

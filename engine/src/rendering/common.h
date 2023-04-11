@@ -1,14 +1,10 @@
-#ifndef MY_ENGINE_UTILITY_HPP
-#define MY_ENGINE_UTILITY_HPP
-
+#ifndef COMMON_H
+#define COMMON_H
 
 #include "core/platform_window.h"
 #include "rendering/camera.h"
 
 namespace engine {
-    // Loads a plain text file from the filesystem.
-    std::string load_file(const std::filesystem::path& path);
-
 
     // For a given world-space position this function converts that into a screen-space
     // local coordinate. In other words, it returns a position on the screen of

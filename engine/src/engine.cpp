@@ -9,7 +9,6 @@
 #include "../src/core/windows/win32_memory.h"
 #endif
 
-
 #include "../src/rendering/api/vulkan/vk_common.h"
 #include "../src/rendering/api/vulkan/vk_renderer.h"
 #include "../src/rendering/api/vulkan/vk_buffer.h"
@@ -19,7 +18,6 @@
 #include "../src/rendering/camera.h"
 #include "../src/rendering/entity.h"
 #include "../src/rendering/model.h"
-
 #include "../src/rendering/shaders/shaders.h"
 
 #include "../src/events/event.h"
@@ -31,10 +29,9 @@
 #include "../src/filesystem/vfs.h"
 #include "../src/filesystem/filesystem.h"
 
-#include "../src/ui/ui.h"
+#include "../src/rendering/ui/ui.h"
 
-#include "../src/utility.h"
-#include "../src/logging.h"
+#include "../src/utils/logging.h"
 #include "../src/utils/time.h"
 
 
@@ -45,18 +42,18 @@ namespace engine {
     struct My_Engine
     {
         Platform_Window* window;
-        Vk_Renderer* renderer;
-        ImGuiContext* ui;
-
+        Platform_Input* input; // not used
         Platform_Audio* audio;
         Platform_Audio_Source* audio_source;
 
+        Vk_Renderer* renderer;
+        ImGuiContext* ui;
 
-        My_Engine_Callbacks callbacks;
+        Callbacks callbacks;
 
         std::string app_location;
         bool running;
-        std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+        time_point start_time;
         double delta_time;
 
         // Resources
@@ -156,9 +153,6 @@ namespace engine {
 
     static Model skybox_model;
 
-
-
-
     // UI related stuff
     static Vk_Render_Pass ui_pass{};
     static std::vector<VkDescriptorSet> viewport_ui;
@@ -179,22 +173,8 @@ namespace engine {
 
     static void event_callback(Basic_Event& e);
 
-    static std::string get_executable_directory()
-    {
-        // Get the current path of the executable
-        // TODO: MAX_PATH is ok to use however, for a long term solution another 
-        // method should used since some paths can go beyond this limit.
-        std::string directory(MAX_PATH, ' ');
-        GetModuleFileNameA(nullptr, directory.data(), static_cast<DWORD>(sizeof(char) * directory.size()));
-
-        // TODO: Might be overkill to convert into filesystem just to get the parent path.
-        // Test speed compared to simply doing a quick parse by finding the last '/'.
-        return std::filesystem::path(directory).parent_path().string();
-    }
-
     static bool initialize_core(My_Engine* engine, const char* name, int width, int height)
     {
-
         // Initialize core systems
         engine->window = create_platform_window(name, { width, height });
         if (!engine->window) {
@@ -202,13 +182,6 @@ namespace engine {
             return false;
         }
         set_window_event_callback(engine->window, event_callback);
-
-
-        engine->renderer = create_renderer(engine->window, buffer_mode::double_buffering, vsync_mode::enabled);
-        if (!engine->renderer) {
-            print_error("Failed to create renderer.\n");
-            return false;
-        }
 
         engine->audio = initialize_audio();
         if (!engine->audio) {
@@ -219,6 +192,12 @@ namespace engine {
             // 
             // TODO: clear audio resources
 
+        }
+
+        engine->renderer = create_renderer(engine->window, buffer_mode::double_buffering, vsync_mode::enabled);
+        if (!engine->renderer) {
+            print_error("Failed to create renderer.\n");
+            return false;
         }
 
         return true;
@@ -388,7 +367,7 @@ namespace engine {
         //composite_cmd_buffer = create_command_buffers();
     }
 
-    bool engine_initialize(const char* name, int width, int height)
+    bool initialize(const char* name, int width, int height)
     {
         g_engine = new My_Engine();
 
@@ -413,7 +392,7 @@ namespace engine {
         return true;
     }
 
-    bool engine_update()
+    bool update()
     {
         // Calculate the amount that has passed since the last frame. This value
         // is then used with inputs and physics to ensure that the result is the
@@ -429,7 +408,7 @@ namespace engine {
         return g_engine->running;
     }
 
-    bool engine_begin_render()
+    bool begin_render()
     {
         g_engine->swapchain_ready = get_next_swapchain_image();
 
@@ -445,7 +424,7 @@ namespace engine {
         return g_engine->swapchain_ready;
     }
 
-    void engine_render()
+    void render()
     {
         begin_command_buffer(cmd_buffer);
         {
@@ -514,7 +493,7 @@ namespace engine {
 
     }
 
-    void engine_present()
+    void present()
     {
         if (g_engine->ui_pass_enabled)
             submit_gpu_work({ cmd_buffer, ui_cmd_buffer });
@@ -531,7 +510,7 @@ namespace engine {
         update_window(g_engine->window);
     }
 
-    void engine_terminate()
+    void terminate()
     {
         assert(g_engine);
 
@@ -597,7 +576,7 @@ namespace engine {
     //////////////////////////////////////////////////////////////////////////////
 
 
-    void engine_set_render_mode(int mode)
+    void set_render_mode(int mode)
     {
         if (mode == 0) {
             current_pipeline = &offscreen_pipeline;
@@ -607,7 +586,7 @@ namespace engine {
         }
     }
 
-    void engine_set_vsync(bool enabled)
+    void set_vsync(bool enabled)
     {
         print_warning("Vsync toggling not yet implemented.");
 
@@ -621,33 +600,33 @@ namespace engine {
 #endif
     }
 
-    void engine_should_terminate()
+    void should_terminate()
     {
         g_engine->running = false;
     }
 
-    void engine_set_window_icon(unsigned char* data, int width, int height)
+    void set_window_icon(unsigned char* data, int width, int height)
     {
         set_window_icon(g_engine->window, data, width, height);
     }
 
-    float engine_get_window_scale()
+    float get_window_scale()
     {
         return get_window_dpi_scale(g_engine->window);
     }
 
-    void engine_show_window()
+    void show_window()
     {
         show_window(g_engine->window);
     }
 
-    void engine_set_callbacks(My_Engine_Callbacks callbacks)
+    void set_callbacks(Callbacks callbacks)
     {
         g_engine->callbacks = callbacks;
     }
 
 
-    void engine_load_model(const char* path, bool flipUVs)
+    void load_model(const char* path, bool flipUVs)
     {
         Model model{};
 
@@ -662,7 +641,7 @@ namespace engine {
         g_engine->models.push_back(model);
     }
 
-    void engine_add_model(const char* data, int size, bool flipUVs)
+    void add_model(const char* data, int size, bool flipUVs)
     {
         Model model;
 
@@ -676,7 +655,7 @@ namespace engine {
         g_engine->models.push_back(model);
     }
 
-    void engine_remove_model(int modelID)
+    void remove_model(int modelID)
     {
         // Remove all instances which use the current model
 #if 0
@@ -698,14 +677,14 @@ namespace engine {
 #endif
     }
 
-    void engine_add_entity(int modelID, float x, float y, float z)
+    void add_entity(int modelID, float x, float y, float z)
     {
         Entity entity = create_entity(g_engine->entity_id++, modelID, g_engine->models[modelID].name, glm::vec3(x, y, z));
 
         g_engine->entities.push_back(entity);
     }
 
-    void engine_remove_instance(int instanceID)
+    void remove_instance(int instanceID)
     {
         assert(instanceID >= 0);
 
@@ -732,21 +711,21 @@ namespace engine {
 
     }
 
-    int engine_get_instance_id(int instanceIndex)
+    int get_instance_id(int instanceIndex)
     {
         assert(instanceIndex >= 0);
 
         return g_engine->entities[instanceIndex].id;
     }
 
-    const char* engine_get_instance_name(int instanceIndex)
+    const char* get_instance_name(int instanceIndex)
     {
         assert(instanceIndex >= 0);
 
         return g_engine->entities[instanceIndex].name.c_str();
     }
 
-    void engine_decompose_entity_matrix(int instanceIndex, float* pos, float* rot, float* scale)
+    void decompose_entity_matrix(int instanceIndex, float* pos, float* rot, float* scale)
     {
         assert(instanceIndex >= 0);
 
@@ -758,7 +737,7 @@ namespace engine {
     }
 
 
-    void engine_get_entity_matrix(int instance_index, float* matrix)
+    void get_entity_matrix(int instance_index, float* matrix)
     {
         assert(instance_index >= 0);
 
@@ -785,14 +764,14 @@ namespace engine {
         matrix[15] = entity.matrix[3][3];
     }
 
-    void engine_set_instance_position(int instanceIndex, float x, float y, float z)
+    void set_instance_position(int instanceIndex, float x, float y, float z)
     {
         assert(instanceIndex >= 0);
 
         translate_entity(g_engine->entities[instanceIndex], glm::vec3(x, y, z));
     }
 
-    void engine_set_instance_rotation(int instanceIndex, float x, float y, float z)
+    void set_instance_rotation(int instanceIndex, float x, float y, float z)
     {
         assert(instanceIndex >= 0);
 
@@ -800,14 +779,14 @@ namespace engine {
     }
 
 
-    void engine_set_instance_scale(int instanceIndex, float scale)
+    void set_instance_scale(int instanceIndex, float scale)
     {
         assert(instanceIndex >= 0);
 
         scale_entity(g_engine->entities[instanceIndex], scale);
     }
 
-    void engine_set_instance_scale(int instanceIndex, float x, float y, float z)
+    void set_instance_scale(int instanceIndex, float x, float y, float z)
     {
         assert(instanceIndex >= 0);
 
@@ -815,7 +794,7 @@ namespace engine {
     }
 
 
-    void engine_set_environment_map(const char* path)
+    void set_environment_map(const char* path)
     {
         assert(!g_engine->using_skybox);
 
@@ -832,12 +811,12 @@ namespace engine {
         g_engine->using_skybox = true;
     }
 
-    void engine_create_camera(float fovy, float speed)
+    void create_camera(float fovy, float speed)
     {
         g_engine->camera = create_perspective_camera({ 0.0f, 2.0f, -2.0f }, fovy, speed);
     }
 
-    void engine_update_input()
+    void update_input()
     {
         Camera& camera = g_engine->camera;
 
@@ -862,57 +841,57 @@ namespace engine {
 
     }
 
-    void engine_update_camera_view()
+    void update_camera_view()
     {
         update_camera_view(g_engine->camera, get_cursor_position());
     }
 
-    void engine_update_camera_projection(int width, int height)
+    void update_camera_projection(int width, int height)
     {
         update_projection(g_engine->camera, width, height);
     }
 
 
-    float* engine_get_camera_view()
+    float* get_camera_view()
     {
         return glm::value_ptr(g_engine->camera.vp.view);
     }
 
-    float* engine_get_camera_projection()
+    float* get_camera_projection()
     {
         return glm::value_ptr(g_engine->camera.vp.proj);
     }
 
-    void engine_get_camera_position(float* x, float* y, float* z)
+    void get_camera_position(float* x, float* y, float* z)
     {
         *x = g_engine->camera.position.x;
         *y = g_engine->camera.position.y;
         *z = g_engine->camera.position.z;
     }
 
-    void engine_get_camera_front_vector(float* x, float* y, float* z)
+    void get_camera_front_vector(float* x, float* y, float* z)
     {
         *x = g_engine->camera.front_vector.x;
         *y = g_engine->camera.front_vector.y;
         *z = g_engine->camera.front_vector.z;
     }
 
-    float* engine_get_camera_fov()
+    float* get_camera_fov()
     {
         return &g_engine->camera.fov;
     }
 
-    float* engine_get_camera_speed()
+    float* get_camera_speed()
     {
         return &g_engine->camera.speed;
     }
 
-    float* engine_get_camera_near()
+    float* get_camera_near()
     {
         return &g_engine->camera.near_plane;
     }
 
-    float* engine_get_camera_far()
+    float* get_camera_far()
     {
         return &g_engine->camera.far_plane;
     }
@@ -921,7 +900,7 @@ namespace engine {
         g_engine->camera.position = glm::vec3(x, y, z);
     }
 
-    void engine_enable_ui()
+    void enable_ui()
     {
         const glm::u32vec2 size = get_window_size(g_engine->window);
 
@@ -950,19 +929,19 @@ namespace engine {
         ui_cmd_buffer = create_command_buffers();
     }
 
-    void engine_set_ui_font_texture()
+    void set_ui_font_texture()
     {
         create_font_textures();
     }
 
-    void engine_begin_ui_pass()
+    void begin_ui_pass()
     {
         begin_command_buffer(ui_cmd_buffer);
         begin_render_pass(ui_cmd_buffer, ui_pass);
         begin_ui();
     }
 
-    void engine_end_ui_pass()
+    void end_ui_pass()
     {
 #if 0
         static float scale = 1.0f;
@@ -988,52 +967,52 @@ namespace engine {
         end_command_buffer(ui_cmd_buffer);
     }
 
-    void* engine_get_viewport_texture(my_engine_viewport_view view)
+    void* engine_get_viewport_texture(Viewport_View view)
     {
         const uint32_t current_image = get_frame_image_index();
 
-        if (view == my_engine_viewport_view::full)
+        if (view == Viewport_View::full)
             return viewport_ui[current_image];
-        else if (view == my_engine_viewport_view::colors)
+        else if (view == Viewport_View::colors)
             return colors_ui[current_image];
-        else if (view == my_engine_viewport_view::positions)
+        else if (view == Viewport_View::positions)
             return positions_ui[current_image];
-        else if (view == my_engine_viewport_view::normals)
+        else if (view == Viewport_View::normals)
             return normals_ui[current_image];
-        else if (view == my_engine_viewport_view::specular)
+        else if (view == Viewport_View::specular)
             return speculars_ui[current_image];
-        else if (view == my_engine_viewport_view::depth)
+        else if (view == Viewport_View::depth)
             return depths_ui[current_image];
 
         return viewport_ui[current_image];
     }
 
-    int engine_get_model_count()
+    int get_model_count()
     {
         return static_cast<int>(g_engine->models.size());
     }
 
-    int engine_get_instance_count()
+    int get_instance_count()
     {
         return static_cast<int>(g_engine->entities.size());
     }
 
-    const char* engine_get_model_name(int modelID)
+    const char* get_model_name(int modelID)
     {
         return g_engine->models[modelID].name.c_str();
     }
 
-    double engine_get_delta_time()
+    double get_frame_delta()
     {
         return g_engine->delta_time;
     }
 
-    const char* engine_get_gpu_name()
+    const char* get_gpu_name()
     {
         return g_engine->renderer->ctx.device->gpu_name.c_str();
     }
 
-    void engine_get_uptime(int* hours, int* minutes, int* seconds)
+    void get_uptime(int* hours, int* minutes, int* seconds)
     {
         const auto duration = std::chrono::high_resolution_clock::now() - g_engine->start_time;
 
@@ -1046,7 +1025,7 @@ namespace engine {
         *seconds = s;
     }
 
-    void engine_get_memory_status(float* memoryUsage, unsigned int* maxMemory)
+    void get_memory_status(float* memoryUsage, unsigned int* maxMemory)
     {
         const MEMORYSTATUSEX memoryStatus = get_windows_memory_status();
 
@@ -1054,7 +1033,7 @@ namespace engine {
         *maxMemory = static_cast<int>(memoryStatus.ullTotalPhys / 1'000'000'000);
     }
 
-    const char* engine_display_file_explorer(const char* path)
+    const char* display_file_explorer(const char* path)
     {
         // TODO: Clean up this function and ensure that no bugs exist
         static std::string current_dir = path;
@@ -1110,21 +1089,29 @@ namespace engine {
         return full_path.c_str();
     }
 
-    const char* engine_get_executable_directory()
+    const char* get_executable_directory()
     {
-        return g_engine->app_location.c_str();
+        // Get the current path of the executable
+        // TODO: MAX_PATH is ok to use however, for a long term solution another
+        // method should used since some paths can go beyond this limit.
+        std::string directory(MAX_PATH, ' ');
+        GetModuleFileNameA(nullptr, directory.data(), static_cast<DWORD>(sizeof(char) * directory.size()));
+
+        // TODO: Might be overkill to convert into filesystem just to get the parent path.
+        // Test speed compared to simply doing a quick parse by finding the last '/'.
+        return std::filesystem::path(directory).parent_path().string().c_str();
     }
 
-    void engine_set_cursor_mode(int cursorMode)
+    void set_cursor_mode(int cursorMode)
     {
         int mode = (cursorMode == 0) ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED;
         g_engine->camera.first_mouse = true;
         glfwSetInputMode(get_window_handle(g_engine->window), GLFW_CURSOR, mode);
     }
 
-    void engine_clear_logs()
+    void clear_logs()
     {
-        clear_logs();
+        clear_log_buffer();
     }
 
     void engine_export_logs_to_file(const char* path)
@@ -1132,22 +1119,22 @@ namespace engine {
         export_logs_to_file(path);
     }
 
-    int engine_get_log_count()
+    int get_log_count()
     {
-        return get_log_count();
+        return get_total_log_count();
     }
 
-    void engine_get_log(int logIndex, const char** str, int* log_type)
+    void get_log(int logIndex, const char** str, int* log_type)
     {
-        get_log(logIndex, str, log_type);
+        get_log_message(logIndex, str, log_type);
     }
 
-    void engine_set_master_volume(float master_volume)
+    void set_master_volume(float master_volume)
     {
         set_audio_volume(g_engine->audio, master_volume);
     }
 
-    bool engine_play_audio(const char* path)
+    bool play_audio(const char* path)
     {
         bool audio_created = create_audio_source(g_engine->audio, &g_engine->audio_source, path);
         if (!audio_created)
@@ -1163,13 +1150,13 @@ namespace engine {
         stop_audio_source(g_engine->audio_source);
     }
 
-    void engine_stop_audio(int audio_id)
+    void stop_audio(int audio_id)
     {
         stop_audio_source(g_engine->audio_source);
         terminate_audio_source(g_engine->audio_source);
     }
 
-    void engine_set_audio_volume(float audio_volume)
+    void set_audio_volume(float audio_volume)
     {
         set_audio_volume(g_engine->audio_source, audio_volume);
     }

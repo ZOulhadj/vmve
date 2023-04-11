@@ -13,10 +13,10 @@ void bottom_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
     ImGui::Begin(title.c_str(), is_open, flags);
     {
         if (ImGui::Button(ICON_FA_BROOM " Clear"))
-            engine_clear_logs();
+            engine::clear_logs();
         ImGui::SameLine();
         if (ImGui::Button(ICON_FA_DOWNLOAD " Export"))
-            engine_export_logs_to_file("logs.txt");
+            engine::export_logs_to_file("logs.txt");
         ImGui::SameLine();
         scrollCheckboxClicked = ImGui::Checkbox("Auto-scroll", &autoScroll);
         ImGui::Separator();
@@ -27,12 +27,12 @@ void bottom_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
 
         if (ImGui::BeginTable("Log_Table", 1, flags)) {
             ImGuiListClipper clipper;
-            clipper.Begin(engine_get_log_count());
+            clipper.Begin(engine::get_log_count());
             while (clipper.Step()) {
                 for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
                     const char* message = nullptr;
                     int log_type = 0;
-                    engine_get_log(index, &message, &log_type);
+                    engine::get_log(index, &message, &log_type);
 
                     static std::string icon_type;
                     static ImVec4 icon_color;

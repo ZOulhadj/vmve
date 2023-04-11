@@ -1,17 +1,7 @@
 #include "pch.h"
-#include "utility.h"
+#include "common.h"
 
 namespace engine {
-    std::string load_file(const std::filesystem::path& path)
-    {
-        std::ifstream file(path.string());
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-
-        return buffer.str();
-    }
-
-
     glm::vec2 world_to_screen(const Platform_Window* window,
         const Camera& camera,
         const glm::vec3& position,

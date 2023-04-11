@@ -13,7 +13,7 @@
 #include "rendering/vertex.h"
 #include "rendering/entity.h"
 
-#include "logging.h"
+#include "utils/logging.h"
 
 namespace engine {
     struct vk_swapchain

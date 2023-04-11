@@ -19,4 +19,33 @@ namespace engine {
 }
 
 
+// todo(zak): old logging api which will need to be replaced by the one above.
+
+namespace engine {
+    enum class log_type
+    {
+        info,
+        warning,
+        error
+    };
+
+    struct log_message
+    {
+        log_type type;
+        std::string string;
+    };
+
+
+    void print_log(const char* fmt, ...);
+    void print_warning(const char* fmt, ...);
+    void print_error(const char* fmt, ...);
+
+    void clear_log_buffer();
+
+    void get_log_message(uint32_t logIndex, const char** str, int* type);
+    int get_total_log_count();
+
+    void export_logs_to_file(const char* path);
+}
+
 #endif

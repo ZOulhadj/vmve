@@ -10,14 +10,14 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
     {
         static int modelID = 0;
 
-        int modelCount = engine_get_model_count();
-        int instanceCount = engine_get_instance_count();
+        int modelCount = engine::get_model_count();
+        int instanceCount = engine::get_instance_count();
 
         // TODO: Get a contiguous list of models names for the combo box instead
         // of recreating a temporary list each frame.
         std::vector<const char*> modelNames(modelCount);
         for (std::size_t i = 0; i < modelNames.size(); ++i)
-            modelNames[i] = engine_get_model_name(i);
+            modelNames[i] = engine::get_model_name(i);
 
         ImGui::Combo("Model", &modelID, modelNames.data(), modelNames.size());
 
@@ -27,7 +27,7 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
         ImGui::SameLine();
         ImGui::BeginDisabled(modelCount == 0);
         if (ImGui::Button(ICON_FA_MINUS))
-            engine_remove_model(modelID);
+            engine::remove_model(modelID);
         ImGui::EndDisabled();
 
 
@@ -37,14 +37,14 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
         ImGui::SameLine();
         ImGui::BeginDisabled(modelCount == 0);
         if (ImGui::Button(ICON_FA_PLUS " add"))
-            engine_add_entity(modelID, 0.0f, 0.0f, 0.0f);
+            engine::add_entity(modelID, 0.0f, 0.0f, 0.0f);
         ImGui::EndDisabled();
 
         ImGui::SameLine();
 
         ImGui::BeginDisabled(instanceCount == 0);
         if (ImGui::Button(ICON_FA_MINUS " remove")) {
-            engine_remove_instance(selectedInstanceIndex);
+            engine::remove_instance(selectedInstanceIndex);
 
             // NOTE: should not go below 0
 
@@ -81,11 +81,11 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
             ImGui::TableHeadersRow();
 
             ImGuiListClipper clipper;
-            clipper.Begin(engine_get_instance_count());
+            clipper.Begin(engine::get_instance_count());
             while (clipper.Step()) {
                 for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
                     char label[32];
-                    sprintf_s(label, "%04d", engine_get_instance_id(i));
+                    sprintf_s(label, "%04d", engine::get_instance_id(i));
 
                     bool isCurrentlySelected = (selectedInstanceIndex == i);
 
@@ -97,7 +97,7 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
                         selectedInstanceIndex = i;
 
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted(engine_get_instance_name(i));
+                    ImGui::TextUnformatted(engine::get_instance_name(i));
 
                     ImGui::PopID();
                 }
@@ -106,7 +106,7 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
         }
 
 
-        if (engine_get_instance_count() > 0) {
+        if (engine::get_instance_count() > 0) {
             ImGui::BeginChild("Object Properties");
 
             if (ImGui::Button(ICON_FA_UP_DOWN_LEFT_RIGHT)) {
@@ -125,31 +125,31 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
             }
 
 
-            ImGui::Text("ID: %04d", engine_get_instance_id(selectedInstanceIndex));
-            ImGui::Text("Name: %s", engine_get_instance_name(selectedInstanceIndex));
+            ImGui::Text("ID: %04d", engine::get_instance_id(selectedInstanceIndex));
+            ImGui::Text("Name: %s", engine::get_instance_name(selectedInstanceIndex));
 
             float instancePos[3];
             float instanceRot[3];
             float scale[3];
 
-            engine_decompose_entity_matrix(selectedInstanceIndex, instancePos, instanceRot, scale);
+            engine::decompose_entity_matrix(selectedInstanceIndex, instancePos, instanceRot, scale);
 
             if (ImGui::SliderFloat3("Translation", instancePos, -100.0f, 100.0f))
-                engine_set_instance_position(selectedInstanceIndex, instancePos[0], instancePos[1], instancePos[2]);
+                engine::set_instance_position(selectedInstanceIndex, instancePos[0], instancePos[1], instancePos[2]);
             if (ImGui::SliderFloat3("Rotation", instanceRot, -360.0f, 360.0f))
-                engine_set_instance_rotation(selectedInstanceIndex, instanceRot[0], instanceRot[1], instanceRot[2]);
+                engine::set_instance_rotation(selectedInstanceIndex, instanceRot[0], instanceRot[1], instanceRot[2]);
 
 
             static bool uniformScale = true;
             if (uniformScale) {
                 if (ImGui::SliderFloat("Scale", scale, 0.1f, 100.0f))
-                    engine_set_instance_scale(selectedInstanceIndex, scale[0]);
+                    engine::set_instance_scale(selectedInstanceIndex, scale[0]);
                 ImGui::SameLine();
                 if (ImGui::Button(ICON_FA_LOCK))
                     uniformScale = false;
             } else {
                 if (ImGui::SliderFloat3("Scale", scale, 0.1f, 100.0f))
-                    engine_set_instance_scale(selectedInstanceIndex, scale[0], scale[1], scale[2]);
+                    engine::set_instance_scale(selectedInstanceIndex, scale[0], scale[1], scale[2]);
                 ImGui::SameLine();
                 if (ImGui::Button(ICON_FA_UNLOCK))
                     uniformScale = true;

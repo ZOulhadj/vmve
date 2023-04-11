@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "logging.h"
 
+
 namespace engine {
     static constexpr uint32_t g_log_history = 10'000;
     static std::vector<log_message> g_log_buffer(g_log_history);
@@ -66,7 +67,7 @@ namespace engine {
         va_end(args);
     }
 
-    void clear_logs()
+    void clear_log_buffer()
     {
         // TODO: need a better solution
         g_log_buffer.clear();
@@ -74,7 +75,7 @@ namespace engine {
         g_log_size = 0;
     }
 
-    void get_log(uint32_t logIndex, const char** str, int* type)
+    void get_log_message(uint32_t logIndex, const char** str, int* type)
     {
         if (logIndex > g_log_size)
             return;
@@ -83,7 +84,7 @@ namespace engine {
         *type = static_cast<int>(g_log_buffer[logIndex].type);
     }
 
-    int get_log_count()
+    int get_total_log_count()
     {
         return g_log_size;
     }
@@ -91,6 +92,11 @@ namespace engine {
     void export_logs_to_file(const char* path)
     {
         std::ofstream output(path);
+        if (!output.is_open()) {
+            print_error("Failed to open %s for writing.\n", path);
+            return;
+        }
+
 
         // NOTE: We only export lines which have been printed instead of exporting the
         // entire log buffer which will mostly be empty
