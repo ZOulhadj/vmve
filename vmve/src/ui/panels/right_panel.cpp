@@ -129,33 +129,33 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
             ImGui::Text("Name: %s", engine::get_instance_name(selectedInstanceIndex));
 
 
-            // todo(zak): undefined values being returned for entity.
-            float instancePos[3];
-            float instanceRot[3];
-            float scale[3];
+            float matrix[16];
+            engine::get_entity_matrix(selectedInstanceIndex, matrix);
 
-            engine::decompose_entity_matrix(selectedInstanceIndex, instancePos, instanceRot, scale);
-
-            if (ImGui::SliderFloat3("Translation", instancePos, -100.0f, 100.0f))
-                engine::set_instance_position(selectedInstanceIndex, instancePos[0], instancePos[1], instancePos[2]);
-            if (ImGui::SliderFloat3("Rotation", instanceRot, -360.0f, 360.0f))
-                engine::set_instance_rotation(selectedInstanceIndex, instanceRot[0], instanceRot[1], instanceRot[2]);
+            float matrixTranslation[3], matrixRotation[3], matrixScale[3];
+            ImGuizmo::DecomposeMatrixToComponents(matrix, matrixTranslation, matrixRotation, matrixScale);
+            if (ImGui::SliderFloat3("Translation", matrixTranslation, -200.0f, 200.0f))
+                engine::set_instance_position(selectedInstanceIndex, matrixTranslation[0], matrixTranslation[1], matrixTranslation[2]);
+            if (ImGui::SliderFloat3("Rotation", matrixRotation, -360.0f, 360.0f))
+                engine::set_instance_rotation(selectedInstanceIndex, matrixRotation[0], matrixRotation[1], matrixRotation[2]);
 
 
             static bool uniformScale = true;
             if (uniformScale) {
-                if (ImGui::SliderFloat("Scale", scale, 0.1f, 100.0f))
-                    engine::set_instance_scale(selectedInstanceIndex, scale[0]);
+                if (ImGui::SliderFloat("Scale", matrixScale, 0.1f, 100.0f))
+                    engine::set_instance_scale(selectedInstanceIndex, matrixScale[0]);
                 ImGui::SameLine();
                 if (ImGui::Button(ICON_FA_LOCK))
                     uniformScale = false;
             } else {
-                if (ImGui::SliderFloat3("Scale", scale, 0.1f, 100.0f))
-                    engine::set_instance_scale(selectedInstanceIndex, scale[0], scale[1], scale[2]);
+                if (ImGui::SliderFloat3("Scale", matrixScale, 0.1f, 100.0f))
+                    engine::set_instance_scale(selectedInstanceIndex, matrixScale[0], matrixScale[1], matrixScale[2]);
                 ImGui::SameLine();
                 if (ImGui::Button(ICON_FA_UNLOCK))
                     uniformScale = true;
             }
+            ImGuizmo::RecomposeMatrixFromComponents(matrixTranslation, matrixRotation, matrixScale, matrix);
+            engine::set_entity_matrix(selectedInstanceIndex, matrix);
 
             ImGui::EndChild();
         }

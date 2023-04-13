@@ -117,31 +117,10 @@ void center_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
                 ImGuizmo::Manipulate(view, proj, operation, ImGuizmo::MODE::WORLD, matrix);
 
                 if (ImGuizmo::IsUsing()) {
-                    float position[3];
-                    float rotation[3];
-                    float scale[3];
-                    static float current_rotation[3]{};
-
-                    ImGuizmo::DecomposeMatrixToComponents(matrix, position, rotation, scale);
-                    //engine_decompose_entity_matrix(engine, selectedInstanceIndex, position, rotation, scale);
-
-                    // TODO: rotation bug causes continuous rotations.
-#if 1
-//float* current_rotation = nullptr;
-                    float rotation_delta[3]{};
-                    rotation_delta[0] = rotation[0] - current_rotation[0];
-                    rotation_delta[1] = rotation[1] - current_rotation[1];
-                    rotation_delta[2] = rotation[2] - current_rotation[2];
-
-                    // set
-
-                    current_rotation[0] += rotation_delta[0];
-                    current_rotation[1] += rotation_delta[1];
-                    current_rotation[2] += rotation_delta[2];
-#endif
-                    engine::set_instance_position(selectedInstanceIndex, position[0], position[1], position[2]);
-                    engine::set_instance_rotation(selectedInstanceIndex, rotation[0], rotation[1], rotation[2]);
-                    engine::set_instance_scale(selectedInstanceIndex, scale[0], scale[1], scale[2]);
+                    engine::set_entity_matrix(selectedInstanceIndex, matrix);
+                    //engine::set_instance_position(selectedInstanceIndex, matrixTranslation[0], matrixTranslation[1], matrixTranslation[2]);
+                    //engine::set_instance_rotation(selectedInstanceIndex, matrixRotation[0], matrixRotation[1], matrixRotation[2]);
+                    //engine::set_instance_scale(selectedInstanceIndex, matrixScale[0], matrixScale[1], matrixScale[2]);
                 }
                 
             }

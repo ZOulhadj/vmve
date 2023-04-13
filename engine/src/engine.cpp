@@ -367,6 +367,20 @@ namespace engine {
         //composite_cmd_buffer = create_command_buffers();
     }
 
+    static std::string get_executable_directory()
+    {
+        // Get the current path of the executable
+        // TODO: MAX_PATH is ok to use however, for a long term solution another
+        // method should used since some paths can go beyond this limit.
+        std::string directory(MAX_PATH, ' ');
+        GetModuleFileNameA(nullptr, directory.data(), static_cast<DWORD>(sizeof(char) * directory.size()));
+
+        // TODO: Might be overkill to convert into filesystem just to get the parent path.
+        // Test speed compared to simply doing a quick parse by finding the last '/'.
+        return std::filesystem::path(directory).parent_path().string();
+    }
+
+
     bool initialize(const char* name, int width, int height)
     {
         g_engine = new My_Engine();
@@ -444,9 +458,10 @@ namespace engine {
             for (std::size_t i = 0; i < g_engine->entities.size(); ++i) {
                 Entity& instance = g_engine->entities[i];
 
-                apply_entity_transformation(instance);
-
+                //apply_entity_transformation(instance);
+                std::cout << glm::to_string(instance.matrix) << "\n";
                 render_model(g_engine->models[instance.model_index], instance.matrix, cmd_buffer, offscreen_pipeline_layout);
+                //instance.matrix = glm::mat4(1.0f);
             }
             end_render_pass(cmd_buffer);
 
@@ -679,7 +694,7 @@ namespace engine {
 
     void add_entity(int modelID, float x, float y, float z)
     {
-        Entity entity = create_entity(g_engine->entity_id++, modelID, g_engine->models[modelID].name, glm::vec3(x, y, z));
+        Entity entity = create_entity(g_engine->entity_id++, modelID, g_engine->models[modelID].name);
 
         g_engine->entities.push_back(entity);
     }
@@ -725,18 +740,6 @@ namespace engine {
         return g_engine->entities[instanceIndex].name.c_str();
     }
 
-    void decompose_entity_matrix(int instanceIndex, float* pos, float* rot, float* scale)
-    {
-        assert(instanceIndex >= 0);
-
-        get_entity_position(g_engine->entities[instanceIndex], pos);
-        get_entity_position(g_engine->entities[instanceIndex], rot);
-        get_entity_position(g_engine->entities[instanceIndex], scale);
-
-        //decompose_entity_matrix(, pos, rot, scale);
-    }
-
-
     void get_entity_matrix(int instance_index, float* matrix)
     {
         assert(instance_index >= 0);
@@ -762,6 +765,31 @@ namespace engine {
         matrix[13] = entity.matrix[3][1];
         matrix[14] = entity.matrix[3][2];
         matrix[15] = entity.matrix[3][3];
+    }
+
+    void set_entity_matrix(int instance_index, const float* matrix)
+    {
+        Entity& entity = g_engine->entities[instance_index];
+
+        entity.matrix[0][0] = matrix[0];
+        entity.matrix[0][1] = matrix[1];
+        entity.matrix[0][2] = matrix[2];
+        entity.matrix[0][3] = matrix[3];
+
+        entity.matrix[1][0] = matrix[4];
+        entity.matrix[1][1] = matrix[5];
+        entity.matrix[1][2] = matrix[6];
+        entity.matrix[1][3] = matrix[7];
+
+        entity.matrix[2][0] = matrix[8];
+        entity.matrix[2][1] = matrix[9];
+        entity.matrix[2][2] = matrix[10];
+        entity.matrix[2][3] = matrix[11];
+
+        entity.matrix[3][0] = matrix[12];
+        entity.matrix[3][1] = matrix[13];
+        entity.matrix[3][2] = matrix[14];
+        entity.matrix[3][3] = matrix[15];
     }
 
     void set_instance_position(int instanceIndex, float x, float y, float z)
@@ -1089,17 +1117,9 @@ namespace engine {
         return full_path.c_str();
     }
 
-    const char* get_executable_directory()
+    const char* get_app_directory()
     {
-        // Get the current path of the executable
-        // TODO: MAX_PATH is ok to use however, for a long term solution another
-        // method should used since some paths can go beyond this limit.
-        std::string directory(MAX_PATH, ' ');
-        GetModuleFileNameA(nullptr, directory.data(), static_cast<DWORD>(sizeof(char) * directory.size()));
-
-        // TODO: Might be overkill to convert into filesystem just to get the parent path.
-        // Test speed compared to simply doing a quick parse by finding the last '/'.
-        return std::filesystem::path(directory).parent_path().string().c_str();
+        return g_engine->app_location.c_str();
     }
 
     void set_cursor_mode(int cursorMode)

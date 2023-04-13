@@ -18,14 +18,10 @@ namespace engine {
 
         uint32_t model_index;
 
-        glm::vec3 position;
-        glm::vec3 rotation;
-        glm::vec3 scale;
-
         glm::mat4 matrix;
     };
 
-    Entity create_entity(int id, int model_index, const std::string& name, const glm::vec3& pos, const glm::vec3& rot = glm::vec3(0.0f), const glm::vec3& scale = glm::vec3(1.0f));
+    Entity create_entity(int id, int model_index, const std::string& name);
     void translate_entity(Entity& e, const glm::vec3& position);
     void rotate_entity(Entity& e, float deg, const glm::vec3& axis);
     void rotate_entity(Entity& e, const glm::vec3& axis);

@@ -496,7 +496,7 @@ static void load_model_window(bool* open)
 
     ImGui::Begin(ICON_FA_CUBE " Load Model", open);
 
-    static const char* modelPath = engine::get_executable_directory();
+    static const char* modelPath = engine::get_app_directory();
     std::string model_path = engine::display_file_explorer(modelPath);
 
     // TODO: instead of simply checking for file extension, we need to properly
@@ -563,7 +563,7 @@ static void vmve_creator_window(bool* open)
 
     ImGui::Begin(ICON_FA_KEY " Export model", open);
 
-    static const char* exportPath = engine::get_executable_directory();
+    static const char* exportPath = engine::get_app_directory();
     std::string current_path = engine::display_file_explorer(exportPath);
 
     ImGui::Text(current_path.c_str());

@@ -44,7 +44,7 @@ namespace engine {
     //
     // The final engine related function call that will terminate all sub-systems
     // and free all engine managed memory. Engine* should be a valid pointer 
-    // created by the EngineInitialize function. If NULL is passed then the function
+    // created by the Engine initialize function. If NULL is passed then the function
     // simply does nothing.
     void terminate();
 
@@ -170,10 +170,8 @@ namespace engine {
     const char* get_instance_name(int instanceIndex);
 
 
-    void decompose_entity_matrix(int instanceIndex, float* pos, float* rot, float* scale);
-
-
     void get_entity_matrix(int instance_index, float* matrix);
+    void set_entity_matrix(int instance_index, const float* matrix);
     //
     //
     //
@@ -229,7 +227,7 @@ namespace engine {
     //
     //
     //
-    const char* get_executable_directory();
+    const char* get_app_directory();
 
     // Input
 

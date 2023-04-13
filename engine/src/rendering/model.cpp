@@ -4,7 +4,7 @@
 #include "vertex.h"
 #include "api/vulkan/vk_image.h"
 #include "filesystem/vfs.h"
-#include "logging.h"
+#include "utils/logging.h"
 
 
 namespace engine {

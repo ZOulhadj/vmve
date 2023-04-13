@@ -78,7 +78,7 @@ int main()
     while (engine::update()) {
 
         //  Only update the camera view if the viewport is currently in focus.
-        if (engine::get_instance_count() > 0 && camera_activated) {
+        if (camera_activated) {
             engine::update_input();
             engine::update_camera_view();
         }
