@@ -456,12 +456,8 @@ namespace engine {
             // A proper solution should be designed and implemented in the
             // near future.
             for (std::size_t i = 0; i < g_engine->entities.size(); ++i) {
-                Entity& instance = g_engine->entities[i];
-
-                //apply_entity_transformation(instance);
-                std::cout << glm::to_string(instance.matrix) << "\n";
+                const Entity& instance = g_engine->entities[i];
                 render_model(g_engine->models[instance.model_index], instance.matrix, cmd_buffer, offscreen_pipeline_layout);
-                //instance.matrix = glm::mat4(1.0f);
             }
             end_render_pass(cmd_buffer);
 

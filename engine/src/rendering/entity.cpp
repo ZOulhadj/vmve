@@ -51,7 +51,7 @@ namespace engine {
         e.matrix = glm::scale(e.matrix, axis);
     }
 
-    void render_model(Model& model, glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout)
+    void render_model(const Model& model, const glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout)
     {
         for (std::size_t i = 0; i < model.meshes.size(); ++i) {
             bind_descriptor_set(cmdBuffer, pipelineLayout, model.meshes[i].descriptor_set);
@@ -60,7 +60,7 @@ namespace engine {
         }
     }
 
-    void render_model(Model& model, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout)
+    void render_model(const Model& model, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout)
     {
         for (std::size_t i = 0; i < model.meshes.size(); ++i) {
             bind_descriptor_set(cmdBuffer, pipelineLayout, model.meshes[i].descriptor_set);

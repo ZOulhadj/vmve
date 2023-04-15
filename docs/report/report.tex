@@ -932,10 +932,10 @@ struct vk_context
 \end{lstlisting}
 
 The initialization of the renderer context can be broken down into several
-stages. The first of these states is acquiring the function pointers into the
-Vulkan loader which contains the implementation details for the \gls{gpu}
-driver. This is achieved by statically linking a ``stub'' library file into the
-executable. However, as discussed in a blog post by Arseny Kapoulkine titled
+stages. The first of these states acquires the function pointers into the Vulkan
+loader which contains the implementation details for the \gls{gpu} driver. This
+is achieved by statically linking a ``stub'' library file into the executable.
+However, as discussed in a blog post by Arseny Kapoulkine titled
 \textit{``Reducing Vulkan\textsuperscript{\textregistered} API call overhead''}
 \cite{volk}, he finds that this method has some overhead due to how function
 calls are dispatched. To reduce this overhead, a meta-loader called Volk is used
@@ -948,17 +948,35 @@ their names, hardware capabilities as well as if it supports basic screen
 rendering.
 
 \subsubsection{Swapchain}
+A swapchain is a series of images also known as framebuffers used by
+\gls{vulkan} that allocates a region of memory that stores frame data i.e pixel
+colors. As the name suggests, a ``swapchain'' is a chain of these images. The
+most common number of images is two or three which is called
+``double-buffering'' and ``triple-buffering'' respectively. The renderer within
+\gls{vmve} is configured to use two images, one for the front buffer that is shown
+on a monitor and a back buffer that is used for rendering.
 
-- Double, Triple Buffering
-- VSync
+In addition to buffers, a swapchain is also responsible for handling vertical
+refresh rate also known as vsync. This is the rate at which new images are
+rendered and then presented on a user's screen. There are two main types of
+vsync modes used within \gls{vulkan} which are
+\lstinline{VK_PRESENT_MODE_FIFO_KHR} and
+\lstinline{VK_PRESENT_MODE_IMMEDIATE_KHR}. The ``fifo'' mode indicates to the 
+swapchain and subsequently the presentation engine that images are to wait 
+for the monitors refreash rate before being present wheras ``immediate'' simply
+renders images as fast a possible.
 
-
-
+\gls{vmve} uses the ``fifo'' presentation mode as it conserves hardware
+resources as new images will not be rendered needlessly. Also, this mode ensures
+that no screen tearing occurs between refresh rates. Figure \ref{fig:frame_sync}
+shows a detailed image regarding the presentation engine and frame
+synchronization.
 
 \subsubsection{Frame synchronization}
-Once the swapchain has been fully initialized, the renderer can now start
-creating the necessary resources required for frame synchronization. Vulkan has
-two concepts that relate to synchronization which are VkFence and VkSemaphore.
+Once the swapchain along with its framebuffers has been fully initialized, the
+renderer can now start creating the necessary resources required for frame
+synchronization. Vulkan has two concepts that relate to synchronization which
+are VkFence and VkSemaphore.
 
 \begin{figure}[ht]
   \centering
@@ -972,7 +990,7 @@ two concepts that relate to synchronization which are VkFence and VkSemaphore.
     };
   \end{lstlisting}
   \caption{Frame sync structure}
-  \label{fig:local_to_world}
+  \label{fig:vk_fence}
 \end{figure}
 
 The \gls{vulkan} 1.3.246 specification states that  ``\lstinline{VkFence} is a
@@ -998,20 +1016,20 @@ occur simultaneously for multiple frames while ensuring that frames
   \label{fig:frame_sync}
 \end{figure}
 
-\subsubsection{Framebuffers}
-The term ``Framebuffer'' refers to a region of memory that stores frame data i.e pixel colors.
-Framebuffers are a fundamental concept in graphics rendering that stores the data for each frame.
-
-\subsubsection{Texture sampling}
-
 \subsubsection{Deferred Rendering Pipeline}
+The next rendering feature that was implemented was a deferred rendering
+pipeline. During rendering, there are two main passes. The first pass renders
+the raw geometry data and performs MVP translation (section \ref{camera}). For
+each rendered frame a total of five framebuffers are filled with different types of
+information including colors, world positions, normals, depth and specular.
 
--- Explain what forward rendering is, what deferred rendering is and how it is better
-
-At its core, the renderer uses a deferred rendering technique which separates geometry rendering and
-lighting into different stages. 
-
-The key benefit of deferred rendering is increased performance 
+Then the second pass reads the data from the five framebuffers and performs the
+lighting calculations. This is a common technique in rendering applications that
+significantly improves performance when large numbers of light sources are
+present compared to forward rendering. This is because deferred rendering defers
+all lighting calculations to the final pass and only needs to perform those
+calculations once. However, for forward rendering, this needs to occur for each
+object in the scene resulting in poorer performance.
 
 \begin{figure}[h!]
   \centering
@@ -1019,6 +1037,8 @@ The key benefit of deferred rendering is increased performance
   \caption{G-Buffer Pipeline}
   \label{fig:g_buffer}
 \end{figure}
+
+
 
 \subsubsection{Dynamic Uniform Buffers}
 Uniform buffers are regions of memory located in \gls{vram} on the \gls{gpu}.
@@ -1047,20 +1067,24 @@ unique buffer handle for each frame.
 
 -- reduces the need to manage unique buffers, fewer state changes (binding).
 
-\subsubsection{Models}
-In the context of the rendering system, a ``model'' is a structure that represents
-a 3D geometry object. This could be as simple as a cube or as complex as an
-entire scene.
 
-The data structure contains several key pieces of information such as geometry data
-and textures. 
+\subsubsection{Texture Mipmapping}
+
+
+\subsubsection{Models}
+In the context of the rendering system, a ``model'' is a structure that
+represents a 3D geometry object. This could be as simple as a cube or as complex
+as an entire scene.
+
+The data structure contains several key pieces of information such as geometry
+data and textures. 
 
 Complex models are not singular pieces of geometry. Instead, artists combine
 multiple smaller objects to form the final model. These smaller parts are known
 as ``Meshes'' within the application.
 
-Figure \ref{fig:model} shows the internal structure of an example model which has been
-loaded into \gls{vmve}.
+Figure \ref{fig:model} shows the internal structure of an example model which
+has been loaded into \gls{vmve}.
 \begin{figure}[h!]
   \centering
   \includegraphics[width=\textwidth]{images/model.png}
@@ -1074,7 +1098,7 @@ array.
 \subsubsection{Entities}
 An entity represents an instance of the model in the virtual environment. There
 can be many different entities using the same model. An example of this can be
-seen in figure \ref{fig:entities} which shows four entities using the same 
+seen in figure \ref{fig:entities} which shows four entities using the same
 backpack model.
 
 This is achieved by storing a model index that indicates which model the entity

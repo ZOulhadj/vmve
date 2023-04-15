@@ -28,17 +28,9 @@ namespace engine {
     void scale_entity(Entity& e, float scale);
     void scale_entity(Entity& e, const glm::vec3& axis);
 
-    void apply_entity_transformation(Entity& e);
-
-    void get_entity_position(Entity& e, float* pos);
-    void get_entity_rotation(Entity& e, float* rot);
-    void get_entity_scale(Entity& e, float* scale);
-
-    void decompose_entity_matrix(const float* matrix, float* pos, float* rot, float* scale);
-
     // todo(zak): move this to either model.cpp or renderer.cpp
-    void render_model(Model& model, glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
-    void render_model(Model& model, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
+    void render_model(const Model& model, const glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
+    void render_model(const Model& model, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
 
 
 }
