@@ -528,6 +528,7 @@ static void load_model_window(bool* open)
 
             if (ImGui::Button("Decrypt")) {
 
+                // todo: compare key and iv input
                 if (key_input == "test")
                     std::cout << "This is a test message\n";
 
