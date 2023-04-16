@@ -20,14 +20,14 @@
 \contentsline {subsubsection}{\numberline {2.1.1}Project Management}{5}{subsubsection.2.1.1}%
 \contentsline {subsubsection}{\numberline {2.1.2}Microsoft Visual Studio 2022}{6}{subsubsection.2.1.2}%
 \contentsline {subsubsection}{\numberline {2.1.3}RenderDoc}{7}{subsubsection.2.1.3}%
-\contentsline {subsubsection}{\numberline {2.1.4}AMD Radeon GPU Profiler}{8}{subsubsection.2.1.4}%
+\contentsline {subsubsection}{\numberline {2.1.4}AMD Radeon GPU Profiler}{7}{subsubsection.2.1.4}%
 \contentsline {subsection}{\numberline {2.2}Programming Language}{9}{subsection.2.2}%
 \contentsline {subsection}{\numberline {2.3}Rendering API}{10}{subsection.2.3}%
 \contentsline {subsection}{\numberline {2.4}Libraries}{11}{subsection.2.4}%
 \contentsline {subsubsection}{\numberline {2.4.1}User Interface}{11}{subsubsection.2.4.1}%
 \contentsline {subsubsection}{\numberline {2.4.2}Encryption}{11}{subsubsection.2.4.2}%
 \contentsline {subsubsection}{\numberline {2.4.3}Serialisation}{11}{subsubsection.2.4.3}%
-\contentsline {subsubsection}{\numberline {2.4.4}Additional libraries}{12}{subsubsection.2.4.4}%
+\contentsline {subsubsection}{\numberline {2.4.4}Additional libraries}{11}{subsubsection.2.4.4}%
 \contentsline {section}{\numberline {3}Design}{12}{section.3}%
 \contentsline {subsection}{\numberline {3.1}Branding}{12}{subsection.3.1}%
 \contentsline {subsubsection}{\numberline {3.1.1}Project Name}{12}{subsubsection.3.1.1}%
@@ -35,6 +35,7 @@
 \contentsline {subsection}{\numberline {3.2}VCS Architecture}{13}{subsection.3.2}%
 \contentsline {subsection}{\numberline {3.3}Programming Conventions}{13}{subsection.3.3}%
 \contentsline {subsection}{\numberline {3.4}Project Architecture}{15}{subsection.3.4}%
+\contentsline {subsubsection}{\numberline {3.4.1}Platform}{15}{subsubsection.3.4.1}%
 \contentsline {subsection}{\numberline {3.5}Renderer Architecture}{16}{subsection.3.5}%
 \contentsline {subsection}{\numberline {3.6}User Interface}{17}{subsection.3.6}%
 \contentsline {subsubsection}{\numberline {3.6.1}Main Viewport}{18}{subsubsection.3.6.1}%
@@ -78,29 +79,29 @@
 \contentsline {subsection}{\numberline {5.1}Distribution}{39}{subsection.5.1}%
 \contentsline {subsection}{\numberline {5.2}Programming language}{39}{subsection.5.2}%
 \contentsline {subsection}{\numberline {5.3}Time Management}{40}{subsection.5.3}%
+\contentsline {subsubsection}{\numberline {5.3.1}Hardware}{41}{subsubsection.5.3.1}%
 \contentsline {subsection}{\numberline {5.4}Performance}{41}{subsection.5.4}%
-\contentsline {subsubsection}{\numberline {5.4.1}Compilation Performance}{41}{subsubsection.5.4.1}%
+\contentsline {subsubsection}{\numberline {5.4.1}Compilation Performance}{42}{subsubsection.5.4.1}%
 \contentsline {subsubsection}{\numberline {5.4.2}Runtime Performance}{42}{subsubsection.5.4.2}%
-\contentsline {subsubsection}{\numberline {5.4.3}Hardware}{42}{subsubsection.5.4.3}%
 \contentsline {subsection}{\numberline {5.5}User Feedback}{43}{subsection.5.5}%
 \contentsline {section}{\numberline {6}Related Work}{43}{section.6}%
-\contentsline {section}{\numberline {7}Reflection}{43}{section.7}%
+\contentsline {section}{\numberline {7}Reflection}{44}{section.7}%
 \contentsline {subsection}{\numberline {7.1}Choice of rendering API}{44}{subsection.7.1}%
 \contentsline {subsection}{\numberline {7.2}Development logs}{44}{subsection.7.2}%
 \contentsline {section}{\numberline {8}Future Work}{44}{section.8}%
-\contentsline {subsection}{\numberline {8.1}Rendering}{44}{subsection.8.1}%
-\contentsline {subsubsection}{\numberline {8.1.1}Multiple rendering APIs}{44}{subsubsection.8.1.1}%
+\contentsline {subsection}{\numberline {8.1}Rendering}{45}{subsection.8.1}%
+\contentsline {subsubsection}{\numberline {8.1.1}Multiple rendering APIs}{45}{subsubsection.8.1.1}%
 \contentsline {subsubsection}{\numberline {8.1.2}Frustum Culling}{45}{subsubsection.8.1.2}%
-\contentsline {subsubsection}{\numberline {8.1.3}Spatial Acceleration Structures}{45}{subsubsection.8.1.3}%
-\contentsline {subsubsection}{\numberline {8.1.4}glTF Support}{46}{subsubsection.8.1.4}%
-\contentsline {subsection}{\numberline {8.2}Cross Platform}{48}{subsection.8.2}%
+\contentsline {subsubsection}{\numberline {8.1.3}Spatial Acceleration Structures}{46}{subsubsection.8.1.3}%
+\contentsline {subsubsection}{\numberline {8.1.4}glTF Support}{49}{subsubsection.8.1.4}%
+\contentsline {subsection}{\numberline {8.2}Cross Platform}{49}{subsection.8.2}%
 \contentsline {subsection}{\numberline {8.3}Networking Support}{49}{subsection.8.3}%
 \contentsline {subsection}{\numberline {8.4}Encryption}{49}{subsection.8.4}%
 \contentsline {subsection}{\numberline {8.5}Version Control}{49}{subsection.8.5}%
 \contentsline {subsection}{\numberline {8.6}Reduce library dependencies}{50}{subsection.8.6}%
 \contentsline {subsection}{\numberline {8.7}Accessibility}{50}{subsection.8.7}%
-\contentsline {section}{\numberline {9}Conclusion}{50}{section.9}%
-\contentsline {section}{\numberline {10}References}{53}{section.10}%
-\contentsline {section}{\numberline {11}Appendices}{54}{section.11}%
-\contentsline {subsection}{\numberline {11.1}Rendering API history}{54}{subsection.11.1}%
-\contentsline {subsection}{\numberline {11.2}Camera transformation code}{55}{subsection.11.2}%
+\contentsline {section}{\numberline {9}Conclusion}{51}{section.9}%
+\contentsline {section}{\numberline {10}References}{54}{section.10}%
+\contentsline {section}{\numberline {11}Appendices}{55}{section.11}%
+\contentsline {subsection}{\numberline {11.1}Rendering API history}{55}{subsection.11.1}%
+\contentsline {subsection}{\numberline {11.2}Camera transformation code}{56}{subsection.11.2}%

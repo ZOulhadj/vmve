@@ -351,8 +351,6 @@ Whereas, indirect impacts are technologies that are used in some areas not
 directly responsible for the outcome of the project such as project management.
 
 \subsection{Tools}
--- TODO: Explain the types of tools used and their significance.
-
 \subsubsection{Project Management}
 A \gls{vcs} is a tool used for backing up and/or collaborating with developers
 on a project. The use of a \gls{vcs} was an obvious choice as this would provide
@@ -539,11 +537,12 @@ The library of choice was Dear ImGui \cite{imgui}. This is an immediate-mode
 user interface library that provides an \gls{api} to render UI elements. 
 
 \subsubsection{Encryption} \label{custom_file_format} \gls{vmve} will include
-its own model file format. This is a special format that will be encrypted as
+its own model file format. This is a custom format that will be encrypted as
 standard. Implementing encryption is a very complex area that can be considered
 an entire project on its own. Instead, the project will make use of a well-known
-encryption library known as Crypto++ \cite{cryptopp}. This is a C++ library that
-provides various algorithms including AES, Diffie-Helm, 
+encryption library known as Crypto++ \cite{cryptopp} and the application will
+use version 8.7. This is a C++ library that provides many algorithms including
+AES, Diffie-Hellman, GCM, RSA and much more.
 
 \subsubsection{Serialisation}
 In addition to encrypting the model data, the custom file format will need to
@@ -677,25 +676,25 @@ style can be seen in figure \ref{fig:convention}.
   \end{figure}
 
 
+  - Functional over object oriented
+  -   POD (Plain old data types)
+  -   Less boilerplate code (getters and setters)
+  -   Easier access to member variables
 
 \subsection{Project Architecture}
 
-\gls{vmve} will be a combination of two projects. The ``Engine'' project
-also known as the core of \gls{vmve} will contain the fundamental
-implementation details. This includes the window, renderer, ui and
-other subsystems. This project will be distributed as a library
-file (.lib) that other projects can import for specific use cases.
+\gls{vmve} will be a combination of two projects. The ``Engine'' project also
+known as the core of \gls{vmve} will contain the fundamental implementation
+details. This includes the Window, Renderer, UI and Audio. This project will be
+distributed as a library file (.lib) that other projects can import for specific
+use cases. The ``VMVE'' project will include the ``Engine'' project by importing
+the library (.lib file). A high-level overview of the project architecture can
+be seen in figure \ref{fig:projarch}.
 
-The ``VMVE'' project will include the ``Engine'' project by importing
-the .lib file.
-
-A high-level overview of the project architecture can be seen in
-figure \ref{fig:projarch}.
-
-There is another key reason why, I will isolate the core of \gls{vmve}
-into its own project instead of combining it into one program. The
-reason being is have the core be a library that can be used in not
-just \gls{vmve} but also other projects in the future.
+There is another key reason why, I will isolate the core of \gls{vmve} into its
+project instead of combining it into one program. The reason being is have the
+core be a library that can be used in not just \gls{vmve} but also other
+projects in the future.
 
 \begin{figure}[h!]
   \centering
@@ -704,20 +703,12 @@ just \gls{vmve} but also other projects in the future.
   \label{fig:projarch}
 \end{figure}
 
+\subsubsection{Platform}
 - Reason for choosing 64bit program.
     goes beyond 4GB address space limit in 32bit programs.
     supports modern hardware
 
-- Functional over object oriented
--   POD (Plain old data types)
--   Less boilerplate code (getters and setters)
--   Easier access to member variables
 
-- Editor UI design and the reason for it for this particular application?
--   UI allows for interaction with underlying system during runtime.
--   Viewport style editor meaning that all controls can be positioned
-    around the viewport and the main rendering occurs at the center of
-    the screen.
 - VMVE file format
 -    Header
 -    Data
@@ -759,6 +750,13 @@ controls are grouped and located appropriately if not within the same panel.
   \caption{UI Design}
   \label{fig:ui_design}
 \end{figure}
+
+
+- Editor UI design and the reason for it for this particular application?
+-   UI allows for interaction with underlying system during runtime.
+-   Viewport style editor meaning that all controls can be positioned
+    around the viewport and the main rendering occurs at the center of
+    the screen.
 
 \subsubsection{Main Viewport}
 The main viewport is located in the center of the window and is the main feature
@@ -1064,12 +1062,8 @@ frame setup.
 The use of dynamic uniform buffers provides several benefits compared to using a
 unique buffer handle for each frame.
 
-
--- reduces the need to manage unique buffers, fewer state changes (binding).
-
-
 \subsubsection{Texture Mipmapping}
-
+Avoid Moire pattern, increased performance.
 
 \subsubsection{Models}
 In the context of the rendering system, a ``model'' is a structure that
@@ -1568,21 +1562,60 @@ during development.
     
 
 
+\subsubsection{Hardware}
+These tests were performed on the main development machine used throughout the
+project which was a Thinkpad T14s Gen 3. A follow list of the laptops specifications
+can be seen in the figure \ref{fig:development_machine}.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|| c c ||} 
+  \hline
+  Component & Type \\ [0.5ex] 
+  \hline\hline
+  CPU & AMD Ryzen 7 Pro 6850U  \\ 
+  GPU & Integrated \\
+  RAM & 32GB DDR6 \\ [1ex] 
+  \hline
+\end{tabular}
+\caption{Development Machine}
+\label{fig:development_machine}
+\end{table}
+
 
 \subsection{Performance}
 Measuring the performance of \gls{vmve} is another key aspect of evaluation that
-ensures the original goals and requirements have been met. There are two main aspects
-that can measured which is compilation and runtime performance.
+ensures the original goals and requirements have been met. Two main aspects can
+be measured which are compilation and runtime performance.
 
 ``Compilation'' refers to the process of building the application in an offline
 setting. The speed at which the project is compiled directly affects the
 developer and subsequently the development of the project.
 
-``Runtime'' refers to the applications performance while it is running and its
-effects to the end users.
+``Runtime'' refers to the performance of the application while it is running and
+its effects on the end users.
 
 
 \subsubsection{Compilation Performance}
+A full clean build of \gls{vmve} takes an average of 53.260 seconds using
+Microsoft Visual Studio and the \gls{cl} compiler. This includes the compilation
+of the source code and precompiled headers. As the codebase for \gls{vmve} grew
+in both size and complexity, ensuring that compilation times were reasonable was
+a vital aspect that had to be taken into consideration.
+
+The main technique used for reducing compilation times was making use of a
+\gls{pch}. This is a header file (pch.h) that includes various header files such
+as those from the standard library as well as external dependencies that are not
+indented to change often. This is because a change to any of the included header
+files will require a full precompiled header rebuild. The compiler compiles this
+file once and is reused across compilations. This significantly reduces the
+amount of work the compiler needs to perform since it does not have to recompile
+the same sets of files needlessly each time.
+
+This technique is done by including the ``pch.h'' header file at the top of each
+translation unit (.cpp file) and before any other header file. This ensures that
+the necessary types can be found for both header files and their corresponding
+source files.
 
 \begin{table}[h!]
 \centering
@@ -1601,22 +1634,7 @@ effects to the end users.
 \label{fig:compilation_performance}
 \end{table}
 
-As the codebase for \gls{vmve} grew in both size and complexity, ensuring that
-compilation times were reasonable was a vital aspect that had to be take into
-consideration.
 
-The main technique used for reducing compilation times was making use of a
-\gls{pch}. This is a header file (pch.h) that includes various header files such
-as those from the standard library as well as external dependencies that are not
-indented to change often. The compiler compiles this file once and is reused
-across compilations. This significantly reduces the amount of work the compiler
-needs to perform since it does not have to recompile the same sets of files
-needlessly each time.
-
-The way that this works is by including the ``pch.h'' header file at the top of
-each translation unit (.cpp file) and before any other header file. This ensures
-that the necessary types can be found for both a header files and its
-corresponding source file.
 
 \subsubsection{Runtime Performance}
 
@@ -1655,45 +1673,29 @@ Profiler
 \label{fig:runtime_performance}
 \end{table}
 
-\subsubsection{Hardware}
-These tests were performed on the main development machine used throughout the
-project which was a Thinkpad T14s Gen 3. A follow list of the laptops specifications
-can be seen in the figure \ref{fig:development_machine}.
-
-\begin{table}[h!]
-\centering
-\begin{tabular}{|| c c ||} 
-  \hline
-  Component & Type \\ [0.5ex] 
-  \hline\hline
-  CPU & AMD Ryzen 7 Pro 6850U  \\ 
-  GPU & Integrated \\
-  RAM & 32GB DDR6 \\ [1ex] 
-  \hline
-\end{tabular}
-\caption{Development Machine}
-\label{fig:development_machine}
-\end{table}
 
 \subsection{User Feedback}
-Having conducted my own evaluation, it is equally important to obtain feedback
-from the stakeholders including users.
-
-The users that tested the application were predominantly other students. The
-process of obtaining this feedback was separated into two stages.
+Having conducted the evaluation, it is equally important to obtain feedback from
+the stakeholders such as users. The users that tested the application were
+predominantly other students. The process of obtaining this feedback was
+separated into two stages.
 
 The first was to measure how intuitive the user interface is which was achieved
-by giving a user a set of instructions such as loading a model, encrypting
-assets, configuring the application etc. A score would be given for each task
-based on how easily the user was able to complete it.
+by giving a user a set of instructions as seen in figure \ref{fig:instructions}.
+A score would be given for each task based on how easily the user was able to
+complete it.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/user_instructions.png}
+  \caption{User feedback instructions}
+  \label{fig:instructions}
+\end{figure}
 
 The second stage would obtain direct feedback from the users by presenting a
 series of questions that would assess \glspl{vmve} usability, performance and
-overall user experience.
-
-This data was recorded into a spreadsheet and further analyzed to produce different
-sets of visualizations the first of which can be seen in figure... TODO
-
+overall user experience. This data was recorded using Google Forms and further
+analyzed to produce different sets of visualizations.
 
 \section{Related Work}
 Computer graphics is a large field 
@@ -1746,20 +1748,25 @@ increase \glspl{vmve} usability and provide a whole host of new features.
 \subsubsection{Multiple rendering APIs}
 \gls{vmve} currently only supports one rendering API which is Vulkan. As
 discussed in the technology review section, Vulkan is officially supported on
-Windows, Linux and macOS (through MoltenVK). However, in order to support
-additional operating system as well as hardware that does not support Vulkan,
-more rendering APIs should be supported including DirectX12 and previous
-generation APIs such as OpenGL and DirectX11.
+Windows, Linux and macOS (through MoltenVK). However, to support additional
+operating systems as well as hardware that does not support Vulkan, more
+rendering APIs should be supported including DirectX12 and previous generation
+APIs such as OpenGL and DirectX11 for increased compatibility.
 
--- Graph for showing how APis can be changed during compilation
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/api_abstraction.png}
+  \caption{Rendering API Abstraction}
+  \label{fig:api_abstraction}
+\end{figure}
 
 \subsubsection{Frustum Culling}
-Currently, VMVE sends all object data to the \gls{gpu} to be process and rendered. The
-\gls{gpu} then subsequently traverses each vertex in order to figure out if it needs
-to be ``discarded''. This process is part of the graphics pipeline and occurs for
-each vertex. As the complexity of both the scene and the objects themselves
-increases, this starts to become a \gls{gpu} intensive task and results in increased
-\gls{gpu} usage and lower performance.
+Currently, VMVE sends all object data to the \gls{gpu} to be processed and
+rendered. The \gls{gpu} then subsequently traverses each vertex to figure out if
+it needs to be ``discarded''. This process is part of the graphics pipeline and
+occurs for each vertex. As the complexity of both the scene and the objects
+themselves increases, this starts to become a \gls{gpu} intensive task and
+results in increased \gls{gpu} usage and lower performance.
 
 To solve this, frustum culling must be implemented which is a rendering
 optimization in which objects not visible from the ``cameras point of view'' are

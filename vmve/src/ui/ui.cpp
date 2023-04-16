@@ -489,8 +489,8 @@ static void load_model_window(bool* open)
     static bool decrypt_modal_open = false;
 
     // NOTE: 256 + 1 for null termination character
-    static std::array<char, 257> key_input;
-    static std::array<char, 33> iv_input;
+    static std::string key_input;
+    static std::string iv_input;
 
     resize_and_center_next_window(ImVec2(800, 600));
 
@@ -523,10 +523,15 @@ static void load_model_window(bool* open)
     if (file_encrypted) {
         ImGui::OpenPopup(ICON_FA_UNLOCK " Encrypted model file detected");
         if (ImGui::BeginPopupModal(ICON_FA_UNLOCK " Encrypted model file detected", &file_encrypted, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::InputText("Key", key_input.data(), key_input.size());
-            ImGui::InputText("IV", iv_input.data(), iv_input.size());
+            ImGui::InputText("Key", &key_input);
+            ImGui::InputText("IV", &iv_input);
 
             if (ImGui::Button("Decrypt")) {
+
+                if (key_input == "test")
+                    std::cout << "This is a test message\n";
+
+
                 std::string raw_data;
                 bool file_read = vmve_read_from_file(raw_data, model_path.c_str());
                 if (file_read)
