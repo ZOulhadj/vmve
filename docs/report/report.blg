@@ -22,45 +22,45 @@ Warning--empty journal in RDNA
 Warning--empty journal in ADA
 
 Done.
-You've used 28 entries,
+You've used 29 entries,
             4087 wiz_defined-function locations,
-            1440 strings with 20076 characters,
-and the built_in function-call counts, 7882 in all, are:
-= -- 495
-> -- 40
+            1443 strings with 20163 characters,
+and the built_in function-call counts, 8148 in all, are:
+= -- 511
+> -- 41
 < -- 0
-+ -- 32
++ -- 33
 - -- 4
-* -- 216
-:= -- 1231
-add.period$ -- 55
-call.type$ -- 28
-change.case$ -- 30
+* -- 222
+:= -- 1270
+add.period$ -- 57
+call.type$ -- 29
+change.case$ -- 31
 chr.to.int$ -- 0
-cite$ -- 33
-duplicate$ -- 800
-empty$ -- 948
+cite$ -- 34
+duplicate$ -- 828
+empty$ -- 982
 format.name$ -- 4
-if$ -- 1792
+if$ -- 1854
 int.to.chr$ -- 0
-int.to.str$ -- 28
-missing$ -- 169
-newline$ -- 107
+int.to.str$ -- 29
+missing$ -- 175
+newline$ -- 110
 num.names$ -- 4
-pop$ -- 524
+pop$ -- 543
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 684
+skip$ -- 708
 stack$ -- 0
-substring$ -- 33
-swap$ -- 353
+substring$ -- 34
+swap$ -- 365
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 28
+type$ -- 29
 warning$ -- 5
 while$ -- 4
-width$ -- 30
-write$ -- 197
+width$ -- 31
+write$ -- 203
 (There were 5 warnings)

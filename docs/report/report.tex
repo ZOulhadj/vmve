@@ -16,6 +16,7 @@
 \usepackage[all]{hypcap}
 \usepackage{textcomp}
 \usepackage{url}
+\usepackage{attachfile}
 %\hypersetup{colorlinks=true, pdfstartview=FitV, linkcolor=blue, citecolor=black, plainpages=false, pdfpagelabels=true, urlcolor=blue}
 
 
@@ -54,6 +55,7 @@
 
 \setacronymstyle{long-short}
 \newacronym{cpu}{CPU}{Central Processing Unit}
+\newacronym{os}{OS}{Operating System}
 \newacronym{gpu}{GPU}{Graphics Processing Unit}
 \newacronym{ram}{RAM}{Random Access Memory}
 \newacronym{vram}{VRAM}{Video Random Access Memory}
@@ -241,37 +243,44 @@ would make the application more accessible.
 
 \subsubsection{Efficient}
 The second aim of the application is to be as efficient as possible and
-subsequently lower the hardware requirements. The application's efficiency and
-aims vary based on the component in question.
-
-
--- CPU
--- GPU
--- Memory
--- Storage
+subsequently, lower the hardware requirements. The application's efficiency and
+aims vary based on the component in question that include the \gls{cpu},
+gls{gpu}, memory and storage.
 
 \subsubsection{Encryption and model format}
-The last of the three main goals is for the application to include its own model
-format that makes use of encryption to safely secure a user's digital assets as
-previously mentioned. The motivation for this functionality formed as a result
-of the increase in theft regarding digital assets. A prime example of this was
-the recent data leak that affected Rockstar Studios and their upcoming game
-(Grand Theft Auto 6) \cite{gta_leak}.
+The last of the three main goals is for the application to include its custom
+model format that makes use of encryption to safely secure a user's digital
+assets as previously mentioned. The motivation for this functionality formed as
+a result of the increase in theft regarding digital assets. A recent example
+relates to the recent data leak that affected Rockstar Studios and their
+upcoming game (Grand Theft Auto 6) \cite{gta_leak} that saw assets, source code
+and documentation released to the public.
 
 \gls{vmve} would be able to provide a platform to encrypt these assets and only
 unlock them using a special key that only the user will know. This ensures that
 in the event of digital assets begin obtained by third parties, they cannot be
-used. This requires several key elements to work together to achieve this aim.
+used. This requires several key elements to work in tandem to achieve this aim.
 
 The raw model must be able to be encrypted using different types of encryption
 algorithms. In addition to this, \gls{vmve} must include a parser that can read
 the internal structure of the encrypted file format and successfully load the
-model.
+model into the application.
 
 \subsection{Stakeholders}
--- TODO: Users
+Two main stakeholders will be directly affected by the project and subsequently
+\gls{vmve}. These are the final-year project supervisors and the end users. Each
+stakeholder needs a different set of requirements to be successfully achieved.
 
+\subsubsection{Supervisors}
+The supervisors (Dr. Charles Clarke and Alex Collins) oversee the progress of
+the project. Meetings are to be held regularly and aim to inform all parties of
+the progress being made. This ensures that the requirements set out are being
+met.
 
+\subsubsection{Users}
+The users on the other hand are individuals that will use \gls{vmve} once it has
+been developed. The aims and objectives discussed earlier directly affect these
+users.
 
 \subsection{Legal}
 Legal considerations are important when distributing an application indented to
@@ -339,6 +348,7 @@ implementation stages extra effort will be spent on ensuring that no such design
 pattern is introduced. This will greatly benefit users and thus, increase the
 overall user experience.
 
+\clearpage
 \section{Technology Review} \label{technology_review}
 This project made use of various technologies at different stages throughout the
 development process and was a key aspect in helping achieve the final goal of
@@ -390,17 +400,20 @@ expected deadline. Figure \ref{fig:kanban_design} shows a preview of the Kanban
 board. It consists of three main columns used to categorize an issue including
 backlog, in progress and done. 
 
-When an idea for a new feature is thought of or a bug within the application is
-discoverd a GitHub issue is created and moved to the ``Backlog''. This is used
-to document a particular task that needs to be worked on in the near future.
+When an idea for a new feature is formed or a bug within the application is
+discovered a GitHub issue is created and moved to the ``Backlog'' board. This is
+used to document a particular task that needs to be worked on within a desired
+timeframe.
 
 Then once a specific issue is ready to be worked on/resolved, it's moved to the
-``In Progress'' column. As the issue is being addressed, key points of discussion
-are added as comments to the issue for documentation purposes.
+``In Progress'' board. As the issue is being addressed, key points of discussion
+are added as comments to the issue for documentation purposes and to be referred
+back to.
 
 Lastly, once the task has been completed, the GitHub commit that includes the
-fix is referenced in the issue and is then finally marked as complete by being
-moved to the ``Done'' column.
+specific fix is referenced in the issue and is then finally marked as complete
+by being moved to the ``Done'' board. This subsequently marks a GitHub issue as
+closed.
 
 \begin{figure}[h!]
   \centering
@@ -418,20 +431,20 @@ This is a compiler that comes bundled with the Microsoft Visual Studio
 \gls{ide}.
 
 The \gls{ide} also provides debugging functionality that will be used
-extensively to fix crashes, bugs and generally ensuring that the application
+extensively to fix crashes, bugs and generally ensure that the application
 runs as expected \cite{visualstudio}. 
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=\textwidth]{images/visual_studio.png}
-  \caption{Microsoft Visual Studio}
-  \label{fig:visual_studio}
-\end{figure}
+% \begin{figure}[h!]
+%   \centering
+%   \includegraphics[width=\textwidth]{images/visual_studio.png}
+%   \caption{Microsoft Visual Studio}
+%   \label{fig:visual_studio}
+% \end{figure}
 
 Some additional tools will be used that will further improve the ease of
 development.  Visual Studio Assist X \cite{visualstudioassistx} is one such
 tool. This is a Visual Studio extension that provides many useful features that
-the based \gls{ide} does not provide such as reliable symbol renaming, file symbol
+the base \gls{ide} does not provide such as reliable symbol renaming, file symbol
 outlining, quick file searching and much more.
 
 
@@ -444,32 +457,31 @@ metrics.
 RenderDoc developed by Baldur Karlsson can be used to inspect different
 rendering \glspl{api} including individual frames and the entire state
 \cite{renderdoc}. This ensures that you can debug specific \gls{gpu} related
-bugs such as model data, textures, rendering commands etc. An example of this
-can be seen in figure \ref{fig:renderdoc}
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=\textwidth]{images/renderdoc.png}
-  \caption{RenderDoc}
-  \label{fig:renderdoc}
-\end{figure}
+bugs such as model data, textures, rendering commands etc.
+
+% \begin{figure}[h!]
+%   \centering
+%   \includegraphics[width=\textwidth]{images/renderdoc.png}
+%   \caption{RenderDoc}
+%   \label{fig:renderdoc}
+% \end{figure}
 
 \subsubsection{AMD Radeon GPU Profiler}
 Similarly to RenderDoc, AMD has its own \gls{gpu} profiling tool called ``AMD
 Radeon GPU Profiler'' \cite{rgp}. This tool is only available for AMD-supported
 \glspl{gpu} which is ideal as the hardware going to be used throughout
 development meets this requirement. The tool analyzes per-frame data which
-subsequently provides insightful performance metrics and can be seen in action
-in figure \ref{fig:amd_profiler}.
+subsequently provides insightful performance metrics.
 
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=\textwidth]{images/amd_profiler.png}
-  \caption{AMD Radeon GPU Profiler}
-  \label{fig:amd_profiler}
-\end{figure}
+% \begin{figure}[h!]
+%   \centering
+%   \includegraphics[width=\textwidth]{images/amd_profiler.png}
+%   \caption{AMD Radeon GPU Profiler}
+%   \label{fig:amd_profiler}
+% \end{figure}
 
 
-\subsection{Programming Language}
+\subsubsection{Programming Language}
 The application needs certain requirements to be met regarding performance. For
 example, the application must use a high-performing programming language, allows
 for low-level memory access and can be compiled into an executable.
@@ -486,7 +498,7 @@ that solidified by choice include, function overloading, templates, compile-time
 expressions, direct memory access and generally faster performance compared to
 higher-level languages such as Python and Javascript.
 
-\subsection{Rendering API} \label{rendering_api}
+\subsubsection{Rendering API} \label{rendering_api}
 A rendering \gls{api} is a set of instructions that acts as an intermediary and
 allows for an application to make use of a systems \gls{gpu}. There are several
 different rendering \glspl{api} that exist including OpenGL, \gls{vulkan},
@@ -563,6 +575,7 @@ The other libraries used in \gls{vmve} can be seen in the list below.
   \item[volk] Vulkan meta-loader
 \end{description}
 
+\clearpage
 \section{Design}
 The next stage of the project was designed and occurred between milestones two
 and three. 
@@ -816,6 +829,7 @@ must be used to decrypt the data.
 -- attempt to decrypt
 -- load model into VMVE
 
+\clearpage
 \section{Implementation}
 This section of the report presents the technical implementation details of
 \gls{vmve}. This section is presented in order of initialization i.e starting at
@@ -1064,6 +1078,14 @@ unique buffer handle for each frame.
 
 \subsubsection{Texture Mipmapping}
 Avoid Moire pattern, increased performance.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{images/mipmaps.png}
+  \caption{Texture mipmapping}
+  \label{fig:texture_mipmapping} \cite{texture_mipmaps}
+\end{figure}
+
 
 \subsubsection{Models}
 In the context of the rendering system, a ``model'' is a structure that
@@ -1492,6 +1514,7 @@ the application.
 \end{figure}
 
 
+\clearpage
 \section{Evaluation}
 The completion of the project transitions into the evaluation stage where the
 project is evaluated against the original goals and requirements in order to
@@ -1697,11 +1720,13 @@ series of questions that would assess \glspl{vmve} usability, performance and
 overall user experience. This data was recorded using Google Forms and further
 analyzed to produce different sets of visualizations.
 
+\clearpage
 \section{Related Work}
 Computer graphics is a large field 
 - Others who have done the same.
 - How good is my work compared others given the time constraints
 
+\clearpage
 \section{Reflection}
 
 One of the major downsides that this project suffers from is the projects time
@@ -1718,8 +1743,8 @@ Could have planned better by designing systems before implementing them.
 
 
 \subsection{Choice of rendering API}
-This project was built on top of the Vulkan which as previously discussed is a
-low-level \gls{gpu} \gls{api}. One of major downsides to having chosen Vulkan as
+This project was built on top of the \gls{vulkan} which as previously discussed is a
+low-level \gls{gpu} \gls{api}. One of the major downsides to having chosen Vulkan as
 the \gls{api} of choice for this project was the significant amount of time had
 to be spent implementing the various rendering features due to how verbose and
 technical the \gls{api} is. The use of the API is only really beneficial if a
@@ -1738,6 +1763,7 @@ recorded showcasing the state of development at that specific point in time. All
 videos were uploaded and are hosted on the Zakariya Oulhadj YouTube channel
 \url{https://www.youtube.com/@ZOulhadj}
 
+\clearpage
 \section{Future Work}
 Going forward there are various features that are currently being evaluated as
 potentially implemented in the near future. These features aim to greatly
@@ -1846,39 +1872,47 @@ stored in a text format which subsequently increases the assets file size. glTF
 features such as compression, binary representation, scene hierarchy and more.
 
 \subsection{Cross Platform}
-Windows is the only operating system that \gls{vmve} officially supports.
-Implementing cross platform support would greatly benefit the application as it
-would increase flexibility in terms of which systems its able to run on and
-subsequently, increase the potential user base. Implementing such functionality
-would require significant changes to the underlying architecture of the
-application such as implementing opaque types for structures that have a
-different implementation depending on the operating system being used.
+In contrast to the project's initial proposal which was the support multiple
+\glspl{os}, Windows is the only \gls{os} that \gls{vmve} officially supports due
+to the time constraints for this project. 
 
-Additionally, a different build system has to be used that is cross platform.
-The most commonly used cross platform build system is CMake \cite{cmake}.
+Going beyond the final deadline, \gls{vmve} should add cross-platform support
+which would greatly benefit the application as it would increase flexibility in
+terms of which \glspl{os} its able to run on and subsequently, increase the
+potential user base. Implementing such functionality would require significant
+changes to the underlying architecture of the application such as implementing
+opaque types for structures that have different implementations depending on the
+\gls{os} being used. Additionally, a different build system would have to be
+used that is cross-platform such as CMake \cite{cmake}.
 
 \subsection{Networking Support}
 \gls{vmve} is a virtual environment editor and as such can be significantly
-improved by adding support for networking. The ideas is that there would be a
+improved by adding support for networking. The idea is that there would be a
 server running which would keep track of the virtual world and multiple clients
 via \gls{vmve} would be able to connect and interact with the environment
 simultaneously.
 
-This would allow for greater efficiency and speed up various tasks.
+This would allow for greater efficiency and speed up various tasks. For example,
+multiple users could work together to construct a virtual environment in
+preparation for scientific research which would otherwise have taken much longer
+had only one user worked on it.
 
 \subsection{Encryption}
-\gls{vmve} supports both AES and Diffie-Helm encryption algorithms out of the box.
-Additional work should be carried out to add more algorithms such as.....
+\gls{vmve} supports both the AES encryption standard by default. The application
+should also include additional encryption algorithms such as Diffie-Helm and
+RC6. This would provide users with greater flexibility in terms of how their
+assets are encrypted as well as varying levels of encryption strength/methods
+based on the user's encryption requirements.
 
 \subsection{Version Control}
-In regards to the VCS (version control system) architecture, a potential change
-that can be done is to add a third branch called ``Beta''. The purpose of this
-branch would be release relatively stable but yet unfinished features to users.
-This would allow user to use new features and test them before an official
-version is released. Overall this would reduce the number of bugs in final
-versions and be beneficial to users who are keen in using recently developed
-features. Figure \ref{fig:futurebrancharch} shows how the VCS architecture could
-look like with the addition of a ``Beta'' branch.
+In regards to the \gls{vcs} architecture, a potential change that can be done is
+to add a third branch called ``Beta''. The purpose of this branch would be to
+release relatively stable yet unfinished features to users. This would allow
+users to use new features and test them before an official version is released.
+Overall, this would reduce the number of bugs in final versions and be
+beneficial to users who are keen on using recently developed features. Figure
+\ref{fig:futurebrancharch} shows how the \gls{vcs} architecture could look like
+with the addition of a ``Beta'' branch.
 
 \begin{figure}[h!]
   \centering
@@ -1888,17 +1922,15 @@ look like with the addition of a ``Beta'' branch.
 \end{figure}
 
 \subsection{Reduce library dependencies}
-\gls{vmve} makes use of several libraries which allows specific functionality to be
-added quickly. This is ideal given the projects time constrains and
+\gls{vmve} makes use of several libraries which allows specific functionality to
+be added quickly. This is ideal given the project's time constraints and
 requirements. However, going forward the aim will be to reduce the number of
 external libraries being used.
 
-This will provide various benefits such as less reliance of external code and
-therefore, more control, smaller 
-
-
--- Replace libraries with a custom solution --
-Lower footprint as only the required features are implemented.
+This will provide various benefits such as less reliance on external code,
+faster compilation times as only functionality that is required will be
+implemented and generally finer control of the code that \gls{vmve} is built on
+top of.
 
 \subsection{Accessibility}
 Another aspect that needs to be addressed soon is improved accessibility. The
@@ -1914,6 +1946,7 @@ the English language and has no way of adapting to other languages. Therefore,
 the internal structure of the application must be redesigned to allow for
 other languages to be added and thus, improving accessibility.
 
+\clearpage
 \section{Conclusion}
 
 \gls{vmve} has been designed to be a platform in which users are provided easy to use
@@ -1926,6 +1959,16 @@ throughout the development of \gls{vmve}.
 
 
 \clearpage
+\section{Documents}
+
+
+\textattachfile{attached_documents/milestone_1.pdf}{\textcolor{blue}{Milestone 1}}
+\textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{blue}{Milestone 2}}
+\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{blue}{Milestone 3}}
+\textattachfile{attached_documents/meetings.docx}{\textcolor{blue}{Meetings}}
+
+
+\clearpage
 \printnoidxglossary
 
 \clearpage
@@ -1935,7 +1978,7 @@ throughout the development of \gls{vmve}.
 \bibliographystyle{IEEEtran}
 \bibliography{IEEEabrv, refs}
 
-
+\clearpage
 \section{Appendices}
 
 \subsection{Rendering API history} \label{rendering_api_appendix}

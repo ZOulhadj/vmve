@@ -74,6 +74,9 @@
 ``Vulkan loader,''
   \url{https://gpuopen.com/learn/reducing-vulkan-api-call-overhead/}.
 
+\bibitem{texture_mipmaps}
+``Texture mipmapping,'' \url{https://learnopengl.com/Getting-started/Textures}.
+
 \bibitem{3d_projection}
 {Wikipedia contributors}, ``3d projection --- {Wikipedia}{,} the free
   encyclopedia,''
