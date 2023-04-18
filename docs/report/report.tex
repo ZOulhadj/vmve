@@ -7,7 +7,9 @@
 \usepackage[parfill]{parskip}
 \usepackage{amsmath}
 \usepackage[hyphens]{url}
-\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\definecolor{skyblue}{HTML}{3366cc}
+\usepackage[hidelinks, colorlinks=true, linkcolor=black, urlcolor=skyblue, citecolor=skyblue, allcolors=skyblue]{hyperref}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{listings}
@@ -17,6 +19,9 @@
 \usepackage{textcomp}
 \usepackage{url}
 \usepackage{attachfile}
+\usepackage[super]{natbib}
+\usepackage{float}
+
 %\hypersetup{colorlinks=true, pdfstartview=FitV, linkcolor=blue, citecolor=black, plainpages=false, pdfpagelabels=true, urlcolor=blue}
 
 
@@ -199,7 +204,7 @@ of different tools and features as a result of decades of work. This
 inadvertently introduces several issues such as increased complexity, a steep
 learning curve as well as high-end hardware requirements.
 
-To address these issues, I introduce my final year project, \gls{vmve}. An
+To address these issues, I introduce my final year project, \gls*{vmve}. An
 application developed in the domain of Computer Graphics to provide an
 easy-to-use and efficient platform for 3D graphics rendering. The project does
 not aim to replicate the functionality of existing rendering engines but instead
@@ -221,12 +226,12 @@ introduction, design, implementation, evaluation and finally, future work.
 
 \subsection{Aims and Objectives}
 Successfully designing, implementing and evaluating a project relies on a set of
-aims and objectives to be fully defined. \gls{vmve} has three main aims and
+aims and objectives to be fully defined. \gls*{vmve} has three main aims and
 consists of several objectives that outline the concrete steps required to
 achieve those aforementioned aims.
 
 \subsubsection{Easy-to-use}
-The first goal of \gls{vmve} is to be ``easy-to-use''. This means that the
+The first goal of \gls*{vmve} is to be ``easy-to-use''. This means that the
 application should not have a steep learning curve and users with little to no
 prior experience with 3D rendering software and the underlying technology can
 use the application to achieve their intended goals.
@@ -244,8 +249,8 @@ would make the application more accessible.
 \subsubsection{Efficient}
 The second aim of the application is to be as efficient as possible and
 subsequently, lower the hardware requirements. The application's efficiency and
-aims vary based on the component in question that include the \gls{cpu},
-gls{gpu}, memory and storage.
+aims vary based on the component in question that include the \gls*{cpu},
+\gls*{gpu}, memory and storage.
 
 \subsubsection{Encryption and model format}
 The last of the three main goals is for the application to include its custom
@@ -256,19 +261,19 @@ relates to the recent data leak that affected Rockstar Studios and their
 upcoming game (Grand Theft Auto 6) \cite{gta_leak} that saw assets, source code
 and documentation released to the public.
 
-\gls{vmve} would be able to provide a platform to encrypt these assets and only
+\gls*{vmve} would be able to provide a platform to encrypt these assets and only
 unlock them using a special key that only the user will know. This ensures that
 in the event of digital assets begin obtained by third parties, they cannot be
 used. This requires several key elements to work in tandem to achieve this aim.
 
 The raw model must be able to be encrypted using different types of encryption
-algorithms. In addition to this, \gls{vmve} must include a parser that can read
+algorithms. In addition to this, \gls*{vmve} must include a parser that can read
 the internal structure of the encrypted file format and successfully load the
 model into the application.
 
 \subsection{Stakeholders}
 Two main stakeholders will be directly affected by the project and subsequently
-\gls{vmve}. These are the final-year project supervisors and the end users. Each
+\gls*{vmve}. These are the final-year project supervisors and the end users. Each
 stakeholder needs a different set of requirements to be successfully achieved.
 
 \subsubsection{Supervisors}
@@ -278,7 +283,7 @@ the progress being made. This ensures that the requirements set out are being
 met.
 
 \subsubsection{Users}
-The users on the other hand are individuals that will use \gls{vmve} once it has
+The users on the other hand are individuals that will use \gls*{vmve} once it has
 been developed. The aims and objectives discussed earlier directly affect these
 users.
 
@@ -288,13 +293,13 @@ be used in production. The project and subsequently the application must abide b
 local laws and regulations.
 
 \subsubsection{License}
-\gls{vmve} is to be licensed under the MIT license \cite{mit}. This ensures the
+\gls*{vmve} is to be licensed under the MIT license \cite{mit}. This ensures the
 application can be used without restriction allowing for it to be copied,
 modified as well as distributed.
 
 \subsubsection{Security}
 Additionally, security must be taken into account when developing the
-application. As mentioned earlier, \gls{vmve} will include the ability to secure
+application. As mentioned earlier, \gls*{vmve} will include the ability to secure
 critical assets including 3D models. This will be achieved using encryption by
 making use of a secret key and initialization vector.
 
@@ -309,16 +314,16 @@ application and the user's device.
 \subsubsection{Intellectual property}
 Given the domain in which the application is intended to be used, such as
 handling third-party 3D assets by importing and exporting geometry data.
-\gls{vmve} mustn't infringe upon the copyright of those who own the models. One
+\gls*{vmve} mustn't infringe upon the copyright of those who own the models. One
 such example includes not modifying the geometry data unless specified by the
 user. Since this will be a new application, a lot of the intricacies behind
-\gls{ip} need to be further defined and taken into account based on user
-feedback. \gls{vmve} will not modify any of the data being imported and only
+\gls*{ip} need to be further defined and taken into account based on user
+feedback. \gls*{vmve} will not modify any of the data being imported and only
 change the visual appearance based on several factors including rendering
 settings, lighting, translation, rotation and scaling. 
 
 \subsection{Social}
-\gls{vmve} must also take into account social considerations for those using the
+\gls*{vmve} must also take into account social considerations for those using the
 application to provide a consistent user experience.
 
 \subsubsection{Accessibility}
@@ -335,7 +340,7 @@ implementation details are not accessible to users as the source code is not
 open source. Therefore, individuals do not know exactly what the software is
 doing during runtime.
 
-To ensure that \gls{vmve} remains ethical, the application will not perform any
+To ensure that \gls*{vmve} remains ethical, the application will not perform any
 additional computations that are not strictly required for 3D rendering.
 Furthermore, the application will not store or send any data as this is not
 required.
@@ -343,7 +348,7 @@ required.
 \subsubsection{Deceptive design}
 Deceptive design also known as ``Dark patterns'' refers to designs/tricks that
 manipulate users into performing certain actions without their informed consent.
-\gls{vmve} will make use of a user interface, however, during the design and
+\gls*{vmve} will make use of a user interface, however, during the design and
 implementation stages extra effort will be spent on ensuring that no such design
 pattern is introduced. This will greatly benefit users and thus, increase the
 overall user experience.
@@ -362,24 +367,24 @@ directly responsible for the outcome of the project such as project management.
 
 \subsection{Tools}
 \subsubsection{Project Management}
-A \gls{vcs} is a tool used for backing up and/or collaborating with developers
-on a project. The use of a \gls{vcs} was an obvious choice as this would provide
+A \gls*{vcs} is a tool used for backing up and/or collaborating with developers
+on a project. The use of a \gls*{vcs} was an obvious choice as this would provide
 a platform on which the project source code could be hosted. This gives me the
 peace of mind of knowing that if for some reason a local copy of the project is
 lost or corrupted then another copy is safely hosted on the servers managed by
-the \gls{vcs}.
+the \gls*{vcs}.
 
-Another key feature of a \gls{vcs} is project management. These types of systems
+Another key feature of a \gls*{vcs} is project management. These types of systems
 provide various tools that greatly benefit developers. One such feature is known
 as a ``commit'' which records any changes made to a particular repository at
 that moment in time. Developers use commits to view changes that occur at each
 stage but also, provide means of reverting to previous versions of particular
 sections, files or even an entire repository. Due to the length and complexity
-of this project, tools such as this provided by a \gls{vcs} are invaluable
+of this project, tools such as this provided by a \gls*{vcs} are invaluable
 throughout the development process.
 
 The version control system that was chosen was Git \cite{gitvcs}. This is the
-most widely-used, free and open-source \gls{vcs}. Git can be used in several
+most widely-used, free and open-source \gls*{vcs}. Git can be used in several
 ways such as by installing Git onto a server manually or by using existing
 platforms that are built on top of Git. A few examples include
 \href{http://github.com}{GitHub}, \href{http://gitlab.com}{GitLab} and
@@ -388,7 +393,7 @@ GitHub which is the platform that I am most familiar with and therefore, GitHub
 will be the platform of choice for this project.
 
 
-The \gls{vmve} project is hosted on GitHub as a private repository
+The \gls*{vmve} project is hosted on GitHub as a private repository
 \url{https://github.com/ZOulhadj/vmve/}
 
 
@@ -415,7 +420,7 @@ specific fix is referenced in the issue and is then finally marked as complete
 by being moved to the ``Done'' board. This subsequently marks a GitHub issue as
 closed.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/kanban_design.png}
   \caption{Kanban design}
@@ -425,55 +430,42 @@ closed.
 \subsubsection{Microsoft Visual Studio 2022}
 Developing a program that runs directly on the underlying operating system
 requires a compiler. This is a program that parses source code and generates
-assembly instructions that the \gls{cpu} will be able to understand and
-therefore, execute. \gls{msvc} also known as CL will be the compiler of choice.
+assembly instructions that the \gls*{cpu} will be able to understand and
+therefore, execute. \gls*{msvc} also known as CL will be the compiler of choice.
 This is a compiler that comes bundled with the Microsoft Visual Studio
-\gls{ide}.
+\gls*{ide}.
 
-The \gls{ide} also provides debugging functionality that will be used
+The \gls*{ide} also provides debugging functionality that will be used
 extensively to fix crashes, bugs and generally ensure that the application
 runs as expected \cite{visualstudio}. 
-
-% \begin{figure}[h!]
-%   \centering
-%   \includegraphics[width=\textwidth]{images/visual_studio.png}
-%   \caption{Microsoft Visual Studio}
-%   \label{fig:visual_studio}
-% \end{figure}
 
 Some additional tools will be used that will further improve the ease of
 development.  Visual Studio Assist X \cite{visualstudioassistx} is one such
 tool. This is a Visual Studio extension that provides many useful features that
-the base \gls{ide} does not provide such as reliable symbol renaming, file symbol
+the base \gls*{ide} does not provide such as reliable symbol renaming, file symbol
 outlining, quick file searching and much more.
 
 
 \subsubsection{RenderDoc}
-As well as using software for debugging on the \gls{cpu}, there also exists
-software that allows for debugging the \gls{gpu}. More specifically, these tools
+As well as using software for debugging on the \gls*{cpu}, there also exists
+software that allows for debugging the \gls*{gpu}. More specifically, these tools
 allow for analyzing per-frame data as well as detailed frame synchronization
 metrics.
 
 RenderDoc developed by Baldur Karlsson can be used to inspect different
-rendering \glspl{api} including individual frames and the entire state
-\cite{renderdoc}. This ensures that you can debug specific \gls{gpu} related
+rendering \glspl*{api} including individual frames and the entire state
+\cite{renderdoc}. This ensures that you can debug specific \gls*{gpu} related
 bugs such as model data, textures, rendering commands etc.
 
-% \begin{figure}[h!]
-%   \centering
-%   \includegraphics[width=\textwidth]{images/renderdoc.png}
-%   \caption{RenderDoc}
-%   \label{fig:renderdoc}
-% \end{figure}
 
 \subsubsection{AMD Radeon GPU Profiler}
-Similarly to RenderDoc, AMD has its own \gls{gpu} profiling tool called ``AMD
+Similarly to RenderDoc, AMD has its own \gls*{gpu} profiling tool called ``AMD
 Radeon GPU Profiler'' \cite{rgp}. This tool is only available for AMD-supported
-\glspl{gpu} which is ideal as the hardware going to be used throughout
+\glspl*{gpu} which is ideal as the hardware going to be used throughout
 development meets this requirement. The tool analyzes per-frame data which
 subsequently provides insightful performance metrics.
 
-% \begin{figure}[h!]
+% \begin{figure}[H]
 %   \centering
 %   \includegraphics[width=\textwidth]{images/amd_profiler.png}
 %   \caption{AMD Radeon GPU Profiler}
@@ -489,7 +481,7 @@ for low-level memory access and can be compiled into an executable.
 The language chosen for this project was C++ 23.  There were two main reasons
 why this specific programming language was chosen. Firstly, it's the language
 that I have the most experience with which will significantly help during the
-implementation stages of the project. Secondly, the \gls{stl}  was one of the
+implementation stages of the project. Secondly, the \gls*{stl}  was one of the
 key reasons why C++ will be used. It provides many prebuilt data structures,
 containers and algorithms including ``std::vector'', ``std::string'' and
 ``std::find'' to name a few. Furthermore, it saves time as I would not have to
@@ -499,56 +491,56 @@ expressions, direct memory access and generally faster performance compared to
 higher-level languages such as Python and Javascript.
 
 \subsubsection{Rendering API} \label{rendering_api}
-A rendering \gls{api} is a set of instructions that acts as an intermediary and
-allows for an application to make use of a systems \gls{gpu}. There are several
-different rendering \glspl{api} that exist including OpenGL, \gls{vulkan},
+A rendering \gls*{api} is a set of instructions that acts as an intermediary and
+allows for an application to make use of a systems \gls*{gpu}. There are several
+different rendering \glspl*{api} that exist including OpenGL, \gls*{vulkan},
 Direct3D 11 and Direct3D 12. Appendix section \ref{rendering_api_appendix} goes
-into great detail explaining the history of rendering \glspl{api} and the
+into great detail explaining the history of rendering \glspl*{api} and the
 differences between them.
 
-OpenGL and Direct3D 11 are previous generation \glspl{api} whereas \gls{vulkan}
+OpenGL and Direct3D 11 are previous generation \glspl*{api} whereas \gls*{vulkan}
 and Direct3D 12 are using the latest technologies. Each of these has its
 benefits and disadvantages. The image below shows a table that compares each of
 these with specific types of functionality. 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/api_comparison.png}
   \caption{Rendering API comparison}
   \label{fig:api_comparison}
 \end{figure}
 
-Figure \ref{fig:api_comparison} shows that \gls{vulkan} has the most amount
+Figure \ref{fig:api_comparison} shows that \gls*{vulkan} has the most amount
 functionality including the ability to run on different operating systems, 
 finer rendering control and support for multithreading.
 
-In addition to \gls{vulkan} inhibiting the most functionality, there are
-numerous other reasons why this \gls{api} is the most suitable for \gls{vmve}.
-Firstly, \gls{vulkan} is extremely verbose as it exposes the technicalities
-related to the \gls{gpu} and requires the application to implement the basic
+In addition to \gls*{vulkan} inhibiting the most functionality, there are
+numerous other reasons why this \gls*{api} is the most suitable for \gls*{vmve}.
+Firstly, \gls*{vulkan} is extremely verbose as it exposes the technicalities
+related to the \gls*{gpu} and requires the application to implement the basic
 functionality as opposed to the driver. This reduces the complexity of the
 display driver and can potentially increase performance as it no longer needs to
 make assumptions about the application and the commands being issued as the
-entire state of the rendering pipeline is predefined. Using \gls{vulkan} also
+entire state of the rendering pipeline is predefined. Using \gls*{vulkan} also
 implicitly helps understand the complex inner workings of graphics development
-and working with the \gls{gpu}.
+and working with the \gls*{gpu}.
 
 \subsection{Libraries}
 The application will make use of different external libraries to speed up 
 development due to the short timeframe.
 
 \subsubsection{User Interface}
-Users will need a way of interacting with \gls{vmve} and the 3D environment.
+Users will need a way of interacting with \gls*{vmve} and the 3D environment.
 This will be achieved through the use of a user interface in which the user can
-directly manipulate the application. As mentioned earlier, \gls{vmve} is an
-application that uses the \gls{gpu} for rendering and therefore, the UI will
-have to interact with the \gls{gpu}. To reduce the development time of this
+directly manipulate the application. As mentioned earlier, \gls*{vmve} is an
+application that uses the \gls*{gpu} for rendering and therefore, the UI will
+have to interact with the \gls*{gpu}. To reduce the development time of this
 particular aspect of the application, the decision was made to make use of a
 preexisting library.
 
 The library of choice was Dear ImGui \cite{imgui}. This is an immediate-mode
-user interface library that provides an \gls{api} to render UI elements. 
+user interface library that provides an \gls*{api} to render UI elements. 
 
-\subsubsection{Encryption} \label{custom_file_format} \gls{vmve} will include
+\subsubsection{Encryption} \label{custom_file_format} \gls*{vmve} will include
 its own model file format. This is a custom format that will be encrypted as
 standard. Implementing encryption is a very complex area that can be considered
 an entire project on its own. Instead, the project will make use of a well-known
@@ -559,14 +551,14 @@ AES, Diffie-Hellman, GCM, RSA and much more.
 \subsubsection{Serialisation}
 In addition to encrypting the model data, the custom file format will need to
 store additional information such as application version and encryption type.
-Therefore, \gls{vmve} must be able to serialize the data when saving to disk as
+Therefore, \gls*{vmve} must be able to serialize the data when saving to disk as
 well as deserialize when loading a ``.vmve'' model. To achieve this, the cereal
 C++ library will be used \cite{cereal}. This library allows for fast and
 efficient data serialization into different formats such as compact binary
 encodings, XML or JSON.
 
 \subsubsection{Additional libraries}
-The other libraries used in \gls{vmve} can be seen in the list below.
+The other libraries used in \gls*{vmve} can be seen in the list below.
 \begin{description}
   \item[assimp] Model loading
   \item[glm] Mathematics
@@ -580,70 +572,77 @@ The other libraries used in \gls{vmve} can be seen in the list below.
 The next stage of the project was designed and occurred between milestones two
 and three. 
 
-Having discussed the different technologies being used in \gls{vmve}, they must
-now be evaluated and incorporated into the design of \gls{vmve} and its various
+Having discussed the different technologies being used in \gls*{vmve}, they must
+now be evaluated and incorporated into the design of \gls*{vmve} and its various
 subsystems.
 
 \subsection{Branding}
 The branding i.e the look of the application was an important factor during the
 design as it will be presented to users and can directly influence the user
-experience. Furthermore, being recognizable can result in greater number of
-users.
+experience. Furthermore, being recognizable results in an increase in brand
+recognition that may also increase user traffic.
 
 \subsubsection{Project Name}
-VMVE stands for ``Vulkan Model Viewer and Exporter''. The name is split into
-two. The first is ``Vulkan'' the other is ``Model Viewer and Exporter''. The
-rendering API used to render 3D digital assets is \gls{vulkan} and hence the
-first part of the name. The second part is because the application will include
-functionality such as importing and exporting models into a custom file format
-as mentioned in section \ref{custom_file_format}.
+VMVE stands for ``Vulkan Model Viewer and Exporter''. The name is made up of
+two parts. The first is ``Vulkan'' the other is ``Model Viewer and Exporter''.
+The rendering \gls*{api} used to render 3D digital assets is \gls*{vulkan} and
+hence the first part of the name. The second part is because the application
+will include functionality such as importing and exporting models into a custom
+file format as mentioned in section \ref{custom_file_format}. The combination of
+these two allows a user to have a basic understanding of what the application
+does without having used it before.
 
 \subsubsection{Logo}
-There are two versions of the \gls{vmve} logo that was designed and intended to
-be used in different situations. The first is the complete logo as seen below in
+There are two versions of the \gls*{vmve} logo that was designed and intended to
+be used in different scenarios. The first is the complete logo as seen below in
 figure \ref{fig:project_logo_large} which is referred to as the ``large logo''.
-It contains the icon and the name of the application.
-\begin{figure}[h!]
+It contains the icon and the name of the application to the right of that.
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/project_logo.png}
   \caption{VMVE Large Logo}
   \label{fig:project_logo_large}
 \end{figure}
+This is to be used on the \gls*{vmve} website as well as documentation pages
+providing consistent branding across different mediums.
 
 The second version is designed to be minimal and therefore, only consists of the
-icons itself.
-
-\begin{figure}[h!]
+icon. This is intended to be mainly used throughout the application and in
+locations where there is a minimal amount of space such as the Windows taskbar.
+\begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{images/project_icon.png}
-  \caption{VMVE Small Logo}
+  \includegraphics[width=0.25\textwidth]{images/project_icon.png}
+  \caption{\gls*{vmve} Small Logo}
   \label{fig:project_logo_small}
 \end{figure}
 
 
 \subsection{VCS Architecture}
+As the only developer for this final-year project, the design and architecture
+of the \gls*{vcs} will remain as simple as possible while still providing the
+core requirements. Figure \ref{fig:brancharch} shows the proposed \gls*{vcs}
+architecture and includes two branches named ``main'' and ``develop''. Develop
+branch will be the primary branch used throughout the implementation stages. In
+other words, when changes occur throughout the source code, all commits will be
+published to the development branch.
 
-As the only developer for this final year project, the design and architecture
-will remain as simple as possible while still providing the core requirements.
-Figure \ref{fig:brancharch} shows the proposed version control architecture and
-includes to branches named ``main'' and ``develop''. Develop will be the primary
-branch used throughout the implementation stages. 
+On the other hand, ``Main'' will be used as a stable branch that is only updated
+for each official release. This would occur for each project milestone such that
+for ``Sprint 1'' a pull request will be made from develop to main and this will
+be tagged as v0.0.1 and likewise ``Sprint 2'' will be tagged as v0.0.2.
 
-Main will be used as a stable branch that is only updated for each official release.
-This would occur for each project milestone such that for ``Sprint 1'' a pull request
-will be made from develop to main and this will be tagged as v0.0.1 and likewise 
-``Sprint 2'' will be tagged as v0.0.2.
-
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/current_branch_design.png}
   \caption{Git branch design}
   \label{fig:brancharch}
 \end{figure}
 
+This architecture ensures that as the sole developer of the project, changes can
+be made consistently while ensuring that users are provided stable versions of
+the application.
 
-
-\subsection{Programming Conventions}
+\subsection{Source code}
 From the beginning, the projects source code and overall architecture were to
 adhere to the C++ Core Guidelines \cite{cpp-guidelines} to ensure that the
 project follows best practices.
@@ -664,79 +663,73 @@ words, reducing vertical line height for code blocks such as ``if, else, while
 and for'' allowing for more lines of code to be visible at any given point
 whilst allowing for a more distinct separation of structures and functions.
 
-The combination of these two specific conventions in regards to source code
-style can be seen in figure \ref{fig:convention}.
+The combination of these two specific conventions regarding source code style
+can be seen in figure \ref{fig:convention}.
 
 \begin{figure}[ht]
-  \centering
-  \begin{lstlisting}[language=C++]
-    struct foo
-    {
-        int a;
-    };
+\centering
+\begin{lstlisting}[language=C++]
+  struct foo
+  {
+      int a;
+  };
 
-    void bar(int a)
-    {
-        if (a) {
-            printf("This is a example.\n");
-        } else {
-            printf("This is another example.\n");
-        }
-    }
-  \end{lstlisting}
-  \caption{Source code convention}
-  \label{fig:convention}
-  \end{figure}
+  void bar(int a)
+  {
+      if (a) {
+          printf("This is a example.\n");
+      } else {
+          printf("This is another example.\n");
+      }
+  }
+\end{lstlisting}
+\caption{Source code convention}
+\label{fig:convention}
+\end{figure}
 
-
-  - Functional over object oriented
-  -   POD (Plain old data types)
-  -   Less boilerplate code (getters and setters)
-  -   Easier access to member variables
+\gls*{vmve} will also be developed in a functional style and by using ``structs``
+instead of an object-oriented one with ``classes''. This is primarily related to
+the ease of use in terms of development since data can be more easily accessed
+and manipulated. Furthermore, this will eliminate the need for getter and setter
+functions that needlessly take up source code space and is redundant when member
+variables are accessible.
 
 \subsection{Project Architecture}
 
-\gls{vmve} will be a combination of two projects. The ``Engine'' project also
-known as the core of \gls{vmve} will contain the fundamental implementation
+\gls*{vmve} will be a combination of two projects. The ``Engine'' project also
+known as the core of \gls*{vmve} will contain the fundamental implementation
 details. This includes the Window, Renderer, UI and Audio. This project will be
 distributed as a library file (.lib) that other projects can import for specific
 use cases. The ``VMVE'' project will include the ``Engine'' project by importing
 the library (.lib file). A high-level overview of the project architecture can
 be seen in figure \ref{fig:projarch}.
 
-There is another key reason why, I will isolate the core of \gls{vmve} into its
-project instead of combining it into one program. The reason being is have the
-core be a library that can be used in not just \gls{vmve} but also other
+There is another key reason why, I will isolate the core of \gls*{vmve} into its
+project instead of combining it into one program. The reason is to have the core
+be a library that can be used in not just \gls*{vmve} but also potentially other
 projects in the future.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/project_architecture.png}
   \caption{Project Architecture}
   \label{fig:projarch}
 \end{figure}
 
-\subsubsection{Platform}
+\subsubsection{Platform Architecture}
 - Reason for choosing 64bit program.
     goes beyond 4GB address space limit in 32bit programs.
     supports modern hardware
 
 
-- VMVE file format
--    Header
--    Data
-- Encryption
-- AES (128, 256 bits for key length)
 
-
-
-\subsection{Renderer Architecture}
+\subsubsection{Renderer Architecture}
 
 As mentioned in section \ref{rendering_api}. Vulkan will be the rendering API of choice
-for \gls{vmve}. The API is extremely verbose giving the programmer the flexibility to
+for \gls*{vmve}. The API is extremely verbose giving the programmer the flexibility to
 control every aspect of the GPU. When interacting with Vulkan throughout the engine
 a certain degree of encapsulation is necessary to reduce the amount of effort required to 
-implement functionality as a result of \glspl{vmve} verbose API.
+implement functionality as a result of \glspl*{vmve} verbose API.
 
 To achieve this, the renderer must be properly designed so that flexibility is not lost
 whilst still simplifying the API. Figure \ref{fig:rendererarch} shows the proposed renderer
@@ -796,14 +789,19 @@ of the application.
 \subsection{Custom file format and encryption}
 
 \subsubsection{File format}
-\gls{vmve} will include its own file format that allows for model data to be encrypted for security purposes.
-Figure \ref{fig:vmve_file_structure} shows the proposed internal structure of the custom file format.
-It includes a 48-byte header that will consist of a version and the method used for encryption.
-The purpose of the version is to check for compatibility between different \gls{vmve} versions. In addition to this,
-this can be used to convert older versions of \gls{vmve} to newer versions.
+\gls*{vmve} will include its own file format that allows for model data to be
+encrypted for security purposes. Figure \ref{fig:vmve_file_structure} shows the
+proposed internal structure of the custom file format. It includes a 48-byte
+header that will consist of a version and the method used for encryption. The
+purpose of the version is to check for compatibility between different
+\gls*{vmve} versions. In addition to this, this can be used to convert older
+versions of the \gls*{vmve} model to newer versions.
 
-The second item in the \gls{vmve} header is the encryption mode. This allows for the \gls{vmve} to know which algorithm
-must be used to decrypt the data.
+The second item in the \gls*{vmve} header is the encryption mode. This allows for
+\gls*{vmve} to know which algorithm must be used to decrypt the data.
+
+The remaining section of the file consists of the encrypted data which includes
+the raw model data.
 
 -- TODO: Update picture to use a smaller header size by using a packed uint32\_t for the version
 
@@ -816,31 +814,57 @@ must be used to decrypt the data.
 
 
 \subsubsection{Encryption and Decryption}
--- encrypting --
--- loading model
--- encrypting model
--- export model
+When dealing with encryption there are two primary stages, encrypting and
+decrypting. The term ``encryption'' means taking some data and running it
+through an algorithm making the data unreadable. ``Decryption'' is the opposite
+of that which takes the unreadable data and turns it back to the original data.
 
+Designing such a system requires careful consideration and extra care to ensure
+that the data being managed is not negatively affected such as information being
+lost when converting from one stage to another.
 
--- decrypting --
--- load model 
--- check version
--- check encryption mode
--- attempt to decrypt
--- load model into VMVE
+The primary encryption algorithm that will be used is AES and the key length can
+be two different values (128 or 256 bits) that the user will choose based on the
+level of security they want for their assets.
+
+Figure \ref{fig:load_model_flowchart} shows a flowchart describing the general
+process of how a model will be loaded into \gls*{vmve}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.5\textwidth]{images/load_model_flowchart.png}
+  \caption{Load model flowchart}
+  \label{fig:load_model_flowchart}
+\end{figure}
+
+Likewise encrypting a model will consist of three main stages which are loading, encrypting
+and exporting as show in figure \ref{fig:export_model_flowchart}.
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.5\textwidth]{images/export_model_flowchart.png}
+  \caption{Export model flowchart}
+  \label{fig:export_model_flowchart}
+\end{figure}
 
 \clearpage
 \section{Implementation}
 This section of the report presents the technical implementation details of
-\gls{vmve}. This section is presented in order of initialization i.e starting at
+\gls*{vmve}. This section is presented in order of initialization i.e starting at
 the core of the application and discussing each subsequent system.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{images/rendering.png}
-  \caption{Liverpool Street Station renderer model}
-  \label{fig:renderer}
+  \includegraphics[width=\textwidth]{images/ui_implementation.png}
+  \caption{UI implementation}
+  \label{fig:user_interface}
 \end{figure}
+
+% \begin{figure}[H]
+%   \centering
+%   \includegraphics[width=\textwidth]{images/rendering.png}
+%   \caption{Liverpool Street Station renderer model}
+%   \label{fig:renderer}
+% \end{figure}
 
 
 \subsection{Overview}
@@ -890,10 +914,10 @@ int main()
   
 
 \subsection{Window System}
-The first system within \gls{vmve} that gets initialized is the window. This system is
+The first system within \gls*{vmve} that gets initialized is the window. This system is
 responsible for creating a desktop window based on a series of configuration
 options specified at the start of the application. These options include the
-window width, height and name. Internally, \gls{vmve} uses the lightweight GLFW
+window width, height and name. Internally, \gls*{vmve} uses the lightweight GLFW
 library to handle window creation. The purpose of this library is to provide an
 API which is cross-platform and allows applications to easily create windows on
 different operating systems. 
@@ -901,13 +925,13 @@ different operating systems.
 Under the hood, on Windows, GLFW uses the Win32 API provided by Microsoft.
 
 In addition to the window creation, various function callbacks are created
-which allows \gls{vmve} to handle specific events such as window resizing, input,
+which allows \gls*{vmve} to handle specific events such as window resizing, input,
 cursor position etc.
 
 \subsection{Rendering System}
 The implementation of the rendering system was one of the key areas worked on
 throughout the project. This system is responsible for communicating with the
-\gls{gpu} and rendering objects onto the screen. As discussed in the
+\gls*{gpu} and rendering objects onto the screen. As discussed in the
 \ref{technology_review}, Vulkan was the renderer API of choice. 
 
     Frames in flight 
@@ -927,7 +951,7 @@ Delta Time
 The first step in creating the renderer is initializing an object called
 ``vk\_context''. This object is created within the application that groups Vulkan
 handles that are responsible for initializing resources. In other words, the
-``vk\_context'' structure is used to allocate \gls{gpu} resources. The handles
+``vk\_context'' structure is used to allocate \gls*{gpu} resources. The handles
 within the context structure can be seen in the code snippet below and a diagram
 can be seen in figure \ref{fig:rendererarch}.
 
@@ -945,7 +969,7 @@ struct vk_context
 
 The initialization of the renderer context can be broken down into several
 stages. The first of these states acquires the function pointers into the Vulkan
-loader which contains the implementation details for the \gls{gpu} driver. This
+loader which contains the implementation details for the \gls*{gpu} driver. This
 is achieved by statically linking a ``stub'' library file into the executable.
 However, as discussed in a blog post by Arseny Kapoulkine titled
 \textit{``Reducing Vulkan\textsuperscript{\textregistered} API call overhead''}
@@ -954,31 +978,31 @@ calls are dispatched. To reduce this overhead, a meta-loader called Volk is used
 which contains pointers to the real implementation and is dynamically loaded at
 runtime.
 
-The next step is acquiring a \gls{gpu} with a specific set of requirements that
-can be used for rendering. This step involves querying all available \glspl{gpu}
+The next step is acquiring a \gls*{gpu} with a specific set of requirements that
+can be used for rendering. This step involves querying all available \glspl*{gpu}
 their names, hardware capabilities as well as if it supports basic screen
 rendering.
 
 \subsubsection{Swapchain}
 A swapchain is a series of images also known as framebuffers used by
-\gls{vulkan} that allocates a region of memory that stores frame data i.e pixel
+\gls*{vulkan} that allocates a region of memory that stores frame data i.e pixel
 colors. As the name suggests, a ``swapchain'' is a chain of these images. The
 most common number of images is two or three which is called
 ``double-buffering'' and ``triple-buffering'' respectively. The renderer within
-\gls{vmve} is configured to use two images, one for the front buffer that is shown
+\gls*{vmve} is configured to use two images, one for the front buffer that is shown
 on a monitor and a back buffer that is used for rendering.
 
 In addition to buffers, a swapchain is also responsible for handling vertical
 refresh rate also known as vsync. This is the rate at which new images are
 rendered and then presented on a user's screen. There are two main types of
-vsync modes used within \gls{vulkan} which are
+vsync modes used within \gls*{vulkan} which are
 \lstinline{VK_PRESENT_MODE_FIFO_KHR} and
 \lstinline{VK_PRESENT_MODE_IMMEDIATE_KHR}. The ``fifo'' mode indicates to the 
 swapchain and subsequently the presentation engine that images are to wait 
 for the monitors refreash rate before being present wheras ``immediate'' simply
 renders images as fast a possible.
 
-\gls{vmve} uses the ``fifo'' presentation mode as it conserves hardware
+\gls*{vmve} uses the ``fifo'' presentation mode as it conserves hardware
 resources as new images will not be rendered needlessly. Also, this mode ensures
 that no screen tearing occurs between refresh rates. Figure \ref{fig:frame_sync}
 shows a detailed image regarding the presentation engine and frame
@@ -1005,11 +1029,11 @@ are VkFence and VkSemaphore.
   \label{fig:vk_fence}
 \end{figure}
 
-The \gls{vulkan} 1.3.246 specification states that  ``\lstinline{VkFence} is a
+The \gls*{vulkan} 1.3.246 specification states that  ``\lstinline{VkFence} is a
 synchronization primitive that can be used between queue submissions and the
 host''
 [\href{https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkFence.html}{7.3
-Fences}]. In other words, a fence can be signaled on the \gls{cpu} to indicate
+Fences}]. In other words, a fence can be signaled on the \gls*{cpu} to indicate
 in this case, when a new image from the presentation engine has been acquired
 via the \lstinline{vkAcquireNextImageKHR} function call.
 
@@ -1021,7 +1045,7 @@ occur simultaneously for multiple frames while ensuring that frames
 ``in-flight'' are not interrupted.
 
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/frame_sync.png}
   \caption{Frame Synchronization}
@@ -1043,7 +1067,7 @@ all lighting calculations to the final pass and only needs to perform those
 calculations once. However, for forward rendering, this needs to occur for each
 object in the scene resulting in poorer performance.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/g_buffer.png}
   \caption{G-Buffer Pipeline}
@@ -1053,20 +1077,20 @@ object in the scene resulting in poorer performance.
 
 
 \subsubsection{Dynamic Uniform Buffers}
-Uniform buffers are regions of memory located in \gls{vram} on the \gls{gpu}.
+Uniform buffers are regions of memory located in \gls*{vram} on the \gls*{gpu}.
 This memory can be accessed by shaders when creating a frame. These buffers can
 contain any sort of data including camera information, light properties, object
 transformations etc.
 
-\gls{vmve} makes use of two dynamic uniform buffers one for the camera
+\gls*{vmve} makes use of two dynamic uniform buffers one for the camera
 projection and the other for scene information such as lights. A dynamic buffer
 is a buffer that is large enough to store per-frame data and each frame of data
 can be accessed using an offset into the buffer and the current frame index.
-\ref{fig:dynamic_uniform_buffer} shows the internal structure of a dynamic
+Figure \ref{fig:dynamic_uniform_buffer} shows the internal structure of a dynamic
 uniform buffer that stores three sub-regions of memory in a triple-buffered
 frame setup.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/dynamic_buffer.png}
   \caption{Dynamic Uniform Buffer}
@@ -1079,7 +1103,7 @@ unique buffer handle for each frame.
 \subsubsection{Texture Mipmapping}
 Avoid Moire pattern, increased performance.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/mipmaps.png}
   \caption{Texture mipmapping}
@@ -1100,8 +1124,8 @@ multiple smaller objects to form the final model. These smaller parts are known
 as ``Meshes'' within the application.
 
 Figure \ref{fig:model} shows the internal structure of an example model which
-has been loaded into \gls{vmve}.
-\begin{figure}[h!]
+has been loaded into \gls*{vmve}.
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/model.png}
   \caption{Model Structure}
@@ -1122,7 +1146,7 @@ refers to within the contiguous array of models. Secondly, an entity contains a
 transformation matrix that positions the entity in the world. A more in-depth
 explanation of the model matrix can be found in section \ref{camera}.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/entities.png}
   \caption{Multiple entities in virtual environment}
@@ -1137,7 +1161,7 @@ transformation is known as perspective projection \cite{3d_projection} and is
 accomplished by computing several intermediate coordinate spaces as seen in
 figure \ref{fig:mvp_projection}.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/mvp.png}
   \caption{MVP Transformation \cite{coordinate_systems}}
@@ -1146,7 +1170,7 @@ figure \ref{fig:mvp_projection}.
 
 Geometric data is first created within a local coordinate space. This ``space''
 is positions relative to the object. In other words, the model data imported by
-\gls{vmve} will be in this local coordinate system often created by a 3D modeling
+\gls*{vmve} will be in this local coordinate system often created by a 3D modeling
 program such as Blender or 3DSMax.
 
 The next step is to convert these local coordinates to ``world'' space. This is
@@ -1173,20 +1197,20 @@ known as camera space. This is important as how the virtual scene is displayed
 depends on the properties of the camera. In the context of graphics rendering
 the concept of a ``camera'' does not exist and is only really an illusion. In
 reality, all points/vertex positions in the world space are transformed relative
-to the ``camera''. For example, if the position of the camera along the z axis
+to the ``camera''. For example, if the position of the camera along the z-axis
 increases i.e. we move forward then all objects in the world will be moved
 towards us. A nice visualization of this is shown in figure
 \ref{fig:camera_projection} courtesy of a blog post by Jordan Santell
 \href{https://jsantell.com/model-view-projection/}{https://jsantell.com/model-view-projection/}.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/camera_space.png}
   \caption{Camera/view projection \cite{camera_projection}}
   \label{fig:camera_projection} 
 \end{figure}
 
-\gls{vmve} makes use of a quaternion to perform the view projection. This is an
+\gls*{vmve} makes use of a quaternion to perform the view projection. This is an
 alternative to Euler angles and has several benefits including, preventing gimbal
 lock and easier interpolation between orientations.
 \begin{figure}[ht]
@@ -1213,7 +1237,7 @@ either a perspective or orthographic projection.
 
 With the fully constructed mvp matrix, this can now be multiplied with each
 vertex position and it will display onto the screen as expected.
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering  
   \begin{equation}
     Output = MVP \times Vertex
@@ -1226,11 +1250,19 @@ A more detailed code example can be seen in figure
 \ref{fig:local_to_world_appendix} in the appendix.
 
 \subsubsection{Lighting}
+The implementation of lighting was the final rendering system that was
+implemented. Lighting in Computer Graphics refers to how the virtual environment
+i.e. the colors of the resulting pixels are manipulated based on certain
+properties such as light, surface direction, occlusion, emissive materials and
+more. The use of lighting significantly <--
 
-The lighting model that is implemented in Blinn-Phong which derives
-from the original Phong model developed by By Bui Tuong Phong in a
-paper published in 1975.  Purpose of lighting model is to calculate
-approximations of lighting based on the real world.  \cite{blinn}
+The lighting model that was implemented is called Blinn-Phong which
+derives from the original Phong model developed by By Bui Tuong Phong in a paper
+titled \textit{``Illumination for Computer Generated Pictures''} published in
+1975 \cite{blinn}. 
+
+Purpose of lighting model is to calculate approximations of
+lighting based on the real world.  
 
 Ambient is a constant value that is used instead of global illumination
 as it requires more computational resources and more complex algorithms.
@@ -1246,28 +1278,30 @@ as it requires more computational resources and more complex algorithms.
 	A = G + P
 \end{equation}
 
-The next step is implementing diffuse lighting. This takes into account
-the light direction $\lightdir$ and the normal $\normal$ for a surface at a particular
-pixel. The formula below calculates the intensity at which light reflects off the
-of an object based on the angle the surface is against a light source. 
+The next step is implementing diffuse lighting. This takes into account the
+light direction $\lightdir$ and the normal $\normal$ for a surface at a
+particular pixel. The formula below calculates the intensity at which light
+reflects off the of an object based on the angle the surface is against a light
+source. 
 
-The dot product of the light direction and surface normal returns a value between
-the ranges of -1 to 1 depending on how parallel the directions are. If this value
-is less than 0 then it's clamped as a result of the max function which returns the largest value for the given two parameters.
+The dot product of the light direction and surface normal returns a value
+between the ranges of -1 to 1 depending on how parallel the directions are. If
+this value is less than 0 then it's clamped as a result of the max function
+which returns the largest value for the given two parameters.
 \begin{gather}
 	\intensity = \glslmax(\vec{\lightdir} \cdot \vec{\normal}, 0) \\
 \end{gather}
 
-Having calculated the intensity value we can now simply multiply it with the objects
-surface colour.
+Having calculated the intensity value we can now simply multiply it with the
+objects' surface color.
 \begin{equation}
 	\diffuse = \intensity \times \glslcolor
 \end{equation}
 
-Figure \ref{fig:diffuse} demonstrates the use of diffuse lighting which shows how each
-surface of the cube is lit differently based on its angle to the directional light 
-source. 
-\begin{figure}[h!]
+Figure \ref{fig:diffuse} demonstrates the use of diffuse lighting which shows
+how each surface of the cube is lit differently based on its angle to the
+directional light source. 
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/diffuse_lighting.png}
   \caption{Diffuse Lighting}
@@ -1275,61 +1309,49 @@ source.
 \end{figure}
 
 
-The final step in the Blinn-Phong lighting model is specular highlighting. This effect
-adds...
+The final step in the Blinn-Phong lighting model is specular highlighting. This
+effect adds...
 
 
 \subsection{User Interface}
 The implementation of the user interface was the next major system. This is
-the frontend and how the users will be able to interact with the application.
+the front end and how the users will be able to interact with the application.
 The user interface is built on top of the Vulkan renderer.
 
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=\textwidth]{images/ui_implementation.png}
-  \caption{UI implementation}
-  \label{fig:user_interface}
-\end{figure}
 
 
 \subsubsection{Controls}
 The term ``Controls'' refers to a combination of keys also known as
 ``Shortcuts'' that are used to perform specific actions within the application.
-There are various  built-in controls that aim to increase the productivity for
-the user by reducing the amount of clicking and menu interaction for repeating tasks.
+Various built-in controls aim to increase productivity for the user by reducing
+the amount of clicking and menu interaction for repeating tasks.
 
-Controls are split into two categories which are Global and Viewport. Global controls
-are controls that can be activated at any point. Viewport controls however, can only 
-be activated whilst using the viewport i.e the camera.
+Controls are split into two categories which are Global and Viewport. Global
+controls are controls that can be activated at any point. Viewport controls,
+however, can only be activated whilst using the viewport i.e the camera.
 
-This distinction for controls between different modes allows for greater context and
-better usability. 
-
-
-
-
-
+This distinction for controls between different modes allows for greater context
+and better usability. 
 
 \subsubsection{Fonts and Icons}
 The font used for the user interface is Open Sans which provides a simple and
 easy to read font.
 
-\gls{vmve} also uses icons throughout the user interface and is an important
+\gls*{vmve} also uses icons throughout the user interface and is an important
 aspect in conveying key information such as the task being performed or for
 additional information. The icon font used is provided by Font Awesome
 \cite{font-awesome}.
 
-Typically, data for fonts and icons are stored in a font file which end using
-extensions such as ``.ttf'' or ``.otf''. However, one of \glspl{vmve} goals is
+Typically, data for fonts and icons are stored in a font file which ends using
+extensions such as ``.ttf'' or ``.otf''. However, one of \glspl*{vmve} goals is
 to be distributed as a single executable file. Therefore, we cannot depend on
 external font files. Instead, data for fonts and icons are stored directly in
-the application in a continuous array of bytes and are encoded in base85. An
+the application in a continuous array of bytes and are encoded in base85. A
 small example of what this looks like can be seen in figure
 \ref{fig:base85_font}. The full version of this is over 3000 lines long due to
-the vast of amount of data stored within the font.
+the vast amount of data stored within the font.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \begin{lstlisting}[language=C++]
     // 206 out of 201650 characters are shown
@@ -1343,7 +1365,7 @@ the vast of amount of data stored within the font.
 
 \subsubsection{Menu Bar}
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/menu_bar.png}
   \caption{Menu Bar}
@@ -1357,7 +1379,7 @@ pressing the \lstinline{Ctrl + L} shortcut. This window allows the user to load
 a 3D model at runtime by traversing the file system and selecting a model to
 load.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/load_model_window.png}
   \caption{Load Model Window}
@@ -1366,7 +1388,7 @@ load.
 
 
 \subsubsection{Export Model Window}
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/encryption_system.png}
   \caption{Export Model Window}
@@ -1375,7 +1397,7 @@ load.
 
 \subsubsection{Settings Window}
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/settings_window.png}
   \caption{Settings Window}
@@ -1389,7 +1411,7 @@ a user has with an object and is used to specify the exact location and
 orientation within the virtual environment. The operations are translation
 (moving), rotation and scaling and can be seen in figure \ref{fig:gizmo}
 respectively.
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/gizmo.png}
   \caption{Gizmo operations}
@@ -1421,9 +1443,9 @@ screen. A small code snippet can be seen below \ref{fig:imguizmo_code} where
 \subsection{Logging system}
 Due to the relative complexity of the underlying application and number of
 moving components a logging system was developed to provide a clear
-understanding of the current state of \gls{vmve}. 
+understanding of the current state of \gls*{vmve}. 
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/logging_window.png}
   \caption{Logging window}
@@ -1432,12 +1454,12 @@ understanding of the current state of \gls{vmve}.
 
 Messages are stored in a fixed-size array that is preallocated. This ensures
 that there are no potential allocations occurring each time ``print\_log''  is
-called. By default \gls{vmve} allows for a maximum of 10,000 log messages before
+called. By default \gls*{vmve} allows for a maximum of 10,000 log messages before
 the buffer becomes full. In the event that the buffer does become full, the
 first log message i.e the oldest one is overwritten when a new log message is
 created \ref{fig:logging_system}. 
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/logging.png}
   \caption{Logging FIFO system}
@@ -1462,13 +1484,13 @@ created \ref{fig:logging_system}.
 - Windows only currently
 
 \subsubsection{Versions}
-\gls{vmve} follows the major, minor and patch system of versioning and is used
+\gls*{vmve} follows the major, minor and patch system of versioning and is used
 as follows [Major].[Minor].[Patch]. The use of versions is important in
-differentiating between \gls{vmve} releases. Each new version of the application
+differentiating between \gls*{vmve} releases. Each new version of the application
 comes with new features as well as bug fixes that aim to improve the software
 over time. Due to the rapid development of new features and functionality,
 backward compatibility cannot be guaranteed. The current official release of
-\gls{vmve} is v0.0.4.
+\gls*{vmve} is v0.0.4.
 
 \subsubsection{Website}
 Alongside the application, a website was created as a platform for easily
@@ -1480,10 +1502,10 @@ is designed with programmers in mind.
 
 In regards to downloads, there are two types. The first is an active development
 version which is regularly updated and acts as a beta release for versions that
-have not yet been officially released. The second is current and past \gls{vmve} versions
+have not yet been officially released. The second is current and past \gls*{vmve} versions
 going all the back to the first official release (v0.0.1).
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/website.png}
   \caption{VMVE website}
@@ -1492,9 +1514,9 @@ going all the back to the first official release (v0.0.1).
 
 
 \subsubsection{Example models}
-The \gls{vmve} website provides an additional download link to six different example
+The \gls*{vmve} website provides an additional download link to six different example
 models. These are provided by third parties (with appropriate credits) and are
-corrected to ensure they can be loaded into \gls{vmve} without any issues. The purpose
+corrected to ensure they can be loaded into \gls*{vmve} without any issues. The purpose
 of these example models is to allow users to easily test the application without
 needing to search the internet or create their own.
 
@@ -1502,11 +1524,11 @@ needing to search the internet or create their own.
 \subsubsection{Documentation}
 In addition to a website, a documentation website was also created curticy of
 Read the Docs (\href{https://readthedocs.org}{https://readthedocs.org}). The
-purpose of this site is to provide additional information about \gls{vmve} and
+purpose of this site is to provide additional information about \gls*{vmve} and
 also, provide an in-depth tutorial that aims to help users understand how to use
 the application.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/documentation.png}
   \caption{VMVE documentation}
@@ -1525,9 +1547,9 @@ feedback.
 
 \subsection{Distribution}
 In hindsight, the most challenging aspect of the entire project was by far,
-distribution and more specifically ensuring that \gls{vmve} was able to run on all
+distribution and more specifically ensuring that \gls*{vmve} was able to run on all
 supported systems as expected. Throughout the applications development, there
-were points where \gls{vmve} would work on the development machine, however,
+were points where \gls*{vmve} would work on the development machine, however,
 throw an exception error on other systems. These inconsistencies paired with the
 lack of reproducibility made these issues quite difficult to debug. The majority
 of these inconsistencies between different systems occurred during the
@@ -1538,7 +1560,7 @@ Some examples of these inconsistencies include the application crashing when
 resizing the window, crashing if audio is disabled on a system as well as frame
 stuttering.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/multiple_systems.png}
   \caption{Working on distribution}
@@ -1576,7 +1598,7 @@ during development.
     - System redesign
     - Encryption development stage
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/github_project.png}
   \caption{GitHub Issues Kanban}
@@ -1590,7 +1612,7 @@ These tests were performed on the main development machine used throughout the
 project which was a Thinkpad T14s Gen 3. A follow list of the laptops specifications
 can be seen in the figure \ref{fig:development_machine}.
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \begin{tabular}{|| c c ||} 
   \hline
@@ -1607,7 +1629,7 @@ can be seen in the figure \ref{fig:development_machine}.
 
 
 \subsection{Performance}
-Measuring the performance of \gls{vmve} is another key aspect of evaluation that
+Measuring the performance of \gls*{vmve} is another key aspect of evaluation that
 ensures the original goals and requirements have been met. Two main aspects can
 be measured which are compilation and runtime performance.
 
@@ -1620,14 +1642,14 @@ its effects on the end users.
 
 
 \subsubsection{Compilation Performance}
-A full clean build of \gls{vmve} takes an average of 53.260 seconds using
-Microsoft Visual Studio and the \gls{cl} compiler. This includes the compilation
-of the source code and precompiled headers. As the codebase for \gls{vmve} grew
+A full clean build of \gls*{vmve} takes an average of 53.260 seconds using
+Microsoft Visual Studio and the \gls*{cl} compiler. This includes the compilation
+of the source code and precompiled headers. As the codebase for \gls*{vmve} grew
 in both size and complexity, ensuring that compilation times were reasonable was
 a vital aspect that had to be taken into consideration.
 
 The main technique used for reducing compilation times was making use of a
-\gls{pch}. This is a header file (pch.h) that includes various header files such
+\gls*{pch}. This is a header file (pch.h) that includes various header files such
 as those from the standard library as well as external dependencies that are not
 indented to change often. This is because a change to any of the included header
 files will require a full precompiled header rebuild. The compiler compiles this
@@ -1640,7 +1662,7 @@ translation unit (.cpp file) and before any other header file. This ensures that
 the necessary types can be found for both header files and their corresponding
 source files.
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \begin{tabular}{||c c c c c ||} 
   \hline
@@ -1653,35 +1675,71 @@ source files.
   5 & 88 & 788 & 6344 & 123 \\ [1ex] 
   \hline
 \end{tabular}
-\caption{\gls{vmve} compilation performance}
+\caption{\gls*{vmve} compilation performance}
 \label{fig:compilation_performance}
 \end{table}
 
 
 
 \subsubsection{Runtime Performance}
+\gls*{cpu} timing is primarily measured by calculating the difference in time at
+two specific sections of the source code. Using C++ this can be easily achieved
+by using the ``chrono'' library that allows for the duration to be calculated in
+different time units such as nanoseconds, milliseconds, seconds and more. The
+timing will be measured using milliseconds as that is the typical timescale for
+applications such as \gls*{vmve}.
 
-\gls{cpu} timing C++ comes with the <chrono> library which provides
-std::chrono::high\_resolution\_clock. This is a \gls{gpu} timer that
-can record and measure differences in time using different
-time units such as nanoseconds, milliseconds, seconds etc.
+Using the aforementioned ``chrono'' library, the startup time for \gls*{vmve}
+averages around 300ms in the distribution version of the application which is
+calculated by taking away the time at the start of the initialization from the
+end of the initialization.
 
-Visual Studio IDE Performance
-Profiler
+The Microsoft Visual Studio \gls*{ide} allows us to further analyze this by
+taking advantage of the built-in profiler which can be accessed by going to
+\lstinline{Debug > Performance Profiler}. Figure
+\ref{fig:vmve_startup_profiling} shows the ``flame graph'' that takes a snapshot
+of the internal state of the application at runtime.
 
-- Benchmarking
-    CPU timing
-    GPU timing
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/startup_profiling_graph.png}
+  \caption{\gls*{vmve} startup profiling}
+  \label{fig:vmve_startup_profiling}
+\end{figure}
 
+What this shows us is that a large chunk of the initialization is taken up by
+the \lstinline{engine::configure_renderer} function and more specifically the
+\lstinline{engine::create_shader} function.
 
-- Frame times
-- Startup time
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/startup_profiling_slow_shader_compile.png}
+  \caption{Profiling slow code path}
+  \label{fig:vmve_slow_code_path}
+\end{figure}
+
 	- no pipeline cache vs pipeline cache
 	- pipeline derivatives
 - Shutdown time
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/visual_studio.png}
+  \caption{Microsoft Visual Studio}
+  \label{fig:visual_studio}
+\end{figure}
 
-\begin{table}[h!]
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/renderdoc.png}
+  \caption{RenderDoc}
+  \label{fig:renderdoc}
+\end{figure}
+
+
+
+
+\begin{table}[H]
 \centering
 \begin{tabular}{||c c c c||} 
   \hline
@@ -1692,7 +1750,7 @@ Profiler
   Shutdown & 545 & 778 & 7507 \\ [1ex] 
   \hline
 \end{tabular}
-\caption{\gls{vmve} runtime performance}
+\caption{\gls*{vmve} runtime performance}
 \label{fig:runtime_performance}
 \end{table}
 
@@ -1708,7 +1766,7 @@ by giving a user a set of instructions as seen in figure \ref{fig:instructions}.
 A score would be given for each task based on how easily the user was able to
 complete it.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/user_instructions.png}
   \caption{User feedback instructions}
@@ -1716,7 +1774,7 @@ complete it.
 \end{figure}
 
 The second stage would obtain direct feedback from the users by presenting a
-series of questions that would assess \glspl{vmve} usability, performance and
+series of questions that would assess \glspl*{vmve} usability, performance and
 overall user experience. This data was recorded using Google Forms and further
 analyzed to produce different sets of visualizations.
 
@@ -1731,7 +1789,7 @@ Computer graphics is a large field
 
 One of the major downsides that this project suffers from is the projects time
 constraints. Given the relative complexity of the project many of the features
-implemented in \gls{vmve} are quite rudimentary and serves as a basic prototype that
+implemented in \gls*{vmve} are quite rudimentary and serves as a basic prototype that
 showcases the underlying technology and the potential future work that can be
 undertaken.
 
@@ -1743,16 +1801,16 @@ Could have planned better by designing systems before implementing them.
 
 
 \subsection{Choice of rendering API}
-This project was built on top of the \gls{vulkan} which as previously discussed is a
-low-level \gls{gpu} \gls{api}. One of the major downsides to having chosen Vulkan as
-the \gls{api} of choice for this project was the significant amount of time had
+This project was built on top of the \gls*{vulkan} which as previously discussed is a
+low-level \gls*{gpu} \gls*{api}. One of the major downsides to having chosen Vulkan as
+the \gls*{api} of choice for this project was the significant amount of time had
 to be spent implementing the various rendering features due to how verbose and
-technical the \gls{api} is. The use of the API is only really beneficial if a
+technical the \gls*{api} is. The use of the API is only really beneficial if a
 developer wants to make full use of the additional performance through the use
 of multithreading, multiple command buffers and very specific memory allocation
 requirements.
 
-If given the choice, I would rewrite the renderer, using a far simpler \gls{api}
+If given the choice, I would rewrite the renderer, using a far simpler \gls*{api}
 such as DirectX11 or OpenGL as they provide same functionality but with
 significantly less work required. This would allow me to focus and spend more time 
 implementing the many other features required in such an application.
@@ -1767,19 +1825,19 @@ videos were uploaded and are hosted on the Zakariya Oulhadj YouTube channel
 \section{Future Work}
 Going forward there are various features that are currently being evaluated as
 potentially implemented in the near future. These features aim to greatly
-increase \glspl{vmve} usability and provide a whole host of new features.
+increase \glspl*{vmve} usability and provide a whole host of new features.
 
 \subsection{Rendering}
 
 \subsubsection{Multiple rendering APIs}
-\gls{vmve} currently only supports one rendering API which is Vulkan. As
+\gls*{vmve} currently only supports one rendering API which is Vulkan. As
 discussed in the technology review section, Vulkan is officially supported on
 Windows, Linux and macOS (through MoltenVK). However, to support additional
 operating systems as well as hardware that does not support Vulkan, more
 rendering APIs should be supported including DirectX12 and previous generation
 APIs such as OpenGL and DirectX11 for increased compatibility.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/api_abstraction.png}
   \caption{Rendering API Abstraction}
@@ -1787,12 +1845,12 @@ APIs such as OpenGL and DirectX11 for increased compatibility.
 \end{figure}
 
 \subsubsection{Frustum Culling}
-Currently, VMVE sends all object data to the \gls{gpu} to be processed and
-rendered. The \gls{gpu} then subsequently traverses each vertex to figure out if
+Currently, VMVE sends all object data to the \gls*{gpu} to be processed and
+rendered. The \gls*{gpu} then subsequently traverses each vertex to figure out if
 it needs to be ``discarded''. This process is part of the graphics pipeline and
 occurs for each vertex. As the complexity of both the scene and the objects
-themselves increases, this starts to become a \gls{gpu} intensive task and
-results in increased \gls{gpu} usage and lower performance.
+themselves increases, this starts to become a \gls*{gpu} intensive task and
+results in increased \gls*{gpu} usage and lower performance.
 
 To solve this, frustum culling must be implemented which is a rendering
 optimization in which objects not visible from the ``cameras point of view'' are
@@ -1800,7 +1858,7 @@ discarded completely and not sent to the GPU entirely. The term ``frustum'' refe
 to the camera projection frustum which can be seen in figure
 \ref{fig:frustum_culling} and ``Culling'' simply means discarding.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/frustum_culling.png}
   \caption{Frustum Culling \cite{frustum_culling}}
@@ -1815,7 +1873,7 @@ bounded box instead of the actual vertices. This allow for in the best case a
 single check or at its worst 8 checks per object. This is far better than
 needing to perform thousands of checks for all the vertices of an object.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/bounding_boxes.png}
   \caption{Bounding Boxes \cite{bounding_boxes}}
@@ -1824,18 +1882,18 @@ needing to perform thousands of checks for all the vertices of an object.
 
 
 \subsubsection{Spatial Acceleration Structures}
-\gls{vmve} only supports loading basic models however, in the future many other
+\gls*{vmve} only supports loading basic models however, in the future many other
 features need to be implemented. One such feature is large scale terrain as seen
 in figure \ref{fig:quad_tree_terrain}.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/quad_tree_terrain.png}
   \caption{Large scale terrain}
   \label{fig:quad_tree_terrain}
 \end{figure}
 
-Currently, \gls{vmve} would struggle to render such objects due to its
+Currently, \gls*{vmve} would struggle to render such objects due to their
 complexity in terms of the number of vertices required. For example, an area of
 20x20km with a resolution of 1 meter would require 400 million vertices. Each
 vertex, if packed efficiently could be 32 bytes each that includes positions (12
@@ -1843,29 +1901,29 @@ bytes), normals (12 bytes) and texture coordinates (8 bytes). In terms of
 memory, this would require 12.8GB of data just for the terrain.
 
 A common solution to this, is implementing a type of spatial acceleration
-structure also known as \gls{lod}. These structures are designed as the name
+structure also known as \gls*{lod}. These structures are designed as the name
 suggests, to increase the speed for algorithms in the spatial domain including
 images and environments.
 
-A quad tree is a type of spatial acceleration structure which stores a
+A quadtree is a type of spatial acceleration structure that stores a
 hierarchical collection of nodes that each represent a 2D area (and an octree in
-the case of 3D). Figure \ref{fig:quad_tree} visualizes a quad tree that shows
+the case of 3D). Figure \ref{fig:quad_tree} visualizes a quadtree that shows
 the resolution of each tile and how there are fewer tiles the further away from
 the camera they are.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/quad_tree.png}
   \caption{Quad Tree visualization}
   \label{fig:quad_tree}
 \end{figure}
 
-The benefit of using this technique is that the number of vertices are
+The benefit of using this technique is that the number of vertices is
 significantly reduced saving on performance and memory usage.
 
 
 \subsubsection{glTF Support}
-Currently, the engine only really supports the \gls{vmve} and OBJ model formats for
+Currently, the engine only really supports the \gls*{vmve} and OBJ model formats for
 importing. The main issue with the OBJ file format is its size since the data is
 stored in a text format which subsequently increases the assets file size. glTF
 \cite{gltf} is a new model format by The Khronos Group that has many useful
@@ -1873,23 +1931,23 @@ features such as compression, binary representation, scene hierarchy and more.
 
 \subsection{Cross Platform}
 In contrast to the project's initial proposal which was the support multiple
-\glspl{os}, Windows is the only \gls{os} that \gls{vmve} officially supports due
+\glspl*{os}, Windows is the only \gls*{os} that \gls*{vmve} officially supports due
 to the time constraints for this project. 
 
-Going beyond the final deadline, \gls{vmve} should add cross-platform support
+Going beyond the final deadline, \gls*{vmve} should add cross-platform support
 which would greatly benefit the application as it would increase flexibility in
-terms of which \glspl{os} its able to run on and subsequently, increase the
+terms of which \glspl*{os} its able to run on and subsequently, increase the
 potential user base. Implementing such functionality would require significant
 changes to the underlying architecture of the application such as implementing
 opaque types for structures that have different implementations depending on the
-\gls{os} being used. Additionally, a different build system would have to be
-used that is cross-platform such as CMake \cite{cmake}.
+\gls*{os} being used. Additionally, a different build system would have to be
+used that is cross-platform such as CMake \cite{cmake} or Premake \cite{premake}.
 
 \subsection{Networking Support}
-\gls{vmve} is a virtual environment editor and as such can be significantly
+\gls*{vmve} is a virtual environment editor and as such can be significantly
 improved by adding support for networking. The idea is that there would be a
 server running which would keep track of the virtual world and multiple clients
-via \gls{vmve} would be able to connect and interact with the environment
+via \gls*{vmve} would be able to connect and interact with the environment
 simultaneously.
 
 This would allow for greater efficiency and speed up various tasks. For example,
@@ -1897,24 +1955,37 @@ multiple users could work together to construct a virtual environment in
 preparation for scientific research which would otherwise have taken much longer
 had only one user worked on it.
 
-\subsection{Encryption}
-\gls{vmve} supports both the AES encryption standard by default. The application
+\subsection{File Format/Encryption}
+\gls*{vmve} supports both the AES encryption standard by default. The application
 should also include additional encryption algorithms such as Diffie-Helm and
 RC6. This would provide users with greater flexibility in terms of how their
 assets are encrypted as well as varying levels of encryption strength/methods
 based on the user's encryption requirements.
 
+Another feature that will need to be added to the application is related to the
+custom model format and the ability to store and encrypt other types of data.
+Currently, the encrypted data stores just the vertices and their corresponding
+information. The downside to this is that assets such as textures are still
+required to be located alongside the ``.vmve'' file since the format does not
+support textures.
+
+In the future, \gls*{vmve} should be able to store textures so that users can be
+left with a single asset file that includes all the information, similar to how
+the glTF model format supports the ``.glb'' binary file. This would
+significantly increase the user's experience since assets files would become
+easier to manage.
+
 \subsection{Version Control}
-In regards to the \gls{vcs} architecture, a potential change that can be done is
+In regards to the \gls*{vcs} architecture, a potential change that can be done is
 to add a third branch called ``Beta''. The purpose of this branch would be to
 release relatively stable yet unfinished features to users. This would allow
 users to use new features and test them before an official version is released.
 Overall, this would reduce the number of bugs in final versions and be
 beneficial to users who are keen on using recently developed features. Figure
-\ref{fig:futurebrancharch} shows how the \gls{vcs} architecture could look like
+\ref{fig:futurebrancharch} shows how the \gls*{vcs} architecture could look like
 with the addition of a ``Beta'' branch.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/future_branch_design.png}
   \caption{Potential future git branch design}
@@ -1922,26 +1993,26 @@ with the addition of a ``Beta'' branch.
 \end{figure}
 
 \subsection{Reduce library dependencies}
-\gls{vmve} makes use of several libraries which allows specific functionality to
+\gls*{vmve} makes use of several libraries which allows specific functionality to
 be added quickly. This is ideal given the project's time constraints and
 requirements. However, going forward the aim will be to reduce the number of
 external libraries being used.
 
 This will provide various benefits such as less reliance on external code,
 faster compilation times as only functionality that is required will be
-implemented and generally finer control of the code that \gls{vmve} is built on
+implemented and generally finer control of the code that \gls*{vmve} is built on
 top of.
 
 \subsection{Accessibility}
 Another aspect that needs to be addressed soon is improved accessibility. The
 application includes some features that address this such as icons, a tutorial,
 documentation as well as additional information. However, some of the features
-that \gls{vmve} does not include is taking into account color blindness and
+that \gls*{vmve} does not include is taking into account color blindness and
 text-to-speech. The reason for this is that these are more complex topics and
 required additional time and research to ensure a proper implementation is
 released.
 
-Another task that must be considered is localization. \gls{vmve} only supports
+Another task that must be considered is localization. \gls*{vmve} only supports
 the English language and has no way of adapting to other languages. Therefore,
 the internal structure of the application must be redesigned to allow for
 other languages to be added and thus, improving accessibility.
@@ -1949,23 +2020,23 @@ other languages to be added and thus, improving accessibility.
 \clearpage
 \section{Conclusion}
 
-\gls{vmve} has been designed to be a platform in which users are provided easy to use
+\gls*{vmve} has been designed to be a platform in which users are provided easy to use
 3D graphics tools without needing to know the complex details that come with
 that. This allows users to worry less about technicalities and more about their
-specific needs and requirements when using \gls{vmve}.
+specific needs and requirements when using \gls*{vmve}.
 
 This has been a long journey that has presented me with various challenges
-throughout the development of \gls{vmve}.
+throughout the development of \gls*{vmve}.
 
 
 \clearpage
 \section{Documents}
 
 
-\textattachfile{attached_documents/milestone_1.pdf}{\textcolor{blue}{Milestone 1}}
-\textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{blue}{Milestone 2}}
-\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{blue}{Milestone 3}}
-\textattachfile{attached_documents/meetings.docx}{\textcolor{blue}{Meetings}}
+\textattachfile{attached_documents/milestone_1.pdf}{\textcolor{skyblue}{Milestone 1}}
+\textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{skyblue}{Milestone 2}}
+\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}
+\textattachfile{attached_documents/meetings.docx}{\textcolor{skyblue}{Meetings}}
 
 
 \clearpage
@@ -1982,7 +2053,7 @@ throughout the development of \gls{vmve}.
 \section{Appendices}
 
 \subsection{Rendering API history} \label{rendering_api_appendix}
-One of the core aspects of \gls{vmve} is making use of the underlying hardware and
+One of the core aspects of \gls*{vmve} is making use of the underlying hardware and
 more specifically the GPU (Graphics Processing Unit) which will be primarily
 used for rendering. Taking advantage of the GPUs hardware capabilities requires
 low-level access to the hardware and is not as straightforward as one would
@@ -1996,7 +2067,7 @@ attempting to target GPUs would need to consider this including having access to
 the GPU drivers (Low-level software that allows a specific piece of hardware to
 function). Oftentimes, drivers are considered trade secrets that companies do
 not want freely available. Given the complexity and variations of modern
-\glspl{gpu} this is simply not feasible.
+\glspl*{gpu} this is simply not feasible.
 
 Companies from across different industries solved this issue by creating
 an open, non-profit consortium in the early 2000s called The Khronos Group. This
@@ -2005,15 +2076,15 @@ but most notably for 3D Graphics and Computation. Companies follow these
 standards when developing software allowing for interoperability across
 hardware. As of 2023, The Khronos Group actively maintains 16 different
 standards. Out of all those standards, there are two which are the most
-suitable for \gls{vmve}, OpenGL and \gls{vulkan}.
+suitable for \gls*{vmve}, OpenGL and \gls*{vulkan}.
 
-OpenGL and \gls{vulkan} are two types of rendering APIs that are designed based on
+OpenGL and \gls*{vulkan} are two types of rendering APIs that are designed based on
 The Khronos Group specifications. When attempting to provide graphics support
-for a particular \gls{gpu}, hardware vendors follow the OpenGL and/or \gls{vulkan}
+for a particular \gls*{gpu}, hardware vendors follow the OpenGL and/or \gls*{vulkan}
 specifications when implementing their drivers. For applications, a
-\acrfull{api} is provided allowing for direct control of the \gls{gpu}.
+\gls*{api} is provided allowing for direct control of the \gls*{gpu}.
 
-\gls{vmve} could support both OpenGL and \gls{vulkan} however, due to the vast
+\gls*{vmve} could support both OpenGL and \gls*{vulkan} however, due to the vast
 amount of work required to accomplish this as well as the project's time
 constraints this is simply not feasible. Instead, both need to be evaluated to
 choose one.

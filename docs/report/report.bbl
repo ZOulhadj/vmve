@@ -91,8 +91,8 @@
 ``Model view projection,'' \url{https://jsantell.com/model-view-projection/}.
 
 \bibitem{blinn}
-``Blinn-phong reflection model,''
-  \url{https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model}.
+{Bui Tuong Phong}, ``{Illumination for Computer Generated Pictures},'' 1975,
+  [Online; accessed 12-December-2022].
 
 \bibitem{font-awesome}
 ``Font awesome,'' \url{https://fontawesome.com/}.
@@ -114,6 +114,10 @@
 \bibitem{cmake}
 ``Cmake, open source and cross platform build system,''
   \url{https://cmake.org/}.
+
+\bibitem{premake}
+``Premake - powerfully simple build configuration,''
+  \url{https://premake.github.io/}.
 
 \bibitem{RDNA}
 {AMD}, ``{RDNA architecture - The all new Radeon gaming architecture powering
