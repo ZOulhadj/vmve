@@ -1709,8 +1709,12 @@ of the internal state of the application at runtime.
 
 What this shows us is that a large chunk of the initialization is taken up by
 the \lstinline{engine::configure_renderer} function and more specifically the
-\lstinline{engine::create_shader} function.
+\lstinline{engine::create_shader} function which is responsible for compiling
+the application shaders.
 
+This can be taken a step further by expanding the hot code path which is what
+Visual Studio refers to as slow code. Figure \ref{fig:vmve_slow_code_path} shows
+the exact function that takes around 36\% of the total initialization time.
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/startup_profiling_slow_shader_compile.png}
@@ -1718,9 +1722,20 @@ the \lstinline{engine::configure_renderer} function and more specifically the
   \label{fig:vmve_slow_code_path}
 \end{figure}
 
-	- no pipeline cache vs pipeline cache
-	- pipeline derivatives
-- Shutdown time
+The question one might ask is, ``How can we improve this startup time?''.
+Currently, \gls*{vmve} stores the shader source code as simple strings within a
+header file called \lstinline{shader.h}. The main advantage of this is that
+shaders can be combined with the executable rather than be in separate files.
+
+The downside to this, however, is that the shader source is not in a precompiled
+binary format, meaning that each time \gls*{vmve} runs, it must recompile the
+shader files. 
+
+In the future, this will need to be addressed and the system redesigned in such
+a way that allows for shader files to be precompiled and bundled with the
+executable at the same time eliminating the need to compile shader files and as
+a result improving the startup time.
+
 
 \begin{figure}[H]
   \centering
