@@ -213,65 +213,79 @@ common graphics-related tasks. These include constructing virtual environments,
 simulating the effect of light on 3D geometry and securing digital assets
 through the use of encryption.
 
-
-% will make the application far more
-% accessible to the general public whose aim is to take advantage of the
-% ever-increasing importance of computer graphics.
-
 \subsection{Overview}
-This report presents the development of the project from start to finish and is
-structured such that it outlines each aspect of the project's development in
-chronological order. There are a total of five key sections in this report. The
-introduction, design, implementation, evaluation and finally, future work.
+This report presents the development of the final-year project and is structured
+such that it outlines each aspect of the development in chronological order.
+There are a total of four key sections to this report:
+\begin{description}
+  \item[Design] Focuses on the concept of the project, the design of the
+    requirements obtained during the requirements-gathering stage followed by
+    the design of the application including the user interface and internal
+    engine architecture.
+  \item[Implementation] Will take the proposed designs and consist of the
+    development of the application as well as presenting the technical
+    implementation details/decisions.
+  \item[Evaluation] comes after the implementation and the main goal of this
+    section is to ensure that the application has met the aims and objectives
+    outlined in the projects.
+  \item[Future Work] is the final key section that aims to outline the aims and
+    specific features that will need to be implemented going forward in regards
+    to the project.
+\end{description}
+
+\subsection{Requirements gathering}
+Successfully designing, implementing and evaluating a project relies on a set of
+aims and objectives to be fully defined. The first step toward obtaining these
+requirements relied on a ``Requirements gathering'' stage. The purpose of this
+was to understand who the stakeholders are and their specific needs.
 
 \subsection{Aims and Objectives}
-Successfully designing, implementing and evaluating a project relies on a set of
-aims and objectives to be fully defined. \gls*{vmve} has three main aims and
-consists of several objectives that outline the concrete steps required to
-achieve those aforementioned aims.
+\gls*{vmve} has three main aims and consists of several objectives that outline
+the concrete steps required to achieve those aforementioned aims.
 
-\subsubsection{Easy-to-use}
-The first goal of \gls*{vmve} is to be ``easy-to-use''. This means that the
-application should not have a steep learning curve and users with little to no
-prior experience with 3D rendering software and the underlying technology can
-use the application to achieve their intended goals.
+\begin{description}
+  \item[Platform for virtual environment authoring] The first goal of
+    \gls*{vmve} is to provide an ``easy-to-use'' platform for creating virtual
+    environment. This means that the application should not have a steep
+    learning curve and users with little to no prior experience with 3D
+    rendering software and the underlying technology can use the application to
+    achieve their intended goals in the domain of computer graphics.
+    
+    Ensuring that this aim can be achieved comes down to various design decisions
+    related to the user interface, the language used and documentation. In regards
+    to the application user interface, it must be designed intuitively and reduce
+    the amount of friction between the user and their end goal.
+    
+    Furthermore, the language used throughout the user interface must reduce if not
+    eliminate jargon. A simple example could be to use the word ``Move'' instead of
+    ``Translate'' when referring to objects in the virtual environment and as such,
+    would make the application more accessible.
+  \item[Efficient] The second aim of the application is to be as efficient as possible and
+    subsequently, lower the hardware requirements. The application's efficiency
+    and aims vary based on the component in question that include the \gls*{cpu},
+    \gls*{gpu}, memory and storage.
+  \item[Provide secure 3D asset encryption] The last of the three main goals is
+    for the application to include its custom model format that makes use of
+    encryption to safely secure a user's digital assets as previously mentioned.
+    The motivation for this functionality formed as a result of the increase in
+    theft regarding digital assets. A recent example relates to the recent data
+    leak that affected Rockstar Studios and their upcoming game (Grand Theft Auto
+    6) \cite{gta_leak} that saw assets, source code and documentation released to
+    the public.
+    
+    \gls*{vmve} would be able to provide a platform to encrypt these assets and only
+    unlock them using a special key that only the user will know. This ensures that
+    in the event of digital assets begin obtained by third parties, they cannot be
+    used. This requires several key elements to work in tandem to achieve this aim.
+    
+    The raw model must be able to be encrypted using different types of encryption
+    algorithms. In addition to this, \gls*{vmve} must include a parser that can read
+    the internal structure of the encrypted file format and successfully load the
+    model into the application.
+\end{description}
 
-Ensuring that this aim can be achieved comes down to various design decisions
-related to the user interface, the language used and documentation. In regards
-to the application user interface, it must be designed intuitively and reduce
-the amount of friction between the user and their end goal.
-
-Furthermore, the language used throughout the user interface must reduce if not
-eliminate jargon. A simple example could be to use the word ``Move'' instead of
-``Translate'' when referring to objects in the virtual environment and as such,
-would make the application more accessible.
-
-\subsubsection{Efficient}
-The second aim of the application is to be as efficient as possible and
-subsequently, lower the hardware requirements. The application's efficiency and
-aims vary based on the component in question that include the \gls*{cpu},
-\gls*{gpu}, memory and storage.
-
-\subsubsection{Encryption and model format}
-The last of the three main goals is for the application to include its custom
-model format that makes use of encryption to safely secure a user's digital
-assets as previously mentioned. The motivation for this functionality formed as
-a result of the increase in theft regarding digital assets. A recent example
-relates to the recent data leak that affected Rockstar Studios and their
-upcoming game (Grand Theft Auto 6) \cite{gta_leak} that saw assets, source code
-and documentation released to the public.
-
-\gls*{vmve} would be able to provide a platform to encrypt these assets and only
-unlock them using a special key that only the user will know. This ensures that
-in the event of digital assets begin obtained by third parties, they cannot be
-used. This requires several key elements to work in tandem to achieve this aim.
-
-The raw model must be able to be encrypted using different types of encryption
-algorithms. In addition to this, \gls*{vmve} must include a parser that can read
-the internal structure of the encrypted file format and successfully load the
-model into the application.
-
-\subsection{Stakeholders}
+\subsection{Considerations}
+\subsubsection{Stakeholders}
 Two main stakeholders will be directly affected by the project and subsequently
 \gls*{vmve}. These are the final-year project supervisors and the end users. Each
 stakeholder needs a different set of requirements to be successfully achieved.
@@ -366,7 +380,7 @@ Whereas, indirect impacts are technologies that are used in some areas not
 directly responsible for the outcome of the project such as project management.
 
 \subsection{Tools}
-\subsubsection{Project Management}
+\subsubsection{Project Management} \label{project_management}
 A \gls*{vcs} is a tool used for backing up and/or collaborating with developers
 on a project. The use of a \gls*{vcs} was an obvious choice as this would provide
 a platform on which the project source code could be hosted. This gives me the
@@ -1579,17 +1593,15 @@ stuttering.
 - Checking for error codes first programming style
 
 \subsection{Time Management}
-Managing the work distribution was a vital aspect in ensuring all of the
-necessary requirements of the project could be met on time. Failure to correctly 
-manage this workload would result in key goals not being achieved and/or features
-not being implemented.
+Given the complexity of this project, it was vital to effectively manage time
+during development and to ensure that all of the requirements of the project
+could be met on time. Failure to correctly manage this workload would result in
+key goals not being achieved and/or features not being implemented.
 
-
-
-The use of GitHub issues was highly effective in managing the projects
-constantly changing requirements especially as the project grew in size.
-
-Throughout the project, over 50 GitHub issues were resolved 
+As mentioned in section \ref{project_management}, GitHub was chosen and has been
+a highly effective tool throughout development in regard to management and
+distributing tasks. Over 50 different GitHub issues have been resolved such as 
+small user interface issues, implementation bugs and major structural chnages.
 
 - How effective was the use of project management tools
 during development.
@@ -1605,7 +1617,10 @@ during development.
   \label{fig:github_kanban}
 \end{figure}
     
-
+\gls*{vmve} currently has 32 outstanding GitHub issues that have yet to be
+resolved. These issues are not considered critical and do not hinder the project
+in terms of meeting its original requirements. However, they are notable and
+should be resolved in the near future.
 
 \subsubsection{Hardware}
 These tests were performed on the main development machine used throughout the
@@ -1616,7 +1631,7 @@ can be seen in the figure \ref{fig:development_machine}.
 \centering
 \begin{tabular}{|| c c ||} 
   \hline
-  Component & Type \\ [0.5ex] 
+  Component & Name \\ [0.5ex] 
   \hline\hline
   CPU & AMD Ryzen 7 Pro 6850U  \\ 
   GPU & Integrated \\
@@ -1633,13 +1648,13 @@ Measuring the performance of \gls*{vmve} is another key aspect of evaluation tha
 ensures the original goals and requirements have been met. Two main aspects can
 be measured which are compilation and runtime performance.
 
-``Compilation'' refers to the process of building the application in an offline
-setting. The speed at which the project is compiled directly affects the
-developer and subsequently the development of the project.
-
-``Runtime'' refers to the performance of the application while it is running and
-its effects on the end users.
-
+\begin{description}
+  \item[Compilation] refers to the process of building the application in an offline
+  setting. The speed at which the project is compiled directly affects the
+  developer and subsequently the development of the project.
+  \item[Runtime] refers to the performance of the application while it is running and
+  its effects on the end users.
+\end{description}
 
 \subsubsection{Compilation Performance}
 A full clean build of \gls*{vmve} takes an average of 53.260 seconds using

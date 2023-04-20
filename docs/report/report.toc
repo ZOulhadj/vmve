@@ -1,22 +1,21 @@
 \nobreakspace {}\hfill \textbf {Page}\par 
 \contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
 \contentsline {subsection}{\numberline {1.1}Overview}{1}{subsection.1.1}%
-\contentsline {subsection}{\numberline {1.2}Aims and Objectives}{1}{subsection.1.2}%
-\contentsline {subsubsection}{\numberline {1.2.1}Easy-to-use}{2}{subsubsection.1.2.1}%
-\contentsline {subsubsection}{\numberline {1.2.2}Efficient}{2}{subsubsection.1.2.2}%
-\contentsline {subsubsection}{\numberline {1.2.3}Encryption and model format}{2}{subsubsection.1.2.3}%
-\contentsline {subsection}{\numberline {1.3}Stakeholders}{3}{subsection.1.3}%
-\contentsline {subsubsection}{\numberline {1.3.1}Supervisors}{3}{subsubsection.1.3.1}%
-\contentsline {subsubsection}{\numberline {1.3.2}Users}{3}{subsubsection.1.3.2}%
-\contentsline {subsection}{\numberline {1.4}Legal}{3}{subsection.1.4}%
-\contentsline {subsubsection}{\numberline {1.4.1}License}{3}{subsubsection.1.4.1}%
-\contentsline {subsubsection}{\numberline {1.4.2}Security}{3}{subsubsection.1.4.2}%
-\contentsline {subsubsection}{\numberline {1.4.3}Intellectual property}{4}{subsubsection.1.4.3}%
-\contentsline {subsection}{\numberline {1.5}Social}{4}{subsection.1.5}%
-\contentsline {subsubsection}{\numberline {1.5.1}Accessibility}{4}{subsubsection.1.5.1}%
-\contentsline {subsection}{\numberline {1.6}Ethical}{4}{subsection.1.6}%
-\contentsline {subsubsection}{\numberline {1.6.1}Software}{4}{subsubsection.1.6.1}%
-\contentsline {subsubsection}{\numberline {1.6.2}Deceptive design}{5}{subsubsection.1.6.2}%
+\contentsline {subsection}{\numberline {1.2}Requirements gathering}{2}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Aims and Objectives}{2}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Considerations}{3}{subsection.1.4}%
+\contentsline {subsubsection}{\numberline {1.4.1}Stakeholders}{3}{subsubsection.1.4.1}%
+\contentsline {subsubsection}{\numberline {1.4.2}Supervisors}{3}{subsubsection.1.4.2}%
+\contentsline {subsubsection}{\numberline {1.4.3}Users}{3}{subsubsection.1.4.3}%
+\contentsline {subsection}{\numberline {1.5}Legal}{4}{subsection.1.5}%
+\contentsline {subsubsection}{\numberline {1.5.1}License}{4}{subsubsection.1.5.1}%
+\contentsline {subsubsection}{\numberline {1.5.2}Security}{4}{subsubsection.1.5.2}%
+\contentsline {subsubsection}{\numberline {1.5.3}Intellectual property}{4}{subsubsection.1.5.3}%
+\contentsline {subsection}{\numberline {1.6}Social}{5}{subsection.1.6}%
+\contentsline {subsubsection}{\numberline {1.6.1}Accessibility}{5}{subsubsection.1.6.1}%
+\contentsline {subsection}{\numberline {1.7}Ethical}{5}{subsection.1.7}%
+\contentsline {subsubsection}{\numberline {1.7.1}Software}{5}{subsubsection.1.7.1}%
+\contentsline {subsubsection}{\numberline {1.7.2}Deceptive design}{5}{subsubsection.1.7.2}%
 \contentsline {section}{\numberline {2}Technology Review}{6}{section.2}%
 \contentsline {subsection}{\numberline {2.1}Tools}{6}{subsection.2.1}%
 \contentsline {subsubsection}{\numberline {2.1.1}Project Management}{6}{subsubsection.2.1.1}%
@@ -82,7 +81,7 @@
 \contentsline {subsection}{\numberline {5.2}Programming language}{46}{subsection.5.2}%
 \contentsline {subsection}{\numberline {5.3}Time Management}{46}{subsection.5.3}%
 \contentsline {subsubsection}{\numberline {5.3.1}Hardware}{47}{subsubsection.5.3.1}%
-\contentsline {subsection}{\numberline {5.4}Performance}{47}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.4}Performance}{48}{subsection.5.4}%
 \contentsline {subsubsection}{\numberline {5.4.1}Compilation Performance}{48}{subsubsection.5.4.1}%
 \contentsline {subsubsection}{\numberline {5.4.2}Runtime Performance}{49}{subsubsection.5.4.2}%
 \contentsline {subsection}{\numberline {5.5}User Feedback}{52}{subsection.5.5}%
