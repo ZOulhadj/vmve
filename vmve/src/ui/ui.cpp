@@ -64,7 +64,7 @@ bool settings_open = false;
 bool about_open = false;
 bool load_model_open = false;
 bool creator_open = false;
-bool perf_profiler_open = false;
+//bool perf_profiler_open = false;
 bool audio_window_open = false;
 bool console_window_open = false;
 
@@ -647,6 +647,7 @@ static void vmve_creator_window(bool* open)
     ImGui::End();
 }
 
+#if 0
 static void perf_window(bool* open)
 {
     if (!*open)
@@ -665,9 +666,9 @@ static void perf_window(bool* open)
         ImGui::Text("%fms - VkQueueSubmit", 0.018f);
     }
 
-
     ImGui::End();
 }
+#endif
 
 static void render_audio_window(bool* open)
 {
@@ -731,7 +732,7 @@ static void render_windows()
     render_about_window(&about_open);
     load_model_window(&load_model_open);
     vmve_creator_window(&creator_open);
-    perf_window(&perf_profiler_open);
+    //perf_window(&perf_profiler_open);
     render_audio_window(&audio_window_open);
     render_console_window(&console_window_open);
 

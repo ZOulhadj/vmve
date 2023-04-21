@@ -32,7 +32,7 @@ namespace engine {
         return paths;
     }
 
-    static bool load_mesh_texture(Model& model, Mesh& mesh, const std::vector<std::filesystem::path>& paths)
+    static bool load_mesh_texture(Model_Old& model, Mesh_Old& mesh, const std::vector<std::filesystem::path>& paths)
     {
         std::vector<std::filesystem::path>& uniques = model.unique_texture_paths;
 
@@ -64,8 +64,8 @@ namespace engine {
         return true;
     }
 
-    static void create_fallback_mesh_texture(Model& model,
-        Mesh& mesh,
+    static void create_fallback_mesh_texture(Model_Old& model,
+        Mesh_Old& mesh,
         unsigned char* texture,
         const std::filesystem::path& path)
     {
@@ -91,7 +91,7 @@ namespace engine {
 
     }
 
-    void create_fallback_albedo_texture(Model& model, Mesh& mesh)
+    void create_fallback_albedo_texture(Model_Old& model, Mesh_Old& mesh)
     {
         unsigned char defaultAlbedo[4];
         defaultAlbedo[0] = (unsigned char)255;
@@ -102,7 +102,7 @@ namespace engine {
         create_fallback_mesh_texture(model, mesh, defaultAlbedo, "albedo_fallback");
     }
 
-    void create_fallback_normal_texture(Model& model, Mesh& mesh)
+    void create_fallback_normal_texture(Model_Old& model, Mesh_Old& mesh)
     {
         unsigned char defaultNormal[4];
         defaultNormal[0] = (unsigned char)128;
@@ -113,7 +113,7 @@ namespace engine {
         create_fallback_mesh_texture(model, mesh, defaultNormal, "albedo_normal");
     }
 
-    void create_fallback_specular_texture(Model& model, Mesh& mesh)
+    void create_fallback_specular_texture(Model_Old& model, Mesh_Old& mesh)
     {
         unsigned char defaultSpecular[4];
         defaultSpecular[0] = (unsigned char)0;
@@ -125,9 +125,9 @@ namespace engine {
     }
 
 
-    static Mesh process_mesh(Model& model, const aiMesh* ai_mesh, const aiScene* scene)
+    static Mesh_Old process_mesh(Model_Old& model, const aiMesh* ai_mesh, const aiScene* scene)
     {
-        Mesh mesh{};
+        Mesh_Old mesh{};
 
         mesh.name = ai_mesh->mName.C_Str();
 
@@ -225,12 +225,12 @@ namespace engine {
         return mesh;
     }
 
-    static void process_node(Model& model, aiNode* node, const aiScene* scene)
+    static void process_node(Model_Old& model, aiNode* node, const aiScene* scene)
     {
         // process the current nodes meshes if they exist
         for (std::size_t i = 0; i < node->mNumMeshes; ++i) {
             const aiMesh* assimp_mesh = scene->mMeshes[node->mMeshes[i]];
-            Mesh mesh = process_mesh(model, assimp_mesh, scene);
+            Mesh_Old mesh = process_mesh(model, assimp_mesh, scene);
 
             model.meshes.push_back(mesh);
         }
@@ -241,7 +241,7 @@ namespace engine {
         }
     }
 
-    bool load_model(Model& model, const std::filesystem::path& path, bool flipUVs)
+    bool load_model(Model_Old& model, const std::filesystem::path& path, bool flipUVs)
     {
         print_log("Loading mesh %s\n", path.string().c_str());
 
@@ -278,7 +278,7 @@ namespace engine {
         return true;
     }
 
-    bool create_model(Model& model, const char* data, std::size_t len, bool flipUVs /*= true*/)
+    bool create_model(Model_Old& model, const char* data, std::size_t len, bool flipUVs /*= true*/)
     {
         print_log("Creating mesh\n");
 
@@ -315,7 +315,7 @@ namespace engine {
         return true;
     }
 
-    void destroy_model(Model& model)
+    void destroy_model(Model_Old& model)
     {
         destroy_images(model.unique_textures);
         for (auto& mesh : model.meshes) {
@@ -323,7 +323,7 @@ namespace engine {
         }
     }
 
-    void upload_model_to_gpu(Model& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings)
+    void upload_model_to_gpu(Model_Old& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings)
     {
 
         // At this point, the model has been fully loaded onto the CPU and now we 
@@ -346,6 +346,196 @@ namespace engine {
             }
         }
     }
+
+
+
+    model_mesh::model_mesh(const std::string& name)
+        : m_name(name)
+    {
+
+    }
+
+    void model_mesh::set_indices(const std::vector<uint32_t>& indices)
+    {
+        m_indices = std::move(indices);
+    }
+
+    model::model()
+    {
+
+    }
+
+    model::~model()
+    {
+
+    }
+
+    bool model::create(const std::filesystem::path& path)
+    {
+        const std::optional<tinygltf::Model> gltf_model = load_model(path);
+        if (!gltf_model)
+            return false;
+
+        load_materials(gltf_model.value());
+        load_textures(gltf_model.value());
+
+        // get vertex/index buffer sizes upfront
+
+        const tinygltf::Scene& scene = gltf_model->scenes[gltf_model->defaultScene];
+        for (const int i : scene.nodes)
+            traverse_node(gltf_model.value(), gltf_model->nodes[i]);
+
+
+        return true;
+    }
+
+    std::optional<tinygltf::Model> model::load_model(const std::filesystem::path& path)
+    {
+        tinygltf::TinyGLTF loader;
+
+        tinygltf::Model model;
+        std::string warn, err;
+        bool loaded = false;
+
+        const std::filesystem::path& extension = path.extension();
+
+        if (extension == ".gltf")
+            loaded = loader.LoadASCIIFromFile(&model, &err, &warn, path.string());
+        else if (extension == ".glb")
+            loaded = loader.LoadBinaryFromFile(&model, &err, &warn, path.string());
+        else {
+            assert((extension == ".gltf" || extension == ".glb") && "glTF is the only currently supported model format");
+            print_error("glTF is the only currently supported model format\n");
+
+            return std::nullopt;
+        }
+
+        if (!warn.empty())
+            print_warning("%s\n", warn.c_str());
+
+        if (!loaded) {
+            if (!err.empty())
+                print_error("%s\n", err.c_str());
+
+            return std::nullopt;
+        }
+
+        return model;
+    }
+
+
+    void model::load_materials(const tinygltf::Model& gltf_model)
+    {
+
+    }
+
+
+    void model::load_textures(const tinygltf::Model& gltf_model)
+    {
+
+    }
+
+
+    void model::traverse_node(const tinygltf::Model& gltf_model, const tinygltf::Node& gltf_node)
+    {
+        parse_node(gltf_model, gltf_node);
+
+        for (int node : gltf_node.children)
+            traverse_node(gltf_model, gltf_model.nodes[node]);
+    }
+
+    void model::parse_node(const tinygltf::Model& gltf_model, const tinygltf::Node& gltf_node)
+    {
+        // todo(zak): figure out which node type this is such as mesh/camera/light
+        // currently, only meshes are handled
+
+
+        if (gltf_node.mesh <= -1) {
+            // todo(zak): was not a mesh not and could have been a camera/light node.
+            // This needs to be handled
+            return;
+        }
+
+        parse_mesh(gltf_model, gltf_model.meshes[gltf_node.mesh]);
+    }
+
+    void model::parse_mesh(const tinygltf::Model& gltf_model, const tinygltf::Mesh& gltf_mesh)
+    {
+        model_mesh mesh(gltf_mesh.name);
+
+        // preallocate buffers
+
+#if 0
+
+
+        for (std::size_t i = 0; i < pos->count; ++i) {
+        }
+            Vertex v{};
+            v.position = glm::make_vec3(&pos->data[i * pos->element_count]);
+            v.normal = nor ? glm::make_vec3(&nor->data[i * nor->element_count]) : glm::vec3(0.0f);
+            v.uv = tex ? glm::make_vec2(&tex->data[i * tex->element_count]) : glm::vec2(0.0f);
+            v.color = col ? glm::make_vec3(&col->data[i * col->element_count]) : glm::vec3(0.0f);
+            node.vertices.push_back(v);
+
+
+        // handle rest of the attributes
+        for (const tinygltf::Primitive& gltf_primitive : gltf_mesh.primitives) {
+            mesh_primitive primitive;
+            primitive.m_draw_mode = gltf_primitive.mode;
+
+            const auto positions = get_attribute_data(gltf_model, gltf_primitive, "POSITION");
+            const auto normals = get_attribute_data(gltf_model, gltf_primitive, "NORMAL");
+            const auto tex_coord_0 = get_attribute_data(gltf_model, gltf_primitive, "TEXCOORD_0");
+
+            if (gltf_primitive.indices != -1) {
+                const tinygltf::Accessor& accessor = gltf_model.accessors[gltf_primitive.indices];
+                const tinygltf::BufferView& buffer_view = gltf_model.bufferViews[accessor.bufferView];
+                const tinygltf::Buffer& buffer = gltf_model.buffers[buffer_view.buffer];
+
+                //node.indices.resize(accessor.count);
+                const void* data = &(buffer.data[accessor.byteOffset + buffer_view.byteOffset]);
+                const auto index_type = accessor.componentType;
+                if (index_type == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
+                    const auto buf = static_cast<const uint32_t*>(data);
+                    mesh.set_indices(std::vector<uint32_t>(buf, buf + accessor.count));
+                } else if (index_type == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
+                    const auto buf = static_cast<const uint16_t*>(data);
+                    mesh.set_indices(std::vector<uint32_t>(buf, buf + accessor.count));
+                } else if (index_type == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
+                    const auto buf = static_cast<const uint8_t*>(data);
+                    mesh.set_indices(std::vector<uint32_t>(buf, buf + accessor.count));
+                }
+              
+
+            }
+
+            // check if it has a material
+            if (gltf_primitive.material != -1) {
+                primitive.m_material_index = gltf_primitive.material;
+            }
+        }
+#endif
+    }
+
+    std::optional<attribute_data> model::get_attribute_data(const tinygltf::Model& gltf_model, const tinygltf::Primitive& primitive, std::string_view attribute_name)
+    {
+        const auto iter = primitive.attributes.find(attribute_name.data());
+        if (iter == primitive.attributes.end())
+            return std::nullopt;
+
+        const tinygltf::Accessor& accessor = gltf_model.accessors[iter->second];
+        const tinygltf::BufferView& view = gltf_model.bufferViews[accessor.bufferView];
+        const tinygltf::Buffer& buffer = gltf_model.buffers[view.buffer];
+
+
+        attribute_data data{};
+        data.data = reinterpret_cast<const float*>(&(buffer.data[accessor.byteOffset + view.byteOffset]));
+        data.element_count = accessor.ByteStride(view) / sizeof(float);
+        data.count = accessor.count;
+
+        return data;
+    }
+
 }
 
 

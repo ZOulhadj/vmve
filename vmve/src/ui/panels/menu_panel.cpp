@@ -72,9 +72,9 @@ void menu_panel()
         }
 
         if (ImGui::BeginMenu(ICON_FA_WRENCH " Tools")) {
-            if (ImGui::MenuItem(ICON_FA_CLOCK " Performance Profiler")) {
-                perf_profiler_open = true;
-            }
+            //if (ImGui::MenuItem(ICON_FA_CLOCK " Performance Profiler")) {
+            //    perf_profiler_open = true;
+            //}
 
             if (ImGui::MenuItem(ICON_FA_MUSIC " Audio player")) {
                 audio_window_open = true;

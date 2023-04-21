@@ -39,7 +39,7 @@ extern bool settings_open;
 extern bool about_open;
 extern bool load_model_open;
 extern bool creator_open;
-extern bool perf_profiler_open;
+//extern bool perf_profiler_open;
 extern bool audio_window_open;
 extern bool console_window_open;
 

@@ -29,8 +29,8 @@ namespace engine {
     void scale_entity(Entity& e, const glm::vec3& axis);
 
     // todo(zak): move this to either model.cpp or renderer.cpp
-    void render_model(const Model& model, const glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
-    void render_model(const Model& model, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
+    void render_model(const Model_Old& model, const glm::mat4& matrix, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
+    void render_model(const Model_Old& model, const std::vector<VkCommandBuffer>& cmdBuffer, VkPipelineLayout pipelineLayout);
 
 
 }

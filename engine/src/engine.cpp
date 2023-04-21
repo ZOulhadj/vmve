@@ -66,7 +66,7 @@ namespace engine {
         Camera camera;
 
 
-        std::vector<Model> models;
+        std::vector<Model_Old> models;
         std::vector<Entity> entities;
         int entity_id = 0;
 
@@ -151,7 +151,7 @@ namespace engine {
     static std::vector<VkCommandBuffer> cmd_buffer;
     //static std::vector<VkCommandBuffer> composite_cmd_buffer;
 
-    static Model skybox_model;
+    static Model_Old skybox_model;
 
     // UI related stuff
     static Vk_Render_Pass ui_pass{};
@@ -403,6 +403,11 @@ namespace engine {
         const float startup_duration = get_duration(g_engine->start_time, get_time());
         print_log("Successfully initialized engine in %.2fms\n", startup_duration);
 
+
+        model test_model;
+        test_model.create("C:/Users/zakar/Downloads/container.glb");
+
+
         return true;
     }
 
@@ -639,7 +644,7 @@ namespace engine {
 
     void load_model(const char* path, bool flipUVs)
     {
-        Model model{};
+        Model_Old model{};
 
         // todo: continue from here
         bool model_loaded = load_model(model, path, flipUVs);
@@ -654,7 +659,7 @@ namespace engine {
 
     void add_model(const char* data, int size, bool flipUVs)
     {
-        Model model;
+        Model_Old model;
 
         bool model_created = create_model(model, data, size, flipUVs);
         if (!model_created) {

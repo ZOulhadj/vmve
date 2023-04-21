@@ -142,8 +142,13 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
 
             static bool uniformScale = true;
             if (uniformScale) {
-                if (ImGui::SliderFloat("Scale", matrixScale, 0.1f, 100.0f))
+                if (ImGui::SliderFloat("Scale", matrixScale, 0.1f, 100.0f)) {
+                    // fixme(zak): we want to display a single slider but update all three
+                    matrixScale[1] = matrixScale[0];
+                    matrixScale[2] = matrixScale[0];
+
                     engine::set_instance_scale(selectedInstanceIndex, matrixScale[0]);
+                }
                 ImGui::SameLine();
                 if (ImGui::Button(ICON_FA_LOCK))
                     uniformScale = false;
