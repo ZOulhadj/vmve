@@ -555,7 +555,7 @@ static void vmve_creator_window(bool* open)
     static bool useEncryption = false;
     static int encryptionModeIndex = 0;
 
-    static std::array<const char*, 4> encryptionModes = { "AES", "Diffie-Hellman", "Galios/Counter Mode", "RC6" };
+    static std::array<const char*, 1> encryptionModes = { "AES" };
     static std::array<const char*, 2> keyLengths = { "256 bits", "128 bit" };
     static std::array<int, 2> keyLengthSizes = { 32, 16 };
     static int keyLengthIndex = 0;
@@ -629,9 +629,6 @@ static void vmve_creator_window(bool* open)
                 const std::string model_name = model_path.filename().string();
 
                 vmve_write_to_file(file_structure, model_parent_path + '/' + model_name + ".vmve");
-            }
-            else if (encryptionModeIndex == 1) { // DH
-
             }
 
             successfully_exported = true;
