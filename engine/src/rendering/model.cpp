@@ -348,6 +348,15 @@ namespace engine {
     }
 
 
+    mesh_primitive::mesh_primitive(const std::vector<vertex>& vertices, 
+        const std::vector<std::uint32_t>& indices, 
+        std::uint32_t draw_mode,
+        std::uint32_t material_index)
+        : m_vertices(vertices), m_indices(indices), m_draw_mode(draw_mode), m_material_index(material_index)
+    {
+
+    }
+
 
     model_mesh::model_mesh(const std::string& name)
         : m_name(name)
@@ -355,9 +364,10 @@ namespace engine {
 
     }
 
-    void model_mesh::set_indices(const std::vector<uint32_t>& indices)
+
+    void model_mesh::add_primitive(const mesh_primitive& primitive)
     {
-        m_indices = std::move(indices);
+        m_primitves.push_back(primitive);
     }
 
     model::model()
@@ -376,15 +386,14 @@ namespace engine {
         if (!gltf_model)
             return false;
 
-        load_materials(gltf_model.value());
-        load_textures(gltf_model.value());
+        parse_materials(gltf_model.value());
+        parse_textures(gltf_model.value());
 
         // get vertex/index buffer sizes upfront
 
         const tinygltf::Scene& scene = gltf_model->scenes[gltf_model->defaultScene];
         for (const int i : scene.nodes)
             traverse_node(gltf_model.value(), gltf_model->nodes[i]);
-
 
         return true;
     }
@@ -424,15 +433,35 @@ namespace engine {
     }
 
 
-    void model::load_materials(const tinygltf::Model& gltf_model)
+    void model::parse_materials(const tinygltf::Model& gltf_model)
     {
+#if 0
+        for (const tinygltf::Material& gltf_material : gltf_model.materials) {
+            material mat;
+            if (gltf_material.values.find("baseColorTexture") != gltf_material.values.end()) {
+                mat.baseColorTexture = &m_textures[gltf_material.values["baseColorTexture"].TextureIndex()];
+                mat.texCoordSets.baseColor = gltf_material.values["baseColorTexture"].TextureTexCoord();
+            }
+
+            m_materials.push_back(mat);
+        }
+#endif
+
+        // todo(zak): default material at end of list
 
     }
 
 
-    void model::load_textures(const tinygltf::Model& gltf_model)
+    void model::parse_textures(const tinygltf::Model& gltf_model)
     {
-
+        for (const tinygltf::Texture& texture : gltf_model.textures) {
+            if (texture.source > -1) {
+                const tinygltf::Image& image = gltf_model.images[texture.source];
+                
+                // todo(zak): remove vulkan specific call
+                m_textures.push_back(create_texture((unsigned char*)image.image.data(), image.width, image.height, VK_FORMAT_R8G8B8A8_UNORM));
+            }
+        }
     }
 
 
@@ -456,36 +485,37 @@ namespace engine {
             return;
         }
 
-        parse_mesh(gltf_model, gltf_model.meshes[gltf_node.mesh]);
+        m_meshes.push_back(parse_mesh(gltf_model, gltf_model.meshes[gltf_node.mesh]));
     }
 
-    void model::parse_mesh(const tinygltf::Model& gltf_model, const tinygltf::Mesh& gltf_mesh)
+    model_mesh model::parse_mesh(const tinygltf::Model& gltf_model, const tinygltf::Mesh& gltf_mesh)
     {
         model_mesh mesh(gltf_mesh.name);
 
         // preallocate buffers
-
-#if 0
-
-
-        for (std::size_t i = 0; i < pos->count; ++i) {
-        }
-            Vertex v{};
-            v.position = glm::make_vec3(&pos->data[i * pos->element_count]);
-            v.normal = nor ? glm::make_vec3(&nor->data[i * nor->element_count]) : glm::vec3(0.0f);
-            v.uv = tex ? glm::make_vec2(&tex->data[i * tex->element_count]) : glm::vec2(0.0f);
-            v.color = col ? glm::make_vec3(&col->data[i * col->element_count]) : glm::vec3(0.0f);
-            node.vertices.push_back(v);
-
+        // note: position accessor stores the min and max which can be used for bounding box
 
         // handle rest of the attributes
         for (const tinygltf::Primitive& gltf_primitive : gltf_mesh.primitives) {
-            mesh_primitive primitive;
-            primitive.m_draw_mode = gltf_primitive.mode;
 
             const auto positions = get_attribute_data(gltf_model, gltf_primitive, "POSITION");
             const auto normals = get_attribute_data(gltf_model, gltf_primitive, "NORMAL");
             const auto tex_coord_0 = get_attribute_data(gltf_model, gltf_primitive, "TEXCOORD_0");
+            const auto tangent = get_attribute_data(gltf_model, gltf_primitive, "TANGENT");
+
+            std::vector<vertex> vertices(positions->count);
+            std::vector<std::uint32_t> indices;
+
+            for (std::size_t i = 0; i < vertices.size(); ++i) {
+                vertex v{};
+                v.position = glm::make_vec3(&positions->data[i * positions->element_count]);
+                v.normal = normals ? glm::make_vec3(&normals->data[i * normals->element_count]) : glm::vec3(0.0f);
+                v.uv = tex_coord_0 ? glm::make_vec2(&tex_coord_0->data[i * tex_coord_0->element_count]) : glm::vec2(0.0f);
+                v.tangent = tangent ? glm::make_vec4(&tangent->data[i * tangent->element_count]) : glm::vec4(0.0f);
+                //v.color = col ? glm::make_vec3(&col->data[i * col->element_count]) : glm::vec3(0.0f);
+                
+                vertices[i] = v;
+            }
 
             if (gltf_primitive.indices != -1) {
                 const tinygltf::Accessor& accessor = gltf_model.accessors[gltf_primitive.indices];
@@ -497,24 +527,23 @@ namespace engine {
                 const auto index_type = accessor.componentType;
                 if (index_type == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
                     const auto buf = static_cast<const uint32_t*>(data);
-                    mesh.set_indices(std::vector<uint32_t>(buf, buf + accessor.count));
+                    indices = std::vector<uint32_t>(buf, buf + accessor.count);
                 } else if (index_type == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
                     const auto buf = static_cast<const uint16_t*>(data);
-                    mesh.set_indices(std::vector<uint32_t>(buf, buf + accessor.count));
+                    indices = std::vector<uint32_t>(buf, buf + accessor.count);
                 } else if (index_type == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
                     const auto buf = static_cast<const uint8_t*>(data);
-                    mesh.set_indices(std::vector<uint32_t>(buf, buf + accessor.count));
+                    indices = std::vector<uint32_t>(buf, buf + accessor.count);
                 }
-              
-
             }
 
-            // check if it has a material
-            if (gltf_primitive.material != -1) {
-                primitive.m_material_index = gltf_primitive.material;
-            }
+            // todo: maybe check if material present and if not then resort to default material
+
+            const mesh_primitive mp = mesh_primitive(vertices, indices, gltf_primitive.mode, gltf_primitive.material);
+            mesh.add_primitive(mp);
         }
-#endif
+
+        return mesh;
     }
 
     std::optional<attribute_data> model::get_attribute_data(const tinygltf::Model& gltf_model, const tinygltf::Primitive& primitive, std::string_view attribute_name)

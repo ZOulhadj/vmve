@@ -48,24 +48,24 @@
 \contentsline {subsubsection}{\numberline {4.3.4}Deferred Rendering Pipeline}{28}{subsubsection.4.3.4}%
 \contentsline {subsubsection}{\numberline {4.3.5}Dynamic Uniform Buffers}{29}{subsubsection.4.3.5}%
 \contentsline {subsubsection}{\numberline {4.3.6}Texture Mipmapping}{30}{subsubsection.4.3.6}%
-\contentsline {subsubsection}{\numberline {4.3.7}Models}{31}{subsubsection.4.3.7}%
-\contentsline {subsubsection}{\numberline {4.3.8}Entities}{32}{subsubsection.4.3.8}%
+\contentsline {subsubsection}{\numberline {4.3.7}Models}{32}{subsubsection.4.3.7}%
+\contentsline {subsubsection}{\numberline {4.3.8}Entities}{33}{subsubsection.4.3.8}%
 \contentsline {subsubsection}{\numberline {4.3.9}Camera}{33}{subsubsection.4.3.9}%
 \contentsline {subsubsection}{\numberline {4.3.10}Lighting}{36}{subsubsection.4.3.10}%
-\contentsline {subsection}{\numberline {4.4}User Interface}{37}{subsection.4.4}%
-\contentsline {subsubsection}{\numberline {4.4.1}Controls}{37}{subsubsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4}User Interface}{38}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}Controls}{38}{subsubsection.4.4.1}%
 \contentsline {subsubsection}{\numberline {4.4.2}Fonts and Icons}{38}{subsubsection.4.4.2}%
 \contentsline {subsubsection}{\numberline {4.4.3}Menu Bar}{39}{subsubsection.4.4.3}%
 \contentsline {subsubsection}{\numberline {4.4.4}Load Model Window}{39}{subsubsection.4.4.4}%
 \contentsline {subsubsection}{\numberline {4.4.5}Export Model Window}{40}{subsubsection.4.4.5}%
-\contentsline {subsubsection}{\numberline {4.4.6}Settings Window}{40}{subsubsection.4.4.6}%
+\contentsline {subsubsection}{\numberline {4.4.6}Settings Window}{41}{subsubsection.4.4.6}%
 \contentsline {subsubsection}{\numberline {4.4.7}Object gizmo}{41}{subsubsection.4.4.7}%
 \contentsline {subsection}{\numberline {4.5}Logging system}{42}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}Encryption and custom model format}{43}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.6}Encryption and custom model format}{44}{subsection.4.6}%
 \contentsline {subsection}{\numberline {4.7}Distribution}{44}{subsection.4.7}%
 \contentsline {subsubsection}{\numberline {4.7.1}Versions}{44}{subsubsection.4.7.1}%
 \contentsline {subsubsection}{\numberline {4.7.2}Website}{45}{subsubsection.4.7.2}%
-\contentsline {subsubsection}{\numberline {4.7.3}Example models}{45}{subsubsection.4.7.3}%
+\contentsline {subsubsection}{\numberline {4.7.3}Example models}{46}{subsubsection.4.7.3}%
 \contentsline {subsubsection}{\numberline {4.7.4}Documentation}{46}{subsubsection.4.7.4}%
 \contentsline {section}{\numberline {5}Evaluation}{47}{section.5}%
 \contentsline {subsection}{\numberline {5.1}Distribution}{47}{subsection.5.1}%

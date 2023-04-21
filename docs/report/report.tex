@@ -1101,7 +1101,10 @@ The use of dynamic uniform buffers provides several benefits compared to using a
 unique buffer handle for each frame.
 
 \subsubsection{Texture Mipmapping}
-Avoid Moire pattern, increased performance.
+\gls*{vmve} makes use of a rendering technique known as ``Texture mipmapping''.
+This improves the visual fidelity by reducing if not eliminating Moire patterns
+which are visual artifacts that appear when identical patterns/textures are
+transformed on the screen \cite{moire_pattern}.
 
 \begin{figure}[H]
   \centering
@@ -1110,6 +1113,26 @@ Avoid Moire pattern, increased performance.
   \label{fig:texture_mipmapping} \cite{texture_mipmaps}
 \end{figure}
 
+
+Using \gls*{vulkan}, this is implemented by taking the originally loaded texture
+and continuously halving it on both the width and height so that the subsequent texture is
+a quarter of the previous size. This is performed using the following equation provided by
+``Sascha Willems''.
+\begin{equation}
+  m = \lfloor \log_2(\max(w, h)) \rfloor + 1
+\end{equation}
+where \(m\) is the number of mipmap levels, \(w\) and \(h\) are the width and
+height of the source texture respectively.
+
+In the source code, it looks like this:
+\begin{figure}[H]
+  \centering
+  \begin{lstlisting}[language=C++]
+    const uint32_t mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+  \end{lstlisting}
+  \caption{Mipmapping equation}
+  \label{fig:mipmapping_equation}
+\end{figure}
 
 \subsubsection{Models}
 In the context of the rendering system, a ``model'' is a structure that
@@ -1798,14 +1821,15 @@ predominantly other students. The process of obtaining this feedback was
 separated into two stages.
 
 The first was to measure how intuitive the user interface is which was achieved
-by giving a user a set of instructions as seen in figure \ref{fig:instructions}.
+by giving a user a set of instructions as seen in figure \ref{fig:instructions}
+\textsuperscript{\textattachfile{attached_documents/user_feedback.xlsx}{\textcolor{skyblue}{file}}}.
 A score would be given for each task based on how easily the user was able to
 complete it.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/user_instructions.png}
-  \caption{User feedback instructions}
+  \caption{User feedback instructions }
   \label{fig:instructions}
 \end{figure}
 
@@ -1852,7 +1876,7 @@ significantly less work required. This would allow me to focus and spend more ti
 implementing the many other features required in such an application.
 
 \subsection{Development logs}
-At key stages of the projects development, development logs i.e. videos were
+At key stages of the project's development, development logs i.e. videos were
 recorded showcasing the state of development at that specific point in time. All
 videos were uploaded and are hosted on the Zakariya Oulhadj YouTube channel
 \url{https://www.youtube.com/@ZOulhadj}

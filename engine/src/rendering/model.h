@@ -42,6 +42,8 @@ namespace engine {
 
     class material
     {
+    public:
+        material() = default;
     private:
         // textures:
         // albedo
@@ -53,8 +55,16 @@ namespace engine {
     class mesh_primitive
     {
     public:
+        mesh_primitive(const std::vector<vertex>& vertices, 
+                       const std::vector<std::uint32_t>& indices,
+                       std::uint32_t draw_mode,
+                       std::uint32_t material_index);
+
         std::uint32_t m_draw_mode; // TRIANGLES, LINES, LOOPS
         std::uint32_t m_material_index;
+    private:
+        std::vector<vertex> m_vertices;
+        std::vector<std::uint32_t> m_indices;
     };
 
     class model_mesh
@@ -62,15 +72,9 @@ namespace engine {
     public:
         model_mesh(const std::string& name = "Unknown");
 
-
-        void set_vertices();
-        void set_indices(const std::vector<uint32_t>& indices);
+        void add_primitive(const mesh_primitive& primitive);
     private:
         std::string m_name;
-
-        std::vector<vertex> m_vertices;
-        std::vector<std::uint32_t> m_indices;
-
         std::vector<mesh_primitive> m_primitves; // actual draw calls
     };
 
@@ -93,15 +97,15 @@ namespace engine {
         bool create(const std::filesystem::path& path);
     private:
         std::optional<tinygltf::Model> load_model(const std::filesystem::path& path);
-        void load_materials(const tinygltf::Model& gltf_model);
-        void load_textures(const tinygltf::Model& gltf_model);
+        void parse_materials(const tinygltf::Model& gltf_model);
+        void parse_textures(const tinygltf::Model& gltf_model);
 
         void traverse_node(const tinygltf::Model& gltf_model, const tinygltf::Node& gltf_node);
 
     private:
 
         void parse_node(const tinygltf::Model& gltf_model, const tinygltf::Node& gltf_node);
-        void parse_mesh(const tinygltf::Model& gltf_model, const tinygltf::Mesh& gltf_mesh);
+        model_mesh parse_mesh(const tinygltf::Model& gltf_model, const tinygltf::Mesh& gltf_mesh);
 
         std::optional<attribute_data> get_attribute_data(const tinygltf::Model& gltf_model, const tinygltf::Primitive& primitive, std::string_view attribute_name);
 
@@ -112,7 +116,7 @@ namespace engine {
     private:
         std::vector<model_mesh> m_meshes;
         std::vector<material> m_materials;
-        std::vector<texture> m_textures;
+        std::vector<Vk_Image> m_textures;
 
     };
 

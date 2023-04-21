@@ -74,6 +74,11 @@
 ``Vulkan loader,''
   \url{https://gpuopen.com/learn/reducing-vulkan-api-call-overhead/}.
 
+\bibitem{moire_pattern}
+{Wikipedia contributors}, ``Moire pattern --- {Wikipedia}{,} the free
+  encyclopedia,'' \url{https://en.wikipedia.org/wiki/Moir%C3%A9_pattern}, 2023,
+  [Online; accessed 21-April-2023].
+
 \bibitem{texture_mipmaps}
 ``Texture mipmapping,'' \url{https://learnopengl.com/Getting-started/Textures}.
 
