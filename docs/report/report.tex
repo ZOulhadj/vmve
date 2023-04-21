@@ -81,7 +81,7 @@
 \newacronym{stl}{STL}{C++ Standard Template Library}
 \newacronym{lod}{LOD}{Level of Detail}
 \newacronym{ip}{IP}{Intellectual Property}
-
+\newacronym{ui}{UI}{User Interface}
 
 
 % end of preamble
@@ -186,37 +186,36 @@ previously presented for the award of any other degree or institution.
 \pagenumbering{arabic}
 
 \section{Introduction}
-
 Computer graphics is a vast area within the field of Computer Science. Since its
-conception in the early 1960s, it has been used for different purposes including
-gaming, film, scientific research, education, architecture, engineering,
-medicine and more recently within vehicles. This is a testament to how versatile
-this field has become.
+conception in the early 1960s, it has been used for a wide range of purposes
+including gaming, film, scientific research, education, architecture,
+engineering, medicine and more recently within vehicles. This is a testament to
+how versatile this field has become and the major benefits that computer
+graphics provide to the real world.
 
-Many different rendering applications already exist including Unreal Engine
-\cite{unreal_engine}, Unity \cite{unity} and RenderMan \cite{render_man} just to
-name a few. These applications are known as ``3D creation tools'' that provide a
-plethora of features and functionality giving the users the freedom to create
-anything they need.
+Although widely used, the development of virtual graphics and environments
+commonly poses a steep learning curve due to the technical details. Many
+different rendering applications already exist that aim to provide a platform to
+easily create digital graphics such as  Unreal Engine \cite{unreal_engine},
+Unity \cite{unity} and RenderMan \cite{render_man} just to name a few. These
+applications are known as ``3D creation tools'' that provide a plethora of
+features and functionality giving the users the freedom to create anything they
+need. However, these tools as a result of a large number of features
+inadvertently introduce several issues such as increased complexity and
+significant hardware requirements.
 
-A common theme that can be observed with these engines is that they have a lot
-of different tools and features as a result of decades of work. This
-inadvertently introduces several issues such as increased complexity, a steep
-learning curve as well as high-end hardware requirements.
-
-To address these issues, I introduce my final year project, \gls*{vmve}. An
-application developed in the domain of Computer Graphics to provide an
-easy-to-use and efficient platform for 3D graphics rendering. The project does
-not aim to replicate the functionality of existing rendering engines but instead
-to purposely implement a small but specific subset of features that are used for
-common graphics-related tasks. These include constructing virtual environments,
-simulating the effect of light on 3D geometry and securing digital assets
-through the use of encryption.
+To address these issues, I introduce my final year project, \gls*{vmve}. A
+standalone application developed in the domain of Computer Graphics that
+provides an easy-to-use, efficient platform for 3D graphics rendering and 3D
+asset safety. \gls*{vmve} will provide a specific subset of features that
+are designed from the ground up for rapid graphics prototyping which include
+constructing virtual environments, simulating the effect of light on 3D geometry
+and securing digital assets through the use of encryption.
 
 \subsection{Overview}
 This report presents the development of the final-year project and is structured
 such that it outlines each aspect of the development in chronological order.
-There are a total of four key sections to this report:
+There are a total of four key sections in this report:
 \begin{description}
   \item[Design] Focuses on the concept of the project, the design of the
     requirements obtained during the requirements-gathering stage followed by
@@ -246,37 +245,38 @@ the concrete steps required to achieve those aforementioned aims.
 \begin{description}
   \item[Platform for virtual environment authoring] The first goal of
     \gls*{vmve} is to provide an ``easy-to-use'' platform for creating virtual
-    environment. This means that the application should not have a steep
+    environments. This means that the application should not have a steep
     learning curve and users with little to no prior experience with 3D
     rendering software and the underlying technology can use the application to
-    achieve their intended goals in the domain of computer graphics.
-    
-    Ensuring that this aim can be achieved comes down to various design decisions
-    related to the user interface, the language used and documentation. In regards
-    to the application user interface, it must be designed intuitively and reduce
-    the amount of friction between the user and their end goal.
-    
-    Furthermore, the language used throughout the user interface must reduce if not
-    eliminate jargon. A simple example could be to use the word ``Move'' instead of
-    ``Translate'' when referring to objects in the virtual environment and as such,
-    would make the application more accessible.
-  \item[Efficient] The second aim of the application is to be as efficient as possible and
-    subsequently, lower the hardware requirements. The application's efficiency
-    and aims vary based on the component in question that include the \gls*{cpu},
-    \gls*{gpu}, memory and storage.
+    achieve their intended goals in the domain of computer graphics. 
+
+    The project will be built to run as a desktop application that renders a
+    user interface editor as well as a virtual environment. The \gls*{ui} must
+    be designed intuitively and reduce the amount of friction for a user.
+    Furthermore, the language used throughout the user interface must reduce if
+    not eliminate jargon. A simple example could be to use the word ``Move''
+    instead of ``Translate'' when referring to objects in the virtual
+    environment and as such, would make the application more accessible.
+  \item[Lower hardware requirements] The second aim of the application is to be
+    as efficient as possible with the goal of lowering the hardware
+    requirements. The application's efficiency and aims vary based on the
+    component in question that include the \gls*{cpu}, \gls*{gpu}, memory and
+    storage. From the ground up \gls*{vmve} will strive to be as efficient as
+    possible by using the latest technologies available.
   \item[Provide secure 3D asset encryption] The last of the three main goals is
     for the application to include its custom model format that makes use of
-    encryption to safely secure a user's digital assets as previously mentioned.
-    The motivation for this functionality formed as a result of the increase in
-    theft regarding digital assets. A recent example relates to the recent data
-    leak that affected Rockstar Studios and their upcoming game (Grand Theft Auto
-    6) \cite{gta_leak} that saw assets, source code and documentation released to
+    encryption to safely secure a user's digital assets. The motivation for
+    this functionality formed as a result of the increase in theft regarding
+    digital assets. A recent example relates to the recent data leak that
+    affected Rockstar Studios and their upcoming game (Grand Theft Auto 6)
+    \cite{gta_leak} that saw assets, source code and documentation released to
     the public.
     
-    \gls*{vmve} would be able to provide a platform to encrypt these assets and only
-    unlock them using a special key that only the user will know. This ensures that
-    in the event of digital assets begin obtained by third parties, they cannot be
-    used. This requires several key elements to work in tandem to achieve this aim.
+    \gls*{vmve} would be able to provide a platform to encrypt these assets and
+    only unlock them using a special key that only the user will know. This
+    ensures that in the event of digital assets begin obtained by third parties,
+    they cannot be used. This requires several key elements to work in tandem to
+    achieve this aim.
     
     The raw model must be able to be encrypted using different types of encryption
     algorithms. In addition to this, \gls*{vmve} must include a parser that can read
@@ -290,32 +290,28 @@ Two main stakeholders will be directly affected by the project and subsequently
 \gls*{vmve}. These are the final-year project supervisors and the end users. Each
 stakeholder needs a different set of requirements to be successfully achieved.
 
-\subsubsection{Supervisors}
 The supervisors (Dr. Charles Clarke and Alex Collins) oversee the progress of
 the project. Meetings are to be held regularly and aim to inform all parties of
 the progress being made. This ensures that the requirements set out are being
 met.
 
-\subsubsection{Users}
 The users on the other hand are individuals that will use \gls*{vmve} once it has
 been developed. The aims and objectives discussed earlier directly affect these
 users.
 
-\subsection{Legal}
+\subsubsection{Legal}
 Legal considerations are important when distributing an application indented to
 be used in production. The project and subsequently the application must abide by
 local laws and regulations.
 
-\subsubsection{License}
-\gls*{vmve} is to be licensed under the MIT license \cite{mit}. This ensures the
-application can be used without restriction allowing for it to be copied,
-modified as well as distributed.
+\gls*{vmve} is to be licensed under the MIT license \cite{mit}. This ensures
+that the application can be used without restriction allowing for it to be
+copied, modified as well as distributed.
 
-\subsubsection{Security}
 Additionally, security must be taken into account when developing the
-application. As mentioned earlier, \gls*{vmve} will include the ability to secure
-critical assets including 3D models. This will be achieved using encryption by
-making use of a secret key and initialization vector.
+application. As mentioned earlier, \gls*{vmve} will include the ability to
+secure critical assets including 3D models. This will be achieved using
+encryption by making use of a secret key and initialization vector.
 
 When developing the system, it is, therefore, important to ask questions such as
 ``How will this data be kept secure?'' and ``Does the application store or send
@@ -325,7 +321,6 @@ Throughout the development of this project, the application will not contain any
 networking functionality. This ensures that all data remains local to the
 application and the user's device.
 
-\subsubsection{Intellectual property}
 Given the domain in which the application is intended to be used, such as
 handling third-party 3D assets by importing and exporting geometry data.
 \gls*{vmve} mustn't infringe upon the copyright of those who own the models. One
@@ -336,18 +331,14 @@ feedback. \gls*{vmve} will not modify any of the data being imported and only
 change the visual appearance based on several factors including rendering
 settings, lighting, translation, rotation and scaling. 
 
-\subsection{Social}
+\subsubsection{Social}
 \gls*{vmve} must also take into account social considerations for those using the
 application to provide a consistent user experience.
 
-\subsubsection{Accessibility}
 Accessibility is a vital aspect that needs to be addressed throughout the
 development to ensure the application is useable for those with disabilities.
 
-\subsection{Ethical}
-
-
-\subsubsection{Software}
+\subsubsection{Ethical}
 One of the main ethical considerations that must be taken into account is the
 computation that the application will perform internally. The technical
 implementation details are not accessible to users as the source code is not
@@ -359,7 +350,6 @@ additional computations that are not strictly required for 3D rendering.
 Furthermore, the application will not store or send any data as this is not
 required.
 
-\subsubsection{Deceptive design}
 Deceptive design also known as ``Dark patterns'' refers to designs/tricks that
 manipulate users into performing certain actions without their informed consent.
 \gls*{vmve} will make use of a user interface, however, during the design and
@@ -680,7 +670,7 @@ whilst allowing for a more distinct separation of structures and functions.
 The combination of these two specific conventions regarding source code style
 can be seen in figure \ref{fig:convention}.
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \begin{lstlisting}[language=C++]
   struct foo
@@ -749,7 +739,7 @@ To achieve this, the renderer must be properly designed so that flexibility is n
 whilst still simplifying the API. Figure \ref{fig:rendererarch} shows the proposed renderer
 architecture which makes distinctive boundaries and encapsulates key systems.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/renderer_architecture.png}
   \caption{Renderer Architecture}
@@ -764,7 +754,7 @@ wireframe that includes four main elements titled ``Global Controls'', ``Logs'',
 in their respective windows which are designed in such a way that common
 controls are grouped and located appropriately if not within the same panel.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/ui_design.png}
   \caption{UI Design}
@@ -819,7 +809,7 @@ the raw model data.
 
 -- TODO: Update picture to use a smaller header size by using a packed uint32\_t for the version
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/vmve_file_structure.png}
   \caption{VMVE File internal structure}
@@ -844,7 +834,7 @@ level of security they want for their assets.
 Figure \ref{fig:load_model_flowchart} shows a flowchart describing the general
 process of how a model will be loaded into \gls*{vmve}.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=0.5\textwidth]{images/load_model_flowchart.png}
   \caption{Load model flowchart}
@@ -853,7 +843,7 @@ process of how a model will be loaded into \gls*{vmve}.
 
 Likewise encrypting a model will consist of three main stages which are loading, encrypting
 and exporting as show in figure \ref{fig:export_model_flowchart}.
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=0.5\textwidth]{images/export_model_flowchart.png}
   \caption{Export model flowchart}
@@ -886,7 +876,7 @@ Figure \ref{fig:overview_pseudo_code} shows the general overview of the applicat
 stages that occur during initialization, runtime and shutting down.
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \begin{lstlisting}[language=C++]
 
@@ -948,18 +938,7 @@ throughout the project. This system is responsible for communicating with the
 \gls*{gpu} and rendering objects onto the screen. As discussed in the
 \ref{technology_review}, Vulkan was the renderer API of choice. 
 
-    Frames in flight 
-    Double and
-
-64 bit world positions 
-Shader resources SPV binary format 
-    Pipelines
--   Pipeline cache 
-Pipeline derivitive 
-Delta Time
-
-- Matrix projection transformation (model to projection space)
-
+    
 
 \subsubsection{Renderer Context}
 The first step in creating the renderer is initializing an object called
@@ -1012,9 +991,16 @@ rendered and then presented on a user's screen. There are two main types of
 vsync modes used within \gls*{vulkan} which are
 \lstinline{VK_PRESENT_MODE_FIFO_KHR} and
 \lstinline{VK_PRESENT_MODE_IMMEDIATE_KHR}. The ``fifo'' mode indicates to the 
-swapchain and subsequently the presentation engine that images are to wait 
-for the monitors refreash rate before being present wheras ``immediate'' simply
-renders images as fast a possible.
+swapchain and subsequently, the presentation engine that images are to wait 
+for the monitor's refresh rate before being present whereas ``immediate'' simply
+renders images as fast as possible.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/swapchain.png}
+  \caption{Swapchain}
+  \label{fig:swapchain}
+\end{figure}
 
 \gls*{vmve} uses the ``fifo'' presentation mode as it conserves hardware
 resources as new images will not be rendered needlessly. Also, this mode ensures
@@ -1028,7 +1014,7 @@ renderer can now start creating the necessary resources required for frame
 synchronization. Vulkan has two concepts that relate to synchronization which
 are VkFence and VkSemaphore.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \begin{lstlisting}[language=C++]
     struct vk_frame
@@ -1075,7 +1061,7 @@ information including colors, world positions, normals, depth and specular.
 
 Then the second pass reads the data from the five framebuffers and performs the
 lighting calculations. This is a common technique in rendering applications that
-significantly improves performance when large numbers of light sources are
+significantly improve performance when large numbers of light sources are
 present compared to forward rendering. This is because deferred rendering defers
 all lighting calculations to the final pass and only needs to perform those
 calculations once. However, for forward rendering, this needs to occur for each
@@ -1128,14 +1114,14 @@ Avoid Moire pattern, increased performance.
 \subsubsection{Models}
 In the context of the rendering system, a ``model'' is a structure that
 represents a 3D geometry object. This could be as simple as a cube or as complex
-as an entire scene.
-
-The data structure contains several key pieces of information such as geometry
-data and textures. 
+as an entire scene. The data structure contains several key pieces of
+information such as geometry data and textures. 
 
 Complex models are not singular pieces of geometry. Instead, artists combine
 multiple smaller objects to form the final model. These smaller parts are known
-as ``Meshes'' within the application.
+as ``Meshes'' within the application. Each mesh has its own vertex and index
+buffers stored on \gls*{gpu} that describe to \gls*{vulkan} how the piece of
+geometry is to be interpreted.
 
 Figure \ref{fig:model} shows the internal structure of an example model which
 has been loaded into \gls*{vmve}.
@@ -1146,8 +1132,9 @@ has been loaded into \gls*{vmve}.
   \label{fig:model}
 \end{figure}
 
-All uniquely loaded models within the application are stored in a contiguous
-array. 
+When a user loads a model, the model is appended to a continuous array
+(\lstinline{std::vector<Model> models;}) which is iterated over each frame in
+order to render all the models on the screen.
 
 \subsubsection{Entities}
 An entity represents an instance of the model in the virtual environment. There
@@ -1193,7 +1180,7 @@ to this space is done by constructing a 4x4 matrix and performing a combination
 of translation, rotation and scaling. A pseudo-code example can be seen in
 \ref{fig:local_to_world}.
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \begin{lstlisting}[language=C++]
     mat4 model = mat4(1.0f);       // Identity matrix
@@ -1227,7 +1214,7 @@ towards us. A nice visualization of this is shown in figure
 \gls*{vmve} makes use of a quaternion to perform the view projection. This is an
 alternative to Euler angles and has several benefits including, preventing gimbal
 lock and easier interpolation between orientations.
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \begin{lstlisting}[language=C++]
     mat4 view = lookAt(camera_position, view_direction, camera_up);
@@ -1240,7 +1227,7 @@ lock and easier interpolation between orientations.
 The final step in calculating the MVP matrix is the projection which converts
 points from local space to clip space. This involves projecting the points to
 either a perspective or orthographic projection.
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \begin{lstlisting}[language=C++]
     mat4 proj = perspective(fovy, aspect, near, far);
@@ -1441,7 +1428,7 @@ screen. A small code snippet can be seen below \ref{fig:imguizmo_code} where
 \(M\) represents the model in the \(MVP\) projection.
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \begin{lstlisting}[language=C++]
     const auto& operation = static_cast<ImGuizmo::OPERATION>(guizmo_operation);
@@ -1480,21 +1467,44 @@ created \ref{fig:logging_system}.
   \label{fig:logging_system}
 \end{figure}
 
-\subsection{Encryption and custom System}
+\subsection{Encryption and custom model format}
+The simplicity of the Crypto++ library results in a relatively straightforward
+function, shown in Figure \ref{fig:aes_encryption} which shows how a model is
+encrypted using the AES algorithm.
+\begin{figure}[H]
+  \centering
+  \begin{lstlisting}[language=C++]
+    std::string encrypt_aes(const std::string& text, encryption_keys& keys, int key_size)
+    {
+        std::string encrypted_text;
+
+        // Set key and IV to encryption mode
+        CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
+        encryption.SetKeyWithIV(
+            reinterpret_cast<const CryptoPP::byte*>(keys.key.data()), 
+            key_size, 
+            reinterpret_cast<const CryptoPP::byte*>(keys.iv.data())
+        );
+
+        // Encrypt text
+        CryptoPP::StringSource s(text, true, new CryptoPP::StreamTransformationFilter(encryption, new CryptoPP::StringSink(encrypted_text)));
+
+        return encrypted_text;
+    }
+  \end{lstlisting}
+  \caption{AES Encryption}
+  \label{fig:aes_encryption}
+\end{figure}
+
+
 
 -- AES (key and initialization vector)
 -- Image of how the system works 
   -- Loads model file, encrypts it and then writes it back out
-
-
-\subsection{Custom File Format}
--- File Format structure
-
-
+  -- File Format structure
 
 \subsection{Distribution}
 - Release mode (optimized)
-- Runs on multiple systems
 - Windows only currently
 
 \subsubsection{Versions}
@@ -1582,15 +1592,10 @@ stuttering.
 \end{figure}
 
 
-
-
-- Redesigned logging system to take crashes into account by creating crash logs
- and then using this to find out exactly what error was being printed.
-
-\subsection{Programming language}
-- Functional style
-- C++ 23
-- Checking for error codes first programming style
+During this part of development, the decision was made to design the logging
+system so that all messages in the buffer would be stored and written to disk
+before exiting. This allowed for unexpected crashes to be better understood as
+the \lstinline{vmve_crash.txt} file could be analyzed.
 
 \subsection{Time Management}
 Given the complexity of this project, it was vital to effectively manage time
@@ -1599,9 +1604,9 @@ could be met on time. Failure to correctly manage this workload would result in
 key goals not being achieved and/or features not being implemented.
 
 As mentioned in section \ref{project_management}, GitHub was chosen and has been
-a highly effective tool throughout development in regard to management and
+a highly effective tool throughout development regarding management and
 distributing tasks. Over 50 different GitHub issues have been resolved such as 
-small user interface issues, implementation bugs and major structural chnages.
+small user interface issues, implementation bugs and major structural changes.
 
 - How effective was the use of project management tools
 during development.
@@ -1620,12 +1625,12 @@ during development.
 \gls*{vmve} currently has 32 outstanding GitHub issues that have yet to be
 resolved. These issues are not considered critical and do not hinder the project
 in terms of meeting its original requirements. However, they are notable and
-should be resolved in the near future.
+should be resolved soon.
 
 \subsubsection{Hardware}
 These tests were performed on the main development machine used throughout the
-project which was a Thinkpad T14s Gen 3. A follow list of the laptops specifications
-can be seen in the figure \ref{fig:development_machine}.
+project which was a Thinkpad T14s Gen 3. The following list shown in figure
+\ref{fig:development_machine} shows the laptop's specifications.
 
 \begin{table}[H]
 \centering
@@ -1635,7 +1640,8 @@ can be seen in the figure \ref{fig:development_machine}.
   \hline\hline
   CPU & AMD Ryzen 7 Pro 6850U  \\ 
   GPU & Integrated \\
-  RAM & 32GB DDR6 \\ [1ex] 
+  RAM & 32GB DDR6 \\ 
+  SSD & 1TB [1ex] \\
   \hline
 \end{tabular}
 \caption{Development Machine}
@@ -2121,7 +2127,7 @@ choose one.
 
 
 \subsection{Camera transformation code}
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   \begin{lstlisting}[language=C++]
     // Construct M (model)

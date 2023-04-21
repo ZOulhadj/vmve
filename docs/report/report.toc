@@ -5,17 +5,9 @@
 \contentsline {subsection}{\numberline {1.3}Aims and Objectives}{2}{subsection.1.3}%
 \contentsline {subsection}{\numberline {1.4}Considerations}{3}{subsection.1.4}%
 \contentsline {subsubsection}{\numberline {1.4.1}Stakeholders}{3}{subsubsection.1.4.1}%
-\contentsline {subsubsection}{\numberline {1.4.2}Supervisors}{3}{subsubsection.1.4.2}%
-\contentsline {subsubsection}{\numberline {1.4.3}Users}{3}{subsubsection.1.4.3}%
-\contentsline {subsection}{\numberline {1.5}Legal}{4}{subsection.1.5}%
-\contentsline {subsubsection}{\numberline {1.5.1}License}{4}{subsubsection.1.5.1}%
-\contentsline {subsubsection}{\numberline {1.5.2}Security}{4}{subsubsection.1.5.2}%
-\contentsline {subsubsection}{\numberline {1.5.3}Intellectual property}{4}{subsubsection.1.5.3}%
-\contentsline {subsection}{\numberline {1.6}Social}{5}{subsection.1.6}%
-\contentsline {subsubsection}{\numberline {1.6.1}Accessibility}{5}{subsubsection.1.6.1}%
-\contentsline {subsection}{\numberline {1.7}Ethical}{5}{subsection.1.7}%
-\contentsline {subsubsection}{\numberline {1.7.1}Software}{5}{subsubsection.1.7.1}%
-\contentsline {subsubsection}{\numberline {1.7.2}Deceptive design}{5}{subsubsection.1.7.2}%
+\contentsline {subsubsection}{\numberline {1.4.2}Legal}{4}{subsubsection.1.4.2}%
+\contentsline {subsubsection}{\numberline {1.4.3}Social}{4}{subsubsection.1.4.3}%
+\contentsline {subsubsection}{\numberline {1.4.4}Ethical}{5}{subsubsection.1.4.4}%
 \contentsline {section}{\numberline {2}Technology Review}{6}{section.2}%
 \contentsline {subsection}{\numberline {2.1}Tools}{6}{subsection.2.1}%
 \contentsline {subsubsection}{\numberline {2.1.1}Project Management}{6}{subsubsection.2.1.1}%
@@ -42,68 +34,66 @@
 \contentsline {subsubsection}{\numberline {3.5.1}Main Viewport}{19}{subsubsection.3.5.1}%
 \contentsline {subsubsection}{\numberline {3.5.2}Global Controls}{19}{subsubsection.3.5.2}%
 \contentsline {subsubsection}{\numberline {3.5.3}Model Controls}{19}{subsubsection.3.5.3}%
-\contentsline {subsubsection}{\numberline {3.5.4}Logs}{19}{subsubsection.3.5.4}%
+\contentsline {subsubsection}{\numberline {3.5.4}Logs}{20}{subsubsection.3.5.4}%
 \contentsline {subsection}{\numberline {3.6}Custom file format and encryption}{20}{subsection.3.6}%
 \contentsline {subsubsection}{\numberline {3.6.1}File format}{20}{subsubsection.3.6.1}%
 \contentsline {subsubsection}{\numberline {3.6.2}Encryption and Decryption}{20}{subsubsection.3.6.2}%
 \contentsline {section}{\numberline {4}Implementation}{23}{section.4}%
 \contentsline {subsection}{\numberline {4.1}Overview}{23}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Window System}{23}{subsection.4.2}%
-\contentsline {subsection}{\numberline {4.3}Rendering System}{24}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.2}Window System}{24}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Rendering System}{25}{subsection.4.3}%
 \contentsline {subsubsection}{\numberline {4.3.1}Renderer Context}{25}{subsubsection.4.3.1}%
 \contentsline {subsubsection}{\numberline {4.3.2}Swapchain}{26}{subsubsection.4.3.2}%
-\contentsline {subsubsection}{\numberline {4.3.3}Frame synchronization}{26}{subsubsection.4.3.3}%
-\contentsline {subsubsection}{\numberline {4.3.4}Deferred Rendering Pipeline}{27}{subsubsection.4.3.4}%
-\contentsline {subsubsection}{\numberline {4.3.5}Dynamic Uniform Buffers}{28}{subsubsection.4.3.5}%
-\contentsline {subsubsection}{\numberline {4.3.6}Texture Mipmapping}{29}{subsubsection.4.3.6}%
-\contentsline {subsubsection}{\numberline {4.3.7}Models}{30}{subsubsection.4.3.7}%
-\contentsline {subsubsection}{\numberline {4.3.8}Entities}{31}{subsubsection.4.3.8}%
-\contentsline {subsubsection}{\numberline {4.3.9}Camera}{32}{subsubsection.4.3.9}%
-\contentsline {subsubsection}{\numberline {4.3.10}Lighting}{35}{subsubsection.4.3.10}%
-\contentsline {subsection}{\numberline {4.4}User Interface}{36}{subsection.4.4}%
-\contentsline {subsubsection}{\numberline {4.4.1}Controls}{36}{subsubsection.4.4.1}%
-\contentsline {subsubsection}{\numberline {4.4.2}Fonts and Icons}{37}{subsubsection.4.4.2}%
-\contentsline {subsubsection}{\numberline {4.4.3}Menu Bar}{38}{subsubsection.4.4.3}%
-\contentsline {subsubsection}{\numberline {4.4.4}Load Model Window}{38}{subsubsection.4.4.4}%
-\contentsline {subsubsection}{\numberline {4.4.5}Export Model Window}{39}{subsubsection.4.4.5}%
-\contentsline {subsubsection}{\numberline {4.4.6}Settings Window}{39}{subsubsection.4.4.6}%
-\contentsline {subsubsection}{\numberline {4.4.7}Object gizmo}{40}{subsubsection.4.4.7}%
-\contentsline {subsection}{\numberline {4.5}Logging system}{41}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}Encryption and custom System}{42}{subsection.4.6}%
-\contentsline {subsection}{\numberline {4.7}Custom File Format}{42}{subsection.4.7}%
-\contentsline {subsection}{\numberline {4.8}Distribution}{42}{subsection.4.8}%
-\contentsline {subsubsection}{\numberline {4.8.1}Versions}{42}{subsubsection.4.8.1}%
-\contentsline {subsubsection}{\numberline {4.8.2}Website}{43}{subsubsection.4.8.2}%
-\contentsline {subsubsection}{\numberline {4.8.3}Example models}{43}{subsubsection.4.8.3}%
-\contentsline {subsubsection}{\numberline {4.8.4}Documentation}{44}{subsubsection.4.8.4}%
-\contentsline {section}{\numberline {5}Evaluation}{45}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Distribution}{45}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Programming language}{46}{subsection.5.2}%
-\contentsline {subsection}{\numberline {5.3}Time Management}{46}{subsection.5.3}%
-\contentsline {subsubsection}{\numberline {5.3.1}Hardware}{47}{subsubsection.5.3.1}%
-\contentsline {subsection}{\numberline {5.4}Performance}{48}{subsection.5.4}%
-\contentsline {subsubsection}{\numberline {5.4.1}Compilation Performance}{48}{subsubsection.5.4.1}%
-\contentsline {subsubsection}{\numberline {5.4.2}Runtime Performance}{49}{subsubsection.5.4.2}%
-\contentsline {subsection}{\numberline {5.5}User Feedback}{52}{subsection.5.5}%
-\contentsline {section}{\numberline {6}Related Work}{53}{section.6}%
-\contentsline {section}{\numberline {7}Reflection}{54}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Choice of rendering API}{54}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Development logs}{54}{subsection.7.2}%
-\contentsline {section}{\numberline {8}Future Work}{55}{section.8}%
-\contentsline {subsection}{\numberline {8.1}Rendering}{55}{subsection.8.1}%
-\contentsline {subsubsection}{\numberline {8.1.1}Multiple rendering APIs}{55}{subsubsection.8.1.1}%
-\contentsline {subsubsection}{\numberline {8.1.2}Frustum Culling}{55}{subsubsection.8.1.2}%
-\contentsline {subsubsection}{\numberline {8.1.3}Spatial Acceleration Structures}{57}{subsubsection.8.1.3}%
-\contentsline {subsubsection}{\numberline {8.1.4}glTF Support}{59}{subsubsection.8.1.4}%
-\contentsline {subsection}{\numberline {8.2}Cross Platform}{60}{subsection.8.2}%
-\contentsline {subsection}{\numberline {8.3}Networking Support}{60}{subsection.8.3}%
-\contentsline {subsection}{\numberline {8.4}File Format/Encryption}{60}{subsection.8.4}%
-\contentsline {subsection}{\numberline {8.5}Version Control}{61}{subsection.8.5}%
-\contentsline {subsection}{\numberline {8.6}Reduce library dependencies}{61}{subsection.8.6}%
-\contentsline {subsection}{\numberline {8.7}Accessibility}{62}{subsection.8.7}%
-\contentsline {section}{\numberline {9}Conclusion}{63}{section.9}%
-\contentsline {section}{\numberline {10}Documents}{64}{section.10}%
-\contentsline {section}{\numberline {11}References}{67}{section.11}%
-\contentsline {section}{\numberline {12}Appendices}{69}{section.12}%
-\contentsline {subsection}{\numberline {12.1}Rendering API history}{69}{subsection.12.1}%
-\contentsline {subsection}{\numberline {12.2}Camera transformation code}{69}{subsection.12.2}%
+\contentsline {subsubsection}{\numberline {4.3.3}Frame synchronization}{27}{subsubsection.4.3.3}%
+\contentsline {subsubsection}{\numberline {4.3.4}Deferred Rendering Pipeline}{28}{subsubsection.4.3.4}%
+\contentsline {subsubsection}{\numberline {4.3.5}Dynamic Uniform Buffers}{29}{subsubsection.4.3.5}%
+\contentsline {subsubsection}{\numberline {4.3.6}Texture Mipmapping}{30}{subsubsection.4.3.6}%
+\contentsline {subsubsection}{\numberline {4.3.7}Models}{31}{subsubsection.4.3.7}%
+\contentsline {subsubsection}{\numberline {4.3.8}Entities}{32}{subsubsection.4.3.8}%
+\contentsline {subsubsection}{\numberline {4.3.9}Camera}{33}{subsubsection.4.3.9}%
+\contentsline {subsubsection}{\numberline {4.3.10}Lighting}{36}{subsubsection.4.3.10}%
+\contentsline {subsection}{\numberline {4.4}User Interface}{37}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}Controls}{37}{subsubsection.4.4.1}%
+\contentsline {subsubsection}{\numberline {4.4.2}Fonts and Icons}{38}{subsubsection.4.4.2}%
+\contentsline {subsubsection}{\numberline {4.4.3}Menu Bar}{39}{subsubsection.4.4.3}%
+\contentsline {subsubsection}{\numberline {4.4.4}Load Model Window}{39}{subsubsection.4.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.5}Export Model Window}{40}{subsubsection.4.4.5}%
+\contentsline {subsubsection}{\numberline {4.4.6}Settings Window}{40}{subsubsection.4.4.6}%
+\contentsline {subsubsection}{\numberline {4.4.7}Object gizmo}{41}{subsubsection.4.4.7}%
+\contentsline {subsection}{\numberline {4.5}Logging system}{42}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Encryption and custom model format}{43}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Distribution}{44}{subsection.4.7}%
+\contentsline {subsubsection}{\numberline {4.7.1}Versions}{44}{subsubsection.4.7.1}%
+\contentsline {subsubsection}{\numberline {4.7.2}Website}{45}{subsubsection.4.7.2}%
+\contentsline {subsubsection}{\numberline {4.7.3}Example models}{45}{subsubsection.4.7.3}%
+\contentsline {subsubsection}{\numberline {4.7.4}Documentation}{46}{subsubsection.4.7.4}%
+\contentsline {section}{\numberline {5}Evaluation}{47}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Distribution}{47}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Time Management}{48}{subsection.5.2}%
+\contentsline {subsubsection}{\numberline {5.2.1}Hardware}{49}{subsubsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.3}Performance}{50}{subsection.5.3}%
+\contentsline {subsubsection}{\numberline {5.3.1}Compilation Performance}{50}{subsubsection.5.3.1}%
+\contentsline {subsubsection}{\numberline {5.3.2}Runtime Performance}{51}{subsubsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.4}User Feedback}{54}{subsection.5.4}%
+\contentsline {section}{\numberline {6}Related Work}{55}{section.6}%
+\contentsline {section}{\numberline {7}Reflection}{56}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Choice of rendering API}{56}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Development logs}{56}{subsection.7.2}%
+\contentsline {section}{\numberline {8}Future Work}{57}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Rendering}{57}{subsection.8.1}%
+\contentsline {subsubsection}{\numberline {8.1.1}Multiple rendering APIs}{57}{subsubsection.8.1.1}%
+\contentsline {subsubsection}{\numberline {8.1.2}Frustum Culling}{57}{subsubsection.8.1.2}%
+\contentsline {subsubsection}{\numberline {8.1.3}Spatial Acceleration Structures}{59}{subsubsection.8.1.3}%
+\contentsline {subsubsection}{\numberline {8.1.4}glTF Support}{61}{subsubsection.8.1.4}%
+\contentsline {subsection}{\numberline {8.2}Cross Platform}{62}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Networking Support}{62}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}File Format/Encryption}{62}{subsection.8.4}%
+\contentsline {subsection}{\numberline {8.5}Version Control}{63}{subsection.8.5}%
+\contentsline {subsection}{\numberline {8.6}Reduce library dependencies}{63}{subsection.8.6}%
+\contentsline {subsection}{\numberline {8.7}Accessibility}{64}{subsection.8.7}%
+\contentsline {section}{\numberline {9}Conclusion}{65}{section.9}%
+\contentsline {section}{\numberline {10}Documents}{66}{section.10}%
+\contentsline {section}{\numberline {11}References}{69}{section.11}%
+\contentsline {section}{\numberline {12}Appendices}{71}{section.12}%
+\contentsline {subsection}{\numberline {12.1}Rendering API history}{71}{subsection.12.1}%
+\contentsline {subsection}{\numberline {12.2}Camera transformation code}{72}{subsection.12.2}%
