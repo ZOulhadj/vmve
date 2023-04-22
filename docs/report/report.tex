@@ -706,12 +706,9 @@ details. This includes the Window, Renderer, UI and Audio. This project will be
 distributed as a library file (.lib) that other projects can import for specific
 use cases. The ``VMVE'' project will include the ``Engine'' project by importing
 the library (.lib file). A high-level overview of the project architecture can
-be seen in figure \ref{fig:projarch}.
-
-There is another key reason why, I will isolate the core of \gls*{vmve} into its
-project instead of combining it into one program. The reason is to have the core
-be a library that can be used in not just \gls*{vmve} but also potentially other
-projects in the future.
+be seen in figure \ref{fig:projarch}. Furthermore, by making this distinction
+between the core and \gls*{vmve}, it will allow for the same sets of tools and
+technologies to be used in the future for other similar projects.
 
 \begin{figure}[H]
   \centering
@@ -721,23 +718,23 @@ projects in the future.
 \end{figure}
 
 \subsubsection{Platform Architecture}
-- Reason for choosing 64bit program.
-    goes beyond 4GB address space limit in 32bit programs.
-    supports modern hardware
-
-
+The application will be developed to take advantage of the 64-bit platform. This
+would allow for the application to go beyond the 4GB limit posed by 32bit
+programs. In addition to this, 64-bit provides better performance and security 
+as a result of the larger address space.
 
 \subsubsection{Renderer Architecture}
+As mentioned in section \ref{rendering_api}. Vulkan will be the rendering API of
+choice for \gls*{vmve}. The API is extremely verbose giving the programmer the
+flexibility to control every aspect of the GPU. When interacting with Vulkan
+throughout the engine a certain degree of encapsulation is necessary to reduce
+the amount of effort required to implement functionality as a result of
+\glspl*{vulkan} verbose API.
 
-As mentioned in section \ref{rendering_api}. Vulkan will be the rendering API of choice
-for \gls*{vmve}. The API is extremely verbose giving the programmer the flexibility to
-control every aspect of the GPU. When interacting with Vulkan throughout the engine
-a certain degree of encapsulation is necessary to reduce the amount of effort required to 
-implement functionality as a result of \glspl*{vmve} verbose API.
-
-To achieve this, the renderer must be properly designed so that flexibility is not lost
-whilst still simplifying the API. Figure \ref{fig:rendererarch} shows the proposed renderer
-architecture which makes distinctive boundaries and encapsulates key systems.
+Therefore, the renderer must be designed so that flexibility is maintained
+whilst simplifying the \gls{api}. Figure \ref{fig:rendererarch} shows the
+proposed renderer architecture which makes distinctive boundaries and
+encapsulates key sub-systems.
 
 \begin{figure}[H]
   \centering
@@ -1122,13 +1119,14 @@ a quarter of the previous size. This is performed using the following equation p
   m = \lfloor \log_2(\max(w, h)) \rfloor + 1
 \end{equation}
 where \(m\) is the number of mipmap levels, \(w\) and \(h\) are the width and
-height of the source texture respectively.
+height of the source texture respectively. For each texture mipmap created the
+size of the texture becomes exponentially smaller.
 
 In the source code, it looks like this:
 \begin{figure}[H]
   \centering
   \begin{lstlisting}[language=C++]
-    const uint32_t mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+    const auto mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
   \end{lstlisting}
   \caption{Mipmapping equation}
   \label{fig:mipmapping_equation}

@@ -16,10 +16,7 @@
 
 enum class encryption_mode
 {
-    aes,
-    dh,
-    gc,
-    rc6
+    aes
 };
 
 struct encryption_keys
@@ -32,7 +29,7 @@ struct vmve_header
 {
     std::string version;
     encryption_mode encrypt_mode;
-    encryption_keys keys;
+    encryption_keys encrypted_keys; // used to check if keys match input
 };
 
 struct vmve_data
@@ -49,13 +46,21 @@ struct vmve_file
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(header.version, header.encrypt_mode, header.keys.key, header.keys.iv, data.encrypted_data);
+        ar(header.version, header.encrypt_mode, header.encrypted_keys.key, header.encrypted_keys.iv, data.encrypted_data);
     }
 };
 
-encryption_keys generate_key_iv(unsigned int keyLength);
-encryption_keys key_iv_to_hex(encryption_keys& keys);
+enum class decrypt_error
+{
+    no_file,
+    key_mismatch
+};
 
+
+
+encryption_keys generate_key_iv(unsigned int keyLength);
+encryption_keys string_to_base16(const encryption_keys& keys);
+encryption_keys base16_to_string(const encryption_keys& keys);
 // AES
 
 std::string encrypt_aes(const std::string& text, encryption_keys& keys, int key_size);
@@ -63,7 +68,7 @@ std::string encrypt_aes(const std::string& text, unsigned char keyLength);
 std::string decrypt_aes(const std::string& encrypted_text, const encryption_keys& keys);
 
 bool vmve_write_to_file(vmve_file& file_format, const std::string& path);
-bool vmve_read_from_file(std::string& out_data, const std::string& path);
+std::expected<std::string, decrypt_error> vmve_read_from_file(const std::string& path, const encryption_keys& keys);
 
 
 

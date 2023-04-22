@@ -18,25 +18,55 @@ encryption_keys generate_key_iv(unsigned int keyLength)
     return keys;
 }
 
-encryption_keys key_iv_to_hex(encryption_keys& keyIV)
+encryption_keys string_to_base16(const encryption_keys& keyIV)
 {
-    encryption_keys key_strings;
+    encryption_keys keys{};
 
-    CryptoPP::HexEncoder keyHexEncoder;
-    keyHexEncoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.key.data()), sizeof(CryptoPP::byte) * keyIV.key.size());
-    keyHexEncoder.MessageEnd();
+    {
+        CryptoPP::HexDecoder encoder;
+        encoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.key.data()), sizeof(CryptoPP::byte) * keyIV.key.size());
+        encoder.MessageEnd();
 
-    key_strings.key.resize(keyHexEncoder.MaxRetrievable());
-    keyHexEncoder.Get((CryptoPP::byte*)&key_strings.key[0], key_strings.key.size());
+        keys.key.resize(encoder.MaxRetrievable());
+        encoder.Get((CryptoPP::byte*)&keys.key[0], keys.key.size());
 
-    CryptoPP::HexEncoder ivHexEncoder;
-    ivHexEncoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.iv.data()), sizeof(CryptoPP::byte) * keyIV.iv.size());
-    ivHexEncoder.MessageEnd();
+    }
+    {
+        CryptoPP::HexDecoder encoder;
+        encoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.iv.data()), sizeof(CryptoPP::byte) * keyIV.iv.size());
+        encoder.MessageEnd();
 
-    key_strings.iv.resize(ivHexEncoder.MaxRetrievable());
-    ivHexEncoder.Get((CryptoPP::byte*)&key_strings.iv[0], key_strings.iv.size());
+        keys.iv.resize(encoder.MaxRetrievable());
+        encoder.Get((CryptoPP::byte*)&keys.iv[0], keys.iv.size());
 
-    return key_strings;
+    }
+
+    return keys;
+}
+
+encryption_keys base16_to_string(const encryption_keys& keyIV)
+{
+    encryption_keys keys{};
+
+    {
+        CryptoPP::HexDecoder decoder;
+        decoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.key.data()), sizeof(CryptoPP::byte) * keyIV.key.size());
+        decoder.MessageEnd();
+
+        keys.key.resize(decoder.MaxRetrievable());
+        decoder.Get((CryptoPP::byte*)&keys.key[0], keys.key.size());
+
+    }
+    {
+        CryptoPP::HexDecoder decoder;
+        decoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.iv.data()), sizeof(CryptoPP::byte) * keyIV.iv.size());
+        decoder.MessageEnd();
+
+        keys.iv.resize(decoder.MaxRetrievable());
+        decoder.Get((CryptoPP::byte*)&keys.iv[0], keys.iv.size());
+    }
+
+    return keys;
 }
 
 
@@ -83,6 +113,8 @@ std::string decrypt_aes(const std::string& encrypted_text, const encryption_keys
 {
     std::string text;
 
+    // todo: catch exception so that it does not crash at runtime
+
     // Set decryption key and IV
     CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryption;
     decryption.SetKeyWithIV(
@@ -101,7 +133,8 @@ static bool vmve_decrypt(vmve_file& file_format, std::string& out_raw_data)
 {
     // parse the vmve file to figure out which encryption method was used
     if (file_format.header.encrypt_mode == encryption_mode::aes) {
-        out_raw_data = decrypt_aes(file_format.data.encrypted_data, file_format.header.keys);
+        // todo: !!!
+        out_raw_data = decrypt_aes(file_format.data.encrypted_data, {});
 
         return true;
     }
@@ -121,20 +154,42 @@ bool vmve_write_to_file(vmve_file& file_format, const std::string& path)
     return true;
 }
 
-bool vmve_read_from_file(std::string& out_data, const std::string& path)
+std::expected<std::string, decrypt_error> vmve_read_from_file(const std::string& path, const encryption_keys& keys)
 {
     vmve_file file_structure;
 
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open())
-        return false;
+        return std::unexpected(decrypt_error::no_file);
 
+    // deserialize vmve file contents into structure
     cereal::BinaryInputArchive input(file);
     input(file_structure);
 
-    // decrypt file
-    bool vmve_decrypted = vmve_decrypt(file_structure, out_data);
 
-    return vmve_decrypted;
+    std::string content;
+    if (file_structure.header.encrypt_mode == encryption_mode::aes) {
+        // check if key and iv match file
+        const encryption_keys& secret_keys = file_structure.header.encrypted_keys;
+
+        // todo: figure out why using a valid length key/iv but only changing a single number
+        // results in an exception.
+        std::string key, iv;
+        try {
+            key = decrypt_aes(secret_keys.key, keys);
+            iv = decrypt_aes(secret_keys.iv, keys);
+        } catch (const std::exception& e) {
+            return std::unexpected(decrypt_error::key_mismatch);
+        }
+
+        if (key != keys.key || iv != keys.iv)
+            return std::unexpected(decrypt_error::key_mismatch);
+
+        // decrypt file
+        content = decrypt_aes(file_structure.data.encrypted_data, keys);
+    }
+    
+
+    return content;
 }
 

@@ -526,33 +526,33 @@ static void load_model_window(bool* open)
             ImGui::InputText("Key", &key_input);
             ImGui::InputText("IV", &iv_input);
 
+            ImGui::BeginDisabled(key_input.empty() || iv_input.empty());
             if (ImGui::Button("Decrypt")) {
-
-                // todo: compare key and iv input
-                if (key_input == "test")
-                    std::cout << "This is a test message\n";
-
-
-                std::string raw_data;
-                bool file_read = vmve_read_from_file(raw_data, model_path.c_str());
-                if (file_read)
-                    engine::add_model(raw_data.c_str(), static_cast<int>(raw_data.size()), flip_uv);
+                encryption_keys base16_keys = string_to_base16({ key_input, iv_input });
+                const auto file = vmve_read_from_file(model_path, base16_keys);
+                if (file)
+                    engine::add_model(file->c_str(), static_cast<int>(file->size()), flip_uv);
+                else if (file == std::unexpected(decrypt_error::no_file))
+                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Failed to open %s file", model_path.c_str());
+                else if (file == std::unexpected(decrypt_error::key_mismatch))
+                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Key/IV mismatch");
 
                 ImGui::CloseCurrentPopup();
                 file_encrypted = false;
             }
+            ImGui::EndDisabled();
+
             ImGui::EndPopup();
         }
     }
 
 }
 
-static void vmve_creator_window(bool* open)
+static void vmve_export_window(bool* open)
 {
     if (!*open)
         return;
 
-    static bool useEncryption = false;
     static int encryptionModeIndex = 0;
 
     static std::array<const char*, 1> encryptionModes = { "AES" };
@@ -574,33 +574,28 @@ static void vmve_creator_window(bool* open)
 
     ImGui::Text(current_path.c_str());
 
-    ImGui::Checkbox("Encryption", &useEncryption);
-    info_marker("Should the model file be encrypted.");
+    //ImGui::Checkbox("Encryption", &useEncryption);
+    //info_marker("Should the model file be encrypted.");
+    ImGui::Combo("Encryption method", &encryptionModeIndex, encryptionModes.data(), static_cast<int>(encryptionModes.size()));
+    ImGui::Combo("Key length", &keyLengthIndex, keyLengths.data(), static_cast<int>(keyLengths.size()));
 
-    if (useEncryption) {
-        ImGui::Combo("Encryption method", &encryptionModeIndex, encryptionModes.data(), static_cast<int>(encryptionModes.size()));
-        ImGui::Combo("Key length", &keyLengthIndex, keyLengths.data(), static_cast<int>(keyLengths.size()));
-
-        if (ImGui::Button("Generate Key/IV")) {
-            keyIV = generate_key_iv(key_size);
-            keyIVString = key_iv_to_hex(keyIV);
-            generated = true;
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Copy to clipboard")) {
-            const std::string clipboard("Key: " + keyIVString.key + "\n" +
-                "IV: " + keyIVString.iv);
-
-            ImGui::SetClipboardText(clipboard.c_str());
-        }
-
-        ImGui::Text("Key: %s", keyIVString.key.c_str());
-        ImGui::Text("IV: %s", keyIVString.iv.c_str());
-
+    if (ImGui::Button("Generate Key/IV")) {
+        keyIV = generate_key_iv(key_size);
+        keyIVString = string_to_base16(keyIV);
+        generated = true;
     }
 
+    ImGui::SameLine();
+
+    if (ImGui::Button("Copy to clipboard")) {
+        const std::string clipboard("Key: " + keyIVString.key + "\n" +
+            "IV: " + keyIVString.iv);
+
+        ImGui::SetClipboardText(clipboard.c_str());
+    }
+
+    ImGui::Text("Key: %s", keyIVString.key.c_str());
+    ImGui::Text("IV: %s", keyIVString.iv.c_str());
 
     static bool successfully_exported = false;
     ImGui::BeginDisabled(!generated);
@@ -620,7 +615,9 @@ static void vmve_creator_window(bool* open)
                 // header
                 file_structure.header.version = app_version;
                 file_structure.header.encrypt_mode = encryption_mode::aes;
-                file_structure.header.keys = keyIV;
+                file_structure.header.encrypted_keys.key = encrypt_aes(keyIV.key, keyIV, key_size);
+                file_structure.header.encrypted_keys.iv = encrypt_aes(keyIV.iv, keyIV, key_size);
+
                 // data
                 file_structure.data.encrypted_data = encrypt_aes(contents, keyIV, key_size);
 
@@ -728,7 +725,7 @@ static void render_windows()
     render_preferences_window(&settings_open);
     render_about_window(&about_open);
     load_model_window(&load_model_open);
-    vmve_creator_window(&creator_open);
+    vmve_export_window(&creator_open);
     //perf_window(&perf_profiler_open);
     render_audio_window(&audio_window_open);
     render_console_window(&console_window_open);

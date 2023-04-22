@@ -7,6 +7,7 @@
 #include <vector>
 #include <filesystem>
 #include <array>
+#include <expected>
 
 #include <cassert>
 

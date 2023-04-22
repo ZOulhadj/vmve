@@ -404,8 +404,8 @@ namespace engine {
         print_log("Successfully initialized engine in %.2fms\n", startup_duration);
 
 
-        model test_model;
-        test_model.create("C:/Users/zakar/Downloads/container.glb");
+        //model test_model;
+        //test_model.create("C:/Users/zakar/Downloads/container.glb");
 
 
         return true;
