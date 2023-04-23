@@ -72,7 +72,7 @@ int main()
     engine::enable_ui();
     configure_ui();
 
-    engine::create_camera(60.0f, 20.0f);
+    engine::create_camera(60.0f, 3.0f);
     engine::show_window();
 
     while (engine::update()) {

@@ -43,20 +43,6 @@ void left_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags)
             engine::get_camera_position(&camera_pos_x, &camera_pos_y, &camera_pos_z);
             engine::get_camera_front_vector(&camera_front_x, &camera_front_y, &camera_front_z);
 
-#if 0
-            if (ImGui::RadioButton("Perspective", engine->camera.projection == CameraProjection::Perspective))
-                engine->camera.projection = CameraProjection::Perspective;
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Orthographic", engine->camera.projection == CameraProjection::Orthographic))
-                engine->camera.projection = CameraProjection::Orthographic;
-            if (ImGui::RadioButton("First person", engine->camera.type == CameraType::FirstPerson))
-                engine->camera.type = CameraType::FirstPerson;
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Look at", engine->camera.type == CameraType::LookAt))
-                engine->camera.type = CameraType::LookAt;
-#endif
-
-
             if (ImGui::BeginTable("camera", 2, ImGuiTableFlags_SizingStretchProp)) {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();

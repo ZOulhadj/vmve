@@ -303,12 +303,6 @@ namespace engine {
     //
     float* get_camera_far();
 
-    //
-    //
-    //
-    //
-    void engine_set_camera_position(float x, float y, float z);
-
     // Logs
 
     //

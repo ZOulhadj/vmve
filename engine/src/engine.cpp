@@ -848,26 +848,25 @@ namespace engine {
     void update_input()
     {
         Camera& camera = g_engine->camera;
+        const float speed = camera.speed * g_engine->delta_time;
 
-        const float dt = camera.speed * (float)g_engine->delta_time;
         if (key_pressed(GLFW_KEY_W))
-            camera.position += camera.front_vector * dt;
+            camera.position += camera.front_vector * speed;
         if (key_pressed(GLFW_KEY_S))
-            camera.position -= camera.front_vector * dt;
+            camera.position -= camera.front_vector * speed;
         if (key_pressed(GLFW_KEY_A))
-            camera.position -= camera.right_vector * dt;
+            camera.position -= camera.right_vector * speed;
         if (key_pressed(GLFW_KEY_D))
-            camera.position += camera.right_vector * dt;
+            camera.position += camera.right_vector * speed;
         if (key_pressed(GLFW_KEY_SPACE))
-            camera.position += camera.up_vector * dt;
+            camera.position += camera.up_vector * speed;
         if (key_pressed(GLFW_KEY_LEFT_CONTROL) || key_pressed(GLFW_KEY_CAPS_LOCK))
-            camera.position -= camera.up_vector * dt;
+            camera.position -= camera.up_vector * speed;
 
         /*if (is_key_down(GLFW_KEY_Q))
             camera.roll -= camera.roll_speed * deltaTime;
         if (is_key_down(GLFW_KEY_E))
             camera.roll += camera.roll_speed * deltaTime;*/
-
     }
 
     void update_camera_view()
@@ -893,9 +892,11 @@ namespace engine {
 
     void get_camera_position(float* x, float* y, float* z)
     {
-        *x = g_engine->camera.position.x;
-        *y = g_engine->camera.position.y;
-        *z = g_engine->camera.position.z;
+        const glm::vec3 position = g_engine->camera.position;
+
+        *x = position.x;
+        *y = position.y;
+        *z = position.z;
     }
 
     void get_camera_front_vector(float* x, float* y, float* z)
@@ -923,10 +924,6 @@ namespace engine {
     float* get_camera_far()
     {
         return &g_engine->camera.far_plane;
-    }
-
-    void engine_set_camera_position(float x, float y, float z) {
-        g_engine->camera.position = glm::vec3(x, y, z);
     }
 
     void enable_ui()

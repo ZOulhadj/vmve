@@ -59,8 +59,8 @@ enum class decrypt_error
 
 
 encryption_keys generate_key_iv(unsigned int keyLength);
-encryption_keys string_to_base16(const encryption_keys& keys);
-encryption_keys base16_to_string(const encryption_keys& keys);
+encryption_keys base16_to_bytes(const encryption_keys& keys);
+encryption_keys bytes_to_base16(const encryption_keys& keys);
 // AES
 
 std::string encrypt_aes(const std::string& text, encryption_keys& keys, int key_size);

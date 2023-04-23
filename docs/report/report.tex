@@ -24,7 +24,7 @@
 
 %\hypersetup{colorlinks=true, pdfstartview=FitV, linkcolor=blue, citecolor=black, plainpages=false, pdfpagelabels=true, urlcolor=blue}
 
-
+\setcitestyle{square}
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
 \definecolor{codegray}{rgb}{0.5,0.5,0.5}
@@ -758,12 +758,9 @@ controls are grouped and located appropriately if not within the same panel.
   \label{fig:ui_design}
 \end{figure}
 
-
-- Editor UI design and the reason for it for this particular application?
--   UI allows for interaction with underlying system during runtime.
--   Viewport style editor meaning that all controls can be positioned
-    around the viewport and the main rendering occurs at the center of
-    the screen.
+The purpose of the user interface is to provide an easy-to-use platform for
+interacting with \gls*{vmve} and more specifically the main viewport located in
+the center of the application.
 
 \subsubsection{Main Viewport}
 The main viewport is located in the center of the window and is the main feature
@@ -790,21 +787,28 @@ of the application.
 \subsection{Custom file format and encryption}
 
 \subsubsection{File format}
-\gls*{vmve} will include its own file format that allows for model data to be
+\gls*{vmve} will include a custom file format that allows for model data to be
 encrypted for security purposes. Figure \ref{fig:vmve_file_structure} shows the
-proposed internal structure of the custom file format. It includes a 48-byte
-header that will consist of a version and the method used for encryption. The
-purpose of the version is to check for compatibility between different
-\gls*{vmve} versions. In addition to this, this can be used to convert older
-versions of the \gls*{vmve} model to newer versions.
+proposed internal structure of the file. The internal structure is split into
+two main sections. The header contains key pieces of information that help the
+application determine how and if the main data should be decrypted.
+
+\begin{description}
+  \item[Version] indicates which version of \gls*{vmve} was used to encrypt the
+  file. At the moment, this is to be purely informational however, in future
+  versions, this can be used for reporting compatibility issues and also,
+  allowing for encrypted files to be updated to newer file layouts.
+  \item[Mode] is the encryption algorithm used (e.g AES, DH) and is what will
+  allow the application to know which decryption algorithm needs to be used.
+  \item[Encrypted Keys] is used for validating the input key and initialization
+  vector. If these match then the application will then decrypt and load the data.
+\end{description}
 
 The second item in the \gls*{vmve} header is the encryption mode. This allows for
 \gls*{vmve} to know which algorithm must be used to decrypt the data.
 
 The remaining section of the file consists of the encrypted data which includes
 the raw model data.
-
--- TODO: Update picture to use a smaller header size by using a packed uint32\_t for the version
 
 \begin{figure}[H]
   \centering
@@ -1272,23 +1276,6 @@ A more detailed code example can be seen in figure
 \ref{fig:local_to_world_appendix} in the appendix.
 
 \subsubsection{Lighting}
-The implementation of lighting was the final rendering system that was
-implemented. Lighting in Computer Graphics refers to how the virtual environment
-i.e. the colors of the resulting pixels are manipulated based on certain
-properties such as light, surface direction, occlusion, emissive materials and
-more. The use of lighting significantly <--
-
-The lighting model that was implemented is called Blinn-Phong which
-derives from the original Phong model developed by By Bui Tuong Phong in a paper
-titled \textit{``Illumination for Computer Generated Pictures''} published in
-1975 \cite{blinn}. 
-
-Purpose of lighting model is to calculate approximations of
-lighting based on the real world.  
-
-Ambient is a constant value that is used instead of global illumination
-as it requires more computational resources and more complex algorithms.
-
 \newcommand{\intensity}{\operatorname{I}}
 \newcommand{\lightdir}{\operatorname{L}}
 \newcommand{\normal}{\operatorname{N}}
@@ -1296,51 +1283,64 @@ as it requires more computational resources and more complex algorithms.
 \newcommand{\glslcolor}{\operatorname{C}}
 \newcommand{\glslmax}{\operatorname{max}}
 
-\begin{equation}
-	A = G + P
-\end{equation}
+The implementation of lighting was the final rendering system that was
+implemented. Lighting in Computer Graphics refers to how the virtual environment
+i.e. the colors of the resulting pixels are manipulated based on certain
+properties such as light, surface direction, occlusion, emissive materials and
+more. The use of lighting significantly improvises the visual fidelity of the
+graphics and increases the realism.
 
-The next step is implementing diffuse lighting. This takes into account the
-light direction $\lightdir$ and the normal $\normal$ for a surface at a
-particular pixel. The formula below calculates the intensity at which light
-reflects off the of an object based on the angle the surface is against a light
-source. 
+The lighting model that was implemented is called Blinn-Phong which derives from
+the original Phong model was developed by Bui Tuong Phong in a paper titled
+\textit{``Illumination for Computer Generated Pictures''} published in 1975
+\cite{blinn}. It describes three main elements including ambient, diffuse and
+specular lighting that works together to produce the final result.
 
-The dot product of the light direction and surface normal returns a value
-between the ranges of -1 to 1 depending on how parallel the directions are. If
-this value is less than 0 then it's clamped as a result of the max function
-which returns the largest value for the given two parameters.
-\begin{gather}
-	\intensity = \glslmax(\vec{\lightdir} \cdot \vec{\normal}, 0) \\
-\end{gather}
-
-Having calculated the intensity value we can now simply multiply it with the
-objects' surface color.
-\begin{equation}
-	\diffuse = \intensity \times \glslcolor
-\end{equation}
-
-Figure \ref{fig:diffuse} demonstrates the use of diffuse lighting which shows
-how each surface of the cube is lit differently based on its angle to the
-directional light source. 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{images/diffuse_lighting.png}
-  \caption{Diffuse Lighting}
-  \label{fig:diffuse}
-\end{figure}
-
-
-The final step in the Blinn-Phong lighting model is specular highlighting. This
-effect adds...
-
+\begin{description}
+  \item[Ambient] Ambient is a constant value that is used instead of global illumination
+    as it requires more computational resources and more complex algorithms.
+    \begin{equation}
+      A = G + P
+    \end{equation}
+  \item[Diffuse] The next step is implementing diffuse lighting. This takes into
+    account the light direction $\lightdir$ and the normal $\normal$ for a
+    surface at a particular pixel. The formula below calculates the intensity at
+    which light reflects off of an object based on the angle off a particular
+    surface.
+    
+    The dot product of the light direction and surface normal returns a value
+    between the ranges of -1 to 1 depending on how parallel the directions are.
+    If this value is equal to or less than 0 then it indicates that the light is
+    behind the surface and thus, is clamped as a result of the max function
+    which returns the largest value for the given two parameters.
+    \begin{gather}
+      \intensity = \glslmax(\vec{\lightdir} \cdot \vec{\normal}, 0) \\
+    \end{gather}
+    
+    Having calculated the intensity value we can now simply multiply it with the
+    objects' surface color as shown in the equation below.
+    \begin{equation}
+      \diffuse = \intensity \times \glslcolor
+    \end{equation}
+    
+    Figure \ref{fig:diffuse} demonstrates a simple example of diffuse lighting
+    and how light interacts with an object based on the various properties
+    discussed. 
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=\textwidth]{images/diffuse_lighting.png}
+      \caption{Diffuse Lighting}
+      \label{fig:diffuse}
+    \end{figure}
+  \item[Specular] The final step in the Blinn-Phong lighting model is specular.
+  This effect adds highlights to certain parts of an object and is where the
+  the intensity of light is strongest.
+\end{description}
 
 \subsection{User Interface}
 The implementation of the user interface was the next major system. This is
 the front end and how the users will be able to interact with the application.
 The user interface is built on top of the Vulkan renderer.
-
-
 
 \subsubsection{Controls}
 The term ``Controls'' refers to a combination of keys also known as
@@ -1395,7 +1395,7 @@ the vast amount of data stored within the font.
 \end{figure}
 
 
-\subsubsection{Load Model Window}
+\subsubsection{Load Model Window} \label{load_model}
 The load model window is accessed through \lstinline{File > Load Model} or by
 pressing the \lstinline{Ctrl + L} shortcut. This window allows the user to load
 a 3D model at runtime by traversing the file system and selecting a model to
@@ -1408,6 +1408,12 @@ load.
   \label{fig:load_model_window}
 \end{figure}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/load_model_encrypted_window.png}
+  \caption{Load Model Encrypted Window}
+  \label{fig:load_model_encrypted_window}
+\end{figure}
 
 \subsubsection{Export Model Window}
 \begin{figure}[H]
@@ -1518,11 +1524,22 @@ encrypted using the AES algorithm.
 \end{figure}
 
 
+\subsubsection{Decryption validation}
+When a model is being decrypted the system must check and ensure that the key
+and iv being used match those originally used to encrypt it. Without this check
+in place, the system will not know what the ``correct'' key and iv are.
 
--- AES (key and initialization vector)
--- Image of how the system works 
-  -- Loads model file, encrypts it and then writes it back out
-  -- File Format structure
+As outlined during the design stage, the file header contains the encrypted key
+and iv. When the user enters their specific key and iv as input parameters into
+the decryption dialog box as shown in figure
+\ref{fig:load_model_encrypted_window} in section \ref{load_model}, \gls*{vmve}
+will first decrypt the header section and check if the input values match. If
+successful, the application will then proceed to decrypt the data section and
+then load the file. If however, this check fails, then the application will
+throw an error and prevent the file from begin decrypted.
+
+
+
 
 \subsection{Distribution}
 - Release mode (optimized)
@@ -2032,6 +2049,18 @@ left with a single asset file that includes all the information, similar to how
 the glTF model format supports the ``.glb'' binary file. This would
 significantly increase the user's experience since assets files would become
 easier to manage.
+
+\subsubsection{Runtime memory protection}
+One of the major flaws present is the lack of security that prevents a user from
+maliciously altering the memory of the application during runtime so that
+encrypted models can be accessed without the need for a valid key or iv.
+
+This can be achieved using applications such as Cheat Engine which provides
+users with a set of tools for analyzing memory addresses, offsets and values
+that can also be manipulated \cite{cheat_engine}.
+
+This will need to be addressed in future versions of \gls*{vmve} so that digital
+assets remain secure for all users.
 
 \subsection{Version Control}
 In regards to the \gls*{vcs} architecture, a potential change that can be done is

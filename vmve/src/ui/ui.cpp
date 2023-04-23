@@ -528,7 +528,7 @@ static void load_model_window(bool* open)
 
             ImGui::BeginDisabled(key_input.empty() || iv_input.empty());
             if (ImGui::Button("Decrypt")) {
-                encryption_keys base16_keys = string_to_base16({ key_input, iv_input });
+                encryption_keys base16_keys = base16_to_bytes({ key_input, iv_input });
                 const auto file = vmve_read_from_file(model_path, base16_keys);
                 if (file)
                     engine::add_model(file->c_str(), static_cast<int>(file->size()), flip_uv);
@@ -581,7 +581,7 @@ static void vmve_export_window(bool* open)
 
     if (ImGui::Button("Generate Key/IV")) {
         keyIV = generate_key_iv(key_size);
-        keyIVString = string_to_base16(keyIV);
+        keyIVString = bytes_to_base16(keyIV);
         generated = true;
     }
 

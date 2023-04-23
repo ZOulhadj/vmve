@@ -1,7 +1,11 @@
 #include "pch.h"
 #include "camera.h"
 
+
+#include "core/platform_input.h"
+
 namespace engine {
+#if 1
     static Camera create_camera(const glm::vec3& pos, float speed, float fov)
     {
         Camera cam{};
@@ -111,4 +115,65 @@ namespace engine {
         camera.vp.proj[1][1] *= -1.0;
 
     }
+#endif
+
+#if 0
+    perspective_camera::perspective_camera(const glm::vec3& position, float speed, float fov, camera_clip clip)
+        : m_position(position),
+        m_front_vector(glm::vec3(0.0f, 0.0f, 1.0f)),
+        m_up_vector(glm::vec3(0.0f, 1.0f, 0.0f)),
+        m_speed(speed), 
+        m_fov(fov), 
+        m_clip(clip)
+    {
+
+    }
+
+    void perspective_camera::on_update(float delta_time)
+    {
+        const float speed = m_speed * delta_time;
+
+        if (key_pressed(GLFW_KEY_W))
+            m_position += m_front_vector * speed;
+        if (key_pressed(GLFW_KEY_S))
+            m_position -= m_front_vector * speed;
+        if (key_pressed(GLFW_KEY_A))
+            m_position -= glm::normalize(glm::cross(m_front_vector, m_up_vector)) * speed;
+        if (key_pressed(GLFW_KEY_D))
+            m_position += glm::normalize(glm::cross(m_front_vector, m_up_vector)) * speed;
+        if (key_pressed(GLFW_KEY_SPACE))
+            m_position += m_up_vector * speed;
+        if (key_pressed(GLFW_KEY_LEFT_CONTROL) || key_pressed(GLFW_KEY_CAPS_LOCK))
+            m_position -= m_up_vector * speed;
+
+        /*if (is_key_down(GLFW_KEY_Q))
+            camera.roll -= camera.roll_speed * deltaTime;
+        if (is_key_down(GLFW_KEY_E))
+            camera.roll += camera.roll_speed * deltaTime;*/
+
+
+        m_transform.view = glm::lookAt(m_position, m_position + m_front_vector, m_up_vector);
+    }
+
+    void perspective_camera::on_resize(window_resized_event& e)
+    {
+        const glm::vec2& size = e.get_size();
+        if (size.x == 0 || size.y == 0)
+            return;
+
+        const float aspect = static_cast<float>(size.x) / static_cast<float>(size.y);
+        m_transform.projection = glm::perspective(glm::radians(m_fov), aspect, m_clip.far, m_clip.near);
+    }
+
+    camera_transform perspective_camera::get_transform()
+    {
+        return m_transform;
+    }
+
+    glm::vec3 perspective_camera::get_position()
+    {
+        return m_position;
+    }
+#endif
+
 }

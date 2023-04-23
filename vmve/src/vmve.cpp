@@ -18,33 +18,7 @@ encryption_keys generate_key_iv(unsigned int keyLength)
     return keys;
 }
 
-encryption_keys string_to_base16(const encryption_keys& keyIV)
-{
-    encryption_keys keys{};
-
-    {
-        CryptoPP::HexDecoder encoder;
-        encoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.key.data()), sizeof(CryptoPP::byte) * keyIV.key.size());
-        encoder.MessageEnd();
-
-        keys.key.resize(encoder.MaxRetrievable());
-        encoder.Get((CryptoPP::byte*)&keys.key[0], keys.key.size());
-
-    }
-    {
-        CryptoPP::HexDecoder encoder;
-        encoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.iv.data()), sizeof(CryptoPP::byte) * keyIV.iv.size());
-        encoder.MessageEnd();
-
-        keys.iv.resize(encoder.MaxRetrievable());
-        encoder.Get((CryptoPP::byte*)&keys.iv[0], keys.iv.size());
-
-    }
-
-    return keys;
-}
-
-encryption_keys base16_to_string(const encryption_keys& keyIV)
+encryption_keys base16_to_bytes(const encryption_keys& keyIV)
 {
     encryption_keys keys{};
 
@@ -54,8 +28,7 @@ encryption_keys base16_to_string(const encryption_keys& keyIV)
         decoder.MessageEnd();
 
         keys.key.resize(decoder.MaxRetrievable());
-        decoder.Get((CryptoPP::byte*)&keys.key[0], keys.key.size());
-
+        decoder.Get(reinterpret_cast<CryptoPP::byte*>(keys.key.data()), keys.key.size());
     }
     {
         CryptoPP::HexDecoder decoder;
@@ -63,7 +36,32 @@ encryption_keys base16_to_string(const encryption_keys& keyIV)
         decoder.MessageEnd();
 
         keys.iv.resize(decoder.MaxRetrievable());
-        decoder.Get((CryptoPP::byte*)&keys.iv[0], keys.iv.size());
+        decoder.Get(reinterpret_cast<CryptoPP::byte*>(keys.iv.data()), keys.iv.size());
+
+    }
+
+    return keys;
+}
+
+encryption_keys bytes_to_base16(const encryption_keys& keyIV)
+{
+    encryption_keys keys{};
+
+    {
+        CryptoPP::HexEncoder encoder;
+        encoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.key.data()), sizeof(CryptoPP::byte) * keyIV.key.size());
+        encoder.MessageEnd();
+
+        keys.key.resize(encoder.MaxRetrievable());
+        encoder.Get(reinterpret_cast<CryptoPP::byte*>(keys.key.data()), keys.key.size());
+    }
+    {
+        CryptoPP::HexEncoder encoder;
+        encoder.Put(reinterpret_cast<const CryptoPP::byte*>(keyIV.iv.data()), sizeof(CryptoPP::byte) * keyIV.iv.size());
+        encoder.MessageEnd();
+
+        keys.iv.resize(encoder.MaxRetrievable());
+        encoder.Get(reinterpret_cast<CryptoPP::byte*>(keys.iv.data()), keys.iv.size());
     }
 
     return keys;
