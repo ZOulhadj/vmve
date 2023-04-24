@@ -1,16 +1,29 @@
 ![logo](.git_assets/logo.svg)
 
-# Vulkan Model Viewer and Exporter
+# VMVE (Vulkan Model Viewer and Exporter)
+An application that provides an easy-to-use, efficient platform for 3D graphics
+rendering and encryption for digital assets.
+
 
 ## Features
 * Standalone application
-* Built using Vulkan
+* Vulkan rendering API
 * Deferred Rendering
 * Supports multiple models
 * Texture mipmaps
 * Debug rendering tools
 * User Interface
 * Internal logging
+
+## Getting started
+### Requirements
+- [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/)
+- [Project external libraries](https://google.com)
+
+
+
+### Building
+
 
 ## Documentation
 VMVE documentation is available [here](https://vmve-docs.rtfd.io)

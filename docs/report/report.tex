@@ -193,11 +193,11 @@ engineering, medicine and more recently within vehicles. This is a testament to
 how versatile this field has become and the major benefits that computer
 graphics provide to the real world.
 
-Although widely used, the development of virtual graphics and environments
-commonly poses a steep learning curve due to the technical details. Many
-different rendering applications already exist that aim to provide a platform to
-easily create digital graphics such as  Unreal Engine \cite{unreal_engine},
-Unity \cite{unity} and RenderMan \cite{render_man} just to name a few. These
+The development of virtual graphics and environments commonly poses a steep
+learning curve due to technical details and features. Many different rendering
+applications already exist that aim to provide a platform for users to easily
+create digital graphics such as  Unreal Engine \cite{unreal_engine}, Unity
+\cite{unity} and RenderMan \cite{render_man} just to name a few. These
 applications are known as ``3D creation tools'' that provide a plethora of
 features and functionality giving the users the freedom to create anything they
 need. However, these tools as a result of a large number of features
@@ -212,25 +212,6 @@ are designed from the ground up for rapid graphics prototyping which includes
 constructing virtual environments, simulating the effect of light on 3D geometry
 and securing digital assets through the use of encryption.
 
-\subsection{Overview}
-This report presents the development of the final-year project and is structured
-such that it outlines each aspect of the development in chronological order.
-There are a total of four key sections in this report:
-\begin{description}
-  \item[Design] Focuses on the concept of the project, the design of the
-    requirements obtained during the requirements-gathering stage followed by
-    the design of the application including the user interface and internal
-    engine architecture.
-  \item[Implementation] Will take the proposed designs and consist of the
-    development of the application as well as presenting the technical
-    implementation details/decisions.
-  \item[Evaluation] comes after the implementation and the main goal of this
-    section is to ensure that the application has met the aims and objectives
-    outlined in the projects.
-  \item[Future Work] is the final key section that aims to outline the aims and
-    specific features that will need to be implemented going forward in regards
-    to the project.
-\end{description}
 
 \subsection{Stakeholders}
 Two main stakeholders will be directly affected by the project and subsequently
@@ -244,7 +225,7 @@ met.
 
 The users on the other hand are individuals that will test and use the
 application once it has been developed. The main aims and objectives of this
-project will focus on these users to ensure that all their needs can be met. 
+project will focus on these users to ensure that all their needs are fulfilled.
 
 \subsection{Requirements}
 The design, implementation and evaluation of the project rely on a set of aims
@@ -254,22 +235,20 @@ was to outline and better understand the requirements for each of the
 stakeholders mentioned in the previous section.
 
 \subsection{Aims and Objectives}
-Throughout this project, each unique stakeholder will have a different set of
-aims and objectives. 
-
-\gls*{vmve} has three main aims and consists of several objectives that outline
-the concrete steps that will need to be implemented in order to achieve said
-aims.
-
 \subsubsection{Supervisors}
 
 \begin{description}
-  \item[Meetings] 
+  \item[Meetings] These are to be held at various stages of the project which
+  aim to keep both supervisors up-to-date with the project's progress.
   \item[Presentations] 
   \item[Sprints] 
 \end{description}
 
 \subsubsection{Users}
+\gls*{vmve} has three main aims and consists of several objectives that outline
+the concrete steps that will need to be implemented to ensure the users of the
+application successfully achieve their desired goals.
+
 \begin{description}
   \item[Platform for virtual environment authoring] The first goal of
     \gls*{vmve} is to provide an ``easy-to-use'' platform for creating virtual
@@ -386,6 +365,32 @@ implementation stages extra effort will be spent on ensuring that no such design
 pattern is introduced. This will greatly benefit users and thus, increase the
 overall user experience.
 
+\subsection{Background}
+Why project is suitable?
+- highly technical 
+- uses aspects from many modules
+
+
+\subsection{Overview}
+This report presents the development of the final-year project and is structured
+such that it outlines each aspect of the development in chronological order.
+There are a total of four key sections in this report:
+\begin{description}
+  \item[Design] Focuses on the concept of the project, the design of the
+    requirements obtained during the requirements-gathering stage followed by
+    the design of the application including the user interface and internal
+    engine architecture.
+  \item[Implementation] Will take the proposed designs and consist of the
+    development of the application as well as presenting the technical
+    implementation details/decisions.
+  \item[Evaluation] comes after the implementation and the main goal of this
+    section is to ensure that the application has met the aims and objectives
+    outlined in the projects.
+  \item[Future Work] is the final key section that aims to outline the aims and
+    specific features that will need to be implemented going forward in regards
+    to the project.
+\end{description}
+
 \clearpage
 \section{Technology Review} \label{technology_review}
 This project made use of various technologies at different stages throughout the
@@ -423,12 +428,9 @@ platforms that are built on top of Git. A few examples include
 \href{http://github.com}{GitHub}, \href{http://gitlab.com}{GitLab} and
 \href{https://bitbucket.org/}{Bitbucket}. By far the most popular option is
 GitHub which is the platform that I am most familiar with and therefore, GitHub
-will be the platform of choice for this project.
-
-
-The \gls*{vmve} project is hosted on GitHub as a private repository
-\url{https://github.com/ZOulhadj/vmve/}
-
+will be the platform of choice for this project. Appendix section
+\ref{github} includes additional information such as how the
+repository is hosted.
 
 GitHub as well as providing hosting for the repository also provides different
 features related to task management. One such feature is known as GitHub issues.
@@ -1895,7 +1897,7 @@ Computer graphics is a large field
 
 One of the major downsides that this project suffers from is the projects time
 constraints. Given the relative complexity of the project many of the features
-implemented in \gls*{vmve} are quite rudimentary and serves as a basic prototype that
+implemented in \gls*{vmve} are quite rudimentary and serve as a basic prototype that
 showcases the underlying technology and the potential future work that can be
 undertaken.
 
@@ -1907,17 +1909,17 @@ Could have planned better by designing systems before implementing them.
 
 
 \subsection{Choice of rendering API}
-This project was built on top of the \gls*{vulkan} which as previously discussed is a
-low-level \gls*{gpu} \gls*{api}. One of the major downsides to having chosen Vulkan as
-the \gls*{api} of choice for this project was the significant amount of time had
-to be spent implementing the various rendering features due to how verbose and
-technical the \gls*{api} is. The use of the API is only really beneficial if a
-developer wants to make full use of the additional performance through the use
-of multithreading, multiple command buffers and very specific memory allocation
-requirements.
+This project was built on top of the \gls*{vulkan} which as previously discussed
+is a low-level \gls*{gpu} \gls*{api}. One of the major downsides to having
+chosen Vulkan as the \gls*{api} of choice for this project was the significant
+amount of time that had to be spent implementing the various rendering features
+due to how verbose and technical the \gls*{api} is. The use of the API is only
+really beneficial if a developer wants to make full use of the additional
+performance through the use of multithreading, multiple command buffers and very
+specific memory allocation requirements.
 
 If given the choice, I would rewrite the renderer, using a far simpler \gls*{api}
-such as DirectX11 or OpenGL as they provide same functionality but with
+such as DirectX11 or OpenGL as they provide the same functionality but with
 significantly less work required. This would allow me to focus and spend more time 
 implementing the many other features required in such an application.
 
@@ -1929,9 +1931,9 @@ videos were uploaded and are hosted on the Zakariya Oulhadj YouTube channel
 
 \clearpage
 \section{Future Work}
-Going forward there are various features that are currently being evaluated as
-potentially implemented in the near future. These features aim to greatly
-increase \glspl*{vmve} usability and provide a whole host of new features.
+Going forward various features are currently being evaluated as potentially
+implemented soon. These features aim to greatly increase \glspl*{vmve} usability
+and provide a whole host of new features.
 
 \subsection{Rendering}
 
@@ -1975,7 +1977,7 @@ to the camera projection frustum which can be seen in figure
 This technique significantly improves performance as each object in the world is
 contained within a ``bounding box'' which is often a cube or a sphere
 \ref{fig:bounding_boxes}. Then for each object, a check is performed against the
-bounded box instead of the actual vertices. This allow for in the best case a
+bounded box instead of the actual vertices. This allows for in the best case a
 single check or at its worst 8 checks per object. This is far better than
 needing to perform thousands of checks for all the vertices of an object.
 
@@ -1989,7 +1991,7 @@ needing to perform thousands of checks for all the vertices of an object.
 
 \subsubsection{Spatial Acceleration Structures}
 \gls*{vmve} only supports loading basic models however, in the future many other
-features need to be implemented. One such feature is large scale terrain as seen
+features need to be implemented. One such feature is large-scale terrain as seen
 in figure \ref{fig:quad_tree_terrain}.
 
 \begin{figure}[H]
@@ -2006,9 +2008,9 @@ vertex, if packed efficiently could be 32 bytes each that includes positions (12
 bytes), normals (12 bytes) and texture coordinates (8 bytes). In terms of
 memory, this would require 12.8GB of data just for the terrain.
 
-A common solution to this, is implementing a type of spatial acceleration
+A common solution to this is implementing a type of spatial acceleration
 structure also known as \gls*{lod}. These structures are designed as the name
-suggests, to increase the speed for algorithms in the spatial domain including
+suggests, to increase the speed of algorithms in the spatial domain including
 images and environments.
 
 A quadtree is a type of spatial acceleration structure that stores a
@@ -2165,6 +2167,11 @@ throughout the development of \gls*{vmve}.
 \textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}
 \textattachfile{attached_documents/meetings.docx}{\textcolor{skyblue}{Meetings}}
 
+
+\subsection{GitHub} \label{github}
+The \gls*{vmve} project is hosted on GitHub as a private repository.
+\url{https://github.com/ZOulhadj/vmve/}
+
 \subsection{Rendering API history} \label{rendering_api_appendix}
 One of the core aspects of \gls*{vmve} is making use of the underlying hardware and
 more specifically the GPU (Graphics Processing Unit) which will be primarily
@@ -2178,8 +2185,8 @@ architectures including AMDs RDNA \cite{RDNA} or NVIDIAs ADA \cite{ADA} as well
 as various capabilities that differ between hardware vendors. An application
 attempting to target GPUs would need to consider this including having access to
 the GPU drivers (Low-level software that allows a specific piece of hardware to
-function). Oftentimes, drivers are considered trade secrets that companies do
-not want freely available. Given the complexity and variations of modern
+function). Oftentimes, software drivers are trade secrets that companies do not
+want freely available. Given the complexity and variations of modern
 \glspl*{gpu} this is simply not feasible.
 
 Companies from across different industries solved this issue by creating
@@ -2230,4 +2237,4 @@ choose one.
 
 \end{document}
 
-% end of document
+% end of the document

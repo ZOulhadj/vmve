@@ -1056,7 +1056,6 @@ INPUT .\images\project_signoff.png
 INPUT .\images\project_signoff.png
 INPUT .\images\project_signoff.png
 INPUT .\images\project_signoff.png
-INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmtt10.tfm
 INPUT .\images\kanban_design.png
 INPUT .\images\kanban_design.png
 INPUT images\kanban_design.png
@@ -1104,6 +1103,7 @@ INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\tex\latex\listings\lstmisc.st
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\tex\latex\listings\lstmisc.sty
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\tex\latex\listings\lstmisc.sty
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\tex\latex\listings\lstmisc.sty
+INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmtt10.tfm
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmtt9.tfm
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmr9.tfm
 INPUT .\images\project_architecture.png
