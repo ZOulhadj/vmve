@@ -27,6 +27,9 @@ rendering and encryption for digital assets.
 git clone https://github.com/ZOulhadj/vmve.git
 ```
 
+1. Update path to Vulkan SDK
+2. Copy libraries to correct locations
+
 ## Documentation
 VMVE documentation is available [here](https://vmve-docs.rtfd.io)
 
