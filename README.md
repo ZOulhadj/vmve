@@ -23,7 +23,9 @@ rendering and encryption for digital assets.
 
 
 ### Building
-
+```
+git clone https://github.com/ZOulhadj/vmve.git
+```
 
 ## Documentation
 VMVE documentation is available [here](https://vmve-docs.rtfd.io)
