@@ -1,14 +1,14 @@
 # Fdb version 4
-["bibtex report"] 1682247534 "report.aux" "report.bbl" "report" 1682275761 0
-  "./refs.bib" 1682247514 5241 416830c5bfa3083d6c8e76420a037bf9 ""
+["bibtex report"] 1682343674 "report.aux" "report.bbl" "report" 1682343738 0
+  "./refs.bib" 1682336780 5241 630eb349b32859e05d0162b59eb5f68e ""
   "C:/Users/zakar/AppData/Local/Programs/MiKTeX/bibtex/bib/ieeetran/IEEEabrv.bib" 1440617548 20898 a5d2167c380db7dfff810b085c77ed63 ""
   "C:/Users/zakar/AppData/Local/Programs/MiKTeX/bibtex/bst/ieeetran/IEEEtran.bst" 1440622569 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "report.aux" 1682275760 43715 105354f73d70d7661c95b51cc45be0d7 "pdflatex"
+  "report.aux" 1682343736 44118 330b37fb14847c1e76377d17e69f70c6 "pdflatex"
   (generated)
   "report.bbl"
   "report.blg"
   (rewritten before read)
-["pdflatex"] 1682275753 "c:/Users/zakar/Projects/vmve/docs/report/report.tex" "report.pdf" "report" 1682275761 0
+["pdflatex"] 1682343728 "c:/Users/zakar/Projects/vmve/docs/report/report.tex" "report.pdf" "report" 1682343738 0
   "C:/Users/zakar/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1681782128 80909 eab91d9745dd2edfd62a31d53cd5fe15 ""
   "C:/Users/zakar/AppData/Local/MiKTeX/fonts/pk/ljfour/jknappen/ec/dpi600/tcti0800.pk" 1680784349 11124 fd318e9f2fda63d72ee2062af7a4e0c9 ""
   "C:/Users/zakar/AppData/Local/MiKTeX/fonts/pk/ljfour/jknappen/ec/dpi600/tctt0900.pk" 1680530247 8332 6973c1e448b60e52c69f74edea7983cc ""
@@ -156,7 +156,7 @@
   "attached_documents/milestone_1.pdf" 1680390303 32556 6e0c73a126014178a577b86e075ff415 ""
   "attached_documents/milestone_2_signed.pdf" 1668147648 60536 250c069a891264f54906789ccaad6d77 ""
   "attached_documents/user_feedback.xlsx" 1681532925 10753 6de9ff067efb2ddf01b58bdefcaa1396 ""
-  "c:/Users/zakar/Projects/vmve/docs/report/report.tex" 1682275752 98220 0a47c8b942190e866c665295865545aa ""
+  "c:/Users/zakar/Projects/vmve/docs/report/report.tex" 1682343727 99146 8a608cf07c9894870fbb9d470589af8c ""
   "images/api_abstraction.png" 1681533547 9762 92f2d25f7f3766b2adff26c7111ddd5a ""
   "images/api_comparison.png" 1680833757 15286 84f2d67c3568b71ed003e62b88cdb79d ""
   "images/bounding_boxes.png" 1679031886 10910 b8f339c84971c970532426a04c8113c2 ""
@@ -188,6 +188,7 @@
   "images/project_architecture.png" 1682136693 49359 1dc1e2883020663995c441e4219e6f1a ""
   "images/project_icon.png" 1676787501 6525 d2862f5672dfdbb54856e99a8494af82 ""
   "images/project_logo.png" 1674372941 6493 89aa6af0cad6a308f49df649899cf7dd ""
+  "images/project_signoff.png" 1682341597 53357 26eea45dd7116d0d0ff238a9515aa48d ""
   "images/quad_tree.png" 1680448812 111652 b7b51b863363dfd28b99a0732ac28387 ""
   "images/quad_tree_terrain.png" 1680447025 277618 884cab575b8ca5135690ef663d5125ae ""
   "images/renderdoc.png" 1679545458 236990 769d077a55224a853e863e02c84a08bf ""
@@ -204,11 +205,11 @@
   "images/visual_studio.png" 1679545921 281866 b147ae647b48e98dcb2e3ec1acce299e ""
   "images/vmve_file_structure.png" 1682156444 8158 7a6158acaeeccec8659f41c60bd2b990 ""
   "images/website.png" 1678581119 682339 9a0432eccc56d6940a0906367f6a8413 ""
-  "report.aux" 1682275760 43715 105354f73d70d7661c95b51cc45be0d7 "pdflatex"
-  "report.bbl" 1682247534 4535 394c7707ccfd8f9461e003462d6c0dbc "bibtex report"
-  "report.out" 1682275760 13775 75ebb1cfbb1a433d9ab59f53b811b398 "pdflatex"
-  "report.tex" 1682275752 98220 0a47c8b942190e866c665295865545aa ""
-  "report.toc" 1682275760 8628 4d9a8240340e5865b3e454053c1e0591 "pdflatex"
+  "report.aux" 1682343736 44118 330b37fb14847c1e76377d17e69f70c6 "pdflatex"
+  "report.bbl" 1682343674 4535 394c7707ccfd8f9461e003462d6c0dbc "bibtex report"
+  "report.out" 1682343736 14003 dfcf94d2a0d0dc47ca7c3591d095672e "pdflatex"
+  "report.tex" 1682343727 99146 8a608cf07c9894870fbb9d470589af8c ""
+  "report.toc" 1682343736 8800 f235161e2bce12c4f5d5b0eef1b4379f "pdflatex"
   (generated)
   "report.aux"
   "report.log"

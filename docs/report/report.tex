@@ -208,7 +208,7 @@ To address these issues, I introduce my final year project, \gls*{vmve}. A
 standalone application developed in the domain of Computer Graphics that
 provides an easy-to-use, efficient platform for 3D graphics rendering and 3D
 asset safety. \gls*{vmve} will provide a specific subset of features that
-are designed from the ground up for rapid graphics prototyping which include
+are designed from the ground up for rapid graphics prototyping which includes
 constructing virtual environments, simulating the effect of light on 3D geometry
 and securing digital assets through the use of encryption.
 
@@ -232,16 +232,44 @@ There are a total of four key sections in this report:
     to the project.
 \end{description}
 
-\subsection{Requirements gathering}
-Successfully designing, implementing and evaluating a project relies on a set of
-aims and objectives to be fully defined. The first step toward obtaining these
-requirements relied on a ``Requirements gathering'' stage. The purpose of this
-was to understand who the stakeholders are and their specific needs.
+\subsection{Stakeholders}
+Two main stakeholders will be directly affected by the project and subsequently
+\gls*{vmve}. These are the final-year project supervisors and the end users. Each
+stakeholder needs a different set of requirements to be successfully achieved.
+
+The supervisors (Dr. Charles Clarke and Alex Collins) oversee the progress of
+the project. Meetings are to be held regularly and aim to inform all parties of
+the progress being made. This ensures that the requirements set out are being
+met.
+
+The users on the other hand are individuals that will test and use the
+application once it has been developed. The main aims and objectives of this
+project will focus on these users to ensure that all their needs can be met. 
+
+\subsection{Requirements}
+The design, implementation and evaluation of the project rely on a set of aims
+and objectives to be fully defined. The first step toward obtaining these
+requirements relied on a ``requirements gathering'' stage. The purpose of this
+was to outline and better understand the requirements for each of the
+stakeholders mentioned in the previous section.
 
 \subsection{Aims and Objectives}
-\gls*{vmve} has three main aims and consists of several objectives that outline
-the concrete steps required to achieve those aforementioned aims.
+Throughout this project, each unique stakeholder will have a different set of
+aims and objectives. 
 
+\gls*{vmve} has three main aims and consists of several objectives that outline
+the concrete steps that will need to be implemented in order to achieve said
+aims.
+
+\subsubsection{Supervisors}
+
+\begin{description}
+  \item[Meetings] 
+  \item[Presentations] 
+  \item[Sprints] 
+\end{description}
+
+\subsubsection{Users}
 \begin{description}
   \item[Platform for virtual environment authoring] The first goal of
     \gls*{vmve} is to provide an ``easy-to-use'' platform for creating virtual
@@ -257,12 +285,14 @@ the concrete steps required to achieve those aforementioned aims.
     not eliminate jargon. A simple example could be to use the word ``Move''
     instead of ``Translate'' when referring to objects in the virtual
     environment and as such, would make the application more accessible.
+
   \item[Lower hardware requirements] The second aim of the application is to be
     as efficient as possible with the goal of lowering the hardware
     requirements. The application's efficiency and aims vary based on the
     component in question that include the \gls*{cpu}, \gls*{gpu}, memory and
     storage. From the ground up \gls*{vmve} will strive to be as efficient as
     possible by using the latest technologies available.
+
   \item[Provide secure 3D asset encryption] The last of the three main goals is
     for the application to include its custom model format that makes use of
     encryption to safely secure a user's digital assets. The motivation for
@@ -284,20 +314,19 @@ the concrete steps required to achieve those aforementioned aims.
     model into the application.
 \end{description}
 
+The aims and objectives discussed above were part of the project proposal
+document and which was signed off for milestone 2. The complete document can
+been viewed in appendix section \ref{supporting_documents}.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/project_signoff.png}
+  \caption{Project proposal sign-off}
+  \label{fig:project_signoff}
+\end{figure}
+
 \subsection{Considerations}
-\subsubsection{Stakeholders}
-Two main stakeholders will be directly affected by the project and subsequently
-\gls*{vmve}. These are the final-year project supervisors and the end users. Each
-stakeholder needs a different set of requirements to be successfully achieved.
-
-The supervisors (Dr. Charles Clarke and Alex Collins) oversee the progress of
-the project. Meetings are to be held regularly and aim to inform all parties of
-the progress being made. This ensures that the requirements set out are being
-met.
-
-The users on the other hand are individuals that will use \gls*{vmve} once it has
-been developed. The aims and objectives discussed earlier directly affect these
-users.
+Several different types of considerations must also be taken into account before
+commencing work on the application.
 
 \subsubsection{Legal}
 Legal considerations are important when distributing an application indented to
@@ -440,7 +469,7 @@ This is a compiler that comes bundled with the Microsoft Visual Studio
 \gls*{ide}.
 
 The \gls*{ide} also provides debugging functionality that will be used
-extensively to fix crashes, bugs and generally ensure that the application
+extensively to fix crashes, and bugs and generally ensure that the application
 runs as expected \cite{visualstudio}. 
 
 Some additional tools will be used that will further improve the ease of
@@ -574,11 +603,9 @@ The other libraries used in \gls*{vmve} can be seen in the list below.
 \clearpage
 \section{Design}
 The next stage of the project was designed and occurred between milestones two
-and three. 
-
-Having discussed the different technologies being used in \gls*{vmve}, they must
-now be evaluated and incorporated into the design of \gls*{vmve} and its various
-subsystems.
+and three. Having discussed the different technologies being used in
+\gls*{vmve}, they must now be evaluated and incorporated into the design of the
+application and it's various subsystems.
 
 \subsection{Branding}
 The branding i.e the look of the application was an important factor during the
@@ -1450,7 +1477,7 @@ This functionality is implemented by taking the matrix transformation of an
 object and feeding that information to ImGuizmo \cite{imguizmo}. It will then
 perform the necessary mathematical calculations to convert from the objects
 world space to screen space. In other words, no matter where in the virtual
-environment the object is located, it will always be shown relative to the users
+environment the object is located, it will always be shown relative to the user's
 screen. A small code snippet can be seen below \ref{fig:imguizmo_code} where
 \(M\) represents the model in the \(MVP\) projection.
 
@@ -1469,7 +1496,7 @@ screen. A small code snippet can be seen below \ref{fig:imguizmo_code} where
 \end{figure}
 
 \subsection{Logging system}
-Due to the relative complexity of the underlying application and number of
+Due to the relative complexity of the underlying application and the number of
 moving components a logging system was developed to provide a clear
 understanding of the current state of \gls*{vmve}. 
 
@@ -1481,11 +1508,11 @@ understanding of the current state of \gls*{vmve}.
 \end{figure}
 
 Messages are stored in a fixed-size array that is preallocated. This ensures
-that there are no potential allocations occurring each time ``print\_log''  is
-called. By default \gls*{vmve} allows for a maximum of 10,000 log messages before
-the buffer becomes full. In the event that the buffer does become full, the
-first log message i.e the oldest one is overwritten when a new log message is
-created \ref{fig:logging_system}. 
+that no potential allocations are occurring each time ``print\_log''  is called.
+By default \gls*{vmve} allows for a maximum of 10,000 log messages before the
+buffer becomes full. If the buffer does become full, the first log message i.e
+the oldest one is overwritten when a new log message is created
+\ref{fig:logging_system}. 
 
 \begin{figure}[H]
   \centering
@@ -1542,7 +1569,12 @@ throw an error and prevent the file from begin decrypted.
 
 
 \subsection{Distribution}
+-O3 /release
+
 - Release mode (optimized)
+
+
+
 - Windows only currently
 
 \subsubsection{Versions}
@@ -1558,14 +1590,14 @@ backward compatibility cannot be guaranteed. The current official release of
 Alongside the application, a website was created as a platform for easily
 distributing the application. It includes a features section that showcases and
 gives users a preview of the application through the use of images and videos.
-Futhermore, a download link is provided giving users an easy way of obtaining
+Furthermore, a download link is provided giving users an easy way of obtaining
 the executable without needing to understand the technicalities of GitHub as it
 is designed with programmers in mind.
 
 In regards to downloads, there are two types. The first is an active development
 version which is regularly updated and acts as a beta release for versions that
-have not yet been officially released. The second is current and past \gls*{vmve} versions
-going all the back to the first official release (v0.0.1).
+have not yet been officially released. The second is current and past
+\gls*{vmve} versions going all the back to the first official release (v0.0.1).
 
 \begin{figure}[H]
   \centering
@@ -1576,12 +1608,11 @@ going all the back to the first official release (v0.0.1).
 
 
 \subsubsection{Example models}
-The \gls*{vmve} website provides an additional download link to six different example
-models. These are provided by third parties (with appropriate credits) and are
-corrected to ensure they can be loaded into \gls*{vmve} without any issues. The purpose
-of these example models is to allow users to easily test the application without
-needing to search the internet or create their own.
-
+The \gls*{vmve} website provides an additional download link to six different
+example models. These are provided by third parties (with appropriate credits)
+and are corrected to ensure they can be loaded into \gls*{vmve} without any
+issues. The purpose of these example models is to allow users to easily test the
+application without needing to search the internet or create their own.
 
 \subsubsection{Documentation}
 In addition to a website, a documentation website was also created curticy of
@@ -1609,12 +1640,12 @@ feedback.
 
 \subsection{Distribution}
 In hindsight, the most challenging aspect of the entire project was by far,
-distribution and more specifically ensuring that \gls*{vmve} was able to run on all
-supported systems as expected. Throughout the applications development, there
-were points where \gls*{vmve} would work on the development machine, however,
-throw an exception error on other systems. These inconsistencies paired with the
-lack of reproducibility made these issues quite difficult to debug. The majority
-of these inconsistencies between different systems occurred during the
+distribution and more specifically ensuring that \gls*{vmve} was able to run on
+all supported systems as expected. Throughout the applications development,
+there were points where \gls*{vmve} would work on the development machine,
+however, throw an exception error on other systems. These inconsistencies paired
+with the lack of reproducibility made these issues quite difficult to debug. The
+majority of these inconsistencies between different systems occurred during the
 initialization stages. This would include creating the window, initializing the
 renderer, initializing the UI, creating the audio system etc.
 
@@ -1643,7 +1674,7 @@ key goals not being achieved and/or features not being implemented.
 
 As mentioned in section \ref{project_management}, GitHub was chosen and has been
 a highly effective tool throughout development regarding management and
-distributing tasks. Over 50 different GitHub issues have been resolved such as 
+distributing tasks. Over 50 different GitHub issues have been resolved such as
 small user interface issues, implementation bugs and major structural changes.
 
 - How effective was the use of project management tools
@@ -2115,17 +2146,6 @@ specific needs and requirements when using \gls*{vmve}.
 This has been a long journey that has presented me with various challenges
 throughout the development of \gls*{vmve}.
 
-
-\clearpage
-\section{Documents}
-
-
-\textattachfile{attached_documents/milestone_1.pdf}{\textcolor{skyblue}{Milestone 1}}
-\textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{skyblue}{Milestone 2}}
-\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}
-\textattachfile{attached_documents/meetings.docx}{\textcolor{skyblue}{Meetings}}
-
-
 \clearpage
 \printnoidxglossary
 
@@ -2138,6 +2158,12 @@ throughout the development of \gls*{vmve}.
 
 \clearpage
 \section{Appendices}
+
+\subsection{Supporting documents} \label{supporting_documents}
+\textattachfile{attached_documents/milestone_1.pdf}{\textcolor{skyblue}{Milestone 1}}
+\textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{skyblue}{Milestone 2}}
+\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}
+\textattachfile{attached_documents/meetings.docx}{\textcolor{skyblue}{Meetings}}
 
 \subsection{Rendering API history} \label{rendering_api_appendix}
 One of the core aspects of \gls*{vmve} is making use of the underlying hardware and
