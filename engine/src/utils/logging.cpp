@@ -36,7 +36,7 @@ namespace engine {
         }
     }
 
-    engine::log_msg logging::get_log(std::size_t index)
+    log_msg logging::get_log(std::size_t index)
     {
         // todo: A check is required to make to ensure that 
         // index is not out of bounds
