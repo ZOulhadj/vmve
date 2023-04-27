@@ -73,7 +73,7 @@ namespace engine {
             current_bytes += format_to_bytes(format);
 
             if (current_bytes > max_bytes) {
-                print_warning("Total attribute size is larger than binding size.\n");
+                warn("Total attribute size is larger than binding size.");
                 return;
             }
 

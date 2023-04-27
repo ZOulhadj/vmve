@@ -178,14 +178,14 @@ namespace engine {
         // Initialize core systems
         engine->window = create_platform_window(name, { width, height });
         if (!engine->window) {
-            print_error("Failed to create window.\n");
+            error("Failed to create window.");
             return false;
         }
         set_window_event_callback(engine->window, event_callback);
 
         engine->audio = initialize_audio();
         if (!engine->audio) {
-            print_error("Failed to initialize audio.\n");
+            error("Failed to initialize audio.");
 
             // NODE: At this moment in time, audio failing to initialize is not critical
             // and therefore, print an error but dont return nullptr.
@@ -196,7 +196,7 @@ namespace engine {
 
         engine->renderer = create_renderer(engine->window, buffer_mode::double_buffering, vsync_mode::enabled);
         if (!engine->renderer) {
-            print_error("Failed to create renderer.\n");
+            error("Failed to create renderer.");
             return false;
         }
 
@@ -388,7 +388,7 @@ namespace engine {
         g_engine->start_time = get_time();
         g_engine->app_location = get_executable_directory();
 
-        print_log("Initializing engine (%s)\n", g_engine->app_location.c_str());
+        info("Initializing engine {}", g_engine->app_location);
 
         if (!initialize_core(g_engine, name, width, height)) {
             return false;
@@ -401,7 +401,7 @@ namespace engine {
         g_engine->using_skybox = false;
 
         const float startup_duration = get_duration(g_engine->start_time, get_time());
-        print_log("Successfully initialized engine in %.2fms\n", startup_duration);
+        info("Successfully initialized engine in {:.2f}ms", startup_duration);
 
 
         //model test_model;
@@ -530,7 +530,7 @@ namespace engine {
     {
         assert(g_engine);
 
-        print_log("Terminating engine.\n");
+        info("Terminating engine.");
 
         wait_for_gpu();
 
@@ -604,7 +604,7 @@ namespace engine {
 
     void set_vsync(bool enabled)
     {
-        print_warning("Vsync toggling not yet implemented.");
+        warn("Vsync toggling not yet implemented.");
 
         // TODO: We might need to recreate swapchain at the end and not in the middle?
 #if 0
@@ -649,7 +649,7 @@ namespace engine {
         // todo: continue from here
         bool model_loaded = load_model(model, path, flipUVs);
         if (!model_loaded) {
-            print_error("Failed to load model: %s\n", model.path.c_str());
+            error("Failed to load model: {}.", model.path);
             return;
         }
 
@@ -663,7 +663,7 @@ namespace engine {
 
         bool model_created = create_model(model, data, size, flipUVs);
         if (!model_created) {
-            print_error("Failed to create model from memory.\n");
+            error("Failed to create model from memory.");
             return;
         }
 
@@ -721,7 +721,7 @@ namespace engine {
 #else
         g_engine->entities.erase(g_engine->entities.begin() + instanceID);
 
-        print_log("Instance (%d) removed.\n", instanceID);
+        info("Instance ({}) removed.", instanceID);
 #endif
 
 
@@ -830,7 +830,7 @@ namespace engine {
         // todo: continue from here
         bool model_loaded = load_model(skybox_model, path, true);
         if (!model_loaded) {
-            print_error("Failed to load environment model/texture: %s\n", skybox_model.path.c_str());
+            error("Failed to load environment model/texture: {}.", skybox_model.path);
             return;
         }
 
@@ -993,7 +993,7 @@ namespace engine {
         end_command_buffer(ui_cmd_buffer);
     }
 
-    void* engine_get_viewport_texture(Viewport_View view)
+    void* get_viewport_texture(Viewport_View view)
     {
         const uint32_t current_image = get_frame_image_index();
 
@@ -1127,26 +1127,6 @@ namespace engine {
         glfwSetInputMode(get_window_handle(g_engine->window), GLFW_CURSOR, mode);
     }
 
-    void clear_logs()
-    {
-        clear_log_buffer();
-    }
-
-    void engine_export_logs_to_file(const char* path)
-    {
-        export_logs_to_file(path);
-    }
-
-    int get_log_count()
-    {
-        return get_total_log_count();
-    }
-
-    void get_log(int logIndex, const char** str, int* log_type)
-    {
-        get_log_message(logIndex, str, log_type);
-    }
-
     void set_master_volume(float master_volume)
     {
         set_audio_volume(g_engine->audio, master_volume);
@@ -1163,7 +1143,7 @@ namespace engine {
         return true;
     }
 
-    void engine_pause_audio(int audio_id)
+    void pause_audio(int audio_id)
     {
         stop_audio_source(g_engine->audio_source);
     }

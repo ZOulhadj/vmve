@@ -1,8 +1,10 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-namespace engine {
+// todo: we must include all headers of the engine here
+#include <../src/utils/logging.h>
 
+namespace engine {
 
     // TODO: Find a better way of obtaining engine specific details without having
     // everything be a function. Maybe a single struct with everything combined?
@@ -303,33 +305,6 @@ namespace engine {
     //
     float* get_camera_far();
 
-    // Logs
-
-    //
-    //
-    //
-    //
-    void clear_logs();
-
-    //
-    //
-    //
-    //
-    void export_logs_to_file(const char* path);
-
-    //
-    //
-    //
-    //
-    int get_log_count();
-
-    //
-    //
-    //
-    //
-    void get_log(int logIndex, const char** str, int* log_type);
-
-
     // UI
 
     //
@@ -353,12 +328,12 @@ namespace engine {
     void end_ui_pass();
 
     // Viewport
-    void* engine_get_viewport_texture(Viewport_View view);
+    void* get_viewport_texture(Viewport_View view);
 
     // Audio
     void set_master_volume(float master_volume);
     bool play_audio(const char* path);
-    void engine_pause_audio(int audio_id);
+    void pause_audio(int audio_id);
     void stop_audio(int audio_id);
     void set_audio_volume(float audio_volume);
 }

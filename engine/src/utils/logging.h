@@ -4,24 +4,7 @@
 //std::cout << "(" << fmt.location.function_name() << "@" << fmt.location.line() << ") ";
 
 namespace engine {
-    template <typename... Args>
-    void println(std::string_view fmt, Args&&... args)
-    {
-        std::cout << std::vformat(fmt, std::make_format_args(args...)) << "\n";
-    }
 
-    template <typename... Args>
-    void println_info(std::string_view fmt, Args&&... args) { println(fmt, args); }
-    template <typename... Args>
-    void println_warning(std::string_view fmt, Args&&... args) { println(fmt, args); }
-    template <typename... Args>
-    void println_error(std::string_view fmt, Args&&... args) { println(fmt, args); }
-}
-
-
-// todo(zak): old logging api which will need to be replaced by the one above.
-
-namespace engine {
     enum class log_type
     {
         info,
@@ -29,23 +12,43 @@ namespace engine {
         error
     };
 
-    struct log_message
+    struct log_msg
     {
-        log_type type;
-        std::string string;
+        log_type    type;
+        std::string data;
     };
 
+    class logging
+    {
+    public:
+        static void add_log(log_type type, const std::string& data);
+        static void output_to_file(const std::filesystem::path& path);
+        static log_msg get_log(std::size_t index);
+        static std::size_t size();
+        static void clear();
+    private:
+        static std::vector<log_msg> m_logs;
+        static std::size_t m_index;
+        static std::size_t m_capacity;
+    };
 
-    void print_log(const char* fmt, ...);
-    void print_warning(const char* fmt, ...);
-    void print_error(const char* fmt, ...);
+    template <typename... Args>
+    void info(std::string_view fmt, Args&&... args)
+    { 
+        logging::add_log(log_type::info, std::vformat(fmt, std::make_format_args(args...)) + "\n");
+    }
 
-    void clear_log_buffer();
+    template <typename... Args>
+    void warn(std::string_view fmt, Args&&... args)
+    {
+        logging::add_log(log_type::warning, std::vformat(fmt, std::make_format_args(args...)) + "\n");
+    }
 
-    void get_log_message(uint32_t logIndex, const char** str, int* type);
-    int get_total_log_count();
-
-    void export_logs_to_file(const char* path);
+    template <typename... Args>
+    void error(std::string_view fmt, Args&&... args)
+    {
+        logging::add_log(log_type::error, std::vformat(fmt, std::make_format_args(args...)) + "\n");
+    }
 }
 
 #endif

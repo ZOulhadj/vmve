@@ -3,107 +3,59 @@
 
 
 namespace engine {
-    static constexpr uint32_t g_log_history = 10'000;
-    static std::vector<log_message> g_log_buffer(g_log_history);
-    static uint32_t g_log_size = 0;
+    constexpr std::size_t max_logs = 200;
+    std::vector<log_msg> logging::m_logs = std::vector<log_msg>(max_logs);
+    std::size_t logging::m_index = 0;
+    std::size_t logging::m_capacity = 0;
 
-    static void check_log_bounds()
+    void logging::add_log(log_type type, const std::string& data)
     {
-        if (g_log_size < g_log_history) {
-            return;
-        }
+        // If we reach the end of the buffer then go back to the start
+        if (m_index + 1 >= m_logs.size())
+            m_index = 0;
 
-        // At this point, the number of logs have reached their maximum limit.
-        // So we will remove the first element of the vector or in other words,
-        // the oldest log message.
+        // Keep track of the number of log messages in buffer
+        if (m_capacity < m_logs.size())
+            m_capacity++;
 
-        // TODO: Find a better solution to remove the first element so that a new
-        // log message can be appended to the end without changing history size.
-        g_log_buffer.erase(g_log_buffer.begin());
-        g_log_size--;
-        g_log_buffer.push_back({});
+        m_logs[m_index] = log_msg({ type, data });
+
+        m_index++;
     }
 
-    static void print_internal(log_type type, const char* fmt, va_list args)
-    {
-        check_log_bounds();
-
-        {
-            const int size = vsnprintf(nullptr, 0, fmt, args) + 1;
-
-            log_message message;
-            message.type = type;
-            message.string.resize(size);
-            vsprintf_s(message.string.data(), size, fmt, args);
-            g_log_buffer[g_log_size] = message;
-
-            vprintf_s(fmt, args);
-        }
-
-        ++g_log_size;
-    }
-
-    void print_log(const char* fmt, ...)
-    {
-        va_list args;
-        va_start(args, fmt);
-        print_internal(log_type::info, fmt, args);
-        va_end(args);
-    }
-
-    void print_warning(const char* fmt, ...)
-    {
-        va_list args;
-        va_start(args, fmt);
-        print_internal(log_type::warning, fmt, args);
-        va_end(args);
-    }
-
-    void print_error(const char* fmt, ...)
-    {
-        va_list args;
-        va_start(args, fmt);
-        print_internal(log_type::error, fmt, args);
-        va_end(args);
-    }
-
-    void clear_log_buffer()
-    {
-        // TODO: need a better solution
-        g_log_buffer.clear();
-        g_log_buffer.resize(g_log_history);
-        g_log_size = 0;
-    }
-
-    void get_log_message(uint32_t logIndex, const char** str, int* type)
-    {
-        if (logIndex > g_log_size)
-            return;
-
-        *str = g_log_buffer[logIndex].string.c_str();
-        *type = static_cast<int>(g_log_buffer[logIndex].type);
-    }
-
-    int get_total_log_count()
-    {
-        return g_log_size;
-    }
-
-    void export_logs_to_file(const char* path)
+    void logging::output_to_file(const std::filesystem::path& path)
     {
         std::ofstream output(path);
         if (!output.is_open()) {
-            print_error("Failed to open %s for writing.\n", path);
+            error("Failed to open {} for writing.", path.string());
             return;
         }
 
-
-        // NOTE: We only export lines which have been printed instead of exporting the
-        // entire log buffer which will mostly be empty
-        for (std::size_t i = 0; i < g_log_size; ++i) {
-            output << g_log_buffer[i].string;
+        for (std::size_t i = 0; i < m_capacity; ++i) {
+            output << m_logs[i].data;
         }
-
     }
+
+    engine::log_msg logging::get_log(std::size_t index)
+    {
+        // todo: A check is required to make to ensure that 
+        // index is not out of bounds
+        return m_logs[index];
+    }
+
+    std::size_t logging::size()
+    {
+        return m_capacity;
+    }
+
+    void logging::clear()
+    {
+        m_logs.clear();
+        m_logs.resize(max_logs);
+
+        m_index = 0;
+        m_capacity = 0;
+    }
+
 
 }

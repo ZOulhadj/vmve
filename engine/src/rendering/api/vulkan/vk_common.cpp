@@ -18,7 +18,7 @@ namespace engine {
                 });
 
             if (iter == layers.end()) {
-                print_error("Failed to find instance layer: %s\n", requested_name);
+                error("Failed to find instance layer: {}.", requested_name);
                 return false;
             }
         }
@@ -38,7 +38,7 @@ namespace engine {
                 });
 
             if (iter == extensions.end()) {
-                print_error("Failed to find extension: %s\n", requested_name);
+                error("Failed to find extension: {}", requested_name);
                 return false;
             }
         }

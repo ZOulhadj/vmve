@@ -19,7 +19,7 @@ namespace engine {
             aiString ai_path;
 
             if (material->GetTexture(type, i, &ai_path) == aiReturn_FAILURE) {
-                print_log("Failed to load texture: %s\n", ai_path.C_Str());
+                error("Failed to load texture: {}", ai_path.C_Str());
                 return {};
             }
 
@@ -208,17 +208,17 @@ namespace engine {
 
             if (diffuse_path.empty() || !load_mesh_texture(model, mesh, diffuse_path)) {
                 create_fallback_albedo_texture(model, mesh);
-                print_log("%s using fallback albedo texture.\n", model.name.c_str());
+                warn("{} using fallback albedo texture.", model.name);
             }
 
             if (normal_path.empty() || !load_mesh_texture(model, mesh, normal_path)) {
                 create_fallback_normal_texture(model, mesh);
-                print_log("%s using fallback normal texture.\n", model.name.c_str());
+                warn("{} using fallback normal texture.", model.name);
             }
 
             if (specular_path.empty() || !load_mesh_texture(model, mesh, specular_path)) {
                 create_fallback_specular_texture(model, mesh);
-                print_log("%s using fallback specular texture.\n", model.name.c_str());
+                warn("{} using fallback specular texture.", model.name);
             }
         }
 
@@ -243,7 +243,7 @@ namespace engine {
 
     bool load_model(Model_Old& model, const std::filesystem::path& path, bool flipUVs)
     {
-        print_log("Loading mesh %s\n", path.string().c_str());
+        info("Loading mesh {}.", path.string());
 
         Assimp::Importer importer;
 
@@ -273,14 +273,14 @@ namespace engine {
         // Start processing from the root scene node
         process_node(model, scene->mRootNode, scene);
 
-        print_log("Successfully loaded model with %llu meshes at path %s\n", model.meshes.size(), path.string().c_str());
+        info("Successfully loaded model with {} meshes at path {}.", model.meshes.size(), path.string());
 
         return true;
     }
 
     bool create_model(Model_Old& model, const char* data, std::size_t len, bool flipUVs /*= true*/)
     {
-        print_log("Creating mesh\n");
+        info("Creating mesh.");
 
         Assimp::Importer importer;
 
@@ -310,7 +310,7 @@ namespace engine {
         // Start processing from the root scene node
         process_node(model, scene->mRootNode, scene);
 
-        print_log("Successfully created model from memory\n");
+        info("Successfully created model from memory.");
 
         return true;
     }
@@ -403,28 +403,28 @@ namespace engine {
         tinygltf::TinyGLTF loader;
 
         tinygltf::Model model;
-        std::string warn, err;
+        std::string warning, err;
         bool loaded = false;
 
         const std::filesystem::path& extension = path.extension();
 
         if (extension == ".gltf")
-            loaded = loader.LoadASCIIFromFile(&model, &err, &warn, path.string());
+            loaded = loader.LoadASCIIFromFile(&model, &err, &warning, path.string());
         else if (extension == ".glb")
-            loaded = loader.LoadBinaryFromFile(&model, &err, &warn, path.string());
+            loaded = loader.LoadBinaryFromFile(&model, &err, &warning, path.string());
         else {
             assert((extension == ".gltf" || extension == ".glb") && "glTF is the only currently supported model format");
-            print_error("glTF is the only currently supported model format\n");
+            error("glTF is the only currently supported model format.");
 
             return std::nullopt;
         }
 
-        if (!warn.empty())
-            print_warning("%s\n", warn.c_str());
+        if (!warning.empty())
+            warn(warning);
 
         if (!loaded) {
             if (!err.empty())
-                print_error("%s\n", err.c_str());
+                error(err);
 
             return std::nullopt;
         }

@@ -21,8 +21,8 @@ namespace engine {
         if (anisotropic_level <= max_ansiotropic_level)
             return anisotropic_level;
 
-        print_log(
-            "Requested anisotropic level of %f not supported. Using the maximum level of %f instead.\n",
+        warn(
+            "Requested anisotropic level of {} not supported. Using the maximum level of {} instead.",
             anisotropic_level,
             max_ansiotropic_level
         );
@@ -350,7 +350,7 @@ namespace engine {
         stbi_set_flip_vertically_on_load(flip_y);
         unsigned char* texture = stbi_load(path.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
         if (!texture) {
-            print_log("Failed to load texture at path: %s\n", path.string().c_str());
+            warn("Failed to load texture at path: {}.", path.string());
 
             stbi_image_free(texture);
 

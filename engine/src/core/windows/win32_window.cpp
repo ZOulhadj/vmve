@@ -23,7 +23,7 @@ namespace engine {
 
     static void glfw_error_callback(int code, const char* description)
     {
-        print_error("GLFW error (%d : %s)\n", code, description);
+        error("GLFW error ({} : {}).", code, description);
     }
 
     static void window_close_callback(GLFWwindow* window)
@@ -176,7 +176,7 @@ namespace engine {
     // events to the application callback.
     Platform_Window* create_platform_window(std::string_view name, const glm::u32vec2& size, bool fullscreen)
     {
-        print_log("Initializing window (%d, %d)\n", size.x, size.y);
+        info("Initializing window ({}, {}).", size.x, size.y);
 
         assert(size.x > 0 && size.y > 0);
 
@@ -189,7 +189,7 @@ namespace engine {
         glfwSetErrorCallback(glfw_error_callback);
 
         if (!glfwInit()) {
-            print_error("Failed to initialize GLFW.\n");
+            error("Failed to initialize GLFW.");
 
             return nullptr;
         }
@@ -200,7 +200,7 @@ namespace engine {
 
         window->handle = glfwCreateWindow(size.x, size.y, name.data(), nullptr, nullptr);
         if (!window->handle) {
-            print_error("Failed to create GLFW window.\n");
+            error("Failed to create GLFW window.");
 
             glfwTerminate();
 
@@ -240,7 +240,7 @@ namespace engine {
         if (!window)
             return;
 
-        print_log("Destroying window.\n");
+        info("Destroying window.");
 
         glfwDestroyWindow(window->handle);
         glfwTerminate();
@@ -259,7 +259,7 @@ namespace engine {
         images[0].pixels = stbi_load(iconPath.string().c_str(), &images[0].width, &images[0].height, 0, STBI_rgb_alpha);
 
         if (!images[0].pixels) {
-            print_error("Failed to load window icon %s.\n", iconPath.string().c_str());
+            error("Failed to load window icon {}.", iconPath.string());
 
             stbi_image_free(images[0].pixels);
             return;
@@ -371,7 +371,7 @@ namespace engine {
         wndClass.hIconSm = nullptr;
 
         if (!RegisterClassExA(&wndClass)) {
-            print_log("Failed to register win32 window class.\n");
+            error("Failed to register win32 window class.");
             return nullptr;
         }
 
@@ -391,7 +391,7 @@ namespace engine {
         );
 
         if (!window->handle) {
-            print_log("Failed to create win32 window.\n");
+            error("Failed to create win32 window.");
             return nullptr;
         }
 

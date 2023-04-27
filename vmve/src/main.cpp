@@ -49,7 +49,7 @@ int main()
 {
     bool initialized = engine::initialize(app_title, app_width, app_height);
     if (!initialized) {
-        engine::export_logs_to_file(app_crash_file);
+        engine::logging::output_to_file(app_crash_file);
         engine::terminate();
 
         return -1;

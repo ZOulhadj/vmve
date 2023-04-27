@@ -12,7 +12,7 @@ namespace engine {
         entity.model_index = model_index;
         entity.matrix = glm::mat4(1.0f);
 
-        print_log("Entity %s with ID (%d) created.\n", entity.name.c_str(), entity.id);
+        info("Entity {} with ID ({}) created.", entity.name, entity.id);
 
         return entity;
     }

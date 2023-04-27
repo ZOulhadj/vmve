@@ -29,14 +29,14 @@ namespace engine {
 
         // check if the vulkan instance supports our requested instance layers
         if (!compare_layers(req_layers, instance_layers)) {
-            print_log("One or more requested Vulkan instance layers are not supported.\n");
+            error("One or more requested Vulkan instance layers are not supported.");
             return nullptr;
         }
 
         if (!req_layers.empty()) {
-            print_log("Requesting a total of %llu instance layers.\n", req_layers.size());
+            info("Requesting a total of {} instance layers.", req_layers.size());
             for (auto& layer : req_layers)
-                print_log("\t%s\n", layer);
+                info("\t{}", layer);
         }
 
 
@@ -50,7 +50,7 @@ namespace engine {
         // note that there is no need to check the extensions returned by glfw as
         // this is already queried.
         if (!compare_extensions(req_extensions, instance_extensions)) {
-            print_log("One or more requested Vulkan instance extensions are not supported.\n");
+            error("One or more requested Vulkan instance extensions are not supported.");
             return nullptr;
         }
 
@@ -63,9 +63,9 @@ namespace engine {
         req_extensions.insert(req_extensions.end(), glfw_extensions.begin(), glfw_extensions.end());
 
         if (!req_extensions.empty()) {
-            print_log("Requesting a total of %llu instance extensions.\n", req_extensions.size());
+            info("Requesting a total of {} instance extensions.", req_extensions.size());
             for (auto& extension : req_extensions)
-                print_log("\t%s\n", extension);
+                info("\t{}", extension);
         }
 
         VkInstanceCreateInfo instance_info{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
@@ -111,11 +111,11 @@ namespace engine {
 
         // Check if there are any GPU's on the system that even support Vulkan
         if (gpus.empty()) {
-            print_log("Failed to find any GPU that supports Vulkan.\n");
+            error("Failed to find any GPU that supports Vulkan.");
             return nullptr;
         }
 
-        print_log("Found a total of %u device(s) that support Vulkan on the system.\n", gpu_count);
+        info("Found a total of {} device(s) that support Vulkan on the system.", gpu_count);
 
         std::vector<GPUInfo> suitable_gpus;
         std::vector<std::string> suitable_gpu_names;
@@ -134,7 +134,7 @@ namespace engine {
             features_supported = has_required_features(gpus[i], features);
 
             if (!features_supported) {
-                print_log("GPU (%s): Does not support requested physical device features.\n", gpu_properties.deviceName);
+                warn("GPU ({}): Does not support requested physical device features.", gpu_properties.deviceName);
                 continue;
             }
 
@@ -174,7 +174,7 @@ namespace engine {
 
 
             if (!queues_supported) {
-                print_log("GPU (%s): Does not support graphics and/or present queues.\n", gpu_properties.deviceName);
+                warn("GPU ({}): Does not support graphics and/or present queues.", gpu_properties.deviceName);
                 continue;
             }
 
@@ -194,7 +194,7 @@ namespace engine {
         // if multiple GPUs were found then we need to perform additional work
         // to compare each GPU and figure out the best one to use.
         if (suitable_gpus.empty()) {
-            print_log("Failed to find any GPU that supports requested features.\n");
+            error("Failed to find any GPU that supports requested features.");
             return nullptr;
         }
         else if (suitable_gpus.size() == 1) {
@@ -228,7 +228,7 @@ namespace engine {
             }
         }
 
-        print_log("Selected GPU: %s\n", device->gpu_name.c_str());
+        info("Selected GPU: {}", device->gpu_name);
 
         // create a logical device from a physical device
         std::vector<VkDeviceQueueCreateInfo> queue_infos{};
@@ -260,7 +260,7 @@ namespace engine {
         // when querying for device extensions. If found, we must ensure that this
         // extension is enabled.
         if (has_extensions("VK_KHR_portability_subset", device_properties)) {
-            print_log("Using %s extension.\n", "VK_KHR_portability_subset");
+            warn("Using {} extension.", "VK_KHR_portability_subset");
 
             device_extensions.push_back("VK_KHR_portability_subset");
         }
@@ -331,7 +331,7 @@ namespace engine {
         const Platform_Window* window)
     {
         if (volkInitialize() != VK_SUCCESS) {
-            print_log("Failed to load Vulkan loader. Is Vulkan installed?\n");
+            error("Failed to load Vulkan loader. Is Vulkan installed?");
 
             return false;
         }
@@ -339,12 +339,12 @@ namespace engine {
         const uint32_t vulkan_version = VK_API_VERSION_1_3;
 
         if (vulkan_version & VK_API_VERSION_1_3)
-            print_log("Requesting Vulkan version 1.3.\n");
+            info("Requesting Vulkan version 1.3.");
 
         context.window = window;
         context.instance = create_instance(vulkan_version, get_window_name(window), requested_layers, requested_extensions);
         if (!context.instance) {
-            print_log("Failed to create Vulkan instance.\n");
+            error("Failed to create Vulkan instance.");
 
             return false;
         }
@@ -353,14 +353,14 @@ namespace engine {
 
         context.surface = create_surface(context.instance, get_window_handle(window));
         if (!context.surface) {
-            print_log("Failed to create Vulkan surface.\n");
+            error("Failed to create Vulkan surface.");
             return false;
         }
 
         context.device = create_device(context.instance, context.surface,
             requested_gpu_features, requested_device_extensions);
         if (!context.device) {
-            print_log("Failed to create Vulkan device.\n");
+            error("Failed to create Vulkan device.");
             return false;
         }
 
@@ -381,7 +381,7 @@ namespace engine {
 
         context.allocator = create_allocator(context.instance, vulkan_version, context.device);
         if (!context.allocator) {
-            print_log("Failed to create Vulkan memory allocator.\n");
+            error("Failed to create Vulkan memory allocator.");
             return false;
         }
 

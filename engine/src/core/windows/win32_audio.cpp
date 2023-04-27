@@ -106,7 +106,7 @@ namespace engine {
 
     Platform_Audio* initialize_audio()
     {
-        print_log("Initializing audio\n");
+        info("Initializing audio.");
 
         Platform_Audio* audio = new Platform_Audio();
 
@@ -115,21 +115,21 @@ namespace engine {
 
         hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
         if (FAILED(hr)) {
-            print_error("Failed to initialize audio COM\n");
+            error("Failed to initialize audio COM.");
 
             return nullptr;
         }
 
         hr = XAudio2Create(&audio->ix_audio, 0, XAUDIO2_USE_DEFAULT_PROCESSOR);
         if (FAILED(hr)) {
-            print_error("Failed to create xaudio2\n");
+            error("Failed to create xaudio2.");
 
             return nullptr;
         }
 
         hr = audio->ix_audio->CreateMasteringVoice(&audio->master_voice);
         if (FAILED(hr)) {
-            print_error("Failed to create mastering voice\n");
+            error("Failed to create mastering voice.");
 
             return nullptr;
         }
@@ -142,7 +142,7 @@ namespace engine {
         if (!audio)
             return;
 
-        print_log("Terminating audio\n");
+        info("Terminating audio.");
 
         audio->master_voice->DestroyVoice();
         audio->ix_audio->Release();
@@ -180,7 +180,7 @@ namespace engine {
             NULL);
 
         if (INVALID_HANDLE_VALUE == hFile) {
-            print_error("Failed to load audio file at path %s.\n", path);
+            error("Failed to load audio file at path {}.", path);
             return HRESULT_FROM_WIN32(GetLastError());
         }
 
@@ -238,18 +238,18 @@ namespace engine {
     {
         HRESULT hr = audio_source->source_voice->Start(0);
         if (FAILED(hr))
-            print_error("Failed to start audio.\n");
+            error("Failed to start audio.");
 
-        print_log("Audio source playing sound.\n");
+        info("Audio source playing sound.");
     }
 
     void stop_audio_source(Platform_Audio_Source* audio_source)
     {
         HRESULT hr = audio_source->source_voice->Stop();
         if (FAILED(hr))
-            print_error("Failed to stop audio.\n");
+            error("Failed to stop audio.");
 
-        print_log("Audio source stopped playing sound.\n");
+        info("Audio source stopped playing sound.");
     }
 
     void set_audio_volume(Platform_Audio* audio, float volume)

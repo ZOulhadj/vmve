@@ -12,7 +12,7 @@
 namespace engine {
     ImGuiContext* create_ui(const Vk_Renderer* renderer, VkRenderPass renderPass)
     {
-        print_log("Initializing user interface\n");
+        info("Initializing user interface.");
 
         ImGuiContext* context{};
 
@@ -70,7 +70,7 @@ namespace engine {
         if (!context)
             return;
 
-        print_log("Terminating user interface\n");
+        info("Terminating user interface.");
 
         ImGui_ImplVulkan_Shutdown();
         ImGui_ImplGlfw_Shutdown();

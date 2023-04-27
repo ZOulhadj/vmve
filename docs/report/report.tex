@@ -1509,12 +1509,13 @@ understanding of the current state of \gls*{vmve}.
   \label{fig:logging_window}
 \end{figure}
 
-Messages are stored in a fixed-size array that is preallocated. This ensures
-that no potential allocations are occurring each time ``print\_log''  is called.
-By default \gls*{vmve} allows for a maximum of 10,000 log messages before the
-buffer becomes full. If the buffer does become full, the first log message i.e
-the oldest one is overwritten when a new log message is created
-\ref{fig:logging_system}. 
+Messages are stored in a data structure known as a ring buffer. This is a
+fixed-size buffer where the start and end of the buffer are connected. In other
+words, when the buffer becomes full, data stored at the start gets overwritten.
+
+By default \gls*{vmve} allows for a maximum of 200 log messages before the
+buffer becomes full. The underlying structure of this system can be seen in
+figure \ref{fig:logging_system}.
 
 \begin{figure}[H]
   \centering
@@ -1522,6 +1523,10 @@ the oldest one is overwritten when a new log message is created
   \caption{Logging FIFO system}
   \label{fig:logging_system}
 \end{figure}
+
+The benefit of retaining log messages in memory as opposed to printing to the
+console is that they can be used at a later time such as for the UI or being
+saved to a file on disk.
 
 \subsection{Encryption and custom model format}
 The simplicity of the Crypto++ library results in a relatively straightforward

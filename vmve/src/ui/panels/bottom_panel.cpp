@@ -13,10 +13,10 @@ void bottom_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
     ImGui::Begin(title.c_str(), is_open, flags);
     {
         if (ImGui::Button(ICON_FA_BROOM " Clear"))
-            engine::clear_logs();
+            engine::logging::clear();
         ImGui::SameLine();
         if (ImGui::Button(ICON_FA_DOWNLOAD " Export"))
-            engine::export_logs_to_file("logs.txt");
+            engine::logging::output_to_file("logs.txt");
         ImGui::SameLine();
         scrollCheckboxClicked = ImGui::Checkbox("Auto-scroll", &autoScroll);
         ImGui::Separator();
@@ -27,12 +27,10 @@ void bottom_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
 
         if (ImGui::BeginTable("Log_Table", 1, flags)) {
             ImGuiListClipper clipper;
-            clipper.Begin(engine::get_log_count());
+            clipper.Begin(engine::logging::size());
             while (clipper.Step()) {
                 for (int index = clipper.DisplayStart; index < clipper.DisplayEnd; index++) {
-                    const char* message = nullptr;
-                    int log_type = 0;
-                    engine::get_log(index, &message, &log_type);
+                    const engine::log_msg& msg = engine::logging::get_log(index);
 
                     static std::string icon_type;
                     static ImVec4 icon_color;
@@ -40,23 +38,21 @@ void bottom_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
 
                     // set up colors based on log type
                     // TODO: Log type 0 icon color should be black in lighter themes
-                    if (log_type == 0) {
+                    if (msg.type == engine::log_type::info) {
                         icon_type = ICON_FA_CIRCLE_INFO;
                         icon_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
                         bg_color = style[ImGuiCol_WindowBg];
-                    }
-                    else if (log_type == 1) {
+                    } else if (msg.type == engine::log_type::warning) {
                         icon_type = ICON_FA_TRIANGLE_EXCLAMATION;
                         icon_color = ImVec4(ImVec4(0.766f, 0.50f, 0.0043f, 1.0f));
                         bg_color = ImVec4(1.0f, 1.0f, 0.0f, 0.12f);
-                    }
-                    else if (log_type == 2) {
+                    } else if (msg.type == engine::log_type::error) {
                         icon_type = ICON_FA_TRIANGLE_EXCLAMATION;
                         icon_color = ImVec4(0.719f, 0.044f, 0.044f, 1.0f);
                         bg_color = ImVec4(1.0f, 0.0f, 0.0f, 0.098f);
                     }
 
-                    ImGui::PushID(message);
+                    ImGui::PushID(msg.data.c_str());
 
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
@@ -65,7 +61,7 @@ void bottom_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
                     ImGui::GetWindowDrawList()->ChannelsSetCurrent(1);
                     ImGui::TextColored(icon_color, icon_type.c_str());
                     ImGui::SameLine();
-                    ImGui::Selectable(message, false, ImGuiSelectableFlags_SpanAllColumns);
+                    ImGui::Selectable(msg.data.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
 
                     // TODO: Should do this once per frame instead of per log 
                     // message. We should maybe have two code paths based on

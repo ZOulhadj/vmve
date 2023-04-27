@@ -76,7 +76,7 @@ namespace engine {
         status = shaderc_result_get_compilation_status(result);
 
         if (status != shaderc_compilation_status_success) {
-            print_error("Failed to compile shader %s\n.", shaderc_result_get_error_message(result));
+            error("Failed to compile shader {}.", shaderc_result_get_error_message(result));
             return {};
         }
 

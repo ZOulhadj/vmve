@@ -1056,7 +1056,7 @@ namespace engine {
 
     Vk_Renderer* create_renderer(const Platform_Window* window, buffer_mode buffering_mode, vsync_mode sync_mode)
     {
-        print_log("Initializing Vulkan renderer\n");
+        info("Initializing Vulkan renderer.");
 
         Vk_Renderer* renderer = new Vk_Renderer();
 
@@ -1094,7 +1094,7 @@ namespace engine {
 
         int context_initialized = create_vulkan_context(renderer->ctx, layers, extensions, device_extensions, features, window);
         if (!context_initialized) {
-            print_error("Failed to initialize Vulkan context\n");
+            error("Failed to initialize Vulkan context.");
 
             return nullptr;
         }
@@ -1109,7 +1109,7 @@ namespace engine {
             renderer->messenger = create_debug_callback(debug_callback);
 
             if (!renderer->messenger) {
-                print_error("Failed to create Vulkan debug callback\n");
+                error("Failed to create Vulkan debug callback.");
                 return nullptr;
             }
         }
@@ -1135,7 +1135,7 @@ namespace engine {
 
     void destroy_renderer(Vk_Renderer* renderer)
     {
-        print_log("Terminating Vulkan renderer\n");
+        info("Terminating Vulkan renderer.");
 
         destroy_command_pool();
         vkDestroyDescriptorPool(renderer->ctx.device->device, renderer->descriptor_pool, nullptr);
@@ -1373,11 +1373,11 @@ namespace engine {
                                    void*                                        pUserData)
     {
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-            print_log("%s\n", pCallbackData->pMessage);
+            info(pCallbackData->pMessage);
         } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-            print_warning("%s\n", pCallbackData->pMessage);
+            warn(pCallbackData->pMessage);
         } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-            print_error("%s\n", pCallbackData->pMessage);
+            error(pCallbackData->pMessage);
         }
 
         return VK_FALSE;

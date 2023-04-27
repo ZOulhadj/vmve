@@ -94,7 +94,7 @@ void center_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flag
 
 
 
-        ImGui::Image(engine_get_viewport_texture(viewport_view), ImVec2(viewport_width, viewport_height));
+        ImGui::Image(engine::get_viewport_texture(viewport_view), ImVec2(viewport_width, viewport_height));
 
         // todo(zak): move this into its own function
         float* view = engine::get_camera_view();
