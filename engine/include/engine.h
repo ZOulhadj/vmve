@@ -3,6 +3,7 @@
 
 // todo: we must include all headers of the engine here
 #include <../src/utils/logging.h>
+#include <../src/utils/time.h>
 
 namespace engine {
 
@@ -198,7 +199,7 @@ namespace engine {
     //
     //
     //
-    double get_frame_delta();
+    float get_frame_delta();
 
 
     const char* get_gpu_name();

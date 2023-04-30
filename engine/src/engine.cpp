@@ -48,13 +48,14 @@ namespace engine {
 
         Vk_Renderer* renderer;
         ImGuiContext* ui;
+        time timer;
 
         Callbacks callbacks;
 
         std::string app_location;
         bool running;
         std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
-        float delta_time;
+        //float delta_time;
 
         // Resources
         Vk_Buffer scene_buffer;
@@ -417,7 +418,7 @@ namespace engine {
         // Calculate the amount that has passed since the last frame. This value
         // is then used with inputs and physics to ensure that the result is the
         // same no matter how fast the CPU is running.
-        g_engine->delta_time = get_delta_time();
+        g_engine->timer.calculate_delta_time();
 
         scene.sun_dir.x = glm::sin((float)glfwGetTime()) * 2.0f;
         scene.sun_dir.z = glm::cos((float)glfwGetTime()) * 2.0f;
@@ -849,7 +850,7 @@ namespace engine {
     void update_input()
     {
         Camera& camera = g_engine->camera;
-        const float speed = camera.speed * g_engine->delta_time;
+        const float speed = camera.speed * g_engine->timer.get_delta_time();
 
         if (key_pressed(GLFW_KEY_W))
             camera.position += camera.front_vector * speed;
@@ -1029,9 +1030,9 @@ namespace engine {
         return g_engine->models[modelID].name.c_str();
     }
 
-    double get_frame_delta()
+    float get_frame_delta()
     {
-        return g_engine->delta_time;
+        return g_engine->timer.get_delta_time();
     }
 
     const char* get_gpu_name()
