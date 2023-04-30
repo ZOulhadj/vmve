@@ -82,7 +82,8 @@
 \newacronym{lod}{LOD}{Level of Detail}
 \newacronym{ip}{IP}{Intellectual Property}
 \newacronym{ui}{UI}{User Interface}
-
+\newacronym{gdpr}{GDPR}{General Data Protection Regulation}
+\newacronym{svn}{svn}{Apache Subversion}
 
 % end of preamble
 
@@ -180,6 +181,11 @@ previously presented for the award of any other degree or institution.
 \addtocontents{toc}{~\hfill\textbf{Page}\par}
 \pagebreak
 
+\clearpage
+\printnoidxglossary
+
+\clearpage
+\printnoidxglossary[type=\acronymtype]
 
 \pagebreak
 \pagestyle{fancy}
@@ -192,6 +198,10 @@ including gaming, film, scientific research, education, architecture,
 engineering, medicine and more recently within vehicles. This is a testament to
 how versatile this field has become and the major benefits that computer
 graphics provide to the real world.
+
+\subsection{Project Problem}
+// TODO: Project should be presented as a learning tool that bridges the gap for new users
+learning graphics development.
 
 The development of virtual graphics and environments commonly poses a steep
 learning curve due to technical details and features. Many different rendering
@@ -212,20 +222,20 @@ are designed from the ground up for rapid graphics prototyping which includes
 constructing virtual environments, simulating the effect of light on 3D geometry
 and securing digital assets through the use of encryption.
 
-
 \subsection{Stakeholders}
-Two main stakeholders will be directly affected by the project and subsequently
-\gls*{vmve}. These are the final-year project supervisors and the end users. Each
-stakeholder needs a different set of requirements to be successfully achieved.
 
-The supervisors (Dr. Charles Clarke and Alex Collins) oversee the progress of
-the project. Meetings are to be held regularly and aim to inform all parties of
-the progress being made. This ensures that the requirements set out are being
-met.
+The end-users are the main stakeholders of the final-year project. 
 
-The users on the other hand are individuals that will test and use the
-application once it has been developed. The main aims and objectives of this
-project will focus on these users to ensure that all their needs are fulfilled.
+
+The main stakeholder for this project is the end users. Users are the
+individuals that will test and use the application once it has been developed.
+
+The main aims and objectives of this project will focus on these users to ensure
+that all their needs are fulfilled.
+
+\subsubsection{Students}
+\subsubsection{Trainees}
+\subsubsection{Employers}
 
 \subsection{Requirements}
 The design, implementation and evaluation of the project rely on a set of aims
@@ -234,23 +244,13 @@ requirements relied on a ``requirements gathering'' stage. The purpose of this
 was to outline and better understand the requirements for each of the
 stakeholders mentioned in the previous section.
 
-\subsection{Aims and Objectives}
-\subsubsection{Supervisors}
+\subsubsection{Aims} \label{aims} 
+
+\gls*{vmve} has several aims which describe the general concepts that the
+application wishes to provide.
 
 \begin{description}
-  \item[Meetings] These are to be held at various stages of the project which
-  aim to keep both supervisors up-to-date with the project's progress.
-  \item[Presentations] 
-  \item[Sprints] 
-\end{description}
-
-\subsubsection{Users}
-\gls*{vmve} has three main aims and consists of several objectives that outline
-the concrete steps that will need to be implemented to ensure the users of the
-application successfully achieve their desired goals.
-
-\begin{description}
-  \item[Platform for virtual environment authoring] The first goal of
+  \item[1. A platform for virtual environment rendering] The first aim of
     \gls*{vmve} is to provide an ``easy-to-use'' platform for creating virtual
     environments. This means that the application should not have a steep
     learning curve and users with little to no prior experience with 3D
@@ -265,14 +265,14 @@ application successfully achieve their desired goals.
     instead of ``Translate'' when referring to objects in the virtual
     environment and as such, would make the application more accessible.
 
-  \item[Lower hardware requirements] The second aim of the application is to be
+  \item[2. Lower hardware requirements] The second aim of the application is to be
     as efficient as possible with the goal of lowering the hardware
     requirements. The application's efficiency and aims vary based on the
     component in question that include the \gls*{cpu}, \gls*{gpu}, memory and
     storage. From the ground up \gls*{vmve} will strive to be as efficient as
     possible by using the latest technologies available.
 
-  \item[Provide secure 3D asset encryption] The last of the three main goals is
+  \item[3. Provide secure 3D asset encryption] The last of the three main goals is
     for the application to include its custom model format that makes use of
     encryption to safely secure a user's digital assets. The motivation for
     this functionality formed as a result of the increase in theft regarding
@@ -293,15 +293,29 @@ application successfully achieve their desired goals.
     model into the application.
 \end{description}
 
-The aims and objectives discussed above were part of the project proposal
-document and which was signed off for milestone 2. The complete document can
-been viewed in appendix section \ref{supporting_documents}.
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{images/project_signoff.png}
-  \caption{Project proposal sign-off}
-  \label{fig:project_signoff}
-\end{figure}
+
+\subsubsection{Objectives} \label{objectives}
+The objectives are concrete requirements that need to be implemented in order
+to achieve the aims outlined in section \ref{aims}.
+
+
+\begin{description}
+  \item[1. A platform for virtual environment rendering] 
+  \item[2. Lower hardware requirements]
+  \item[3. Provide secure 3D asset encryption]
+\end{description}
+
+
+
+% The aims discussed above were part of the project proposal document and which
+% was signed off for milestone 2. The complete document can be viewed in
+% appendix section \ref{supporting_documents}.
+% \begin{figure}[H]
+%   \centering
+%   \includegraphics[width=\textwidth]{images/project_signoff.png}
+%   \caption{Project proposal sign-off}
+%   \label{fig:project_signoff}
+% \end{figure}
 
 \subsection{Considerations}
 Several different types of considerations must also be taken into account before
@@ -329,6 +343,11 @@ Throughout the development of this project, the application will not contain any
 networking functionality. This ensures that all data remains local to the
 application and the user's device.
 
+\begin{description}
+  \item[No modification to geometry] 
+  \item[No data is send or recieved] 
+\end{description}
+
 Given the domain in which the application is intended to be used, such as
 handling third-party 3D assets by importing and exporting geometry data.
 \gls*{vmve} mustn't infringe upon the copyright of those who own the models. One
@@ -338,6 +357,12 @@ user. Since this will be a new application, a lot of the intricacies behind
 feedback. \gls*{vmve} will not modify any of the data being imported and only
 change the visual appearance based on several factors including rendering
 settings, lighting, translation, rotation and scaling. 
+
+
+As the application does not store or process any personal information,
+\gls*{gdpr} has not been taken into consideration. In the future, however, if
+the use of data and information changes then this will be revisited to ensure
+that all laws are adhered to.
 
 \subsubsection{Social}
 \gls*{vmve} must also take into account social considerations for those using the
@@ -365,46 +390,40 @@ implementation stages extra effort will be spent on ensuring that no such design
 pattern is introduced. This will greatly benefit users and thus, increase the
 overall user experience.
 
-\subsection{Background}
-Why project is suitable?
-- highly technical 
-- uses aspects from many modules
-
+\subsection{BSc Justification}
+This project combines the knowledge gained throughout the degree and presents a
+highly technical application that uses advanced concepts.
 
 \subsection{Overview}
 This report presents the development of the final-year project and is structured
 such that it outlines each aspect of the development in chronological order.
 There are a total of four key sections in this report:
 \begin{description}
-  \item[Design] Focuses on the concept of the project, the design of the
-    requirements obtained during the requirements-gathering stage followed by
-    the design of the application including the user interface and internal
-    engine architecture.
-  \item[Implementation] Will take the proposed designs and consist of the
-    development of the application as well as presenting the technical
-    implementation details/decisions.
-  \item[Evaluation] comes after the implementation and the main goal of this
-    section is to ensure that the application has met the aims and objectives
-    outlined in the projects.
-  \item[Future Work] is the final key section that aims to outline the aims and
-    specific features that will need to be implemented going forward in regards
-    to the project.
+  \item[Design (\ref{design})] Focuses on the concept of the project, the design
+    of the requirements obtained during the requirements-gathering stage
+    followed by the design of the application including the user interface and
+    internal engine architecture.
+  \item[Implementation (\ref{implementation})] Will take the proposed designs
+    and consist of the development of the application as well as presenting the
+    technical implementation details/decisions.
+  \item[Evaluation (\ref{evaluation})] comes after the implementation and the
+    main goal of this section is to ensure that the application has met the aims
+    and objectives outlined in the projects.
+  \item[Future Work (\ref{future_work})] is the final key section that aims to
+    outline the aims and specific features that will need to be implemented
+    going forward in regards to the project.
 \end{description}
 
 \clearpage
-\section{Technology Review} \label{technology_review}
-This project made use of various technologies at different stages throughout the
-development process and was a key aspect in helping achieve the final goal of
-developing a 3D model viewer and exporter.
+\section{Technology Review} \label{technology_review} 
+Prior to commencing work, a technological review must be undertaken that
+analyses and compares different types of potential tools that could be used.
+Throughout this comparison, the choice of tools is heavily influenced by the
+aims and objectives outlined in sections \ref{aims} and \ref{objectives} 
+respectively.
 
-Technologies are categorized into two areas based on the impact they have on the
-project such as direct and indirect influence. A technology that has a direct
-impact means that it assisted in some way in the implementation of the project.
-Whereas, indirect impacts are technologies that are used in some areas not
-directly responsible for the outcome of the project such as project management.
 
-\subsection{Tools}
-\subsubsection{Project Management} \label{project_management}
+\subsection{Version Control}
 A \gls*{vcs} is a tool used for backing up and/or collaborating with developers
 on a project. The use of a \gls*{vcs} was an obvious choice as this would provide
 a platform on which the project source code could be hosted. This gives me the
@@ -421,19 +440,83 @@ sections, files or even an entire repository. Due to the length and complexity
 of this project, tools such as this provided by a \gls*{vcs} are invaluable
 throughout the development process.
 
-The version control system that was chosen was Git \cite{gitvcs}. This is the
-most widely-used, free and open-source \gls*{vcs}. Git can be used in several
-ways such as by installing Git onto a server manually or by using existing
-platforms that are built on top of Git. A few examples include
+\subsubsection{Git vs SVN}
+
+Git is the most widely-used, free and open-source \gls*{vcs}. Git can be used in
+several ways such as by installing Git onto a server manually or by using
+existing platforms that are built on top of Git. A few examples include
 \href{http://github.com}{GitHub}, \href{http://gitlab.com}{GitLab} and
-\href{https://bitbucket.org/}{Bitbucket}. By far the most popular option is
-GitHub which is the platform that I am most familiar with and therefore, GitHub
-will be the platform of choice for this project. Appendix section
-\ref{github} includes additional information such as how the
-repository is hosted.
+\href{https://bitbucket.org/}{Bitbucket}. 
+
+Similarly, \gls*{svn} is another type of version control system. 
+
+\subsubsection{Development Enviornment}
+- VS 2022 
+- VSCode 
+- Clion
+- 
+\subsubsection{Programming Language}
+
+The application will be desktop based...
+
+C
+C++
+Rust
+Python
+
+\subsubsection{Rendering API} \label{rendering_api_tech_review}
+A rendering \gls*{api} is a set of instructions that acts as an intermediary and
+allows for an application to make use of a systems \gls*{gpu}. There are several
+different rendering \glspl*{api} that exist including OpenGL, \gls*{vulkan},
+Direct3D 11 and Direct3D 12. Appendix section \ref{rendering_api_appendix} goes
+into great detail explaining the history of rendering \glspl*{api} and the
+differences between them.
+
+OpenGL and Direct3D 11 are previous generation \glspl*{api} whereas
+\gls*{vulkan} and Direct3D 12 are the latest technologies. Each of these has its
+benefits and disadvantages. The image below shows a table that compares each of
+these with specific types of functionality. 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/api_comparison.png}
+  \caption{Rendering API comparison}
+  \label{fig:api_comparison}
+\end{figure}
+
+
+The image shows that DirectX \glspl*{api} is not cross-platform and is only
+created to target Microsoft-backed operating systems such as Windows and Xbox.
+On the other hand,
+
+
+
+\subsubsection{Externel Libraries}
+
+
+
+
+\subsection{Task Management}
+Task management refers to the use of tools to aid in managing tasks or issues.
+Various tools are designed for this purpose however, there are two that are the most
+well-known which are Trello and GitHub Projects.
 
 GitHub as well as providing hosting for the repository also provides different
 features related to task management. One such feature is known as GitHub issues.
+
+\clearpage
+\section{Design} \label{design} The design of the project consists of selecting
+the specific tools which will be used throughout the development as well as the
+design of the software and overall architecture.
+
+\subsection{Tools}
+\subsubsection{Version control} \label{project_management}
+The version control system that was chosen for use throughout the development of
+the project was Git/GitHub \cite{gitvcs}. It's the most popular version control
+system and is the platform that I am most familiar with therefore, GitHub will
+be the platform of choice for this project. Appendix section \ref{github}
+includes additional information such as how the repository is hosted.
+
+\subsubsection{Task Management}
 This will be used as the task tracker in which ``posts'' are created that would
 track outstanding tasks including the priority, current progress and the
 expected deadline. Figure \ref{fig:kanban_design} shows a preview of the Kanban
@@ -454,7 +537,6 @@ Lastly, once the task has been completed, the GitHub commit that includes the
 specific fix is referenced in the issue and is then finally marked as complete
 by being moved to the ``Done'' board. This subsequently marks a GitHub issue as
 closed.
-
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/kanban_design.png}
@@ -462,7 +544,9 @@ closed.
   \label{fig:kanban_design}
 \end{figure}
 
-\subsubsection{Microsoft Visual Studio 2022}
+\subsubsection{Development Environment}
+
+-- Chose VS 22
 Developing a program that runs directly on the underlying operating system
 requires a compiler. This is a program that parses source code and generates
 assembly instructions that the \gls*{cpu} will be able to understand and
@@ -526,38 +610,28 @@ expressions, direct memory access and generally faster performance compared to
 higher-level languages such as Python and Javascript.
 
 \subsubsection{Rendering API} \label{rendering_api}
-A rendering \gls*{api} is a set of instructions that acts as an intermediary and
-allows for an application to make use of a systems \gls*{gpu}. There are several
-different rendering \glspl*{api} that exist including OpenGL, \gls*{vulkan},
-Direct3D 11 and Direct3D 12. Appendix section \ref{rendering_api_appendix} goes
-into great detail explaining the history of rendering \glspl*{api} and the
-differences between them.
+Having evaluated the potential use of the different \glspl*{api} covered in
+section \ref{rendering_api_tech_review}, it was concluded that \gls*{vulkan}
+would be the most suitable rendering \gls*{api} for \gls*{vmve}. Firstly,
+\gls*{vulkan} is extremely verbose as it exposes the technicalities related to
+the \gls*{gpu} and requires the application to implement the basic functionality
+as opposed to the driver. This reduces the complexity of the display driver and
+can potentially increase performance as it no longer needs to make assumptions
+about the application and the commands being issued as the entire state of the
+rendering pipeline is predefined. Using \gls*{vulkan} also implicitly helps
+understand the complex inner workings of graphics development and work with
+the \gls*{gpu}. Furthermore, Figure \ref{fig:api_comparison} shows that the
+\gls*{api} provides most amount functionality including the ability to run
+on different operating systems, finer rendering control and support for
+multithreading.
 
-OpenGL and Direct3D 11 are previous generation \glspl*{api} whereas \gls*{vulkan}
-and Direct3D 12 are using the latest technologies. Each of these has its
-benefits and disadvantages. The image below shows a table that compares each of
-these with specific types of functionality. 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{images/api_comparison.png}
-  \caption{Rendering API comparison}
-  \label{fig:api_comparison}
+  \includegraphics[width=\textwidth]{images/vulkan_logo.png}
+  \caption{Vulkan logo \cite{vulkan}}
+  \label{fig:vulkan_logo}
 \end{figure}
 
-Figure \ref{fig:api_comparison} shows that \gls*{vulkan} has the most amount
-functionality including the ability to run on different operating systems, 
-finer rendering control and support for multithreading.
-
-In addition to \gls*{vulkan} inhibiting the most functionality, there are
-numerous other reasons why this \gls*{api} is the most suitable for \gls*{vmve}.
-Firstly, \gls*{vulkan} is extremely verbose as it exposes the technicalities
-related to the \gls*{gpu} and requires the application to implement the basic
-functionality as opposed to the driver. This reduces the complexity of the
-display driver and can potentially increase performance as it no longer needs to
-make assumptions about the application and the commands being issued as the
-entire state of the rendering pipeline is predefined. Using \gls*{vulkan} also
-implicitly helps understand the complex inner workings of graphics development
-and working with the \gls*{gpu}.
 
 \subsection{Libraries}
 The application will make use of different external libraries to speed up 
@@ -592,7 +666,7 @@ C++ library will be used \cite{cereal}. This library allows for fast and
 efficient data serialization into different formats such as compact binary
 encodings, XML or JSON.
 
-\subsubsection{Additional libraries}
+\subsubsection{Additional Libraries}
 The other libraries used in \gls*{vmve} can be seen in the list below.
 \begin{description}
   \item[assimp] Model loading
@@ -601,13 +675,6 @@ The other libraries used in \gls*{vmve} can be seen in the list below.
   \item[vma] Vulkan memory allocator
   \item[volk] Vulkan meta-loader
 \end{description}
-
-\clearpage
-\section{Design}
-The next stage of the project was designed and occurred between milestones two
-and three. Having discussed the different technologies being used in
-\gls*{vmve}, they must now be evaluated and incorporated into the design of the
-application and it's various subsystems.
 
 \subsection{Branding}
 The branding i.e the look of the application was an important factor during the
@@ -650,7 +717,9 @@ locations where there is a minimal amount of space such as the Windows taskbar.
 \end{figure}
 
 
-\subsection{VCS Architecture}
+\subsection{Project Architecture}
+
+\subsubsection{Version Control}
 As the only developer for this final-year project, the design and architecture
 of the \gls*{vcs} will remain as simple as possible while still providing the
 core requirements. Figure \ref{fig:brancharch} shows the proposed \gls*{vcs}
@@ -675,7 +744,7 @@ This architecture ensures that as the sole developer of the project, changes can
 be made consistently while ensuring that users are provided stable versions of
 the application.
 
-\subsection{Source code}
+\subsubsection{Source Code}
 From the beginning, the projects source code and overall architecture were to
 adhere to the C++ Core Guidelines \cite{cpp-guidelines} to ensure that the
 project follows best practices.
@@ -727,8 +796,7 @@ and manipulated. Furthermore, this will eliminate the need for getter and setter
 functions that needlessly take up source code space and is redundant when member
 variables are accessible.
 
-\subsection{Project Architecture}
-
+\subsubsection{Architecture}
 \gls*{vmve} will be a combination of two projects. The ``Engine'' project also
 known as the core of \gls*{vmve} will contain the fundamental implementation
 details. This includes the Window, Renderer, UI and Audio. This project will be
@@ -813,7 +881,7 @@ white, orange or red respectively.
 This is designed so that the user will have a clear understanding of the internal state
 of the application.
 
-\subsection{Custom file format and encryption}
+\subsection{Custom File Format and Encryption}
 
 \subsubsection{File format}
 \gls*{vmve} will include a custom file format that allows for model data to be
@@ -881,7 +949,7 @@ and exporting as show in figure \ref{fig:export_model_flowchart}.
 \end{figure}
 
 \clearpage
-\section{Implementation}
+\section{Implementation} \label{implementation}
 This section of the report presents the technical implementation details of
 \gls*{vmve}. This section is presented in order of initialization i.e starting at
 the core of the application and discussing each subsequent system.
@@ -1497,7 +1565,7 @@ screen. A small code snippet can be seen below \ref{fig:imguizmo_code} where
   \label{fig:imguizmo_code}
 \end{figure}
 
-\subsection{Logging system}
+\subsection{Logging System}
 Due to the relative complexity of the underlying application and the number of
 moving components a logging system was developed to provide a clear
 understanding of the current state of \gls*{vmve}. 
@@ -1528,7 +1596,7 @@ The benefit of retaining log messages in memory as opposed to printing to the
 console is that they can be used at a later time such as for the UI or being
 saved to a file on disk.
 
-\subsection{Encryption and custom model format}
+\subsection{Encryption and Custom Model Format}
 The simplicity of the Crypto++ library results in a relatively straightforward
 function, shown in Figure \ref{fig:aes_encryption} which shows how a model is
 encrypted using the AES algorithm.
@@ -1636,8 +1704,7 @@ the application.
 \end{figure}
 
 
-\clearpage
-\section{Evaluation}
+\subsection{Evaluation} \label{evaluation}
 The completion of the project transitions into the evaluation stage where the
 project is evaluated against the original goals and requirements in order to
 judge if those requirements have been met. When evaluating the project there are
@@ -1645,7 +1712,7 @@ two distinct categories. The first is self-evaluation and the other is user
 feedback.
 
 
-\subsection{Distribution}
+\subsubsection{Distribution}
 In hindsight, the most challenging aspect of the entire project was by far,
 distribution and more specifically ensuring that \gls*{vmve} was able to run on
 all supported systems as expected. Throughout the applications development,
@@ -1673,7 +1740,7 @@ system so that all messages in the buffer would be stored and written to disk
 before exiting. This allowed for unexpected crashes to be better understood as
 the \lstinline{vmve_crash.txt} file could be analyzed.
 
-\subsection{Time Management}
+\subsubsection{Time Management}
 Given the complexity of this project, it was vital to effectively manage time
 during development and to ensure that all of the requirements of the project
 could be met on time. Failure to correctly manage this workload would result in
@@ -1703,7 +1770,7 @@ resolved. These issues are not considered critical and do not hinder the project
 in terms of meeting its original requirements. However, they are notable and
 should be resolved soon.
 
-\subsubsection{Hardware}
+% \subsubsection{Hardware}
 These tests were performed on the main development machine used throughout the
 project which was a Thinkpad T14s Gen 3. The following list shown in figure
 \ref{fig:development_machine} shows the laptop's specifications.
@@ -1725,7 +1792,7 @@ project which was a Thinkpad T14s Gen 3. The following list shown in figure
 \end{table}
 
 
-\subsection{Performance}
+\subsubsection{Performance}
 Measuring the performance of \gls*{vmve} is another key aspect of evaluation that
 ensures the original goals and requirements have been met. Two main aspects can
 be measured which are compilation and runtime performance.
@@ -1738,7 +1805,7 @@ be measured which are compilation and runtime performance.
   its effects on the end users.
 \end{description}
 
-\subsubsection{Compilation Performance}
+% \subsubsection{Compilation Performance}
 A full clean build of \gls*{vmve} takes an average of 53.260 seconds using
 Microsoft Visual Studio and the \gls*{cl} compiler. This includes the compilation
 of the source code and precompiled headers. As the codebase for \gls*{vmve} grew
@@ -1778,7 +1845,7 @@ source files.
 
 
 
-\subsubsection{Runtime Performance}
+% \subsubsection{Runtime Performance}
 \gls*{cpu} timing is primarily measured by calculating the difference in time at
 two specific sections of the source code. Using C++ this can be easily achieved
 by using the ``chrono'' library that allows for the duration to be calculated in
@@ -1867,7 +1934,7 @@ a result improving the startup time.
 \end{table}
 
 
-\subsection{User Feedback}
+\subsubsection{User Feedback}
 Having conducted the evaluation, it is equally important to obtain feedback from
 the stakeholders such as users. The users that tested the application were
 predominantly other students. The process of obtaining this feedback was
@@ -1891,14 +1958,25 @@ series of questions that would assess \glspl*{vmve} usability, performance and
 overall user experience. This data was recorded using Google Forms and further
 analyzed to produce different sets of visualizations.
 
-\clearpage
-\section{Related Work}
+\subsection{Related Work}
 Computer graphics is a large field 
 - Others who have done the same.
 - How good is my work compared others given the time constraints
+- Use Google Scholar 
 
 \clearpage
-\section{Reflection}
+\section{Conclusion}
+
+\gls*{vmve} has been designed to be a platform in which users are provided easy to use
+3D graphics tools without needing to know the complex details that come with
+that. This allows users to worry less about technicalities and more about their
+specific needs and requirements when using \gls*{vmve}.
+
+This has been a long journey that has presented me with various challenges
+throughout the development of \gls*{vmve}.
+
+
+\subsection{Reflection}
 
 One of the major downsides that this project suffers from is the projects time
 constraints. Given the relative complexity of the project many of the features
@@ -1913,7 +1991,7 @@ undertaken.
 Could have planned better by designing systems before implementing them.
 
 
-\subsection{Choice of rendering API}
+\subsubsection{Choice of Rendering API}
 This project was built on top of the \gls*{vulkan} which as previously discussed
 is a low-level \gls*{gpu} \gls*{api}. One of the major downsides to having
 chosen Vulkan as the \gls*{api} of choice for this project was the significant
@@ -1928,21 +2006,20 @@ such as DirectX11 or OpenGL as they provide the same functionality but with
 significantly less work required. This would allow me to focus and spend more time 
 implementing the many other features required in such an application.
 
-\subsection{Development logs}
+\subsubsection{Development Logs}
 At key stages of the project's development, development logs i.e. videos were
 recorded showcasing the state of development at that specific point in time. All
 videos were uploaded and are hosted on the Zakariya Oulhadj YouTube channel
 \url{https://www.youtube.com/@ZOulhadj}
 
-\clearpage
-\section{Future Work}
+\subsection{Future Work} \label{future_work}
 Going forward various features are currently being evaluated as potentially
 implemented soon. These features aim to greatly increase \glspl*{vmve} usability
 and provide a whole host of new features.
 
-\subsection{Rendering}
+\subsubsection{Rendering}
 
-\subsubsection{Multiple rendering APIs}
+% \subsubsection{Multiple rendering APIs}
 \gls*{vmve} currently only supports one rendering API which is Vulkan. As
 discussed in the technology review section, Vulkan is officially supported on
 Windows, Linux and macOS (through MoltenVK). However, to support additional
@@ -1957,7 +2034,7 @@ APIs such as OpenGL and DirectX11 for increased compatibility.
   \label{fig:api_abstraction}
 \end{figure}
 
-\subsubsection{Frustum Culling}
+% \subsubsection{Frustum Culling}
 Currently, VMVE sends all object data to the \gls*{gpu} to be processed and
 rendered. The \gls*{gpu} then subsequently traverses each vertex to figure out if
 it needs to be ``discarded''. This process is part of the graphics pipeline and
@@ -1994,7 +2071,7 @@ needing to perform thousands of checks for all the vertices of an object.
 \end{figure}
 
 
-\subsubsection{Spatial Acceleration Structures}
+% \subsubsection{Spatial Acceleration Structures}
 \gls*{vmve} only supports loading basic models however, in the future many other
 features need to be implemented. One such feature is large-scale terrain as seen
 in figure \ref{fig:quad_tree_terrain}.
@@ -2035,14 +2112,14 @@ The benefit of using this technique is that the number of vertices is
 significantly reduced saving on performance and memory usage.
 
 
-\subsubsection{glTF Support}
+% \subsubsection{glTF Support}
 Currently, the engine only really supports the \gls*{vmve} and OBJ model formats for
 importing. The main issue with the OBJ file format is its size since the data is
 stored in a text format which subsequently increases the assets file size. glTF
 \cite{gltf} is a new model format by The Khronos Group that has many useful
 features such as compression, binary representation, scene hierarchy and more.
 
-\subsection{Cross Platform}
+\subsubsection{Cross Platform}
 In contrast to the project's initial proposal which was the support multiple
 \glspl*{os}, Windows is the only \gls*{os} that \gls*{vmve} officially supports due
 to the time constraints for this project. 
@@ -2056,7 +2133,7 @@ opaque types for structures that have different implementations depending on the
 \gls*{os} being used. Additionally, a different build system would have to be
 used that is cross-platform such as CMake \cite{cmake} or Premake \cite{premake}.
 
-\subsection{Networking Support}
+\subsubsection{Networking Support}
 \gls*{vmve} is a virtual environment editor and as such can be significantly
 improved by adding support for networking. The idea is that there would be a
 server running which would keep track of the virtual world and multiple clients
@@ -2068,7 +2145,7 @@ multiple users could work together to construct a virtual environment in
 preparation for scientific research which would otherwise have taken much longer
 had only one user worked on it.
 
-\subsection{File Format/Encryption}
+\subsubsection{File Format/Encryption}
 \gls*{vmve} supports both the AES encryption standard by default. The application
 should also include additional encryption algorithms such as Diffie-Helm and
 RC6. This would provide users with greater flexibility in terms of how their
@@ -2088,7 +2165,7 @@ the glTF model format supports the ``.glb'' binary file. This would
 significantly increase the user's experience since assets files would become
 easier to manage.
 
-\subsubsection{Runtime memory protection}
+% \subsubsection{Runtime memory protection}
 One of the major flaws present is the lack of security that prevents a user from
 maliciously altering the memory of the application during runtime so that
 encrypted models can be accessed without the need for a valid key or iv.
@@ -2100,7 +2177,7 @@ that can also be manipulated \cite{cheat_engine}.
 This will need to be addressed in future versions of \gls*{vmve} so that digital
 assets remain secure for all users.
 
-\subsection{Version Control}
+\subsubsection{Version Control}
 In regards to the \gls*{vcs} architecture, a potential change that can be done is
 to add a third branch called ``Beta''. The purpose of this branch would be to
 release relatively stable yet unfinished features to users. This would allow
@@ -2117,7 +2194,7 @@ with the addition of a ``Beta'' branch.
   \label{fig:futurebrancharch}
 \end{figure}
 
-\subsection{Reduce library dependencies}
+\subsubsection{Reduce Library Dependencies}
 \gls*{vmve} makes use of several libraries which allows specific functionality to
 be added quickly. This is ideal given the project's time constraints and
 requirements. However, going forward the aim will be to reduce the number of
@@ -2128,7 +2205,7 @@ faster compilation times as only functionality that is required will be
 implemented and generally finer control of the code that \gls*{vmve} is built on
 top of.
 
-\subsection{Accessibility}
+\subsubsection{Accessibility}
 Another aspect that needs to be addressed soon is improved accessibility. The
 application includes some features that address this such as icons, a tutorial,
 documentation as well as additional information. However, some of the features
@@ -2142,22 +2219,7 @@ the English language and has no way of adapting to other languages. Therefore,
 the internal structure of the application must be redesigned to allow for
 other languages to be added and thus, improving accessibility.
 
-\clearpage
-\section{Conclusion}
 
-\gls*{vmve} has been designed to be a platform in which users are provided easy to use
-3D graphics tools without needing to know the complex details that come with
-that. This allows users to worry less about technicalities and more about their
-specific needs and requirements when using \gls*{vmve}.
-
-This has been a long journey that has presented me with various challenges
-throughout the development of \gls*{vmve}.
-
-\clearpage
-\printnoidxglossary
-
-\clearpage
-\printnoidxglossary[type=\acronymtype]
 
 \clearpage
 \bibliographystyle{IEEEtran}
@@ -2166,7 +2228,7 @@ throughout the development of \gls*{vmve}.
 \clearpage
 \section{Appendices}
 
-\subsection{Supporting documents} \label{supporting_documents}
+\subsection{Supporting Documents} \label{supporting_documents}
 \textattachfile{attached_documents/milestone_1.pdf}{\textcolor{skyblue}{Milestone 1}}
 \textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{skyblue}{Milestone 2}}
 \textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}
@@ -2177,7 +2239,7 @@ throughout the development of \gls*{vmve}.
 The \gls*{vmve} project is hosted on GitHub as a private repository.
 \url{https://github.com/ZOulhadj/vmve/}
 
-\subsection{Rendering API history} \label{rendering_api_appendix}
+\subsection{Rendering API History} \label{rendering_api_appendix}
 One of the core aspects of \gls*{vmve} is making use of the underlying hardware and
 more specifically the GPU (Graphics Processing Unit) which will be primarily
 used for rendering. Taking advantage of the GPUs hardware capabilities requires
@@ -2215,7 +2277,7 @@ constraints this is simply not feasible. Instead, both need to be evaluated to
 choose one.
 
 
-\subsection{Camera transformation code}
+\subsection{Camera Transformation}
 \begin{figure}[H]
   \centering
   \begin{lstlisting}[language=C++]

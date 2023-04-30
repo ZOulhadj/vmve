@@ -53,8 +53,8 @@ namespace engine {
 
         std::string app_location;
         bool running;
-        time_point start_time;
-        double delta_time;
+        std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+        float delta_time;
 
         // Resources
         Vk_Buffer scene_buffer;
@@ -385,7 +385,7 @@ namespace engine {
     {
         g_engine = new My_Engine();
 
-        g_engine->start_time = get_time();
+        g_engine->start_time = std::chrono::high_resolution_clock::now();
         g_engine->app_location = get_executable_directory();
 
         info("Initializing engine {}", g_engine->app_location);
@@ -400,7 +400,8 @@ namespace engine {
         g_engine->swapchain_ready = true;
         g_engine->using_skybox = false;
 
-        const float startup_duration = get_duration(g_engine->start_time, get_time());
+        const auto current_time = std::chrono::high_resolution_clock::now();
+        const float startup_duration = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - g_engine->start_time).count();
         info("Successfully initialized engine in {:.2f}ms", startup_duration);
 
 

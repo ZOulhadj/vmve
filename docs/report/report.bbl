@@ -53,6 +53,9 @@
 \bibitem{rgp}
 ``Amd radeon gpu profiler,'' \url{https://gpuopen.com/rgp/}.
 
+\bibitem{vulkan}
+``Vulkan,'' \url{https://www.vulkan.org/}.
+
 \bibitem{imgui}
 ``Imgui,'' \url{https://github.com/ocornut/imgui/}.
 
