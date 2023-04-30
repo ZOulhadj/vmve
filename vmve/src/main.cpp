@@ -45,8 +45,112 @@ static void drop_callback(int path_count, const char* paths[]);
 bool not_full_screen = true;
 static bool camera_activated = false;
 
+
+// TODO: Below is an example of how the engine could be structured in the future
+class engine_base
+{
+public:
+    void start(std::uint32_t width, std::uint32_t height)
+    {
+        if (!initialize())
+        {
+            terminate();
+
+            return;
+        }
+
+        if (!user_initialize())
+        {
+            user_terminate();
+            terminate();
+
+            return;
+        }
+
+        while (m_running)
+        {
+            static auto last_time = std::chrono::high_resolution_clock::now();
+            auto current_time = std::chrono::high_resolution_clock::now();
+            const float delta_time = std::chrono::duration<float, std::milli>(current_time - last_time).count() / 1000.0f;
+            last_time = current_time;
+
+            if (!user_update(delta_time))
+                m_running = false;
+
+            if (!update(delta_time))
+                m_running = false;
+        }
+
+        user_terminate();
+        terminate();
+    }
+
+    // User interface member functions
+protected:
+    virtual bool user_initialize() { return true; }
+    virtual bool user_update(float delta_time) { return true; }
+    virtual bool user_terminate() { return true; }
+
+    // Internal engine member functions
+private:
+    bool initialize()
+    {
+        // create window
+        // create renderer
+        // create audio
+        // create input
+        // create scene graph
+        // 
+        return true;
+    }
+
+    bool update(float delta_time)
+    {
+        // window event polling
+        // rendering models
+        // renderer resize
+
+        return true;
+    }
+
+    bool terminate()
+    {
+        // free all resources 
+        return true;
+    }
+private:
+    bool m_running;
+};
+
+class vmve : public engine_base
+{
+private:
+    bool user_initialize() override
+    {
+        std::cout << "User init\n";
+        return true;
+    }
+
+    bool user_update(float delta_time) override
+    {
+        // camera movement
+        // moving objects
+        // updating light information
+        std::cout << "User update\n";
+       
+        return true;
+    }
+
+    bool user_terminate() override
+    {
+        std::cout << "User terminate\n";
+        return true;
+    }
+};
+
 int main()
 {
+    // Main application start
     bool initialized = engine::initialize(app_title, app_width, app_height);
     if (!initialized) {
         engine::logging::output_to_file(app_crash_file);
@@ -105,6 +209,12 @@ int main()
     // TODO: export settings file
 
     engine::terminate();
+
+
+    // Future API 
+    vmve app;
+    app.start(1280, 720);
+
 
     return 0;
 }

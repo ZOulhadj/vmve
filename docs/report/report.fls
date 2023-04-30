@@ -1402,6 +1402,7 @@ INPUT .\attached_documents\milestone_1.pdf
 INPUT .\attached_documents\milestone_2_signed.pdf
 INPUT .\attached_documents\mid_project_review.pdf
 INPUT .\attached_documents\meetings.docx
+INPUT .\report.tex
 INPUT report.aux
 INPUT .\report.out
 INPUT .\report.out

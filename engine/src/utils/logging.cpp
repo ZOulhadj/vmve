@@ -18,7 +18,13 @@ namespace engine {
         if (m_capacity < m_logs.size())
             m_capacity++;
 
+        // TODO: Logging should support different types of "sinks" i.e printing to a buffer,
+        // console, file etc.
         m_logs[m_index] = log_msg({ type, data });
+
+#if defined(_DEBUG)
+        std::cout << data;
+#endif
 
         m_index++;
     }
