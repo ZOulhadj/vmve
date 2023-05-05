@@ -406,9 +406,34 @@ namespace engine {
         info("Successfully initialized engine in {:.2f}ms", startup_duration);
 
 
+        model test;
+        test.create("C:/Users/zakar/Downloads/container.glb");
+#if 0
         //model test_model;
         //test_model.create("C:/Users/zakar/Downloads/container.glb");
 
+        struct transform_component
+        {
+            glm::mat4 transform;
+        };
+        Entity e;
+        e.add_component<mesh_component>();
+        struct mesh_component
+        {
+            void* model;
+        };
+        entt::registry registry;
+        entt::entity player_entity = registry.create();
+        registry.emplace<transform_component>(player_entity, glm::mat4(0.5f));
+        registry.emplace<mesh_component>(player_entity);
+        entt::entity enemy_entity = registry.create();
+        registry.emplace<transform_component>(enemy_entity);
+        auto t = registry.get<transform_component>(player_entity);
+        // render all meshes
+        for (entt::entity mesh_component : registry.view<mesh_component>()) {
+            std::cout << "transform\n";
+        }
+#endif
 
         return true;
     }

@@ -7,6 +7,8 @@
 #include "model.h"
 
 namespace engine {
+
+    // todo(zak): convert to using composition (ECS)
     struct Entity
     {
         // TODO: Some of these member variables a here as we need to be able

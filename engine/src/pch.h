@@ -74,4 +74,6 @@
 
 #include <tiny_gltf.h>
 
+#include <entt.hpp>
+
 #endif

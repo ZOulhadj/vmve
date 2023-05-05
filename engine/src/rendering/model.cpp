@@ -358,14 +358,14 @@ namespace engine {
     }
 
 
-    model_mesh::model_mesh(const std::string& name)
+    mesh::mesh(const std::string& name)
         : m_name(name)
     {
 
     }
 
 
-    void model_mesh::add_primitive(const mesh_primitive& primitive)
+    void mesh::add_primitive(const mesh_primitive& primitive)
     {
         m_primitves.push_back(primitive);
     }
@@ -454,12 +454,16 @@ namespace engine {
 
     void model::parse_textures(const tinygltf::Model& gltf_model)
     {
-        for (const tinygltf::Texture& texture : gltf_model.textures) {
-            if (texture.source > -1) {
-                const tinygltf::Image& image = gltf_model.images[texture.source];
-                
-                // todo(zak): remove vulkan specific call
-                m_textures.push_back(create_texture((unsigned char*)image.image.data(), image.width, image.height, VK_FORMAT_R8G8B8A8_UNORM));
+        for (const tinygltf::Texture& gltf_texture : gltf_model.textures) {
+            if (gltf_texture.source > -1) {
+                const tinygltf::Image& image = gltf_model.images[gltf_texture.source];
+
+                texture tex;
+                tex.data = image.image;
+                tex.width = image.width;
+                tex.height = image.height;
+                tex.bits_per_pixels = image.bits;
+                m_textures.push_back(tex);
             }
         }
     }
@@ -488,9 +492,9 @@ namespace engine {
         m_meshes.push_back(parse_mesh(gltf_model, gltf_model.meshes[gltf_node.mesh]));
     }
 
-    model_mesh model::parse_mesh(const tinygltf::Model& gltf_model, const tinygltf::Mesh& gltf_mesh)
+    mesh model::parse_mesh(const tinygltf::Model& gltf_model, const tinygltf::Mesh& gltf_mesh)
     {
-        model_mesh mesh(gltf_mesh.name);
+        mesh mesh(gltf_mesh.name);
 
         // preallocate buffers
         // note: position accessor stores the min and max which can be used for bounding box

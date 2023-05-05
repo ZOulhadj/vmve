@@ -107,6 +107,7 @@ private:
     bool update(float delta_time)
     {
         // window event polling
+        // entity component system
         // rendering models
         // renderer resize
 

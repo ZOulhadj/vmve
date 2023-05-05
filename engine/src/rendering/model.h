@@ -34,10 +34,12 @@ namespace engine {
         std::string name;
     };
 
-    class texture
+    struct texture
     {
-    private:
-        const unsigned char* data;
+        std::vector<unsigned char> data;
+        std::uint32_t width;
+        std::uint32_t height;
+        std::uint32_t bits_per_pixels;
     };
 
     class material
@@ -67,10 +69,10 @@ namespace engine {
         std::vector<std::uint32_t> m_indices;
     };
 
-    class model_mesh
+    class mesh
     {
     public:
-        model_mesh(const std::string& name = "Unknown");
+        mesh(const std::string& name = "Unknown");
 
         void add_primitive(const mesh_primitive& primitive);
     private:
@@ -105,7 +107,7 @@ namespace engine {
     private:
 
         void parse_node(const tinygltf::Model& gltf_model, const tinygltf::Node& gltf_node);
-        model_mesh parse_mesh(const tinygltf::Model& gltf_model, const tinygltf::Mesh& gltf_mesh);
+        mesh parse_mesh(const tinygltf::Model& gltf_model, const tinygltf::Mesh& gltf_mesh);
 
         std::optional<attribute_data> get_attribute_data(const tinygltf::Model& gltf_model, const tinygltf::Primitive& primitive, std::string_view attribute_name);
 
@@ -114,10 +116,9 @@ namespace engine {
         void parse_light();
 
     private:
-        std::vector<model_mesh> m_meshes;
+        std::vector<mesh> m_meshes;
         std::vector<material> m_materials;
-        std::vector<Vk_Image> m_textures;
-
+        std::vector<texture> m_textures;
     };
 
 

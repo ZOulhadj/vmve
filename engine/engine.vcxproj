@@ -58,7 +58,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)vendor/glfw/include/;$(ProjectDir)vendor/vma/include/;$(ProjectDir)vendor/glm/;$(ProjectDir)vendor/imgui/;$(ProjectDir)vendor/stb/;$(ProjectDir)vendor/assimp/include/;$(ProjectDir)vendor/volk/;C:\VulkanSDK\1.3.231.1\Include/;$(ProjectDir)vendor/tinygltf/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)vendor/glfw/include/;$(ProjectDir)vendor/vma/include/;$(ProjectDir)vendor/glm/;$(ProjectDir)vendor/imgui/;$(ProjectDir)vendor/stb/;$(ProjectDir)vendor/assimp/include/;$(ProjectDir)vendor/volk/;C:\VulkanSDK\1.3.231.1\Include/;$(ProjectDir)vendor/tinygltf/;$(ProjectDir)vendor/entt/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -85,7 +85,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)vendor/glfw/include/;$(ProjectDir)vendor/vma/include/;$(ProjectDir)vendor/glm/;$(ProjectDir)vendor/imgui/;$(ProjectDir)vendor/stb/;$(ProjectDir)vendor/assimp/include/;$(ProjectDir)vendor/volk/;C:\VulkanSDK\1.3.231.1\Include/;$(ProjectDir)vendor/tinygltf/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src/;$(ProjectDir)vendor/glfw/include/;$(ProjectDir)vendor/vma/include/;$(ProjectDir)vendor/glm/;$(ProjectDir)vendor/imgui/;$(ProjectDir)vendor/stb/;$(ProjectDir)vendor/assimp/include/;$(ProjectDir)vendor/volk/;C:\VulkanSDK\1.3.231.1\Include/;$(ProjectDir)vendor/tinygltf/;$(ProjectDir)vendor/entt/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
