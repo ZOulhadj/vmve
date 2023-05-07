@@ -63,8 +63,9 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
         ImGui::Button("Add light");
         ImGui::SameLine();
         ImGui::Button("Remove light");
-#endif
         ImGui::Separator();
+#endif
+
 
         // Options
         static ImGuiTableFlags flags =

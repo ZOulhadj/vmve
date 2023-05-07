@@ -1,15 +1,15 @@
 # Fdb version 4
-["bibtex report"] 1683156223 "report.aux" "report.bbl" "report" 1683156233 0
+["bibtex report"] 1683258608 "report.aux" "report.bbl" "report" 1683258620 0
   "./refs.bib" 1682815863 5444 5dec2dd3bb3d4880a8ac02d4af2cf0da ""
   "C:/Users/zakar/AppData/Local/Programs/MiKTeX/bibtex/bib/ieeetran/IEEEabrv.bib" 1440617548 20898 a5d2167c380db7dfff810b085c77ed63 ""
   "C:/Users/zakar/AppData/Local/Programs/MiKTeX/bibtex/bst/ieeetran/IEEEtran.bst" 1440622569 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "report.aux" 1683156231 48361 7a2792ddcba70a128c512a7200c3a9fc "pdflatex"
+  "report.aux" 1683258618 48573 a257d6faf0dd8dd116d33193dee8d551 "pdflatex"
   (generated)
   "report.bbl"
   "report.blg"
   (rewritten before read)
-["pdflatex"] 1683156223 "c:/Users/zakar/Projects/vmve/docs/report/report.tex" "report.pdf" "report" 1683156233 0
-  "<report.tex" 1683156205 107855 0 ""
+["pdflatex"] 1683258608 "c:/Users/zakar/Projects/vmve/docs/report/report.tex" "report.pdf" "report" 1683258620 0
+  "<report.tex" 1683258591 108048 0 ""
   "C:/Users/zakar/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1682960271 80909 eab91d9745dd2edfd62a31d53cd5fe15 ""
   "C:/Users/zakar/AppData/Local/MiKTeX/fonts/pk/ljfour/jknappen/ec/dpi600/tcti0800.pk" 1680784349 11124 fd318e9f2fda63d72ee2062af7a4e0c9 ""
   "C:/Users/zakar/AppData/Local/MiKTeX/fonts/pk/ljfour/jknappen/ec/dpi600/tctt0900.pk" 1680530247 8332 6973c1e448b60e52c69f74edea7983cc ""
@@ -157,9 +157,10 @@
   "attached_documents/milestone_1.pdf" 1680390303 32556 6e0c73a126014178a577b86e075ff415 ""
   "attached_documents/milestone_2_signed.pdf" 1668147648 60536 250c069a891264f54906789ccaad6d77 ""
   "attached_documents/user_feedback.xlsx" 1681532925 10753 6de9ff067efb2ddf01b58bdefcaa1396 ""
-  "c:/Users/zakar/Projects/vmve/docs/report/report.tex" 1683156205 107855 00566abe4a14f30679ca06755e5a53f7 ""
+  "c:/Users/zakar/Projects/vmve/docs/report/report.tex" 1683258591 108048 2857762b6a62515e8d09d3975335e556 ""
   "images/api_abstraction.png" 1681533547 9762 92f2d25f7f3766b2adff26c7111ddd5a ""
   "images/api_comparison.png" 1682817806 247237 e3f811c11ee24abcc9e41d5fa361222c ""
+  "images/bar_chart_usability.png" 1683258481 5647 dd1aa0b83ff8013fd0328c4f6cb66f39 ""
   "images/bounding_boxes.png" 1679031886 10910 b8f339c84971c970532426a04c8113c2 ""
   "images/camera_space.png" 1680119556 204286 63d962f7ed3c3d4a8abe268f2b326794 ""
   "images/current_branch_design.png" 1674724185 5163 1bcf30797e1181eed22d25365348c6b5 ""
@@ -210,11 +211,11 @@
   "images/vmve_file_structure.png" 1682156444 8158 7a6158acaeeccec8659f41c60bd2b990 ""
   "images/vulkan_logo.png" 1682815778 20110 85184ffa5c91f0ea434d159f94cad29c ""
   "images/website.png" 1678581119 682339 9a0432eccc56d6940a0906367f6a8413 ""
-  "report.aux" 1683156231 48361 7a2792ddcba70a128c512a7200c3a9fc "pdflatex"
-  "report.bbl" 1683156223 4599 40bf17974c87a46887d96f23453deb01 "bibtex report"
-  "report.out" 1683156231 15466 a6f0074c0847f33c1904c07b9ae4edb7 "pdflatex"
-  "report.tex" 1683156205 107855 00566abe4a14f30679ca06755e5a53f7 ""
-  "report.toc" 1683156231 9924 43e4c1380b8c5e7a88bcadaa8d0615a9 "pdflatex"
+  "report.aux" 1683258618 48573 a257d6faf0dd8dd116d33193dee8d551 "pdflatex"
+  "report.bbl" 1683258608 4599 40bf17974c87a46887d96f23453deb01 "bibtex report"
+  "report.out" 1683258618 15466 a6f0074c0847f33c1904c07b9ae4edb7 "pdflatex"
+  "report.tex" 1683258591 108048 2857762b6a62515e8d09d3975335e556 ""
+  "report.toc" 1683258618 9924 922ccede8790bc4f59b46f312020051b "pdflatex"
   (generated)
   "report.aux"
   "report.log"

@@ -213,8 +213,8 @@ int main()
 
 
     // Future API 
-    vmve app;
-    app.start(1280, 720);
+    //vmve app;
+    //app.start(1280, 720);
 
 
     return 0;
