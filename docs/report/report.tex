@@ -228,7 +228,7 @@ for rapid graphics prototyping such as constructing virtual environments,
 simulating the effect of light on 3D geometry and securing digital assets
 through the use of encryption.
 
-\subsection{Stakeholders}
+\subsection{Stakeholders} \label{stakeholders}
 Stakeholders are individuals or groups who have an interest or "stake" in
 \gls*{vmve} which can include decisions made throughout the development or the
 end product. Each stakeholder group may have different goals, priorities, and
@@ -256,11 +256,15 @@ The design, implementation and evaluation of the project rely on a set of aims
 and objectives to be fully defined. The first step toward obtaining these
 requirements requires a ``requirements gathering'' stage. The purpose of this
 is to outline and better understand the requirements for each of the
-stakeholders mentioned in the previous section.
+stakeholders mentioned in section \ref{stakeholders}.
 
 \subsubsection{Aims} \label{aims} 
+
 \gls*{vmve} has several aims which outline the general goals that the
-application wishes to provide.
+application wishes to achieve throughout this project. These aims will go on to
+define concrete objectives that provide a clear and concise set of instructions
+required for the design and implementation stages.
+
 
 \begin{description}
   \item[1. Virtual environment rendering] The first aim of \gls*{vmve} is to
@@ -270,14 +274,11 @@ application wishes to provide.
     underlying technology such as students and trainees can use the application
     to achieve their desired goals.
 
-  \item[2. Lower system requirements] The second aim is to focus on the
-    efficiency of the application to lower the hardware requirements. 
-    
-    The
-    efficiency and aims vary based on the component in question that include the
-    \gls*{cpu}, \gls*{gpu}, memory and storage. From the ground up \gls*{vmve}
-    will strive to be as efficient as possible by using the latest technologies
-    available.
+  \item[2. Lower system requirements] Many industry-leading applications are
+    complex applications that have significant hardware requirements to run.
+    \gls*{vmve} will aim to address this by focusing on the efficiency of the
+    application and only providing the necessary tools needed which are not
+    computationally expensive.
 
   \item[3. 3D asset encryption] The last of the three main aims is for the
     application to include a custom model format that makes use of encryption to
@@ -291,25 +292,28 @@ application wishes to provide.
 
 
 \subsubsection{Objectives} \label{objectives}
-The objectives are concrete requirements that need to be implemented in order
-to achieve the aims outlined in section \ref{aims}.
+Fulfilling these aims requires a set of objectives i.e requirements that need to
+be implemented to achieve the aims outlined in section \ref{aims}.
 
 \begin{description}
-  \item[1. A platform for virtual environment rendering] 
-  The project will be built to run as a desktop application that renders a user
-  interface editor as well as a virtual environment. The \gls*{ui} must be
-  designed intuitively and reduce the amount of friction between the application
-  and the user's goal.
+  \item[1. Virtual environment rendering] 
+    The project will be built to run as a desktop application that renders a user
+    interface editor as well as a virtual environment. The \gls*{ui} must be
+    designed intuitively to reduce the amount of friction between the application
+    and the user's goal. This means common related tasks and functionality must be
+    grouped. Furthermore, the language used throughout the user interface must
+    reduce if not eliminate jargon. Doing so will make the application easier to
+    understand.
 
-  Furthermore, the language used throughout the user interface must reduce if
-  not eliminate jargon. A simple example could be to use the word ``Move''
-  instead of ``Translate'' when referring to objects in the virtual environment
-  and as such, would make the application more accessible.
   \item[2. Lower system requirements]
-    This can be achieved through the use of efficient algorithms and
-    technologies related to rendering that will allow for assets to be displayed
-    using as little hardware resources as possible. For example, by using the
-    latest rendering \glspl*{api} and packing/compressing crucial data.
+    This can be achieved through the use of efficient technologies, algorithms
+    and overall structure related to rendering that will allow for assets to be
+    displayed using as few hardware resources as possible. For example, by
+    using the latest rendering \glspl*{api} and packing/compressing crucial
+    data. Efficiency requirements vary based on the component in question which
+    includes the \gls*{cpu}, \gls*{gpu}, memory and storage. 
+
+
   \item[3. 3D asset encryption]
     \gls*{vmve} would be able to provide a platform to encrypt these assets and
     only unlock them using a special key that only the user will know. This
@@ -340,58 +344,44 @@ as part of the requirements for milestone 2.
 
 
 \subsection{Considerations}
-Several different types of considerations must also be taken into account before
-commencing work on the application.
+With the aims and objectives fully defined, important considerations must be
+taken into account before commencing work on the application. These include
+legal, social and ethical considerations.
 
 \subsubsection{Legal}
-Legal considerations are important when distributing an application indented to
-be used in production. The project and subsequently the application must abide by
-local laws and regulations.
-
-\gls*{vmve} is to be licensed under the MIT license \cite{mit}. This ensures
-that the application can be used without restriction allowing for it to be
-copied, modified as well as distributed.
-
-Additionally, security must be taken into account when developing the
-application. As mentioned earlier, \gls*{vmve} will include the ability to
-secure critical assets including 3D models. This will be achieved using
-encryption by making use of a secret key and initialisation vector.
-
-When developing the system, it is, therefore, important to ask questions such as
-``How will this data be kept secure?'' and ``Does the application store or send
-any private data?''. 
-
-Throughout the development of this project, the application will not contain any
-networking functionality. This ensures that all data remains local to the
-application and the user's device.
+The legality of \gls*{vmve} is one of the most important considerations that
+must be taken into account. As the application is intended to be distributed to
+users around the world, local laws and regulations must be adhered to. As a
+relatively basic application that serves a specific user base, there is a small
+set of features and functionality that require legal clarification.
 
 \begin{description}
-  \item[No modification to geometry] 
-  \item[No data is send or recieved] 
+  \item[Encryption]
+    Firstly, \gls*{vmve} will include the ability to secure critical assets such
+    as 3D models. This will be achieved using encryption by making use of a
+    secret key and initialisation vector. This information is not stored and is
+    only generated once for a user to save in order to encrypt and decrypt a
+    model.
+
+  \item[Asset modification] 
+    Secondly, \gls*{vmve} will not modify any of the raw data being imported and
+    only change the visual appearance based on several factors including
+    rendering settings, lighting, translation, rotation and scaling. 
+
+  \item[Personal information] 
+    Finally, the application does not store or process any personal information.
+    Furthermore, it will not contain any networking functionality. This ensures
+    that all data remains local to the application and the user's device.
+    Therefore, \gls*{gdpr} has not been taken into consideration. In the future,
+    however, if the use of data and information changes then this will be
+    revisited to ensure that all laws are adhered to. 
 \end{description}
 
-Given the domain in which the application is intended to be used, such as
-handling third-party 3D assets by importing and exporting geometry data.
-\gls*{vmve} mustn't infringe upon the copyright of those who own the models. One
-such example includes not modifying the geometry data unless specified by the
-user. Since this will be a new application, a lot of the intricacies behind
-\gls*{ip} need to be further defined and taken into account based on user
-feedback. \gls*{vmve} will not modify any of the data being imported and only
-change the visual appearance based on several factors including rendering
-settings, lighting, translation, rotation and scaling. 
-
-
-As the application does not store or process any personal information,
-\gls*{gdpr} has not been taken into consideration. In the future, however, if
-the use of data and information changes then this will be revisited to ensure
-that all laws are adhered to.
-
-\subsubsection{Social}
-\gls*{vmve} must also take into account social considerations for those using the
-application to provide a consistent user experience.
-
-Accessibility is a vital aspect that needs to be addressed throughout the
-development to ensure the application is useable for those with disabilities.
+The source code for the project will not be publicly available throughout the
+development. However, upon completion of the project, this may change and thus,
+will be licensed under the MIT license \cite{mit} which states that the source
+code can be used without restriction allowing for it to be copied, modified as
+well as distributed.
 
 \subsubsection{Ethical}
 One of the main ethical considerations that must be taken into account is the
@@ -405,25 +395,24 @@ additional computations that are not strictly required for 3D rendering.
 Furthermore, the application will not store or send any data as this is not
 required.
 
-Deceptive design also known as ``Dark patterns'' refers to designs/tricks that
-manipulate users into performing certain actions without their informed consent.
-\gls*{vmve} will make use of a user interface, however, during the design and
-implementation stages extra effort will be spent on ensuring that no such design
-pattern is introduced. This will greatly benefit users and thus, increase the
-overall user experience.
+Another ethical consideration is the use of deceptive design also known as
+``Dark patterns'' that refers to designs/tricks that manipulate users into
+performing certain actions without their informed consent. \gls*{vmve} will make
+use of a user interface, however, during the design and implementation stages
+extra effort will be spent on ensuring that no such design pattern is
+introduced. This will greatly benefit users and their overall user experience.
 
 \subsection{BSc Justification}
 The development of \gls*{vmve} is an ambitious and challenging project that
 requires a strong understanding of computer graphics, programming, and software
 architecture. This project is a large undertaking that uses the skills and
 knowledge gained through the BSc (Bachelor of Science) computer science program
-from modules such as software development (1, 2, 3), algorithms, data science
-and mathematics. It not only showcases technical ability but also highlights
-critical thinking, problem-solving, decision-making and time management skills. 
-
-As such, they will be highly valued in the professional industry and necessary
-for success in the field of computer science and therefore, is a suitable choice
-for a final-year project.
+from modules such as software development (1, 2, 3), algorithms, data science,
+cybersecurity and mathematics. Not only does it showcase technical ability but
+also highlights critical thinking, problem-solving, decision-making and time
+management skills. As a result, they will be highly valued in the professional
+industry and necessary for success in the field of computer science and
+therefore, is a suitable choice for a final-year project.
 
 \subsection{Overview}
 This report is structured such that it presents each aspect of the development
@@ -443,7 +432,7 @@ in chronological order. There are a total of four key sections in this report:
   \item[Conclusion (\ref{conclusion})] comes after the implementation and
     reflects on the project to ensure that the application has met the aims and
     objectives originally set out. Furthermore, it discusses the specific
-    features that will need to be implemented going forward in.
+    features that will need to be implemented going forward.
 \end{description}
 
 \clearpage
