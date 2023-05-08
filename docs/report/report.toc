@@ -16,11 +16,11 @@
 \contentsline {section}{\numberline {2}Technology Review}{8}{section.2}%
 \contentsline {subsection}{\numberline {2.1}Version Control}{8}{subsection.2.1}%
 \contentsline {subsubsection}{\numberline {2.1.1}Git vs SVN}{8}{subsubsection.2.1.1}%
-\contentsline {subsection}{\numberline {2.2}Development Environment}{8}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.2}Development Environment}{9}{subsection.2.2}%
 \contentsline {subsection}{\numberline {2.3}Programming Language}{9}{subsection.2.3}%
 \contentsline {subsection}{\numberline {2.4}Rendering API}{10}{subsection.2.4}%
-\contentsline {subsection}{\numberline {2.5}External Libraries}{10}{subsection.2.5}%
-\contentsline {subsection}{\numberline {2.6}Task Management}{10}{subsection.2.6}%
+\contentsline {subsection}{\numberline {2.5}External Libraries}{11}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}Task Management}{11}{subsection.2.6}%
 \contentsline {section}{\numberline {3}Design}{12}{section.3}%
 \contentsline {subsection}{\numberline {3.1}Tools}{12}{subsection.3.1}%
 \contentsline {subsubsection}{\numberline {3.1.1}GitHub}{12}{subsubsection.3.1.1}%
@@ -70,46 +70,48 @@
 \contentsline {subsubsection}{\numberline {4.4.1}Controls}{43}{subsubsection.4.4.1}%
 \contentsline {subsubsection}{\numberline {4.4.2}Fonts and Icons}{43}{subsubsection.4.4.2}%
 \contentsline {subsubsection}{\numberline {4.4.3}Menu Bar}{44}{subsubsection.4.4.3}%
-\contentsline {subsubsection}{\numberline {4.4.4}Load Model Window}{44}{subsubsection.4.4.4}%
-\contentsline {subsubsection}{\numberline {4.4.5}Export Model Window}{46}{subsubsection.4.4.5}%
-\contentsline {subsubsection}{\numberline {4.4.6}Settings Window}{46}{subsubsection.4.4.6}%
-\contentsline {subsubsection}{\numberline {4.4.7}Object gizmo}{47}{subsubsection.4.4.7}%
-\contentsline {subsection}{\numberline {4.5}Logging System}{48}{subsection.4.5}%
-\contentsline {subsection}{\numberline {4.6}Encryption and Custom Model Format}{49}{subsection.4.6}%
-\contentsline {subsubsection}{\numberline {4.6.1}Decryption validation}{50}{subsubsection.4.6.1}%
-\contentsline {subsection}{\numberline {4.7}Distribution}{51}{subsection.4.7}%
-\contentsline {subsubsection}{\numberline {4.7.1}Executable}{51}{subsubsection.4.7.1}%
-\contentsline {subsubsection}{\numberline {4.7.2}Versions}{51}{subsubsection.4.7.2}%
-\contentsline {subsubsection}{\numberline {4.7.3}Website}{52}{subsubsection.4.7.3}%
-\contentsline {subsubsection}{\numberline {4.7.4}Example models}{52}{subsubsection.4.7.4}%
-\contentsline {subsubsection}{\numberline {4.7.5}Documentation}{53}{subsubsection.4.7.5}%
-\contentsline {subsection}{\numberline {4.8}Evaluation}{53}{subsection.4.8}%
-\contentsline {subsubsection}{\numberline {4.8.1}Distribution}{54}{subsubsection.4.8.1}%
-\contentsline {subsubsection}{\numberline {4.8.2}Time Management}{55}{subsubsection.4.8.2}%
-\contentsline {subsubsection}{\numberline {4.8.3}Performance}{57}{subsubsection.4.8.3}%
-\contentsline {subsubsection}{\numberline {4.8.4}User Feedback}{61}{subsubsection.4.8.4}%
-\contentsline {subsection}{\numberline {4.9}Related Work}{62}{subsection.4.9}%
-\contentsline {section}{\numberline {5}Conclusion}{63}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Reflection}{63}{subsection.5.1}%
-\contentsline {subsubsection}{\numberline {5.1.1}Time Management}{63}{subsubsection.5.1.1}%
-\contentsline {subsubsection}{\numberline {5.1.2}Design}{63}{subsubsection.5.1.2}%
-\contentsline {subsubsection}{\numberline {5.1.3}Alternative Rendering API}{63}{subsubsection.5.1.3}%
-\contentsline {subsubsection}{\numberline {5.1.4}Development Logs}{64}{subsubsection.5.1.4}%
-\contentsline {subsection}{\numberline {5.2}Future Work}{64}{subsection.5.2}%
-\contentsline {subsubsection}{\numberline {5.2.1}Multiple rendering APIs}{64}{subsubsection.5.2.1}%
-\contentsline {subsubsection}{\numberline {5.2.2}Frustum Culling}{65}{subsubsection.5.2.2}%
-\contentsline {subsubsection}{\numberline {5.2.3}Spatial Acceleration Structures}{66}{subsubsection.5.2.3}%
-\contentsline {subsubsection}{\numberline {5.2.4}glTF Support}{68}{subsubsection.5.2.4}%
-\contentsline {subsubsection}{\numberline {5.2.5}Cross Platform}{69}{subsubsection.5.2.5}%
-\contentsline {subsubsection}{\numberline {5.2.6}Networking Support}{69}{subsubsection.5.2.6}%
-\contentsline {subsubsection}{\numberline {5.2.7}File Format/Encryption}{69}{subsubsection.5.2.7}%
-\contentsline {subsubsection}{\numberline {5.2.8}Runtime memory protection}{70}{subsubsection.5.2.8}%
-\contentsline {subsubsection}{\numberline {5.2.9}Version Control}{70}{subsubsection.5.2.9}%
-\contentsline {subsubsection}{\numberline {5.2.10}Reduce Library Dependencies}{71}{subsubsection.5.2.10}%
-\contentsline {subsubsection}{\numberline {5.2.11}Accessibility}{71}{subsubsection.5.2.11}%
-\contentsline {section}{\numberline {6}References}{72}{section.6}%
-\contentsline {section}{\numberline {7}Appendices}{74}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Supporting Documents}{74}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}GitHub}{74}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Rendering API History}{74}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}Camera Transformation}{75}{subsection.7.4}%
+\contentsline {subsubsection}{\numberline {4.4.4}Settings Window}{46}{subsubsection.4.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.5}Load Model Window}{46}{subsubsection.4.4.5}%
+\contentsline {subsubsection}{\numberline {4.4.6}Export Model Window}{48}{subsubsection.4.4.6}%
+\contentsline {subsubsection}{\numberline {4.4.7}Global Panel}{48}{subsubsection.4.4.7}%
+\contentsline {subsubsection}{\numberline {4.4.8}Entity Panel}{49}{subsubsection.4.4.8}%
+\contentsline {subsubsection}{\numberline {4.4.9}Object gizmo}{50}{subsubsection.4.4.9}%
+\contentsline {subsection}{\numberline {4.5}Logging System}{51}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Encryption and Custom Model Format}{53}{subsection.4.6}%
+\contentsline {subsubsection}{\numberline {4.6.1}Decryption validation}{54}{subsubsection.4.6.1}%
+\contentsline {subsection}{\numberline {4.7}Distribution}{55}{subsection.4.7}%
+\contentsline {subsubsection}{\numberline {4.7.1}Executable}{55}{subsubsection.4.7.1}%
+\contentsline {subsubsection}{\numberline {4.7.2}Versions}{55}{subsubsection.4.7.2}%
+\contentsline {subsubsection}{\numberline {4.7.3}Website}{56}{subsubsection.4.7.3}%
+\contentsline {subsubsection}{\numberline {4.7.4}Example models}{56}{subsubsection.4.7.4}%
+\contentsline {subsubsection}{\numberline {4.7.5}Documentation}{57}{subsubsection.4.7.5}%
+\contentsline {subsection}{\numberline {4.8}Evaluation}{57}{subsection.4.8}%
+\contentsline {subsubsection}{\numberline {4.8.1}Distribution}{58}{subsubsection.4.8.1}%
+\contentsline {subsubsection}{\numberline {4.8.2}Time Management}{59}{subsubsection.4.8.2}%
+\contentsline {subsubsection}{\numberline {4.8.3}Performance}{61}{subsubsection.4.8.3}%
+\contentsline {subsubsection}{\numberline {4.8.4}User Feedback}{65}{subsubsection.4.8.4}%
+\contentsline {subsection}{\numberline {4.9}Related Work}{66}{subsection.4.9}%
+\contentsline {section}{\numberline {5}Conclusion}{67}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Reflection}{67}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}Time Management}{67}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}Design}{67}{subsubsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.3}Alternative Rendering API}{67}{subsubsection.5.1.3}%
+\contentsline {subsubsection}{\numberline {5.1.4}Development Logs}{68}{subsubsection.5.1.4}%
+\contentsline {subsection}{\numberline {5.2}Future Work}{68}{subsection.5.2}%
+\contentsline {subsubsection}{\numberline {5.2.1}Multiple rendering APIs}{68}{subsubsection.5.2.1}%
+\contentsline {subsubsection}{\numberline {5.2.2}Frustum Culling}{69}{subsubsection.5.2.2}%
+\contentsline {subsubsection}{\numberline {5.2.3}Spatial Acceleration Structures}{70}{subsubsection.5.2.3}%
+\contentsline {subsubsection}{\numberline {5.2.4}glTF Support}{72}{subsubsection.5.2.4}%
+\contentsline {subsubsection}{\numberline {5.2.5}Cross Platform}{73}{subsubsection.5.2.5}%
+\contentsline {subsubsection}{\numberline {5.2.6}Networking Support}{73}{subsubsection.5.2.6}%
+\contentsline {subsubsection}{\numberline {5.2.7}File Format/Encryption}{73}{subsubsection.5.2.7}%
+\contentsline {subsubsection}{\numberline {5.2.8}Runtime memory protection}{74}{subsubsection.5.2.8}%
+\contentsline {subsubsection}{\numberline {5.2.9}Version Control}{74}{subsubsection.5.2.9}%
+\contentsline {subsubsection}{\numberline {5.2.10}Reduce Library Dependencies}{75}{subsubsection.5.2.10}%
+\contentsline {subsubsection}{\numberline {5.2.11}Accessibility}{75}{subsubsection.5.2.11}%
+\contentsline {section}{\numberline {6}References}{76}{section.6}%
+\contentsline {section}{\numberline {7}Appendices}{78}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Supporting Documents}{78}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}GitHub}{78}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Rendering API History}{78}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Camera Transformation}{79}{subsection.7.4}%

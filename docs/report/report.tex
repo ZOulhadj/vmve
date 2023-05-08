@@ -7,13 +7,12 @@
 \usepackage[parfill]{parskip}
 \usepackage{amsmath}
 \usepackage[hyphens]{url}
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
 \definecolor{skyblue}{HTML}{3366cc}
 \usepackage[hidelinks, colorlinks=true, linkcolor=black, urlcolor=skyblue, citecolor=skyblue, allcolors=skyblue]{hyperref}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{listings}
-\usepackage{xcolor}
 \usepackage[acronym]{glossaries}
 \usepackage[all]{hypcap}
 \usepackage{textcomp}
@@ -153,7 +152,8 @@ This report presents my final year project an application built from the ground
 up using the latest technologies for 3D graphics rendering. Its goal is to be
 easy to use, and performant and include a collection of tools for graphics
 manipulation that users can take advantage of when designing and building
-virtual environments.
+virtual environments. It is intended to serve as an important application that
+bridges the gap between new users and industry-leading rendering engines.
 
 \pagebreak
 
@@ -214,7 +214,7 @@ wide range of issues such as requiring training for employees, additional costs
 for businesses and a decrease in productivity. Other issues include performance,
 compatibility and storage when using these complex applications.
 
-% back this up with data/from a paper
+% todo: back this up with data/from a paper
 
 To address these issues, I introduce my final year project, \gls*{vmve}. A
 standalone application developed in the domain of computer graphics that
@@ -234,25 +234,22 @@ Stakeholders are individuals or groups who have an interest or "stake" in
 end product. Each stakeholder group may have different goals, priorities, and
 expectations, which can sometimes lead to conflicts and challenges in
 decision-making and implementation. It is important to identify the different
-groups in order to ensure their requirements and concerns are being taken into
-account so that informed decisions can be made during development.
+groups to ensure their requirements and concerns are being taken into account so
+that informed decisions can be made.
 
 \subsubsection{Students and trainees}
 Students and trainees are the key stakeholder groups for the project which the
 application will be designed to accommodate by providing the necessary tools and
 functionality. This includes providing a suite of easy-to-use tools for graphics
-rendering that students and trainees could use to learn about basic rendering 
-concepts. 
-
-% The end-users are the main stakeholders of the final-year project. 
-% The main stakeholder for this project is the end users. Users are the
-% individuals that will test and use the application once it has been developed.
-% The main aims and objectives of this project will focus on these users to ensure
-% that all their needs are fulfilled.
+rendering that students and trainees could use to learn about basic rendering
+concepts and to use this knowledge to construct virtual environments for
+graphics prototyping and rendering.
 
 \subsubsection{Businesses}
 The other type of stakeholder is employers who will want to train new potential
-employees in the field of computer graphics.
+employees in the field of computer graphics. The goal is for businesses to use
+\gls*{vmve} as a training tool to lower the learning curve and reduce the
+barrier to entry within the graphics industry.
 
 \subsection{Requirements}
 The design, implementation and evaluation of the project rely on a set of aims
@@ -483,6 +480,19 @@ existing platforms that are built on top of Git. A few examples include
 \href{https://bitbucket.org/}{Bitbucket}. 
 
 Similarly, \gls*{svn} is another type of version control system. 
+
+\begin{center}
+  \rowcolors{2}{gray!25}{white}
+  \begin{tabular}{cc}
+    
+    \rowcolor{gray!50}
+    Git & SVN\\
+    Some values & Some values\\
+    Some values & Some values\\
+    Some values & Some values\\
+    Some values & Some values\\
+  \end{tabular}  
+\end{center}
 
 \subsection{Development Environment}
 
@@ -1555,7 +1565,9 @@ the vast amount of data stored within the font.
 \end{figure}
 
 \subsubsection{Menu Bar}
-
+The menu bar is a panel located at the top of the application and provides
+global and commonly accessed tools and functionality. Each option within the 
+menu bar contains various properties that allow a to toggle key settings.
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/menu_bar.png}
@@ -1563,34 +1575,52 @@ the vast amount of data stored within the font.
   \label{fig:menu_bar}
 \end{figure}
 
+ 
+\begin{description}
+  \item[File] 
+    Has the main buttons for importing and exporting models. It also provides
+    convenient ``Exit'' button to free all resources and terminate the
+    application.
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.5\textwidth]{images/menu_bar_file.png}
+      \caption{Menu Bar File}
+      \label{fig:menu_bar_file}
+    \end{figure}
 
-\subsubsection{Load Model Window} \label{load_model}
-The load model window is accessed through \lstinline{File > Load Model} or by
-pressing the \lstinline{Ctrl + L} shortcut. This window allows the user to load
-a 3D model at runtime by traversing the file system and selecting a model to
-load.
+  \item[Options] 
+    This is possibly the most frequently used item within the main menu as this
+    has all the key options for the renderer and various visualisation tools.
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.5\textwidth]{images/menu_bar_options.png}
+      \caption{Menu Bar Options}
+      \label{fig:menu_bar_options}
+    \end{figure}
+  \item[Tools] 
+    As well as rendering, \gls*{vmve} will provide many other tools such as
+    audio, a built-in console, an editor etc. To facilitate this, a dedicated
+    tools menu is included. Currently, this acts as a prototype but in the near
+    future will contain a plethora of fully featured supporting tools.
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.25\textwidth]{images/menu_bar_tools.png}
+      \caption{Menu Bar Tools}
+      \label{fig:menu_bar_tools}
+    \end{figure}
+  \item[Help]
+    Lastly, the help option is for users who need additional assistance whilst
+    using the application. It provides information about the application but
+    also, a link that redirects users to the documentation website for
+    \gls*{vmve}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.5\textwidth]{images/menu_bar_help.png}
+      \caption{Menu Bar Help}
+      \label{fig:menu_bar_help}
+    \end{figure}
+\end{description}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{images/load_model_window.png}
-  \caption{Load Model Window}
-  \label{fig:load_model_window}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{images/load_model_encrypted_window.png}
-  \caption{Load Model Encrypted Window}
-  \label{fig:load_model_encrypted_window}
-\end{figure}
-
-\subsubsection{Export Model Window}
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{images/encryption_system.png}
-  \caption{Export Model Window}
-  \label{fig:encryption_window}
-\end{figure}
 
 \subsubsection{Settings Window}
 
@@ -1599,6 +1629,70 @@ load.
   \includegraphics[width=\textwidth]{images/settings_window.png}
   \caption{Settings Window}
   \label{fig:settings_window}
+\end{figure}
+
+\subsubsection{Load Model Window} \label{load_model}
+
+The load model window is accessed through \lstinline{File > Load Model} or by
+pressing the \lstinline{Ctrl + L} shortcut. The window displays the file system
+which contains a list of items and directories. The user can interact with this
+in order to load a 3D model at runtime.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/load_model_window.png}
+  \caption{Load Model Window}
+  \label{fig:load_model_window}
+\end{figure}
+
+If the 3D geometry file is detected to be encrypted then a modal window will
+popup asking the user to enter the files encryption key and initialisation
+vector. 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/load_model_encrypted_window.png}
+  \caption{Load Model Encrypted Window}
+  \label{fig:load_model_encrypted_window}
+\end{figure}
+
+\subsubsection{Export Model Window}
+The export window is responsible for encrypting and exporting models to the file
+system. There are two key options when encrypting a model which are the
+encryption mode and the length of the key. Users can change these options based
+on their security requirements. The next step is to generate the key and
+initialisation vector which can be performed by clicking on the ``Generate
+key/iv'' button. Finally, the model can be encrypted.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/encryption_system.png}
+  \caption{Export Model Window}
+  \label{fig:encryption_window}
+\end{figure}
+
+
+\subsubsection{Global Panel}
+The global panel contains application-wide information such as uptime and memory
+usage. Additionally, camera information and properties can be configured here which
+changes the way the virtual environment is rendered.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{images/global_panel.png}
+  \caption{Global Panel}
+  \label{fig:global_panel}
+\end{figure}
+
+\subsubsection{Entity Panel}
+The main method of interacting with entities in the virtual environment is
+through the entity panel. It contains a list of all loaded models in application
+as well as the entities as shown in figure \ref{fig:entity_panel}. Below the
+entity list is dedicated controls for a specifically selected entity. This
+allows the user to manipulate the position, rotation and scale of an object in
+the world.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{images/entity_panel.png}
+  \caption{Entity Panel}
+  \label{fig:entity_panel}
 \end{figure}
 
 \subsubsection{Object gizmo}
@@ -1790,7 +1884,7 @@ application without needing to search the internet or create their own.
 \end{figure}
 
 \subsubsection{Documentation}
-In addition to a website, a documentation website was also created curticy of
+In addition to a website, a documentation website was also created courtesy of
 Read the Docs (\href{https://readthedocs.org}{https://readthedocs.org}). The
 purpose of this site is to provide additional information about \gls*{vmve} and
 also, provide an in-depth tutorial that aims to help users understand how to use
@@ -1884,7 +1978,7 @@ project which was a Thinkpad T14s Gen 3. The following list shown in figure
   CPU & AMD Ryzen 7 Pro 6850U  \\ 
   GPU & Integrated \\
   RAM & 32GB DDR6 \\ 
-  SSD & 1TB [1ex] \\
+  SSD & 1TB \\
   \hline
 \end{tabular}
 \caption{Development Machine}
@@ -1925,25 +2019,6 @@ This technique is done by including the ``pch.h'' header file at the top of each
 translation unit (.cpp file) and before any other header file. This ensures that
 the necessary types can be found for both header files and their corresponding
 source files.
-
-\begin{table}[H]
-\centering
-\begin{tabular}{||c c c c c ||} 
-  \hline
-  Col1 & Debug Full & Debug Partial  & Release Full & Release Partial \\ [0.5ex] 
-  \hline\hline
-  1 & 6 & 87837 & 787 & 123 \\ 
-  2 & 7 & 78 & 5415 & 123 \\
-  3 & 545 & 778 & 7507 & 123 \\
-  4 & 545 & 18744 & 7560 & 123  \\
-  5 & 88 & 788 & 6344 & 123 \\ [1ex] 
-  \hline
-\end{tabular}
-\caption{\gls*{vmve} compilation performance}
-\label{fig:compilation_performance}
-\end{table}
-
-
 
 % \subsubsection{Runtime Performance}
 \gls*{cpu} timing is primarily measured by calculating the difference in time at
@@ -2015,25 +2090,6 @@ a result improving the startup time.
   \label{fig:renderdoc}
 \end{figure}
 
-
-
-
-\begin{table}[H]
-\centering
-\begin{tabular}{||c c c c||} 
-  \hline
-  Metric & Debug & Release & Col3 \\ [0.5ex] 
-  \hline\hline
-  Initialisation & 6 & 87837 & 787 \\ 
-  Update Loop & 7 & 78 & 5415 \\
-  Shutdown & 545 & 778 & 7507 \\ [1ex] 
-  \hline
-\end{tabular}
-\caption{\gls*{vmve} runtime performance}
-\label{fig:runtime_performance}
-\end{table}
-
-
 \subsubsection{User Feedback}
 Having conducted the evaluation, it is equally important to obtain feedback from
 the stakeholders such as users. The users that tested the application were
@@ -2058,6 +2114,10 @@ series of questions that would assess \glspl*{vmve} usability, performance and
 overall user experience. This data was recorded using Google Forms and further
 analysed to produce different sets of visualisations.
 
+The bar chart below shows the results of an ease-of-use test that was conducted
+between different users. The average ease of use score was 4.2. This indicates
+that the majority of the users found the user interface to be suitable for users
+regarding achieving their desired goals.
 
 \begin{figure}[H]
   \centering
@@ -2065,6 +2125,14 @@ analysed to produce different sets of visualisations.
   \caption{Usability bar chart}
   \label{fig:bar_chart_usability}
 \end{figure}
+
+Tom who gave the \gls*{vmve} an ease-of-use score of 3 said the following:
+``\textit{Overall, the user interface is quite simple, however, I found that 
+the shortcuts used throughout the application were not as easy to use as most
+required the use of two hands.}''. 
+
+This highlights an important issue in terms of ergonomics between the
+application and the user and as such will have to be addressed in the future.
 
 
 
