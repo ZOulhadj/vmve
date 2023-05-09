@@ -70,6 +70,10 @@
 ``cereal - a c++11 library for serialization,''
   \url{https://uscilab.github.io/cereal/}.
 
+\bibitem{agile}
+``Agile development life cycle,''
+  \url{https://survey.stackoverflow.co/2022/#section-version-control-version-control-systems}.
+
 \bibitem{cpp-guidelines}
 ``C++ core guidelines,''
   \url{https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines}.

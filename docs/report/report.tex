@@ -91,6 +91,13 @@
 
 \begin{document}
 
+\hypersetup{
+  pdftitle={Optimizing workflow for virtual environments using Vulkan Model Viewer and Exporter},
+  pdfsubject={Computer Graphics},
+  pdfauthor={Zakariya Oulhadj},
+  pdfkeywords={vmve, graphics, vulkan, report, game engine, rendering}
+}
+
 \begin{titlepage}
 	\centering
   \includegraphics[scale=0.35]{images/university-logo.png}\par
@@ -153,7 +160,8 @@ up using the latest technologies for 3D graphics rendering. Its goal is to be
 easy to use, and performant and include a collection of tools for graphics
 manipulation that users can take advantage of when designing and building
 virtual environments. It is intended to serve as an important application that
-bridges the gap between new users and industry-leading rendering engines.
+bridges the gap between inexperienced users and industry-leading rendering
+engines.
 
 \pagebreak
 
@@ -177,8 +185,11 @@ previously presented for the award of any other degree or institution.
 \end{tabular}
 
 \pagebreak
-\tableofcontents
-\addtocontents{toc}{~\hfill\textbf{Page}\par}
+{
+  \hypersetup{linkcolor=black}
+  \tableofcontents
+  \addtocontents{toc}{~\hfill\textbf{Page}\par}
+}
 \pagebreak
 
 \clearpage
@@ -196,14 +207,14 @@ Computer graphics is a vast area within the field of Computer Science. Since its
 conception in the early 1960s, it has been used for a wide range of purposes
 including gaming, film, scientific research, education, architecture,
 engineering, medicine and more recently within vehicles. This is a testament to
-how versatile this field has become and consists of various benefits that
+how versatile this field has become and consists of numerous benefits that
 computer graphics provide to the real world.
 
 \subsection{Project Problem}
 Industrial graphics software today are large and highly technical applications
-that are the culmination of decades worth of work. Examples include Unreal Engine
-\cite{unreal_engine}, Unity \cite{unity} and RenderMan \cite{render_man}. These
-applications provide users with cutting-edge technology such as ray tracing,
+that are the culmination of decades worth of work. Examples include Unreal
+Engine \cite{unreal_engine}, Unity \cite{unity} and RenderMan \cite{render_man}.
+These applications provide users with innovative technology such as ray tracing,
 real-time global illumination, subsurface scattering, geometry compression,
 streaming and much more that are designed for use in professional environments
 which results in stringent requirements and complex feature sets.
@@ -292,8 +303,8 @@ required for the design and implementation stages.
 
 
 \subsubsection{Objectives} \label{objectives}
-Fulfilling these aims requires a set of objectives i.e requirements that need to
-be implemented to achieve the aims outlined in section \ref{aims}.
+Fulfilling these aims requires a set of objectives i.e. requirements that need
+to be implemented to achieve the aims outlined in section \ref{aims}.
 
 \begin{description}
   \item[1. Virtual environment rendering] 
@@ -541,20 +552,27 @@ debugging, formatting, source code analyses, profiling and much more.
 \subsection{Programming Language} \label{programming_language}
 As a desktop application, there are several options for which programming
 language should be chosen with each one having its advantages and disadvantages.
-
 Due to the nature of the application and its performance requirements, the
 language must allow \gls*{vmve} to be compiled as a binary file. Furthermore,
-direct memory access and manipulation are required. There are three main
-candidates.
+direct memory access and manipulation are required. Three main candidates have
+been proposed.
 
 \begin{description}
   \item[C] Developed in 1972, it is one of the older programming languages and
-  closest to the hardware. The language is quite rudimentary.
-  \item[C++] This language is built on top of C and introduces a wide range of
-    features such as classes, inheritance, type safety and the standard template
-    library. 
-  \item[Rust] Is the newest language and has been developed from the ground up
-    with memory safety in mind. 
+    closest to the hardware. It is a simple language in terms of the
+    functionality that it provides. This, however, makes development using C
+    more work as various basic functionality must be implemented from the group
+    up and also could introduce bugs and performance issues if not done
+    correctly.
+  \item[C++] Developed on top of C, it introduces a wide range of features such
+    as classes, inheritance, type safety and the standard template library. As a
+    result of this, the language is much more popular in the domain of computer
+    graphics. Furthermore, this is the language that I have the most experience
+    with.
+  \item[Rust] Is the newest language out of the three and has been developed
+    from the ground up with memory safety in mind. One of the key drawbacks to
+    using Rust is the lack of adoption and thus, many external libraries or
+    features may not be available as of yet.
 \end{description}
 
 \subsection{Rendering API} \label{rendering_api_tech_review} 
@@ -818,6 +836,20 @@ locations where there is a minimal amount of space such as the Windows taskbar.
 
 
 \subsection{Project Architecture}
+
+\subsubsection{Development Life Cycle}
+Agile will be the development life cycle of choice through the project's
+development. This is a software development methodology which is an iterative
+process occurs for key stages of a project. This allows for continuous
+designing, implementation and evaluation that ensures requirements are being
+adhered to.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/development_life_cycle.png}
+  \caption{Agile Development Life Cycle \cite{agile}}
+  \label{fig:development_life_cycle}
+\end{figure}
 
 \subsubsection{Version Control}
 As the only developer for this final-year project, the design and architecture
