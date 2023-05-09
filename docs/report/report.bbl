@@ -38,11 +38,15 @@
 \bibitem{mit}
 ``The mit license,'' \url{https://opensource.org/license/mit/}.
 
-\bibitem{gitvcs}
-``Git version control system,'' \url{https://git-scm.com/}.
+\bibitem{vcs_survey}
+``Stackoverflow developer survey 2022,''
+  \url{https://survey.stackoverflow.co/2022/#section-version-control-version-control-systems}.
 
 \bibitem{visualstudio}
 ``Microsoft visual studio 2022,'' \url{https://visualstudio.microsoft.com/}.
+
+\bibitem{gitvcs}
+``Git version control system,'' \url{https://git-scm.com/}.
 
 \bibitem{visualstudioassistx}
 ``Visual studio assist x,'' \url{https://www.wholetomato.com/}.

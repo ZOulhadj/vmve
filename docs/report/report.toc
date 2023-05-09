@@ -14,25 +14,24 @@
 \contentsline {subsection}{\numberline {1.6}Overview}{6}{subsection.1.6}%
 \contentsline {section}{\numberline {2}Technology Review}{8}{section.2}%
 \contentsline {subsection}{\numberline {2.1}Version Control}{8}{subsection.2.1}%
-\contentsline {subsubsection}{\numberline {2.1.1}Git vs SVN}{8}{subsubsection.2.1.1}%
 \contentsline {subsection}{\numberline {2.2}Development Environment}{9}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Programming Language}{9}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.3}Programming Language}{10}{subsection.2.3}%
 \contentsline {subsection}{\numberline {2.4}Rendering API}{10}{subsection.2.4}%
 \contentsline {subsection}{\numberline {2.5}External Libraries}{11}{subsection.2.5}%
 \contentsline {subsection}{\numberline {2.6}Task Management}{11}{subsection.2.6}%
 \contentsline {section}{\numberline {3}Design}{12}{section.3}%
 \contentsline {subsection}{\numberline {3.1}Tools}{12}{subsection.3.1}%
-\contentsline {subsubsection}{\numberline {3.1.1}GitHub}{12}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Git/GitHub}{12}{subsubsection.3.1.1}%
 \contentsline {subsubsection}{\numberline {3.1.2}GitHub Projects}{12}{subsubsection.3.1.2}%
 \contentsline {subsubsection}{\numberline {3.1.3}Microsoft Visual Studio 2022}{13}{subsubsection.3.1.3}%
-\contentsline {subsubsection}{\numberline {3.1.4}RenderDoc}{14}{subsubsection.3.1.4}%
+\contentsline {subsubsection}{\numberline {3.1.4}RenderDoc}{13}{subsubsection.3.1.4}%
 \contentsline {subsubsection}{\numberline {3.1.5}AMD Radeon GPU Profiler}{14}{subsubsection.3.1.5}%
 \contentsline {subsubsection}{\numberline {3.1.6}C++ 23}{14}{subsubsection.3.1.6}%
-\contentsline {subsubsection}{\numberline {3.1.7}Vulkan}{15}{subsubsection.3.1.7}%
+\contentsline {subsubsection}{\numberline {3.1.7}Vulkan}{14}{subsubsection.3.1.7}%
 \contentsline {subsection}{\numberline {3.2}Libraries}{15}{subsection.3.2}%
-\contentsline {subsubsection}{\numberline {3.2.1}ImGui}{15}{subsubsection.3.2.1}%
-\contentsline {subsubsection}{\numberline {3.2.2}Crypto++}{16}{subsubsection.3.2.2}%
-\contentsline {subsubsection}{\numberline {3.2.3}Cereal}{16}{subsubsection.3.2.3}%
+\contentsline {subsubsection}{\numberline {3.2.1}ImGui v1.89}{15}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Crypto++ v8.7}{16}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Cereal v1.3.2}{16}{subsubsection.3.2.3}%
 \contentsline {subsubsection}{\numberline {3.2.4}Summary}{16}{subsubsection.3.2.4}%
 \contentsline {subsection}{\numberline {3.3}Branding}{17}{subsection.3.3}%
 \contentsline {subsubsection}{\numberline {3.3.1}Project Name}{17}{subsubsection.3.3.1}%
@@ -94,23 +93,23 @@
 \contentsline {subsection}{\numberline {5.1}Reflection}{67}{subsection.5.1}%
 \contentsline {subsubsection}{\numberline {5.1.1}Time Management}{67}{subsubsection.5.1.1}%
 \contentsline {subsubsection}{\numberline {5.1.2}Design}{67}{subsubsection.5.1.2}%
-\contentsline {subsubsection}{\numberline {5.1.3}Alternative Rendering API}{67}{subsubsection.5.1.3}%
+\contentsline {subsubsection}{\numberline {5.1.3}Alternative Rendering API}{68}{subsubsection.5.1.3}%
 \contentsline {subsubsection}{\numberline {5.1.4}Development Logs}{68}{subsubsection.5.1.4}%
 \contentsline {subsection}{\numberline {5.2}Future Work}{68}{subsection.5.2}%
 \contentsline {subsubsection}{\numberline {5.2.1}Multiple rendering APIs}{68}{subsubsection.5.2.1}%
 \contentsline {subsubsection}{\numberline {5.2.2}Frustum Culling}{69}{subsubsection.5.2.2}%
-\contentsline {subsubsection}{\numberline {5.2.3}Spatial Acceleration Structures}{70}{subsubsection.5.2.3}%
-\contentsline {subsubsection}{\numberline {5.2.4}glTF Support}{72}{subsubsection.5.2.4}%
-\contentsline {subsubsection}{\numberline {5.2.5}Cross Platform}{73}{subsubsection.5.2.5}%
-\contentsline {subsubsection}{\numberline {5.2.6}Networking Support}{73}{subsubsection.5.2.6}%
-\contentsline {subsubsection}{\numberline {5.2.7}File Format/Encryption}{73}{subsubsection.5.2.7}%
-\contentsline {subsubsection}{\numberline {5.2.8}Runtime memory protection}{74}{subsubsection.5.2.8}%
-\contentsline {subsubsection}{\numberline {5.2.9}Version Control}{74}{subsubsection.5.2.9}%
-\contentsline {subsubsection}{\numberline {5.2.10}Reduce Library Dependencies}{75}{subsubsection.5.2.10}%
-\contentsline {subsubsection}{\numberline {5.2.11}Accessibility}{75}{subsubsection.5.2.11}%
-\contentsline {section}{\numberline {6}References}{76}{section.6}%
-\contentsline {section}{\numberline {7}Appendices}{78}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Supporting Documents}{78}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}GitHub}{78}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Rendering API History}{78}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}Camera Transformation}{79}{subsection.7.4}%
+\contentsline {subsubsection}{\numberline {5.2.3}Spatial Acceleration Structures}{71}{subsubsection.5.2.3}%
+\contentsline {subsubsection}{\numberline {5.2.4}glTF Support}{73}{subsubsection.5.2.4}%
+\contentsline {subsubsection}{\numberline {5.2.5}Cross Platform}{74}{subsubsection.5.2.5}%
+\contentsline {subsubsection}{\numberline {5.2.6}Networking Support}{74}{subsubsection.5.2.6}%
+\contentsline {subsubsection}{\numberline {5.2.7}File Format/Encryption}{74}{subsubsection.5.2.7}%
+\contentsline {subsubsection}{\numberline {5.2.8}Runtime memory protection}{75}{subsubsection.5.2.8}%
+\contentsline {subsubsection}{\numberline {5.2.9}Version Control}{75}{subsubsection.5.2.9}%
+\contentsline {subsubsection}{\numberline {5.2.10}Reduce Library Dependencies}{76}{subsubsection.5.2.10}%
+\contentsline {subsubsection}{\numberline {5.2.11}Accessibility}{76}{subsubsection.5.2.11}%
+\contentsline {section}{\numberline {6}References}{77}{section.6}%
+\contentsline {section}{\numberline {7}Appendices}{79}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Supporting Documents}{79}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}GitHub}{79}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Rendering API History}{79}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Camera Transformation}{80}{subsection.7.4}%

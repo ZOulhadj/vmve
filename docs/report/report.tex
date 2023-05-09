@@ -451,37 +451,48 @@ provide a platform on which the project source code could be hosted.
 Furthermore, if for some reason a local copy of the project is lost or corrupted
 then another copy is safely hosted on the servers managed by the \gls*{vcs}.
 
-Another key feature of a \gls*{vcs} is project management. These types of systems
-provide various tools that greatly benefit developers. One such feature is known
-as a ``commit'' which records any changes made to a particular repository at
-that moment in time. Developers use commits to view changes that occur at each
-stage but also, provide means of reverting to previous versions of particular
-sections, files or even an entire repository. Due to the length and complexity
-of this project, tools such as this provided by a \gls*{vcs} are invaluable
-throughout the development process.
+Another key feature of a \gls*{vcs} is project management. These types of
+systems provide various tools that greatly benefit developers. One such feature
+is known as a ``commit'' which records any changes made to a particular
+repository at that moment in time. Developers use commits to view changes that
+occur at each stage but also, provide means of reverting to previous versions of
+particular sections, files or even an entire repository. Due to the length and
+complexity of this project, tools such as this provided by a \gls*{vcs} are
+invaluable throughout the development process. There are two main types of
+systems, which are SVN and Git. 
 
-\subsubsection{Git vs SVN}
 
-Git is the most widely-used, free and open-source \gls*{vcs}. Git can be used in
-several ways such as by installing Git onto a server manually or by using
-existing platforms that are built on top of Git. A few examples include
-\href{http://github.com}{GitHub}, \href{http://gitlab.com}{GitLab} and
-\href{https://bitbucket.org/}{Bitbucket}. 
+\gls*{svn} was originally developed in 2000 by Apache and is a centralised
+\gls*{vcs} which means that the repository is stored on a remote server which
+developers all connect to.
 
-Similarly, \gls*{svn} is another type of version control system. 
+On the other hand, Git is the most widely-used, free and open-source \gls*{vcs}
+developed in 2005. It is a distributed system meaning that developers have
+copies of a repository that they work off. Git is generally considered to be
+faster and more efficient than \gls*{svn} as a result of its distributed
+structure. Furthermore, Git is more flexible regarding how it can be
+installed such as onto a server manually or by using existing platforms that are
+built on top of Git. A few examples include \href{http://github.com}{GitHub},
+\href{http://gitlab.com}{GitLab} and \href{https://bitbucket.org/}{Bitbucket}. 
 
+
+According to the StackOverflow Developer Survey, in 2022 Git was the most widely used \gls*{vcs}
+with an adoption percentage of 93.9\% as seen in figure \ref{fig:vcs_comparison}.
+This shows how popular Git is compared to other similar systems \cite{vcs_survey}.
+
+\begin{figure}[H]
 \begin{center}
   \rowcolors{2}{gray!25}{white}
   \begin{tabular}{cc}
     
     \rowcolor{gray!50}
-    Git & SVN\\
-    Some values & Some values\\
-    Some values & Some values\\
-    Some values & Some values\\
-    Some values & Some values\\
-  \end{tabular}  
+    Git & SVN \\
+    93.9\% & 5.2\% \\
+  \end{tabular}
 \end{center}
+\caption{Version control usage comparison}
+\label{fig:vcs_comparison}
+\end{figure}
 
 \subsection{Development Environment}
 
@@ -491,28 +502,43 @@ debugging, formatting, source code analyses, profiling and much more.
 
 \begin{description}
   \item[Microsoft Visual Studio 2022] This application is a fully-fledged
-  \gls*{ide} that contains many different features that are dedicated to
-  development. In addition to the application, it comes with the \gls*{msvc}
-  compiler which is Microsoft's own C/C++ compiler. The \gls*{ide} together with
-  \gls*{msvc} create a solid ecosystem for development.
+    \gls*{ide} that contains many different features that are dedicated to
+    application development. In addition to the application, it comes with the
+    \gls*{msvc} compiler which is Microsoft's own C/C++ compiler and linker.
+    This is a program that parses source code and generates assembly
+    instructions that the \gls*{cpu} will be able to understand and therefore,
+    execute. The \gls*{ide} together with \gls*{msvc} create a solid ecosystem
+    for development. The \gls*{ide} also provides debugging functionality that
+    will be used extensively to fix crashes, and bugs and generally ensure that
+    the application runs as expected \cite{visualstudio}. 
 
-  However, the main downside to this option is that it is only supported on the
-  Windows operating system. Therefore, it's not available on macOS or Linux.
+    The main downside to this option, however, is that it is only supported on
+    the Windows operating system. Therefore, it's not available on macOS or
+    Linux means that if the application will be cross-platform then other
+    tools will be required.
 
-  \item[Microsoft Visual Studio Code] Is a light text editor that is very flexible and has support for
-  many extensions for debugging and other ide-like features.
+  \item[Microsoft Visual Studio Code] Is a light and open-source text editor
+    built using Electron which is flexible and has support for many extensions
+    that include debugging, code analysis and many other ide-like features. As
+    it's built on top of Electron, it's cross-platform and can run on different
+    operating systems.
+
+    However, the disadvantage of using a tool such as this is that it's not a
+    complete package as it relies on external tools to provide more advanced
+    functionality. Therefore, issues regarding compatibility, functionality and
+    performance may arise which is not ideal when developing a complex
+    application.
   
-  \item[JetBrains Clion] Developed by JetBrains it is a C/C++ \gls*{ide} for use with the
-    CMake build system. 
-
-  One of the major downsides to this application is performance. CLion was built
-  using the Java programming language which runs on JVM (Java Virtual Machine).
-  Parsing complex source code requires significant performance and if the
-  \gls*{ide} starts to slow down then this makes the developer experience must
-  worse.
+  \item[JetBrains Clion] Developed by JetBrains it's primarily a C/C++
+    \gls*{ide} for use with the CMake build system. One of the major downsides
+    to this application is performance. CLion was built using the Java
+    programming language which runs on JVM (Java Virtual Machine). Parsing
+    complex source code requires significant performance requirements and if the
+    \gls*{ide} starts to slow down then this makes the developer experience
+    worse.
 \end{description}
 
-\subsection{Programming Language}
+\subsection{Programming Language} \label{programming_language}
 As a desktop application, there are several options for which programming
 language should be chosen with each one having its advantages and disadvantages.
 
@@ -531,18 +557,21 @@ candidates.
     with memory safety in mind. 
 \end{description}
 
-\subsection{Rendering API} \label{rendering_api_tech_review}
+\subsection{Rendering API} \label{rendering_api_tech_review} 
 A rendering \gls*{api} is a set of instructions that acts as an intermediary and
-allows for an application to make use of a systems \gls*{gpu}. There are several
-different rendering \glspl*{api} that exist including OpenGL, \gls*{vulkan},
-Direct3D 11 and Direct3D 12. Appendix section \ref{rendering_api_appendix} goes
-into great detail explaining the history of rendering \glspl*{api} and the
-differences between them.
+allows for an application to make use of a systems \gls*{gpu} which is also
+known as hardware acceleration. There are several different rendering
+\glspl*{api} that exist including OpenGL, \gls*{vulkan}, Direct3D 11 and
+Direct3D 12. Appendix section \ref{rendering_api_appendix} goes into great
+detail explaining the history of rendering \glspl*{api} and the differences
+between them.
 
-OpenGL and Direct3D 11 are previous generation \glspl*{api} whereas
+OpenGL and Direct3D 11 are previous generations \glspl*{api} whereas
 \gls*{vulkan} and Direct3D 12 are the latest technologies. Each of these has its
-benefits and disadvantages. The image below shows a table that compares each of
-these with specific types of functionality. 
+advantages and disadvantages. Figure \ref{fig:api_comparison} shows a table that
+compares each of these with specific types of functionality between the
+\glspl*{api}.
+
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/api_comparison.png}
@@ -550,17 +579,13 @@ these with specific types of functionality.
   \label{fig:api_comparison}
 \end{figure}
 
-
-The image shows that DirectX \glspl*{api} is not cross-platform and is only
+It shows that the Direct3D \glspl*{api} is not cross-platform and is only
 created to target Microsoft-backed operating systems such as Windows and Xbox.
-On the other hand,
-
-
+On the other hand, OpenGL and \gls*{vulkan} are designed according to their
+specifications to run on different platforms from the group up.
 
 \subsection{External Libraries}
-
-
-
+% todo
 
 \subsection{Task Management}
 Task management refers to the use of tools to aid in managing tasks or issues.
@@ -576,12 +601,13 @@ the specific tools which will be used throughout the development as well as the
 design of the software and overall architecture.
 
 \subsection{Tools}
-\subsubsection{GitHub} \label{project_management}
-The version control system that was chosen for use throughout the development of
-the project was Git/GitHub \cite{gitvcs}. It's the most popular version control
-system and is the platform that I am most familiar with therefore, GitHub will
-be the platform of choice for this project. Appendix section \ref{github}
-includes additional information such as how the repository is hosted.
+\subsubsection{Git/GitHub} \label{project_management} 
+The \gls*{vcs} that was chosen for this project was Git including the GitHub
+platform \cite{gitvcs}. It's the most popular version control system and is the
+platform that I am most familiar with. Additionally, the performance benefits
+that it provides over similar systems are ideal for this type of project.
+Appendix section \ref{github} provides additional information regarding the
+technical details of how the repository is hosted on GitHub.
 
 \subsubsection{GitHub Projects}
 This will be used as the task tracker in which ``posts'' are created that would
@@ -612,24 +638,16 @@ closed.
 \end{figure}
 
 \subsubsection{Microsoft Visual Studio 2022} \label{development_environment}
+Out of the proposed development environments, Microsoft Visual Studio 2022 was
+chosen. This is primarily because of the vast amount of features and
+functionality that it provides compared to the other tools.
 
--- Chose VS 22
-Developing a program that runs directly on the underlying operating system
-requires a compiler. This is a program that parses source code and generates
-assembly instructions that the \gls*{cpu} will be able to understand and
-therefore, execute. \gls*{msvc} also known as CL will be the compiler of choice.
-This is a compiler that comes bundled with the Microsoft Visual Studio
-\gls*{ide}.
+An additional tool will be used in conjunction with Visual Studio that will
+further improve the ease of development such as Visual Studio Assist X
+\cite{visualstudioassistx}. This is an extension that provides many useful
+features that the base \gls*{ide} does not provide such as reliable symbol
+renaming, file symbol outlining, quick file searching and much more.
 
-The \gls*{ide} also provides debugging functionality that will be used
-extensively to fix crashes, and bugs and generally ensure that the application
-runs as expected \cite{visualstudio}. 
-
-Some additional tools will be used that will further improve the ease of
-development.  Visual Studio Assist X \cite{visualstudioassistx} is one such
-tool. This is a Visual Studio extension that provides many useful features that
-the base \gls*{ide} does not provide such as reliable symbol renaming, file symbol
-outlining, quick file searching and much more.
 
 
 \subsubsection{RenderDoc}
@@ -664,17 +682,19 @@ The application needs certain requirements to be met regarding performance. For
 example, the application must use a high-performing programming language, allows
 for low-level memory access and can be compiled into an executable.
 
-The language chosen for this project was C++ 23.  There were two main reasons
-why this specific programming language was chosen. Firstly, it's the language
-that I have the most experience with which will significantly help during the
-implementation stages of the project. Secondly, the \gls*{stl}  was one of the
-key reasons why C++ will be used. It provides many prebuilt data structures,
-containers and algorithms including ``std::vector'', ``std::string'' and
-``std::find'' to name a few. Furthermore, it saves time as I would not have to
-implement a custom solution in the limited time frame. Other language features
-that solidified by choice include, function overloading, templates, compile-time
-expressions, direct memory access and generally faster performance compared to
-higher-level languages such as Python and Javascript.
+The language chosen for this project was C++ and more specifically version 23.
+There were two main reasons why this specific programming language was chosen.
+Firstly, it's the language that as a programmer I have the most experience with
+which will significantly help during the implementation stages of the project.
+Secondly, the \gls*{stl} was one of the key reasons why C++ will be used. It
+provides many prebuilt data structures, containers and algorithms including
+``std::vector'', ``std::string'' and ``std::find'' to name a few. Furthermore,
+it saves time as it eliminates the need to implement a custom solution in the
+limited time frame for this project. Other language features that confirmed the
+programming language was suitable include function overloading, templates,
+compile-time expressions, direct memory access and generally faster performance
+compared to higher-level languages discussed in section
+\ref{programming_language}.
 
 \subsubsection{Vulkan} \label{rendering_api}
 Having evaluated the potential use of the different \glspl*{api} covered in
@@ -682,15 +702,15 @@ section \ref{rendering_api_tech_review}, it was concluded that \gls*{vulkan}
 would be the most suitable rendering \gls*{api} for \gls*{vmve}. Firstly,
 \gls*{vulkan} is extremely verbose as it exposes the technicalities related to
 the \gls*{gpu} and requires the application to implement the basic functionality
-as opposed to the driver. This reduces the complexity of the display driver and
-can potentially increase performance as it no longer needs to make assumptions
-about the application and the commands being issued as the entire state of the
-rendering pipeline is predefined. Using \gls*{vulkan} also implicitly helps
-understand the complex inner workings of graphics development and work with
-the \gls*{gpu}. Furthermore, Figure \ref{fig:api_comparison} shows that the
-\gls*{api} provides most amount functionality including the ability to run
-on different operating systems, finer rendering control and support for
-multithreading.
+as opposed to the underlying driver provided by major \gls*{gpu} vendors. This
+reduces the complexity of the display driver and can potentially increase
+performance as it no longer needs to make assumptions about the application and
+the commands being issued as the entire state of the rendering pipeline is
+predefined. Using \gls*{vulkan} also implicitly helps understand the complex
+inner workings of graphics development and work with the \gls*{gpu}.
+Furthermore, Figure \ref{fig:api_comparison} shows that the \gls*{api} provides
+the most amount of functionality including the ability to run on different
+operating systems, finer rendering control and support for multithreading.
 
 \begin{figure}[H]
   \centering
@@ -701,30 +721,31 @@ multithreading.
 
 
 \subsection{Libraries}
-The application will make use of different external libraries to speed up 
-development due to the short timeframe.
+The application will make use of different external libraries to help aid and
+speed up development as a result of the short timeframe. These libraries vary in
+terms of functionality and will provide a solid foundation on which the
+application can be built on top of.
 
-\subsubsection{ImGui}
-Users will need a way of interacting with \gls*{vmve} and the 3D environment.
-This will be achieved through the use of a user interface in which the user can
-directly manipulate the application. As mentioned earlier, \gls*{vmve} is an
-application that uses the \gls*{gpu} for rendering and therefore, the UI will
-have to interact with the \gls*{gpu}. To reduce the development time of this
-particular aspect of the application, the decision was made to make use of a
-preexisting library.
+\subsubsection{ImGui v1.89}
+Users will need a way of interacting with \gls*{vmve} and the 3D environment at
+runtime. This will be achieved through the use of a user interface in which the
+user can directly manipulate the application. As mentioned earlier, \gls*{vmve}
+is an application that uses the \gls*{gpu} for rendering and therefore, the UI
+will have to interact with the \gls*{gpu}. To reduce the development time of
+this particular aspect of the application, the decision was made to make use of
+an existing library. This library is called Dear ImGui \cite{imgui}. This is an
+immediate-mode user interface library that provides an \gls*{api} to render UI
+elements. It's easy to use and popular which is what makes is an ideal choice.
 
-The library of choice was Dear ImGui \cite{imgui}. This is an immediate-mode
-user interface library that provides an \gls*{api} to render UI elements. 
+\subsubsection{Crypto++ v8.7} \label{custom_file_format}
+\gls*{vmve} will include its own model file format. This is a custom format that
+will be encrypted as standard. Implementing encryption is a very complex area
+that can be considered an entire project on its own. Instead, the project will
+make use of a well-known encryption library known as Crypto++ \cite{cryptopp}
+and the application will use version 8.7. This is a C++ library that provides
+many algorithms including AES, Diffie-Hellman, GCM, RSA and much more.
 
-\subsubsection{Crypto++} \label{custom_file_format} \gls*{vmve} will include
-its own model file format. This is a custom format that will be encrypted as
-standard. Implementing encryption is a very complex area that can be considered
-an entire project on its own. Instead, the project will make use of a well-known
-encryption library known as Crypto++ \cite{cryptopp} and the application will
-use version 8.7. This is a C++ library that provides many algorithms including
-AES, Diffie-Hellman, GCM, RSA and much more.
-
-\subsubsection{Cereal}
+\subsubsection{Cereal v1.3.2}
 In addition to encrypting the model data, the custom file format will need to
 store additional information such as application version and encryption type.
 Therefore, \gls*{vmve} must be able to serialise the data when saving to disk as
@@ -734,17 +755,29 @@ efficient data serialisation into different formats such as compact binary
 encodings, XML or JSON.
 
 \subsubsection{Summary}
-The other libraries used in \gls*{vmve} can be seen in the list below.
-\begin{description}
-  \item[assimp] Model loading
-  \item[glm] Mathematics
-  \item[stb] Image loading
-  \item[vma] Vulkan memory allocator
-  \item[volk] Vulkan meta-loader
-\end{description}
+There are a number of additional libraries which will be used and are listed in
+figure \ref{fig:library_versions}.
+
+\begin{figure}[H]
+  \begin{center}
+    \rowcolors{2}{gray!25}{white}
+    \begin{tabular}{cc}
+      
+      \rowcolor{gray!50}
+      Assimp (Model Loading) &  v5.2.5\\
+      GLM (Mathematics) &  v0.9.9.8\\
+      STB (Image Loading) &  v2.27 \\
+      VMA (Vulkan Memory Allocator) &  v3.1.0 \\
+      VOLK (Vulkan Function Loader) & v1.3215 \\
+      ENTT (Entity Component System) & v3.11 \\
+    \end{tabular}
+  \end{center}
+  \caption{Additional library versions}
+  \label{fig:library_versions}
+  \end{figure}
 
 \subsection{Branding}
-The branding i.e the look of the application was an important factor during the
+The branding i.e. the look of the application was an important factor during the
 design as it will be presented to users and can directly influence the user
 experience. Furthermore, being recognisable results in an increase in brand
 recognition that may also increase user traffic.
@@ -2126,6 +2159,7 @@ application and the user and as such will have to be addressed in the future.
 
 
 \subsection{Related Work}
+% todo
 Computer graphics is a large field 
 - Others who have done the same.
 - How good is my work compared others given the time constraints
@@ -2134,10 +2168,16 @@ Computer graphics is a large field
 \clearpage
 \section{Conclusion} \label{conclusion}
 
-\gls*{vmve} has been designed to be a platform in which users are provided easy to use
-3D graphics tools without needing to know the complex details that come with
-that. This allows users to worry less about technicalities and more about their
-specific needs and requirements.
+\gls*{vmve} has been designed to be a platform in which users are provided with
+easy to use 3D graphics tools without needing to know the complex implementation
+details. This allows users to focus on their needs and requirements. The
+application has been developed in line with the original aims and objectives
+fulfilled with the primary aim of targeting students and trainees as an
+education tool for the digital graphics industry. 
+
+Although many of the original requirements have been met, the project as a whole
+must be evaluated to analyse the various strengths and weaknesses at key stages
+including requirements gathering, design, implementation and user feedback.
 
 \subsection{Reflection}
 This has been a long journey that has presented various challenges throughout
@@ -2343,10 +2383,14 @@ encrypted models can be accessed without the need for a valid key or iv.
 
 This can be achieved using applications such as Cheat Engine which provides
 users with a set of tools for analysing memory addresses, offsets and values
-that can also be manipulated \cite{cheat_engine}.
+that can also be manipulated \cite{cheat_engine}. For example, an attacker could
+alter the boolean statement that checks if the key and iv being inputted are
+valid. Doing so would force the application to go ahead and decrypt a model.
 
 This will need to be addressed in future versions of \gls*{vmve} so that digital
-assets remain secure for all users.
+assets remain secure for all users. A possible alternative implementation would
+involve the use of symmetric and asymmetric encryption as well as techniques
+designed specially to prevent runtime memory manipulation.
 
 \subsubsection{Version Control}
 In regards to the \gls*{vcs} architecture, a potential change that can be done is

@@ -39,6 +39,70 @@
 
 namespace engine {
 
+#if 0
+    void base_engine::start(std::uint32_t width, std::uint32_t height)
+    {
+        if (!initialize())
+        {
+            terminate();
+
+            return;
+        }
+
+        if (!user_initialize())
+        {
+            user_terminate();
+            terminate();
+
+            return;
+        }
+
+        while (m_running)
+        {
+            static auto last_time = std::chrono::high_resolution_clock::now();
+            auto current_time = std::chrono::high_resolution_clock::now();
+            const float delta_time = std::chrono::duration<float, std::milli>(current_time - last_time).count() / 1000.0f;
+            last_time = current_time;
+
+            if (!user_update(delta_time))
+                m_running = false;
+
+            if (!update(delta_time))
+                m_running = false;
+        }
+
+        user_terminate();
+        terminate();
+    }
+
+    bool base_engine::initialize()
+    {
+        // create window
+        // create renderer
+        // create audio
+        // create input
+        // create scene graph
+        // 
+        return true;
+    }
+
+    bool base_engine::update(float delta_time)
+    {
+        // window event polling
+        // entity component system
+        // rendering models
+        // renderer resize
+
+        return true;
+    }
+
+    bool base_engine::terminate()
+    {
+        // free all resources 
+        return true;
+    }
+#endif
+
     struct My_Engine
     {
         Platform_Window* window;

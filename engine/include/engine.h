@@ -2,10 +2,42 @@
 #define ENGINE_H
 
 // todo: we must include all headers of the engine here
+//#include <../src/core/platform_window.h>
+//#include <../src/core/platform_input.h>
+//#include <../src/core/platform_audio.h>
+
 #include <../src/utils/logging.h>
 #include <../src/utils/time.h>
 
 namespace engine {
+
+#if 0
+    // TODO: Below is an example of how the engine could be structured in the future
+    class base_engine
+    {
+    public:
+        void start(std::uint32_t width, std::uint32_t height);
+
+        // User interface member functions
+    protected:
+        virtual bool user_initialize() { return true; }
+        virtual bool user_update(float delta_time) { return true; }
+        virtual bool user_terminate() { return true; }
+
+        // Internal engine member functions
+    private:
+        bool initialize();
+        bool update(float delta_time);
+        bool terminate();
+    private:
+        Platform_Window* m_window;
+        Platform_Input* m_input;
+        Platform_Audio* m_audio;
+        
+
+        bool m_running;
+    };
+#endif
 
     // TODO: Find a better way of obtaining engine specific details without having
     // everything be a function. Maybe a single struct with everything combined?

@@ -1,19 +1,6 @@
 #ifndef VMVE_VMVE_H
 #define VMVE_VMVE_H
 
-// TODO: Create a custom file format
-
-// VMVE file format draft design
-// 
-// +----------- HEADER ------------+
-// | Application version (v0.0.1)  |
-// | Encryption mode (AES, DH)     |
-// +------------ DATA -------------+
-// | Scene Graph / Model Data      |
-// +-------------------------------+
-//
-
-
 enum class encryption_mode
 {
     aes
@@ -56,12 +43,9 @@ enum class decrypt_error
     key_mismatch
 };
 
-
-
 encryption_keys generate_key_iv(unsigned int keyLength);
 encryption_keys base16_to_bytes(const encryption_keys& keys);
 encryption_keys bytes_to_base16(const encryption_keys& keys);
-// AES
 
 std::string encrypt_aes(const std::string& text, encryption_keys& keys, int key_size);
 std::string encrypt_aes(const std::string& text, unsigned char keyLength);
