@@ -22,128 +22,222 @@
 \BIBdecl
 
 \bibitem{unreal_engine}
-``Unreal engine,'' \url{https://www.unrealengine.com/en-US/}.
+\BIBentryALTinterwordspacing
+E.~Games, ``Unreal engine.'' [Online]. Available:
+  \url{https://www.unrealengine.com/en-US/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{unity}
-``Unity,'' \url{https://unity.com/}.
+\BIBentryALTinterwordspacing
+U.~Technologies, ``Unity.'' [Online]. Available: \url{https://unity.com/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{render_man}
-``Renderman,'' \url{https://renderman.pixar.com/}.
+\BIBentryALTinterwordspacing
+Pixar, ``Renderman.'' [Online]. Available: \url{https://renderman.pixar.com/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{gta_leak}
-{Keza MacDonald, Keith Stuart and Alex Hern},
-  \url{https://www.theguardian.com/games/2022/sep/19/grand-theft-auto-6-leak-who-hacked-rockstar-and-what-was-stolen},
-  {9} {2022}.
+\BIBentryALTinterwordspacing
+{Keza MacDonald, Keith Stuart and Alex Hern}, {9} {2022}. [Online]. Available:
+  \url{https://www.theguardian.com/games/2022/sep/19/grand-theft-auto-6-leak-who-hacked-rockstar-and-what-was-stolen}
+\BIBentrySTDinterwordspacing
 
 \bibitem{mit}
-``The mit license,'' \url{https://opensource.org/license/mit/}.
+\BIBentryALTinterwordspacing
+``The mit license.'' [Online]. Available:
+  \url{https://opensource.org/license/mit/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{vcs_survey}
-``Stackoverflow developer survey 2022,''
-  \url{https://survey.stackoverflow.co/2022/#section-version-control-version-control-systems}.
+\BIBentryALTinterwordspacing
+StackOverflow, ``Stackoverflow developer survey,'' 2022. [Online]. Available:
+  \url{https://survey.stackoverflow.co/2022/#section-version-control-version-control-systems}
+\BIBentrySTDinterwordspacing
 
 \bibitem{visualstudio}
-``Microsoft visual studio 2022,'' \url{https://visualstudio.microsoft.com/}.
+\BIBentryALTinterwordspacing
+Microsoft, ``Microsoft visual studio 2022.'' [Online]. Available:
+  \url{https://visualstudio.microsoft.com/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{gitvcs}
-``Git version control system,'' \url{https://git-scm.com/}.
+\BIBentryALTinterwordspacing
+``Git version control system.'' [Online]. Available: \url{https://git-scm.com/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{visualstudioassistx}
-``Visual studio assist x,'' \url{https://www.wholetomato.com/}.
+\BIBentryALTinterwordspacing
+Embarcadero, ``{Visual Studio Assist X}.'' [Online]. Available:
+  \url{https://www.wholetomato.com/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{renderdoc}
-``Renderdoc,'' \url{https://renderdoc.org/}.
+\BIBentryALTinterwordspacing
+B.~Karlsson, ``Renderdoc.'' [Online]. Available: \url{https://renderdoc.org/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{rgp}
-``Amd radeon gpu profiler,'' \url{https://gpuopen.com/rgp/}.
+\BIBentryALTinterwordspacing
+``Amd radeon gpu profiler.'' [Online]. Available:
+  \url{https://gpuopen.com/rgp/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{vulkan}
-``Vulkan,'' \url{https://www.vulkan.org/}.
+\BIBentryALTinterwordspacing
+{The Khronos Vulkan Working Group}, ``Vulkan.'' [Online]. Available:
+  \url{https://www.vulkan.org/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{imgui}
-``Imgui,'' \url{https://github.com/ocornut/imgui/}.
+\BIBentryALTinterwordspacing
+A.~Cornut, ``Imgui,'' 2018. [Online]. Available:
+  \url{https://github.com/ocornut/imgui/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{cryptopp}
-``Crypto++ library,'' \url{https://www.cryptopp.com/}.
+\BIBentryALTinterwordspacing
+W.~Dai, ``Crypto++ library.'' [Online]. Available:
+  \url{https://www.cryptopp.com/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{cereal}
-``cereal - a c++11 library for serialization,''
-  \url{https://uscilab.github.io/cereal/}.
+\BIBentryALTinterwordspacing
+W.~S. Grant and R.~Voorhies, ``cereal - a c++11 library for serialization,''
+  2017. [Online]. Available: \url{https://uscilab.github.io/cereal/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{agile}
-``Agile development life cycle,''
-  \url{https://survey.stackoverflow.co/2022/#section-version-control-version-control-systems}.
+\BIBentryALTinterwordspacing
+J.~Adam, ``Agile development life cycle,'' 11 2022. [Online]. Available:
+  \url{https://kruschecompany.com/agile-software-development/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{cpp-guidelines}
-``C++ core guidelines,''
-  \url{https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines}.
+\BIBentryALTinterwordspacing
+B.~Stroustrup, ``C++ core guidelines,'' 4 2023. [Online]. Available:
+  \url{https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines}
+\BIBentrySTDinterwordspacing
 
 \bibitem{indentation}
-``K and r indentation style.''
+\BIBentryALTinterwordspacing
+``K\&r indentation style.'' [Online]. Available:
+  \url{https://en.wikipedia.org/wiki/Indentation_style}
+\BIBentrySTDinterwordspacing
 
 \bibitem{volk}
-``Vulkan loader,''
-  \url{https://gpuopen.com/learn/reducing-vulkan-api-call-overhead/}.
+\BIBentryALTinterwordspacing
+A.~Kapoulkine, ``Vulkan loader,'' 4 2018. [Online]. Available:
+  \url{https://gpuopen.com/learn/reducing-vulkan-api-call-overhead/}
+\BIBentrySTDinterwordspacing
+
+\bibitem{vulkan-spec}
+\BIBentryALTinterwordspacing
+{The Khronos Vulkan Working Group}, ``Vulkan 1.3 specification,'' 5 2023.
+  [Online]. Available:
+  \url{https://registry.khronos.org/vulkan/specs/1.3/html/vkspec.html}
+\BIBentrySTDinterwordspacing
 
 \bibitem{moire_pattern}
+\BIBentryALTinterwordspacing
 {Wikipedia contributors}, ``Moire pattern --- {Wikipedia}{,} the free
-  encyclopedia,'' \url{https://en.wikipedia.org/wiki/Moir%C3%A9_pattern}, 2023,
-  [Online; accessed 21-April-2023].
+  encyclopedia,'' 2023, [accessed 21-April-2023]. [Online]. Available:
+  \url{https://en.wikipedia.org/wiki/Moir%C3%A9_pattern}
+\BIBentrySTDinterwordspacing
 
 \bibitem{texture_mipmaps}
-``Texture mipmapping,'' \url{https://learnopengl.com/Getting-started/Textures}.
+\BIBentryALTinterwordspacing
+J.~de~Vries, ``Texture mipmapping,'' 6 2014. [Online]. Available:
+  \url{https://learnopengl.com/Getting-started/Textures}
+\BIBentrySTDinterwordspacing
 
 \bibitem{3d_projection}
+\BIBentryALTinterwordspacing
 {Wikipedia contributors}, ``3d projection --- {Wikipedia}{,} the free
-  encyclopedia,''
-  \url{https://en.wikipedia.org/w/index.php?title=3D_projection&oldid=1148285432},
-  2023, [Online; accessed 6-April-2023].
+  encyclopedia,'' 2023, [accessed 6-April-2023]. [Online]. Available:
+  \url{https://en.wikipedia.org/w/index.php?title=3D_projection&oldid=1148285432}
+\BIBentrySTDinterwordspacing
 
 \bibitem{coordinate_systems}
-``Coordinate systems,''
-  \url{https://learnopengl.com/Getting-started/Coordinate-Systems}.
+\BIBentryALTinterwordspacing
+J.~de~Vries, ``Coordinate systems,'' 6 2014. [Online]. Available:
+  \url{https://learnopengl.com/Getting-started/Coordinate-Systems}
+\BIBentrySTDinterwordspacing
 
 \bibitem{camera_projection}
-``Model view projection,'' \url{https://jsantell.com/model-view-projection/}.
+\BIBentryALTinterwordspacing
+J.~Santell, ``Model view projection,'' 4 2019. [Online]. Available:
+  \url{https://jsantell.com/model-view-projection/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{blinn}
+\BIBentryALTinterwordspacing
 {Bui Tuong Phong}, ``{Illumination for Computer Generated Pictures},'' 1975,
-  [Online; accessed 12-December-2022].
+  [accessed 12-December-2022]. [Online]. Available:
+  \url{https://users.cs.northwestern.edu/~ago820/cs395/Papers/Phong_1975.pdf}
+\BIBentrySTDinterwordspacing
 
 \bibitem{font-awesome}
-``Font awesome,'' \url{https://fontawesome.com/}.
+\BIBentryALTinterwordspacing
+``Font awesome.'' [Online]. Available: \url{https://fontawesome.com/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{imguizmo}
-``Imguizmo,'' \url{https://github.com/CedricGuillemet/ImGuizmo}.
+\BIBentryALTinterwordspacing
+C.~Guillemet, ``Imguizmo.'' [Online]. Available:
+  \url{https://github.com/CedricGuillemet/ImGuizmo}
+\BIBentrySTDinterwordspacing
 
 \bibitem{frustum_culling}
-``High-level strategic tools for fast rendering,''
-  \url{https://techpubs.jurassic.nl/manuals/nt/developer/Optimizer_PG/sgi_html/ch05.html}.
+\BIBentryALTinterwordspacing
+{George Eckel, Renate Kempf, and Leif Wennerberg}, ``High-level strategic tools
+  for fast rendering,'' 1998. [Online]. Available:
+  \url{https://techpubs.jurassic.nl/manuals/nt/developer/Optimizer_PG/sgi_html/ch05.html}
+\BIBentrySTDinterwordspacing
 
 \bibitem{bounding_boxes}
-``Mdn web docs, 3d collision detection,''
-  \url{https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection}.
+\BIBentryALTinterwordspacing
+{Mozilla Developer Network contributors}, ``Mdn web docs, 3d collision
+  detection,'' 2021. [Online]. Available:
+  \url{https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection}
+\BIBentrySTDinterwordspacing
 
 \bibitem{gltf}
-``gltf runtime 3d asset delivery,'' \url{https://www.khronos.org/gltf/}.
+\BIBentryALTinterwordspacing
+{The Khronos Group}, ``gltf runtime 3d asset delivery.'' [Online]. Available:
+  \url{https://www.khronos.org/gltf/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{cmake}
-``Cmake, open source and cross platform build system,''
-  \url{https://cmake.org/}.
+\BIBentryALTinterwordspacing
+``Cmake, open source and cross platform build system.'' [Online]. Available:
+  \url{https://cmake.org/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{premake}
-``Premake - powerfully simple build configuration,''
-  \url{https://premake.github.io/}.
+\BIBentryALTinterwordspacing
+``Premake - powerfully simple build configuration.'' [Online]. Available:
+  \url{https://premake.github.io/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{cheat_engine}
-``Cheat engine,'' \url{https://www.cheatengine.org/}.
+\BIBentryALTinterwordspacing
+D.~Byte, ``Cheat engine.'' [Online]. Available:
+  \url{https://www.cheatengine.org/}
+\BIBentrySTDinterwordspacing
 
 \bibitem{RDNA}
+\BIBentryALTinterwordspacing
 {AMD}, ``{RDNA architecture - The all new Radeon gaming architecture powering
-  ``Navi''},'' 2019, [Online; accessed 23-January-2023].
+  ``Navi''},'' 2019, [accessed 23-January-2023]. [Online]. Available:
+  \url{https://www.amd.com/system/files/documents/rdna-whitepaper.pdf}
+\BIBentrySTDinterwordspacing
 
 \bibitem{ADA}
+\BIBentryALTinterwordspacing
 {Henry C Lin and Andrew Burnes}, ``{How Ada advances the science of graphics
-  with DLSS 3.}'' 2022, [Online; accessed 2-May-2023].
+  with DLSS 3.}'' 2022, [accessed 2-May-2023]. [Online]. Available:
+  \url{https://images.nvidia.com/aem-dam/Solutions/geforce/ada/ada-lovelace-architecture/nvidia-ada-gpu-science.pdf}
+\BIBentrySTDinterwordspacing
 
 \end{thebibliography}

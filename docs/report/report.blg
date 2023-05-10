@@ -12,10 +12,6 @@ Reallocating 'wiz_functions' (item size: 4) to 6000 items.
 Reallocating 'singl_function' (item size: 4) to 100 items.
 Database file #1: IEEEabrv.bib
 Database file #2: refs.bib
-Warning--entry type for "vcs_survey" isn't style-file defined
---line 399 of file refs.bib
-Warning--entry type for "agile" isn't style-file defined
---line 409 of file refs.bib
 -- IEEEtran.bst version 1.14 (2015/08/26) by Michael Shell.
 -- http://www.michaelshell.org/tex/ieeetran/bibtex/
 -- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
@@ -27,45 +23,45 @@ Warning--empty journal in RDNA
 Warning--empty journal in ADA
 
 Done.
-You've used 35 entries,
+You've used 36 entries,
             4087 wiz_defined-function locations,
-            1463 strings with 20672 characters,
-and the built_in function-call counts, 9969 in all, are:
-= -- 641
-> -- 53
+            1500 strings with 21233 characters,
+and the built_in function-call counts, 12467 in all, are:
+= -- 917
+> -- 128
 < -- 0
-+ -- 41
-- -- 6
-* -- 273
-:= -- 1571
-add.period$ -- 69
-call.type$ -- 35
-change.case$ -- 39
++ -- 67
+- -- 30
+* -- 476
+:= -- 2328
+add.period$ -- 71
+call.type$ -- 36
+change.case$ -- 40
 chr.to.int$ -- 0
-cite$ -- 41
-duplicate$ -- 1007
-empty$ -- 1188
-format.name$ -- 6
-if$ -- 2269
+cite$ -- 42
+duplicate$ -- 1071
+empty$ -- 1257
+format.name$ -- 31
+if$ -- 2678
 int.to.chr$ -- 0
-int.to.str$ -- 35
-missing$ -- 213
-newline$ -- 128
-num.names$ -- 6
-pop$ -- 654
+int.to.str$ -- 36
+missing$ -- 243
+newline$ -- 203
+num.names$ -- 29
+pop$ -- 794
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 865
+skip$ -- 917
 stack$ -- 0
-substring$ -- 44
-swap$ -- 449
+substring$ -- 45
+swap$ -- 550
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 35
+type$ -- 36
 warning$ -- 6
-while$ -- 6
-width$ -- 37
-write$ -- 244
-(There were 8 warnings)
+while$ -- 29
+width$ -- 38
+write$ -- 361
+(There were 6 warnings)

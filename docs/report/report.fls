@@ -1448,6 +1448,13 @@ INPUT .\images\bar_chart_usability.png
 INPUT .\images\bar_chart_usability.png
 INPUT .\images\bar_chart_usability.png
 INPUT .\images\bar_chart_usability.png
+INPUT .\images\pie_chart_feature_improvements.png
+INPUT .\images\pie_chart_feature_improvements.png
+INPUT images\pie_chart_feature_improvements.png
+INPUT .\images\pie_chart_feature_improvements.png
+INPUT .\images\pie_chart_feature_improvements.png
+INPUT .\images\pie_chart_feature_improvements.png
+INPUT .\images\pie_chart_feature_improvements.png
 INPUT .\images\api_abstraction.png
 INPUT .\images\api_abstraction.png
 INPUT images\api_abstraction.png
@@ -1526,6 +1533,8 @@ INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\c
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsl10.pfb
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy10.pfb
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy10.pfb
+INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy8.pfb
+INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy8.pfb
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmti10.pfb
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmti10.pfb
 INPUT C:\Users\zakar\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmti12.pfb

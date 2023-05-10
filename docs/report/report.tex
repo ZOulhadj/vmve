@@ -20,6 +20,7 @@
 \usepackage{attachfile}
 \usepackage[super]{natbib}
 \usepackage{float}
+%\usepackage[czech]{babel}
 
 %\hypersetup{colorlinks=true, pdfstartview=FitV, linkcolor=blue, citecolor=black, plainpages=false, pdfpagelabels=true, urlcolor=blue}
 
@@ -603,7 +604,20 @@ On the other hand, OpenGL and \gls*{vulkan} are designed according to their
 specifications to run on different platforms from the group up.
 
 \subsection{External Libraries}
-% todo
+The use of external libraries is vital in allowing \gls*{vmve} to be implemented
+within the short timeframe allocated. Libraries provide functionality that the
+application can easily incorporate without the need to implement the same
+solution from the group up.
+
+\subsubsection{Model Loading}
+- Assimp, tinygltf, tinyobj
+\subsubsection{User Interface}
+imgui, qt, 
+\subsubsection{Encryption}
+crypto++, 
+\subsubsection{Serialisation}
+cereal, boost
+
 
 \subsection{Task Management}
 Task management refers to the use of tools to aid in managing tasks or issues.
@@ -773,8 +787,9 @@ efficient data serialisation into different formats such as compact binary
 encodings, XML or JSON.
 
 \subsubsection{Summary}
-There are a number of additional libraries which will be used and are listed in
-figure \ref{fig:library_versions}.
+Having compared the various external libraries proposed, a complete list of the
+libraries that will be used in \gls*{vmve} is listed in figure
+\ref{fig:library_versions}.
 
 \begin{figure}[H]
   \begin{center}
@@ -1176,11 +1191,11 @@ throughout the project. This system is responsible for communicating with the
 
 \subsubsection{Renderer Context}
 The first step in creating the renderer is initialising an object called
-``vk\_context''. This object is created within the application that groups Vulkan
-handles that are responsible for initialising resources. In other words, the
-``vk\_context'' structure is used to allocate \gls*{gpu} resources. The handles
-within the context structure can be seen in the code snippet below and a diagram
-can be seen in figure \ref{fig:rendererarch}.
+``vk\_context''. This object is created within the application that groups
+Vulkan handles that is responsible for initialising resources. In other words,
+the ``vk\_context'' structure is used to allocate \gls*{gpu} resources. The
+handles within the context structure can be seen in the code snippet below and a
+diagram can be seen in figure \ref{fig:rendererarch}.
 
 \begin{lstlisting}[language=C++]
 struct vk_context
@@ -1267,16 +1282,17 @@ The \gls*{vulkan} 1.3.246 specification states that  ``\lstinline{VkFence} is a
 synchronisation primitive that can be used between queue submissions and the
 host''
 [\href{https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkFence.html}{7.3
-Fences}]. In other words, a fence can be signaled on the \gls*{cpu} to indicate
-in this case, when a new image from the presentation engine has been acquired
-via the \lstinline{vkAcquireNextImageKHR} function call.
+Fences}] \cite{vulkan-spec}. In other words, a fence can be signaled on the
+\gls*{cpu} to indicate in this case, when a new image from the presentation
+engine has been acquired via the \lstinline{vkAcquireNextImageKHR} function
+call.
 
 Similarly, ``\lstinline{VkSemaphore} is a synchronisation primitive that can be
 used between queue operations''
 [\href{https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkSemaphore.html}{7.4
-Semaphores}]. For the application, this means that rendering operations can
-occur simultaneously for multiple frames while ensuring that frames
-``in-flight'' are not interrupted.
+Semaphores}] \cite{vulkan-spec}. For the application, this means that rendering
+operations can occur simultaneously for multiple frames while ensuring that
+frames ``in-flight'' are not interrupted.
 
 
 \begin{figure}[H]
@@ -2183,19 +2199,37 @@ regarding achieving their desired goals.
 Tom who gave the \gls*{vmve} an ease-of-use score of 3 said the following:
 ``\textit{Overall, the user interface is quite simple, however, I found that 
 the shortcuts used throughout the application were not as easy to use as most
-required the use of two hands.}''. 
+required the use of two hands}''. 
 
 This highlights an important issue in terms of ergonomics between the
 application and the user and as such will have to be addressed in the future.
 
+Another test was conducted that asked users which of the main features of the
+application required additional work and overall improvements. The pie chart in
+figure \ref{fig:pie_chart_features} shows that lighting followed by performance
+were the two most mentioned features.
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/pie_chart_feature_improvements.png}
+  \caption{Feature Improvements}
+  \label{fig:pie_chart_features}
+\end{figure}
+
+Taylor, one of the users that tested the application said the following:
+\textit{When displaying a single object VMVE can do this reasonably well without
+any issues. However, when increasing the entity count so that there are many
+objects in the scene, the performance of the application starts to drastically
+lower}.
+
+Based on how \gls*{vmve} has been initially developed, this makes sense as the
+application does not make use of the many commonly found optimisations that are
+required for rendering large quantities of objects. This also needs to be
+addressed in future versions of the application so that usability is maintained,
+and that \gls*{vmve} meets the demands and requirements of its users.
 
 \subsection{Related Work}
 % todo
-Computer graphics is a large field 
-- Others who have done the same.
-- How good is my work compared others given the time constraints
-- Use Google Scholar 
 
 \clearpage
 \section{Conclusion} \label{conclusion}
@@ -2474,18 +2508,26 @@ other languages to be added and thus, improving accessibility.
 
 \clearpage
 \section{Appendices}
+The appendices may be referenced throughout the report which provides additional
+information or access to important documents.
 
 \subsection{Supporting Documents} \label{supporting_documents}
-\textattachfile{attached_documents/milestone_1.pdf}{\textcolor{skyblue}{Milestone 1}}
-\textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{skyblue}{Milestone 2}}
-\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}
-\textattachfile{attached_documents/meetings.docx}{\textcolor{skyblue}{Meetings}}
-\textattachfile{report.tex}{\textcolor{skyblue}{Report source}}
-
+\begin{description}
+  \item[\textattachfile{attached_documents/milestone_1.pdf}{\textcolor{skyblue}{Milestone 1}}] 
+    Project initiation document for milestone 1.
+  \item[\textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{skyblue}{Milestone 2}}]
+    Project proposal document for milestone 2.
+  \item[\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}]
+    Mid-term project review document for milestone 3.
+  \item[\textattachfile{attached_documents/meetings.docx}{\textcolor{skyblue}{Meetings}}]
+    A complete log of all meetings held during the project.
+  \item[\textattachfile{report.tex}{\textcolor{skyblue}{Source}}]
+    The source code to this latex document.
+\end{description}
 
 \subsection{GitHub} \label{github}
-The \gls*{vmve} project is hosted on GitHub as a private repository.
-\url{https://github.com/ZOulhadj/vmve/}
+The \gls*{vmve} project is hosted on GitHub as a private repository which can be
+found at the following link: \url{https://github.com/ZOulhadj/vmve/}
 
 \subsection{Rendering API History} \label{rendering_api_appendix}
 One of the core aspects of \gls*{vmve} is making use of the underlying hardware and
