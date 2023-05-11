@@ -4,6 +4,7 @@
 \usepackage{graphicx}
 \usepackage[nottoc,numbib]{tocbibind}
 \usepackage{tabularx}
+\usepackage{booktabs}
 \usepackage[parfill]{parskip}
 \usepackage{amsmath}
 \usepackage[hyphens]{url}
@@ -337,20 +338,10 @@ to be implemented to achieve the aims outlined in section \ref{aims}.
     format and successfully load the model into the application.
 \end{description}
 
+With these aims and objectives fully defined, the project proposal document was
+signed off as part of the requirements for milestone 2 which can be seen in
+appendix section \ref{project_proposal}.
 
-% TODO: Should this be included?
-With these aims and objectives fully defined, the project proposal document was signed off
-as part of the requirements for milestone 2. 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{images/project_signoff.png}
-  \caption{Project proposal sign-off}
-  \label{fig:project_signoff}
-\end{figure}
-
-% The aims discussed above were part of the project proposal document and which
-% was signed off for milestone 2. The complete document can be viewed in
-% appendix section \ref{supporting_documents}.
 
 
 \subsection{Considerations}
@@ -486,10 +477,10 @@ built on top of Git. A few examples include \href{http://github.com}{GitHub},
 
 
 According to the StackOverflow Developer Survey, in 2022 Git was the most widely used \gls*{vcs}
-with an adoption percentage of 93.9\% as seen in figure \ref{fig:vcs_comparison}.
+with an adoption percentage of 93.9\% as seen in figure \ref{tab:vcs_comparison}.
 This shows how popular Git is compared to other similar systems \cite{vcs_survey}.
 
-\begin{figure}[H]
+\begin{table}[H]
 \begin{center}
   \rowcolors{2}{gray!25}{white}
   \begin{tabular}{cc}
@@ -500,8 +491,8 @@ This shows how popular Git is compared to other similar systems \cite{vcs_survey
   \end{tabular}
 \end{center}
 \caption{Version control usage comparison}
-\label{fig:vcs_comparison}
-\end{figure}
+\label{tab:vcs_comparison}
+\end{table}
 
 \subsection{Development Environment}
 
@@ -601,16 +592,26 @@ specifications to run on different platforms.
 The use of external libraries is vital in allowing \gls*{vmve} to be implemented
 within the short timeframe allocated. Libraries provide functionality that the
 application can easily incorporate without the need to implement the same
-solution from scratch.
+solution from scratch. The table shown in figure \ref{tab:library_compare} lists
+the different libraries based on the feature.
 
-\subsubsection{Model Loading}
-- Assimp, tinygltf, tinyobj
-\subsubsection{User Interface}
-imgui, qt, 
-\subsubsection{Encryption}
-crypto++, 
-\subsubsection{Serialisation}
-cereal, boost
+\begin{table}[H]
+  \centering
+  \footnotesize
+  \rowcolors{2}{gray!25}{white}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{>{\centering\arraybackslash}m{2.5cm} >{\centering\arraybackslash}m{3.5cm}}
+  \toprule
+  \rowcolor{gray!50}
+  \textbf{Feature} & \textbf{Libraries} \\ \midrule
+  Model Loading      &  Assimp, tinyGLTF, tinyOBJ \\ \addlinespace
+  User Interface    & ImGui, QT \\ \addlinespace
+  Encryption    & Crypto++ \\ \addlinespace
+  Serialisation   & Cereal, Boost \\ \bottomrule
+  \end{tabular}
+  \caption{Library comparison}
+  \label{tab:library_compare}
+\end{table}
 
 
 \subsection{Task Management}
@@ -784,9 +785,9 @@ encodings, XML or JSON.
 
 \subsubsection{Summary}
 Several other external libraries were used which are shown in figure
-\ref{fig:library_versions}. 
+\ref{tab:library_versions}. 
 
-\begin{figure}[H]
+\begin{table}[H]
   \begin{center}
     \rowcolors{2}{gray!25}{white}
     \begin{tabular}{cc}
@@ -801,8 +802,8 @@ Several other external libraries were used which are shown in figure
     \end{tabular}
   \end{center}
   \caption{Additional library versions}
-  \label{fig:library_versions}
-  \end{figure}
+  \label{tab:library_versions}
+\end{table}
 
 \subsection{Branding}
 The branding i.e. the look of the application was an important factor during the
@@ -961,7 +962,7 @@ would allow for the application to go beyond the 4GB limit posed by 32bit
 programs. In addition to this, 64-bit provides better performance and security
 as a result of the larger address space.
 
-\subsubsection{Renderer Architecture}
+\subsubsection{Renderer Architecture} \label{renderer_architecture}
 As mentioned in section \ref{rendering_api}. Vulkan will be the rendering API of
 choice for \gls*{vmve}. The API is extremely verbose giving the programmer the
 flexibility to control every aspect of the GPU. When interacting with Vulkan
@@ -970,7 +971,7 @@ the amount of effort required to implement functionality as a result of
 \glspl*{vulkan} verbose API.
 
 Therefore, the renderer must be designed so that flexibility is maintained
-whilst simplifying the \gls{api}. Figure \ref{fig:rendererarch} shows the
+whilst simplifying the \gls*{api}. Figure \ref{fig:rendererarch} shows the
 proposed renderer architecture which makes distinctive boundaries and
 encapsulates key sub-systems.
 
@@ -980,6 +981,29 @@ encapsulates key sub-systems.
   \caption{Renderer Architecture}
   \label{fig:rendererarch}
 \end{figure}
+
+
+In terms of the main rendering pipeline, two main techniques can be used called
+forward rendering and deferred rendering. The first is a more traditional method
+of rendering that renders and performs lighting calculations on all objects
+individually and finally displays the results on the screen. On the other hand,
+deferred rendering can significantly improve performance when large numbers of
+light sources are present compared to forward rendering. This is because
+deferred rendering defers all lighting calculations to a second pass and only
+needs to perform those calculations once. It also allows for important data to
+be accessed within shaders such as normals, world positions, colours etc. 
+Figure \ref{fig:forward_vs_deferred} compares the different techniques.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/forward_vs_deferred.png}
+  \caption{Forward vs Deferred Rendering}
+  \label{fig:forward_vs_deferred}
+\end{figure}
+
+\gls*{vmve} will make use of the deferred rendering pipeline as that is more
+widely used in the industry and provides various benefits.
+
 
 \subsection{User Interface}
 Designing the user interface was the next step as part of the design stage of
@@ -1300,19 +1324,13 @@ frames ``in-flight'' are not interrupted.
 \end{figure}
 
 \subsubsection{Deferred Rendering Pipeline}
-The next rendering feature that was implemented was a deferred rendering
-pipeline. During rendering, there are two main passes. The first pass renders
-the raw geometry data and performs MVP translation (section \ref{camera}). For
-each rendered frame a total of five framebuffers are filled with different types of
-information including colors, world positions, normals, depth and specular.
-
-Then the second pass reads the data from the five framebuffers and performs the
-lighting calculations. This is a common technique in rendering applications that
-significantly improve performance when large numbers of light sources are
-present compared to forward rendering. This is because deferred rendering defers
-all lighting calculations to the final pass and only needs to perform those
-calculations once. However, for forward rendering, this needs to occur for each
-object in the scene resulting in poorer performance.
+The next rendering feature that was implemented was the deferred rendering
+pipeline as proposed in section \ref{renderer_architecture}. During rendering,
+there are two main passes. The first pass renders the raw geometry data and
+performs MVP translation (section \ref{camera}). For each rendered frame a total
+of five framebuffers are filled with different types of information including
+colors, world positions, normals, depth and specular. Then the second pass reads
+the data from the five framebuffers and performs the lighting calculations. 
 
 \begin{figure}[H]
   \centering
@@ -2356,6 +2374,14 @@ information or access to important documents.
   \item[\textattachfile{report.tex}{\textcolor{skyblue}{Source}}]
     The source code to this latex document.
 \end{description}
+
+\subsection{Project Proposal Sign-Off} \label{project_proposal}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/project_signoff.png}
+  \caption{Project proposal sign-off}
+  \label{fig:project_signoff}
+\end{figure}
 
 \subsection{GitHub} \label{github}
 The \gls*{vmve} project is hosted on GitHub as a private repository (accessible
