@@ -1370,6 +1370,13 @@ INPUT .\images\executable.png
 INPUT .\images\executable.png
 INPUT .\images\executable.png
 INPUT .\images\executable.png
+INPUT .\images\vmve_release.png
+INPUT .\images\vmve_release.png
+INPUT images\vmve_release.png
+INPUT .\images\vmve_release.png
+INPUT .\images\vmve_release.png
+INPUT .\images\vmve_release.png
+INPUT .\images\vmve_release.png
 INPUT .\images\website.png
 INPUT .\images\website.png
 INPUT images\website.png
@@ -1398,6 +1405,13 @@ INPUT .\images\multiple_systems.png
 INPUT .\images\multiple_systems.png
 INPUT .\images\multiple_systems.png
 INPUT .\images\multiple_systems.png
+INPUT .\images\commit_history.png
+INPUT .\images\commit_history.png
+INPUT images\commit_history.png
+INPUT .\images\commit_history.png
+INPUT .\images\commit_history.png
+INPUT .\images\commit_history.png
+INPUT .\images\commit_history.png
 INPUT .\images\github_project.png
 INPUT .\images\github_project.png
 INPUT images\github_project.png

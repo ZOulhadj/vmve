@@ -25,43 +25,43 @@ Warning--empty journal in ADA
 Done.
 You've used 36 entries,
             4087 wiz_defined-function locations,
-            1500 strings with 21233 characters,
-and the built_in function-call counts, 12467 in all, are:
-= -- 917
-> -- 128
-< -- 0
-+ -- 67
-- -- 30
-* -- 476
-:= -- 2328
+            1503 strings with 21381 characters,
+and the built_in function-call counts, 12682 in all, are:
+= -- 942
+> -- 137
+< -- 2
++ -- 71
+- -- 32
+* -- 492
+:= -- 2363
 add.period$ -- 71
 call.type$ -- 36
 change.case$ -- 40
 chr.to.int$ -- 0
 cite$ -- 42
-duplicate$ -- 1071
-empty$ -- 1257
-format.name$ -- 31
-if$ -- 2678
+duplicate$ -- 1089
+empty$ -- 1265
+format.name$ -- 34
+if$ -- 2731
 int.to.chr$ -- 0
 int.to.str$ -- 36
-missing$ -- 243
-newline$ -- 203
+missing$ -- 245
+newline$ -- 201
 num.names$ -- 29
-pop$ -- 794
+pop$ -- 790
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 917
+skip$ -- 936
 stack$ -- 0
-substring$ -- 45
-swap$ -- 550
-text.length$ -- 0
+substring$ -- 47
+swap$ -- 569
+text.length$ -- 2
 text.prefix$ -- 0
 top$ -- 5
 type$ -- 36
 warning$ -- 6
-while$ -- 29
+while$ -- 30
 width$ -- 38
-write$ -- 361
+write$ -- 362
 (There were 6 warnings)

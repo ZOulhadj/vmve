@@ -2,8 +2,7 @@
 #define MY_ENGINE_VERTEX_H
 
 namespace engine {
-    struct vertex
-    {
+    struct vertex {
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec2 uv;

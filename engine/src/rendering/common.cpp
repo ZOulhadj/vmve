@@ -3,7 +3,7 @@
 
 namespace engine {
     glm::vec2 world_to_screen(const Platform_Window* window,
-        const Camera& camera,
+        const perspective_camera& camera,
         const glm::vec3& position,
         const glm::vec2& offset)
     {

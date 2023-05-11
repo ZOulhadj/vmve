@@ -126,9 +126,8 @@ namespace engine {
         Vk_Buffer sun_buffer;
         Vk_Buffer camera_buffer;
 
-
         // Scene information
-        Camera camera;
+        perspective_camera camera;
 
 
         std::vector<Model_Old> models;
@@ -293,7 +292,7 @@ namespace engine {
 
 
         //out_engine->sun_buffer = create_uniform_buffer(sizeof(sun_data));
-        engine->camera_buffer = create_uniform_buffer(sizeof(View_Projection));
+        engine->camera_buffer = create_uniform_buffer(sizeof(camera_projection));
         engine->scene_buffer = create_uniform_buffer(sizeof(Scene_Data));
 
 
@@ -303,7 +302,7 @@ namespace engine {
 
         offscreen_ds_layout = create_descriptor_layout(offscreen_bindings);
         offscreen_ds = allocate_descriptor_sets(offscreen_ds_layout);
-        update_binding(offscreen_ds, offscreen_bindings[0], engine->camera_buffer, sizeof(View_Projection));
+        update_binding(offscreen_ds, offscreen_bindings[0], engine->camera_buffer, sizeof(camera_projection));
 
         //////////////////////////////////////////////////////////////////////////
         const std::vector<VkDescriptorSetLayoutBinding> composite_bindings{
@@ -338,7 +337,7 @@ namespace engine {
 
         skybox_ds_layout = create_descriptor_layout(skybox_bindings);
         skybox_ds = allocate_descriptor_sets(skybox_ds_layout);
-        update_binding(skybox_ds, skybox_bindings[0], engine->camera_buffer, sizeof(View_Projection));
+        update_binding(skybox_ds, skybox_bindings[0], engine->camera_buffer, sizeof(camera_projection));
 
         //////////////////////////////////////////////////////////////////////////
         material_ds_binding = {
@@ -512,7 +511,7 @@ namespace engine {
         scene.sun_dir.x = glm::sin((float)glfwGetTime()) * 2.0f;
         scene.sun_dir.z = glm::cos((float)glfwGetTime()) * 2.0f;
 
-        set_buffer_data(g_engine->camera_buffer, &g_engine->camera.vp, sizeof(View_Projection));
+        set_buffer_data(g_engine->camera_buffer, &g_engine->camera.vp, sizeof(camera_projection));
         set_buffer_data(g_engine->scene_buffer, &scene);
 
         return g_engine->running;
@@ -540,7 +539,7 @@ namespace engine {
         {
             begin_render_pass(cmd_buffer, offscreen_pass);
 
-            bind_descriptor_set(cmd_buffer, offscreen_pipeline_layout, offscreen_ds, { sizeof(View_Projection) });
+            bind_descriptor_set(cmd_buffer, offscreen_pipeline_layout, offscreen_ds, { sizeof(camera_projection) });
             bind_pipeline(cmd_buffer, *current_pipeline);
 
             // TODO: Currently we are rendering each instance individually
@@ -569,7 +568,7 @@ namespace engine {
             if (g_engine->using_skybox) {
                 begin_render_pass(cmd_buffer, skybox_pass);
 
-                bind_descriptor_set(cmd_buffer, skybox_pipeline_layout, skybox_ds, { sizeof(View_Projection) });
+                bind_descriptor_set(cmd_buffer, skybox_pipeline_layout, skybox_ds, { sizeof(camera_projection) });
                 bind_pipeline(cmd_buffer, skybox_pipeline);
                 render_model(skybox_model, cmd_buffer, skybox_pipeline_layout);
                 end_render_pass(cmd_buffer);
@@ -933,12 +932,12 @@ namespace engine {
 
     void create_camera(float fovy, float speed)
     {
-        g_engine->camera = create_perspective_camera({ 0.0f, 2.0f, -2.0f }, fovy, speed);
+        g_engine->camera = create_camera({ 0.0f, 2.0f, -2.0f }, fovy, speed);
     }
 
     void update_input()
     {
-        Camera& camera = g_engine->camera;
+        perspective_camera& camera = g_engine->camera;
         const float speed = camera.speed * g_engine->timer.get_delta_time();
 
         if (key_pressed(GLFW_KEY_W))
@@ -946,9 +945,9 @@ namespace engine {
         if (key_pressed(GLFW_KEY_S))
             camera.position -= camera.front_vector * speed;
         if (key_pressed(GLFW_KEY_A))
-            camera.position -= camera.right_vector * speed;
+            camera.position -= glm::normalize(glm::cross(camera.up_vector, camera.front_vector)) * speed;
         if (key_pressed(GLFW_KEY_D))
-            camera.position += camera.right_vector * speed;
+            camera.position += glm::normalize(glm::cross(camera.up_vector, camera.front_vector)) * speed;
         if (key_pressed(GLFW_KEY_SPACE))
             camera.position += camera.up_vector * speed;
         if (key_pressed(GLFW_KEY_LEFT_CONTROL) || key_pressed(GLFW_KEY_CAPS_LOCK))
@@ -999,7 +998,7 @@ namespace engine {
 
     float* get_camera_fov()
     {
-        return &g_engine->camera.fov;
+        return &g_engine->camera.fovy;
     }
 
     float* get_camera_speed()

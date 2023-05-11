@@ -23,13 +23,13 @@
 
 \bibitem{unreal_engine}
 \BIBentryALTinterwordspacing
-E.~Games, ``Unreal engine.'' [Online]. Available:
+{Epic Games}, ``Unreal engine.'' [Online]. Available:
   \url{https://www.unrealengine.com/en-US/}
 \BIBentrySTDinterwordspacing
 
 \bibitem{unity}
 \BIBentryALTinterwordspacing
-U.~Technologies, ``Unity.'' [Online]. Available: \url{https://unity.com/}
+{Unity Technologies}, ``Unity.'' [Online]. Available: \url{https://unity.com/}
 \BIBentrySTDinterwordspacing
 
 \bibitem{render_man}
@@ -66,12 +66,6 @@ Microsoft, ``Microsoft visual studio 2022.'' [Online]. Available:
 ``Git version control system.'' [Online]. Available: \url{https://git-scm.com/}
 \BIBentrySTDinterwordspacing
 
-\bibitem{visualstudioassistx}
-\BIBentryALTinterwordspacing
-Embarcadero, ``{Visual Studio Assist X}.'' [Online]. Available:
-  \url{https://www.wholetomato.com/}
-\BIBentrySTDinterwordspacing
-
 \bibitem{renderdoc}
 \BIBentryALTinterwordspacing
 B.~Karlsson, ``Renderdoc.'' [Online]. Available: \url{https://renderdoc.org/}
@@ -106,6 +100,11 @@ W.~Dai, ``Crypto++ library.'' [Online]. Available:
 W.~S. Grant and R.~Voorhies, ``cereal - a c++11 library for serialization,''
   2017. [Online]. Available: \url{https://uscilab.github.io/cereal/}
 \BIBentrySTDinterwordspacing
+
+\bibitem{girard2013role}
+T.~Girard, M.~M. Anitsal, and I.~Anitsal, ``The role of logos in building brand
+  awareness and performance: Implications for entrepreneurs,'' \emph{The
+  Entrepreneurial Executive}, vol.~18, p.~7, 2013.
 
 \bibitem{agile}
 \BIBentryALTinterwordspacing

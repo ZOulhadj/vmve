@@ -5,21 +5,18 @@
 #include "core/platform_input.h"
 
 namespace engine {
-#if 1
-    static Camera create_camera(const glm::vec3& pos, float speed, float fov)
+    perspective_camera create_camera(const glm::vec3& position, float fov, float speed)
     {
-        Camera cam{};
-
-        cam.position = pos;
+        perspective_camera cam{};
+        cam.position = position;
         cam.orientation = glm::quat(1, 0, 0, 0);
         cam.speed = speed;
         cam.view_speed = 0.1f;
         cam.roll_speed = 45.0f;
         cam.roll = 0.0f;
-        cam.fov = fov;
+        cam.fovy = fov;
         cam.near_plane = 0.1f;
         cam.far_plane = 2000.0f;
-        cam.type = Camera_Type::first_person;
 
 
         cam.vp.view = glm::mat4_cast(glm::quat(cam.orientation)) * glm::translate(glm::mat4(1.0f), -glm::vec3(cam.position));
@@ -28,14 +25,7 @@ namespace engine {
         // Required if using Vulkan (left-handed coordinate-system)
         cam.vp.proj[1][1] *= -1.0;
 
-
         return cam;
-    }
-
-
-    Camera create_perspective_camera(const glm::vec3& position, float fov, float speed)
-    {
-        return create_camera(position, speed, fov);
     }
 
     // Reversed Z infinite perspective
@@ -58,7 +48,7 @@ namespace engine {
     //}
     //
 
-    void update_camera_view(Camera& camera, const glm::vec2& cursor_pos)
+    void update_camera_view(perspective_camera& camera, const glm::vec2& cursor_pos)
     {
         // todo(zak): Need to fix unwanted roll when rotating
         static float last_x = 1280.0f / 2.0f;
@@ -80,7 +70,7 @@ namespace engine {
         // Get the camera current direction vectors based on orientation
         camera.front_vector = glm::conjugate(camera.orientation) * glm::vec3(0.0f, 0.0f, 1.0f);
         camera.up_vector = glm::conjugate(camera.orientation) * glm::vec3(0.0f, 1.0f, 0.0f);
-        camera.right_vector = glm::conjugate(camera.orientation) * glm::vec3(1.0f, 0.0f, 0.0f);
+        //camera.right_vector = glm::conjugate(camera.orientation) * glm::vec3(1.0f, 0.0f, 0.0f);
 
         // Create each of the orientations based on mouse offset and roll offset.
         //
@@ -104,76 +94,61 @@ namespace engine {
 #endif
     }
 
-    void update_projection(Camera& camera, uint32_t width, uint32_t height)
+    void update_projection(perspective_camera& camera, uint32_t width, uint32_t height)
     {
         const auto aspect_ratio = static_cast<float>(width) /
             static_cast<float>(height);
 
-        camera.vp.proj = glm::perspective(glm::radians(camera.fov), aspect_ratio, camera.far_plane, camera.near_plane);
+        camera.vp.proj = glm::perspective(glm::radians(camera.fovy), aspect_ratio, camera.far_plane, camera.near_plane);
 
         // Required if using Vulkan (left-handed coordinate-system)
         camera.vp.proj[1][1] *= -1.0;
 
     }
-#endif
 
-#if 0
-    perspective_camera::perspective_camera(const glm::vec3& position, float speed, float fov, camera_clip clip)
-        : m_position(position),
-        m_front_vector(glm::vec3(0.0f, 0.0f, 1.0f)),
-        m_up_vector(glm::vec3(0.0f, 1.0f, 0.0f)),
-        m_speed(speed), 
-        m_fov(fov), 
-        m_clip(clip)
+    camera_frustum extract_frustum_planes(const glm::mat4& matrix)
     {
+        camera_frustum frustum{};
 
+        frustum.left.x = matrix[0].w + matrix[0].x;
+        frustum.left.y = matrix[1].w + matrix[1].x;
+        frustum.left.z = matrix[2].w + matrix[2].x;
+        frustum.left.w = matrix[3].w + matrix[3].x;
+
+        frustum.right.x = matrix[0].w - matrix[0].x;
+        frustum.right.y = matrix[1].w - matrix[1].x;
+        frustum.right.z = matrix[2].w - matrix[2].x;
+        frustum.right.w = matrix[3].w - matrix[3].x;
+
+        frustum.top.x = matrix[0].w - matrix[0].y;
+        frustum.top.y = matrix[1].w - matrix[1].y;
+        frustum.top.z = matrix[2].w - matrix[2].y;
+        frustum.top.w = matrix[3].w - matrix[3].y;
+
+        frustum.bottom.x = matrix[0].w + matrix[0].y;
+        frustum.bottom.y = matrix[1].w + matrix[1].y;
+        frustum.bottom.z = matrix[2].w + matrix[2].y;
+        frustum.bottom.w = matrix[3].w + matrix[3].y;
+
+        // todo: first part might not be required
+        frustum.near.x = matrix[0].w + matrix[0].z;
+        frustum.near.y = matrix[1].w + matrix[1].z;
+        frustum.near.z = matrix[2].w + matrix[2].z;
+        frustum.near.w = matrix[3].w + matrix[3].z;
+
+        frustum.far.x = matrix[0].w - matrix[0].z;
+        frustum.far.y = matrix[1].w - matrix[1].z;
+        frustum.far.z = matrix[2].w - matrix[2].z;
+        frustum.far.w = matrix[3].w - matrix[3].z;
+
+        frustum.left = glm::normalize(frustum.left);
+        frustum.right = glm::normalize(frustum.right);
+        frustum.top = glm::normalize(frustum.top);
+        frustum.bottom = glm::normalize(frustum.bottom);
+        frustum.near = glm::normalize(frustum.near);
+        frustum.far = glm::normalize(frustum.far);
+
+        return frustum;
     }
-
-    void perspective_camera::on_update(float delta_time)
-    {
-        const float speed = m_speed * delta_time;
-
-        if (key_pressed(GLFW_KEY_W))
-            m_position += m_front_vector * speed;
-        if (key_pressed(GLFW_KEY_S))
-            m_position -= m_front_vector * speed;
-        if (key_pressed(GLFW_KEY_A))
-            m_position -= glm::normalize(glm::cross(m_front_vector, m_up_vector)) * speed;
-        if (key_pressed(GLFW_KEY_D))
-            m_position += glm::normalize(glm::cross(m_front_vector, m_up_vector)) * speed;
-        if (key_pressed(GLFW_KEY_SPACE))
-            m_position += m_up_vector * speed;
-        if (key_pressed(GLFW_KEY_LEFT_CONTROL) || key_pressed(GLFW_KEY_CAPS_LOCK))
-            m_position -= m_up_vector * speed;
-
-        /*if (is_key_down(GLFW_KEY_Q))
-            camera.roll -= camera.roll_speed * deltaTime;
-        if (is_key_down(GLFW_KEY_E))
-            camera.roll += camera.roll_speed * deltaTime;*/
-
-
-        m_transform.view = glm::lookAt(m_position, m_position + m_front_vector, m_up_vector);
-    }
-
-    void perspective_camera::on_resize(window_resized_event& e)
-    {
-        const glm::vec2& size = e.get_size();
-        if (size.x == 0 || size.y == 0)
-            return;
-
-        const float aspect = static_cast<float>(size.x) / static_cast<float>(size.y);
-        m_transform.projection = glm::perspective(glm::radians(m_fov), aspect, m_clip.far, m_clip.near);
-    }
-
-    camera_transform perspective_camera::get_transform()
-    {
-        return m_transform;
-    }
-
-    glm::vec3 perspective_camera::get_position()
-    {
-        return m_position;
-    }
-#endif
 
 }
