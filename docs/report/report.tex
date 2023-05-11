@@ -574,19 +574,16 @@ been proposed.
 \end{description}
 
 \subsection{Rendering API} \label{rendering_api_tech_review} 
+
 A rendering \gls*{api} is a set of instructions that acts as an intermediary and
 allows for an application to make use of a systems \gls*{gpu} which is also
 known as hardware acceleration. There are several different rendering
 \glspl*{api} that exist including OpenGL, \gls*{vulkan}, Direct3D 11 and
-Direct3D 12. Appendix section \ref{rendering_api_appendix} goes into great
-detail explaining the history of rendering \glspl*{api} and the differences
-between them.
-
-OpenGL and Direct3D 11 are previous generations \glspl*{api} whereas
-\gls*{vulkan} and Direct3D 12 are the latest technologies. Each of these has its
-advantages and disadvantages. Figure \ref{fig:api_comparison} shows a table that
-compares each of these with specific types of functionality between the
-\glspl*{api}.
+Direct3D 12. OpenGL and Direct3D 11 are previous generations \glspl*{api}
+whereas \gls*{vulkan} and Direct3D 12 are the latest technologies. Each of these
+has its advantages and disadvantages. Figure \ref{fig:api_comparison} shows a
+table that compares each of these with specific types of functionality between
+the \glspl*{api}.
 
 \begin{figure}[H]
   \centering
@@ -2236,44 +2233,45 @@ required for rendering large quantities of objects. This also needs to be
 addressed in future versions of the application so that usability is maintained,
 and that \gls*{vmve} meets the demands and requirements of its users.
 
-\subsection{Related Work}
-% todo
-
 \clearpage
 \section{Conclusion} \label{conclusion}
 
 \gls*{vmve} has been designed to be a platform in which users are provided with
-easy to use 3D graphics tools without needing to know the complex implementation
-details. This allows users to focus on their needs and requirements. The
-application has been developed in line with the original aims and objectives
-fulfilled with the primary aim of targeting students and trainees as an
-education tool for the digital graphics industry. 
+3D graphics tools without needing to know the complex implementation details of
+the underlying technology. This allows users to focus on their needs and
+requirements. The project has been developed in line with the original aims and
+objectives and has been fulfilled with the primary aim of targeting students
+and trainees as an education tool for the digital graphics industry.
+
 
 Although many of the original requirements have been met, the project as a whole
 must be evaluated to analyse the various strengths and weaknesses at key stages
 including requirements gathering, design, implementation and user feedback.
 
 \subsection{Reflection}
-This has been a long journey that has presented various challenges throughout
-the development of \gls*{vmve}. Furthermore, a lot has been learned in different
-areas.
+To fully understand how well the project went, it must be evaluated as part of
+the reflection stage. This consists analysing the design, implementation and 
+management surrounding the project.
+
+\subsubsection{Design}
+Having concluded the project, it has shown how important the requirements
+gathering and design stages are. During the implementation of the rendering
+architecture, it took much longer than expected as certain aspects were not
+fully defined and designed during the design stages. This resulted in having to
+redesign the architecture mid way and thus, delaying other aspects of the
+project.
+
+However, it's also important to recognise that in large projects such as this,
+it can be difficult to fully define all the requirements as they may change over
+time. Therefore, this needs to be taken into consideration for design stages and
+have alternative solutions in future projects.
 
 \subsubsection{Time Management}
-One of the major downsides that this project suffers from is the projects time
+One of the major downsides that the project suffers from is the projects time
 constraints. Given the relative complexity of the project, many of the features
 implemented in \gls*{vmve} are quite rudimentary and serve as a basic prototype
 that showcases the underlying technology and the potential future work that can
 be undertaken.
-
-\subsubsection{Design}
-This project has also shown how important the requirements gathering and design
-stages are. For example, the rendering architecture took longer to implement as 
-certain aspects were not fully realised and designed ahead of time.
-
-However, it's also important to recognise that in large projects such as this,
-it can be difficult to fully define all the requirements as they may change over
-time. Therefore, this needs to be taken into consideration for design stages in
-future projects.
 
 \subsubsection{Alternative Rendering API}
 \gls*{vulkan} which as previously discussed is a low-level \gls*{gpu}
@@ -2286,23 +2284,116 @@ of multithreading, multiple command buffers and very specific memory allocation
 requirements.
 
 If given the choice, \gls*{vmve} would be rewritten to use a simpler \gls*{api}
-such as DirectX11 or OpenGL as they provide the same functionality but with
+such as Direct3D or OpenGL as they provide the same functionality but with
 significantly less work required. This would allow me to focus and spend more
 time implementing the many other features required in such an application. In
 the future, if the renderer's performance becomes an issue then the use of more
 advanced \glspl*{api} could be reconsidered.
 
-\subsubsection{Development Logs}
-At key stages of the project's development, development logs i.e. videos were
-recorded showcasing the state of development at that specific point in time. All
-videos were uploaded and are hosted on the Zakariya Oulhadj YouTube channel
-\url{https://www.youtube.com/@ZOulhadj}
 
 \subsection{Future Work} \label{future_work} 
 Looking forward to the future, several features need to be worked on and
 implemented that aim to greatly increase \glspl*{vmve} usability and provide a
 whole host of new features that benefit the key stakeholder groups.
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/github_issues.png}
+  \caption{Outstanding GitHub issues}
+  \label{fig:github_issues}
+\end{figure}
+
+The feature list provides a basic outline of the improvements that can be made.
+For a detailed and in-depth discussion of the various features that will need to
+be implemented in the future, see section \ref{detailed_future_work} of the
+appendix.
+\begin{description}
+  \item[Multiple rendering APIs] Currently, \gls*{vulkan} is the only supported
+    rendering \gls*{api}. The application should be able to support the other
+    \glspl*{api} such as OpenGL and Direct3D for greater platform support and
+    user reach.
+  \item[Renderer optimisations] How the renderer system has been implemented
+    does not scale appropriately as the complexity of the virtual environment
+    increases. This results in poorer performance. To solve this, various other
+    optimisations can be implemented such as frustum culling and spatial
+    acceleration structures for large-scale terrains.
+  \item[glTF model loading] As a new model format, it has several benefits over
+    current formats such as ``obj'' and ``fbx''. Supporting this would decrease
+    model loading times and allow for assets to be packed more efficiently both
+    on disk and in memory.
+  \item[User interface accessibility]
+    The usability of \gls*{vmve} can be further improved by making the
+    application accessible such as by using text-to-speech, improving the usage
+    of colors and also supporting color blindness.
+  \item[Version control] The other major improvement that can be made is the
+    architecture of the GitHub repository. To ensure that the project can scale
+    better in the future, an additional branch called ``Beta'' could be
+    implemented so that users can gain early access to new features.
+  
+\end{description}
+
+
+
+\clearpage
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv, refs}
+
+\clearpage
+\section{Appendices}
+The appendices may be referenced throughout the report which provides additional
+information or access to important documents.
+
+\subsection{Supporting Documents} \label{supporting_documents}
+\begin{description}
+  \item[\textattachfile{attached_documents/milestone_1.pdf}{\textcolor{skyblue}{Milestone 1}}] 
+    Project initiation document for milestone 1.
+  \item[\textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{skyblue}{Milestone 2}}]
+    Project proposal document for milestone 2.
+  \item[\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}]
+    Mid-term project review document for milestone 3.
+  \item[\textattachfile{attached_documents/meetings.docx}{\textcolor{skyblue}{Meetings}}]
+    A complete log of all meetings held during the project.
+  \item[\textattachfile{report.tex}{\textcolor{skyblue}{Source}}]
+    The source code to this latex document.
+\end{description}
+
+\subsection{GitHub} \label{github}
+The \gls*{vmve} project is hosted on GitHub as a private repository (accessible
+to supervisors) which can be found at the following link:
+\url{https://github.com/ZOulhadj/vmve/}. The repository also contains a guide on
+how to download and build the project.
+
+\subsection{Development Logs}
+At key stages of the project's development, development logs i.e. videos were
+recorded showcasing the state of development at that specific point in time. All
+videos were uploaded and are hosted on the Zakariya Oulhadj YouTube channel
+\url{https://www.youtube.com/@ZOulhadj}
+
+\subsection{Camera Transformation}
+\begin{figure}[H]
+  \centering
+  \begin{lstlisting}[language=C++]
+    // Construct M (model)
+    glm::mat4 m = glm::mat4(1.0f);
+    m = glm::translate(m, world_position);   
+    m = glm::rotate(m, radians, rotation_axis); 
+    m = glm::scale(m, scale_amount);
+
+    // Construct V (view)
+    glm::mat4 v = glm::lookAt(camera_position, camera_direction, camera_up);
+
+    // Construct P (projection)
+    glm::mat4 p = glm::perspective(field_of_view, aspect_ratio, near, far);
+
+    // Construct MVP
+    glm::mat4 mvp = p * v * m; // Order is important
+
+  \end{lstlisting}
+  \caption{Complete MVP example}
+  \label{fig:local_to_world_appendix}
+\end{figure}
+
+\subsection{Detailed Future Work} \label{detailed_future_work}
 
 \subsubsection{Multiple rendering APIs}
 \gls*{vmve} currently only supports one rendering API which is Vulkan. As
@@ -2507,97 +2598,6 @@ Another task that must be considered is localisation. \gls*{vmve} only supports
 the English language and has no way of adapting to other languages. Therefore,
 the internal structure of the application must be redesigned to allow for
 other languages to be added and thus, improving accessibility.
-
-
-
-\clearpage
-\bibliographystyle{IEEEtran}
-\bibliography{IEEEabrv, refs}
-
-\clearpage
-\section{Appendices}
-The appendices may be referenced throughout the report which provides additional
-information or access to important documents.
-
-\subsection{Supporting Documents} \label{supporting_documents}
-\begin{description}
-  \item[\textattachfile{attached_documents/milestone_1.pdf}{\textcolor{skyblue}{Milestone 1}}] 
-    Project initiation document for milestone 1.
-  \item[\textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{skyblue}{Milestone 2}}]
-    Project proposal document for milestone 2.
-  \item[\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}]
-    Mid-term project review document for milestone 3.
-  \item[\textattachfile{attached_documents/meetings.docx}{\textcolor{skyblue}{Meetings}}]
-    A complete log of all meetings held during the project.
-  \item[\textattachfile{report.tex}{\textcolor{skyblue}{Source}}]
-    The source code to this latex document.
-\end{description}
-
-\subsection{GitHub} \label{github}
-The \gls*{vmve} project is hosted on GitHub as a private repository which can be
-found at the following link: \url{https://github.com/ZOulhadj/vmve/}
-
-\subsection{Rendering API History} \label{rendering_api_appendix}
-One of the core aspects of \gls*{vmve} is making use of the underlying hardware and
-more specifically the GPU (Graphics Processing Unit) which will be primarily
-used for rendering. Taking advantage of the GPUs hardware capabilities requires
-low-level access to the hardware and is not as straightforward as one would
-hope. To understand why, we must first understand how Graphics Processing Units
-function.
-
-There are different types of GPUs such as dedicated or onboard, different
-architectures including AMDs RDNA \cite{RDNA} or NVIDIAs ADA \cite{ADA} as well
-as various capabilities that differ between hardware vendors. An application
-attempting to target GPUs would need to consider this including having access to
-the GPU drivers (Low-level software that allows a specific piece of hardware to
-function). Oftentimes, software drivers are trade secrets that companies do not
-want freely available. Given the complexity and variations of modern
-\glspl*{gpu} this is simply not feasible.
-
-Companies from across different industries solved this issue by creating
-an open, non-profit consortium in the early 2000s called The Khronos Group. This
-organisation develops, publishes and maintains standards for different areas
-but most notably for 3D Graphics and Computation. Companies follow these 
-standards when developing software allowing for interoperability across
-hardware. As of 2023, The Khronos Group actively maintains 16 different
-standards. Out of all those standards, there are two which are the most
-suitable for \gls*{vmve}, OpenGL and \gls*{vulkan}.
-
-OpenGL and \gls*{vulkan} are two types of rendering APIs that are designed based on
-The Khronos Group specifications. When attempting to provide graphics support
-for a particular \gls*{gpu}, hardware vendors follow the OpenGL and/or \gls*{vulkan}
-specifications when implementing their drivers. For applications, a
-\gls*{api} is provided allowing for direct control of the \gls*{gpu}.
-
-\gls*{vmve} could support both OpenGL and \gls*{vulkan} however, due to the vast
-amount of work required to accomplish this as well as the project's time
-constraints this is simply not feasible. Instead, both need to be evaluated to
-choose one.
-
-
-\subsection{Camera Transformation}
-\begin{figure}[H]
-  \centering
-  \begin{lstlisting}[language=C++]
-    // Construct M (model)
-    glm::mat4 m = glm::mat4(1.0f);
-    m = glm::translate(m, world_position);   
-    m = glm::rotate(m, radians, rotation_axis); 
-    m = glm::scale(m, scale_amount);
-
-    // Construct V (view)
-    glm::mat4 v = glm::lookAt(camera_position, camera_direction, camera_up);
-
-    // Construct P (projection)
-    glm::mat4 p = glm::perspective(field_of_view, aspect_ratio, near, far);
-
-    // Construct MVP
-    glm::mat4 mvp = p * v * m; // Order is important
-
-  \end{lstlisting}
-  \caption{Complete MVP example}
-  \label{fig:local_to_world_appendix}
-\end{figure}
 
 
 \end{document}

@@ -225,18 +225,4 @@ D.~Byte, ``Cheat engine.'' [Online]. Available:
   \url{https://www.cheatengine.org/}
 \BIBentrySTDinterwordspacing
 
-\bibitem{RDNA}
-\BIBentryALTinterwordspacing
-{AMD}, ``{RDNA architecture - The all new Radeon gaming architecture powering
-  ``Navi''},'' 2019, [accessed 23-January-2023]. [Online]. Available:
-  \url{https://www.amd.com/system/files/documents/rdna-whitepaper.pdf}
-\BIBentrySTDinterwordspacing
-
-\bibitem{ADA}
-\BIBentryALTinterwordspacing
-{Henry C Lin and Andrew Burnes}, ``{How Ada advances the science of graphics
-  with DLSS 3.}'' 2022, [accessed 2-May-2023]. [Online]. Available:
-  \url{https://images.nvidia.com/aem-dam/Solutions/geforce/ada/ada-lovelace-architecture/nvidia-ada-gpu-science.pdf}
-\BIBentrySTDinterwordspacing
-
 \end{thebibliography}

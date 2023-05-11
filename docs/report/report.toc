@@ -93,28 +93,27 @@
 \contentsline {subsubsection}{\numberline {4.8.2}Time Management}{60}{subsubsection.4.8.2}%
 \contentsline {subsubsection}{\numberline {4.8.3}Performance}{62}{subsubsection.4.8.3}%
 \contentsline {subsubsection}{\numberline {4.8.4}User Feedback}{66}{subsubsection.4.8.4}%
-\contentsline {subsection}{\numberline {4.9}Related Work}{68}{subsection.4.9}%
 \contentsline {section}{\numberline {5}Conclusion}{69}{section.5}%
 \contentsline {subsection}{\numberline {5.1}Reflection}{69}{subsection.5.1}%
-\contentsline {subsubsection}{\numberline {5.1.1}Time Management}{69}{subsubsection.5.1.1}%
-\contentsline {subsubsection}{\numberline {5.1.2}Design}{69}{subsubsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.1}Design}{69}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}Time Management}{69}{subsubsection.5.1.2}%
 \contentsline {subsubsection}{\numberline {5.1.3}Alternative Rendering API}{70}{subsubsection.5.1.3}%
-\contentsline {subsubsection}{\numberline {5.1.4}Development Logs}{70}{subsubsection.5.1.4}%
 \contentsline {subsection}{\numberline {5.2}Future Work}{70}{subsection.5.2}%
-\contentsline {subsubsection}{\numberline {5.2.1}Multiple rendering APIs}{70}{subsubsection.5.2.1}%
-\contentsline {subsubsection}{\numberline {5.2.2}Frustum Culling}{71}{subsubsection.5.2.2}%
-\contentsline {subsubsection}{\numberline {5.2.3}Spatial Acceleration Structures}{73}{subsubsection.5.2.3}%
-\contentsline {subsubsection}{\numberline {5.2.4}glTF Support}{75}{subsubsection.5.2.4}%
-\contentsline {subsubsection}{\numberline {5.2.5}Cross Platform}{76}{subsubsection.5.2.5}%
-\contentsline {subsubsection}{\numberline {5.2.6}Networking Support}{76}{subsubsection.5.2.6}%
-\contentsline {subsubsection}{\numberline {5.2.7}File Format/Encryption}{76}{subsubsection.5.2.7}%
-\contentsline {subsubsection}{\numberline {5.2.8}Runtime memory protection}{77}{subsubsection.5.2.8}%
-\contentsline {subsubsection}{\numberline {5.2.9}Version Control}{77}{subsubsection.5.2.9}%
-\contentsline {subsubsection}{\numberline {5.2.10}Reduce Library Dependencies}{78}{subsubsection.5.2.10}%
-\contentsline {subsubsection}{\numberline {5.2.11}Accessibility}{78}{subsubsection.5.2.11}%
-\contentsline {section}{\numberline {6}References}{79}{section.6}%
-\contentsline {section}{\numberline {7}Appendices}{82}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Supporting Documents}{82}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}GitHub}{82}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Rendering API History}{82}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}Camera Transformation}{83}{subsection.7.4}%
+\contentsline {section}{\numberline {6}References}{72}{section.6}%
+\contentsline {section}{\numberline {7}Appendices}{75}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Supporting Documents}{75}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}GitHub}{75}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Development Logs}{75}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Camera Transformation}{76}{subsection.7.4}%
+\contentsline {subsection}{\numberline {7.5}Detailed Future Work}{76}{subsection.7.5}%
+\contentsline {subsubsection}{\numberline {7.5.1}Multiple rendering APIs}{76}{subsubsection.7.5.1}%
+\contentsline {subsubsection}{\numberline {7.5.2}Frustum Culling}{77}{subsubsection.7.5.2}%
+\contentsline {subsubsection}{\numberline {7.5.3}Spatial Acceleration Structures}{79}{subsubsection.7.5.3}%
+\contentsline {subsubsection}{\numberline {7.5.4}glTF Support}{81}{subsubsection.7.5.4}%
+\contentsline {subsubsection}{\numberline {7.5.5}Cross Platform}{82}{subsubsection.7.5.5}%
+\contentsline {subsubsection}{\numberline {7.5.6}Networking Support}{82}{subsubsection.7.5.6}%
+\contentsline {subsubsection}{\numberline {7.5.7}File Format/Encryption}{82}{subsubsection.7.5.7}%
+\contentsline {subsubsection}{\numberline {7.5.8}Runtime memory protection}{83}{subsubsection.7.5.8}%
+\contentsline {subsubsection}{\numberline {7.5.9}Version Control}{83}{subsubsection.7.5.9}%
+\contentsline {subsubsection}{\numberline {7.5.10}Reduce Library Dependencies}{84}{subsubsection.7.5.10}%
+\contentsline {subsubsection}{\numberline {7.5.11}Accessibility}{84}{subsubsection.7.5.11}%

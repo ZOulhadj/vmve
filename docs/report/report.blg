@@ -19,49 +19,47 @@ Warning--empty author in indentation
 Warning--empty journal in indentation
 Warning--empty year in indentation
 Warning--empty journal in blinn
-Warning--empty journal in RDNA
-Warning--empty journal in ADA
 
 Done.
-You've used 36 entries,
+You've used 34 entries,
             4087 wiz_defined-function locations,
-            1503 strings with 21381 characters,
-and the built_in function-call counts, 12682 in all, are:
-= -- 942
-> -- 137
+            1491 strings with 20981 characters,
+and the built_in function-call counts, 11892 in all, are:
+= -- 870
+> -- 129
 < -- 2
-+ -- 71
-- -- 32
-* -- 492
-:= -- 2363
-add.period$ -- 71
-call.type$ -- 36
-change.case$ -- 40
++ -- 67
+- -- 30
+* -- 455
+:= -- 2195
+add.period$ -- 67
+call.type$ -- 34
+change.case$ -- 36
 chr.to.int$ -- 0
-cite$ -- 42
-duplicate$ -- 1089
-empty$ -- 1265
-format.name$ -- 34
-if$ -- 2731
+cite$ -- 38
+duplicate$ -- 1023
+empty$ -- 1201
+format.name$ -- 32
+if$ -- 2565
 int.to.chr$ -- 0
-int.to.str$ -- 36
-missing$ -- 245
-newline$ -- 201
-num.names$ -- 29
-pop$ -- 790
+int.to.str$ -- 34
+missing$ -- 233
+newline$ -- 191
+num.names$ -- 27
+pop$ -- 762
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 936
+skip$ -- 873
 stack$ -- 0
-substring$ -- 47
-swap$ -- 569
+substring$ -- 41
+swap$ -- 535
 text.length$ -- 2
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 36
-warning$ -- 6
-while$ -- 30
-width$ -- 38
-write$ -- 362
-(There were 6 warnings)
+type$ -- 34
+warning$ -- 4
+while$ -- 28
+width$ -- 36
+write$ -- 340
+(There were 4 warnings)
