@@ -1,27 +1,29 @@
-#ifndef MYENGINE_VFS_HPP
-#define MYENGINE_VFS_HPP
+#ifndef MY_ENGINE_VFS_HPP
+#define MY_ENGINE_VFS_HPP
 
-class VFS {
-public:
-    VFS(VFS const&) = delete;
-    void operator=(VFS const&) = delete;
+namespace engine {
+    class virtual_fs
+    {
+    public:
+        virtual_fs(virtual_fs const&) = delete;
+        void operator=(virtual_fs const&) = delete;
 
 
-    static VFS& get();
+        static virtual_fs& get();
 
-    void mount(const std::string& virtual_path, const std::filesystem::path& real_path);
-    void unmount(const std::string& virtual_path);
+        void mount(const std::string& virtual_path, const std::filesystem::path& real_path);
+        void unmount(const std::string& virtual_path);
 
-    std::filesystem::path get_path(const std::string& virtual_path);
+        std::filesystem::path get_path(const std::string& virtual_path);
 
-private:
-    VFS() = default;
+    private:
+        virtual_fs() = default;
 
-private:
-    std::unordered_map<std::string, std::vector<std::filesystem::path>> mount_points;
-};
+    private:
+        std::unordered_map<std::string, std::vector<std::filesystem::path>> mount_points;
+    };
 
-void mount_path(const std::string& virtual_path, const std::filesystem::path& real_path);
-std::filesystem::path get_vfs_path(const std::string& virtual_path);
-
+    void mount_path(const std::string& virtual_path, const std::filesystem::path& real_path);
+    std::filesystem::path get_vfs_path(const std::string& virtual_path);
+}
 #endif

@@ -1,78 +1,59 @@
-#ifndef MY_ENGINE_QUATERNION_CAMERA_HPP
-#define MY_ENGINE_QUATERNION_CAMERA_HPP
+#ifndef MY_ENGINE_CAMERA_H
+#define MY_ENGINE_CAMERA_H
 
+#include "entity.h"
 
-struct Frustum_Plane {
-    glm::vec3 normal;
-    float distance_from_origin;
-};
+#include "events/window_event.h"
 
-struct Frustum {
-    Frustum_Plane top;
-    Frustum_Plane bottom;
-    Frustum_Plane left;
-    Frustum_Plane right;
-    Frustum_Plane near;
-    Frustum_Plane far;
-};
+// Windows craziness
+#undef near
+#undef far
 
+namespace engine {
 
-enum class Camera_Projection {
-    perspective,
-    orthographic
-};
+    struct camera_projection {
+        glm::mat4 view;
+        glm::mat4 proj;
+    };
 
-enum class Camera_Type {
-    first_person,
-    look_at
-};
+    struct camera_frustum {
+        glm::vec4 left;
+        glm::vec4 right;
+        glm::vec4 top;
+        glm::vec4 bottom;
+        glm::vec4 near;
+        glm::vec4 far;
+    };
 
-struct View_Projection {
-    glm::mat4 view;
-    glm::mat4 proj;
-};
+    struct perspective_camera {
+        glm::vec3 position;
+        glm::vec3 front_vector;
+        glm::vec3 up_vector;
+        glm::quat orientation;
 
-struct Camera {
-    Camera_Type type;
-    Camera_Projection projection;
+        camera_projection vp;
+        camera_frustum frustum;
 
+        float fovy;
+        float near_plane;
+        float far_plane;
+        float speed;
+        float view_speed;
+        float roll;
+        float roll_speed;
 
-    glm::vec3 position;
-    glm::vec3 front_vector;
-    glm::vec3 right_vector;
-    glm::vec3 up_vector;
-    float roll;
-    glm::quat orientation;
+        bool first_mouse;
+    };
 
+    perspective_camera create_camera(const glm::vec3& position, float fov, float speed);
 
-    //float aspect_ratio;
-    uint32_t width;
-    uint32_t height;
+    void update_camera_view(perspective_camera& camera, const glm::vec2& cursor_pos);
+    void update_projection(perspective_camera& camera, uint32_t width, uint32_t height);
 
+    camera_frustum extract_frustum_planes(const glm::mat4& matrix);
 
-    float speed;
-    float view_speed;
-    float roll_speed;
-    float fov;
+}
 
-    float near;
-    float far;
-
-    View_Projection viewProj;
-
-    bool first_mouse;
-};
-
-
-Frustum create_camera_frustum(const Camera& camera);
-
-Camera create_perspective_camera(Camera_Type type, const glm::vec3& position, float fov, float speed);
-Camera create_orthographic_camera(Camera_Type type, const glm::vec3& position, float speed);
-
-//Camera CreateCamera(const glm::vec3& position, float fov, float speed);
-void update_camera(Camera& camera, const glm::vec2& cursor_pos);
-void update_projection(Camera& cam);
-void update_projection(Camera& camera, uint32_t width, uint32_t height);
 
 
 #endif

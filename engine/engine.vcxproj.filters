@@ -15,13 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\platform\win32_memory.cpp">
+    <ClCompile Include="src\core\windows\win32_audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\input.cpp">
+    <ClCompile Include="src\core\windows\win32_memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\window.cpp">
+    <ClCompile Include="src\core\windows\win32_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\platform_input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\filesystem\filesystem.cpp">
@@ -30,22 +33,28 @@
     <ClCompile Include="src\filesystem\vfs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\api\vulkan\buffer.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\vk_buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\api\vulkan\vulkan_context.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\vk_common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\api\vulkan\descriptor_sets.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\vk_context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\api\vulkan\renderer.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\vk_descriptor_sets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\api\vulkan\shader.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\vk_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\api\vulkan\vertex_array.cpp">
+    <ClCompile Include="src\rendering\api\vulkan\vk_renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rendering\api\vulkan\vk_shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rendering\api\vulkan\vk_vertex_array.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\camera.cpp">
@@ -63,16 +72,28 @@
     <ClCompile Include="src\rendering\vertex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ui\ui.cpp">
+    <ClCompile Include="src\rendering\ui\ui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\utility.cpp">
+    <ClCompile Include="src\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\imgui\ImGuizmo.cpp">
+    <ClCompile Include="vendor\imgui\imgui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_impl_glfw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\imgui\imgui_impl_vulkan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vendor\imgui\imgui_tables.cpp">
@@ -81,51 +102,36 @@
     <ClCompile Include="vendor\imgui\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_impl_vulkan.cpp">
+    <ClCompile Include="vendor\imgui\ImGuizmo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_impl_glfw.cpp">
+    <ClCompile Include="vendor\imgui\imgui_stdlib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_draw.cpp">
+    <ClCompile Include="src\rendering\terrain\quad_tree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui_demo.cpp">
+    <ClCompile Include="src\utils\time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vendor\imgui\imgui.cpp">
+    <ClCompile Include="src\rendering\common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\api\directx\d3d_context.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\platform\win32_audio.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\platform\win32_window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\rendering\api\vulkan\common.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\logging.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\rendering\api\vulkan\image.cpp">
+    <ClCompile Include="src\utils\logging.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\platform\win32_memory.h">
+    <ClInclude Include="src\core\windows\win32_memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\input.h">
+    <ClInclude Include="src\core\platform_audio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\window.h">
+    <ClInclude Include="src\core\platform_input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\platform_window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\events\event.h">
@@ -149,25 +155,37 @@
     <ClInclude Include="src\filesystem\vfs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\buffer.h">
+    <ClInclude Include="src\math\math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\common.h">
+    <ClInclude Include="src\rendering\api\vulkan\vk_buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\vulkan_context.h">
+    <ClInclude Include="src\rendering\api\vulkan\vk_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\descriptor_sets.h">
+    <ClInclude Include="src\rendering\api\vulkan\vk_context.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\renderer.h">
+    <ClInclude Include="src\rendering\api\vulkan\vk_descriptor_sets.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\shader.h">
+    <ClInclude Include="src\rendering\api\vulkan\vk_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\vertex_array.h">
+    <ClInclude Include="src\rendering\api\vulkan\vk_renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\api\vulkan\vk_shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\api\vulkan\vk_vertex_array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\primitives\cube.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\shaders\shaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\rendering\camera.h">
@@ -182,50 +200,35 @@
     <ClInclude Include="src\rendering\model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\rendering\renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\rendering\vertex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ui\ui.h">
+    <ClInclude Include="src\rendering\ui\ui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\utility.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\api\directx\d3d_context.h">
+    <ClInclude Include="src\rendering\terrain\quad_tree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\platform\win32_audio.h">
+    <ClInclude Include="src\rendering\ui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\platform\win32_window.h">
+    <ClInclude Include="src\utils\logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\shaders\shaders.h">
+    <ClInclude Include="src\utils\time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\primitives\cube.h">
+    <ClInclude Include="src\rendering\common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vendor\volk\volk.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\logging.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\math\math.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\rendering\api\vulkan\image.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="changelog.txt" />
   </ItemGroup>
 </Project>

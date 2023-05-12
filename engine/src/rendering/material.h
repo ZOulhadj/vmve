@@ -1,10 +1,10 @@
-#ifndef MYENGINE_MATERIAL_HPP
-#define MYENGINE_MATERIAL_HPP
+#ifndef MY_ENGINE_MATERIAL_H
+#define MY_ENGINE_MATERIAL_H
 
 
-#include "api/vulkan/buffer.h"
+#include "api/vulkan/vk_buffer.h"
 
-#include "api/vulkan/descriptor_sets.h"
+#include "api/vulkan/vk_descriptor_sets.h"
 
 
 // order of images are as follows
@@ -14,19 +14,19 @@
 // specular
 // ... 
 
-
-struct Material
-{
-    VkDescriptorSet descriptor_set = nullptr;
-
-    std::vector<vk_image> textures;
-
-};
+namespace engine {
+    struct Material
+    {
+        VkDescriptorSet descriptor_set = nullptr;
+        std::vector<Vk_Image> textures;
+    };
 
 
-void create_material(Material& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler);
-void destroy_material(Material& material);
+    void create_material(Material& material, const std::vector<VkDescriptorSetLayoutBinding>& bindings, VkDescriptorSetLayout layout, VkSampler sampler);
+    void destroy_material(Material& material);
 
-void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, Material& material);
+    void bind_material(std::vector<VkCommandBuffer>& buffers, VkPipelineLayout layout, Material& material);
+
+}
 
 #endif

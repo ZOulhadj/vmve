@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ui_fonts.h"
 
 const char open_sans_regular_compressed_data_base85[201650 + 1] =

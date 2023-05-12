@@ -1,7 +1,7 @@
 #ifndef MY_ENGINE_SHADERS_HPP
 #define MY_ENGINE_SHADERS_HPP
 
-const std::string geometryVSCode = R"(
+const std::string geometry_vs_code = R"(
 #version 450
 
 layout(location = 0) in vec3 position;
@@ -42,7 +42,7 @@ void main()
 }
 )";
 
-const std::string geometryFSCode = R"(
+const std::string geometry_fs_code = R"(
 #version 450
 
 layout(location = 0) in vec2 texture_coord;
@@ -77,7 +77,7 @@ void main()
 }
 )";
 
-const std::string lightingVSCode = R"(
+const std::string lighting_vs_code = R"(
 #version 450
 
 layout (location = 0) out vec2 outUV;
@@ -90,7 +90,7 @@ void main()
 
 )";
 
-const std::string lightingFSCode = R"(
+const std::string lighting_fs_code = R"(
 #version 450
 
 

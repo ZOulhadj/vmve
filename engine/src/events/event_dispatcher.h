@@ -3,23 +3,26 @@
 
 #include "event.h"
 
-struct Event_Dispatcher {
-    Event_Dispatcher(basic_event& e)
-        : m_Event(e)
-    {}
+namespace engine {
+    struct event_dispatcher
+    {
+        event_dispatcher(Basic_Event& e)
+            : m_Event(e)
+        {}
 
-    template <typename T>
-    bool dispatch(std::function<bool(T&)> func) {
-        if (m_Event.get_type() != T::get_static_type())
-            return false;
+        template <typename T>
+        bool dispatch(std::function<bool(T&)> func) {
+            if (m_Event.get_type() != T::get_static_type())
+                return false;
 
-        m_Event.Handled = func(*(T*)&m_Event);
+            m_Event.Handled = func(*(T*)&m_Event);
 
-        return true;
-    }
+            return true;
+        }
 
-private:
-    basic_event& m_Event;
-};
+    private:
+        Basic_Event& m_Event;
+    };
+}
 
 #endif

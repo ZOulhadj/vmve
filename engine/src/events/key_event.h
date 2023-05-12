@@ -1,34 +1,43 @@
-#ifndef MYENGINE_KEYEVENT_HPP
-#define MYENGINE_KEYEVENT_HPP
+#ifndef MY_ENGINE_KEYEVENT_HPP
+#define MY_ENGINE_KEYEVENT_HPP
 
 #include "event.h"
 
-struct Key_Event : public basic_event {
-    int get_key_code() const { return m_KeyCode; }
+namespace engine {
+    struct key_event : public Basic_Event
+    {
+        int get_key_code() const { return m_KeyCode; }
+        int get_mods() const { return m_Modifiers; }
 
-protected:
-    Key_Event(int keycode)
-        : m_KeyCode(keycode)
-    {}
+        bool is_control_down() const { return m_Modifiers & GLFW_MOD_CONTROL; }
+        bool is_alt_down() const { return m_Modifiers & GLFW_MOD_ALT; }
+    protected:
+        key_event(int keycode, int mods)
+            : m_KeyCode(keycode), m_Modifiers(mods)
+        {}
 
-private:
-    int m_KeyCode;
-};
+    private:
+        int m_KeyCode;
+        int m_Modifiers;
+    };
 
-struct Key_Pressed_Event : public Key_Event {
-    Key_Pressed_Event(int keycode)
-        : Key_Event(keycode)
-    {}
+    struct key_pressed_event : public key_event
+    {
+        key_pressed_event(int keycode, int mods)
+            : key_event(keycode, mods)
+        {}
 
-    EVENT_CLASS_TYPE(key_pressed);
-};
+        EVENT_CLASS_TYPE(key_pressed);
+    };
 
-struct Key_Released_Event : public Key_Event {
-    Key_Released_Event(int keycode)
-        : Key_Event(keycode)
-    {}
+    struct key_released_event : public key_event
+    {
+        key_released_event(int keycode, int mods)
+            : key_event(keycode, mods)
+        {}
 
-    EVENT_CLASS_TYPE(key_released);
-};
+        EVENT_CLASS_TYPE(key_released);
+    };
+}
 
 #endif
