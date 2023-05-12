@@ -21,45 +21,45 @@ Warning--empty year in indentation
 Warning--empty journal in blinn
 
 Done.
-You've used 34 entries,
+You've used 35 entries,
             4087 wiz_defined-function locations,
-            1491 strings with 20981 characters,
-and the built_in function-call counts, 11892 in all, are:
-= -- 870
-> -- 129
+            1495 strings with 21063 characters,
+and the built_in function-call counts, 12225 in all, are:
+= -- 893
+> -- 133
 < -- 2
-+ -- 67
-- -- 30
-* -- 455
-:= -- 2195
-add.period$ -- 67
-call.type$ -- 34
-change.case$ -- 36
++ -- 69
+- -- 31
+* -- 466
+:= -- 2256
+add.period$ -- 69
+call.type$ -- 35
+change.case$ -- 37
 chr.to.int$ -- 0
-cite$ -- 38
-duplicate$ -- 1023
-empty$ -- 1201
-format.name$ -- 32
-if$ -- 2565
+cite$ -- 39
+duplicate$ -- 1052
+empty$ -- 1236
+format.name$ -- 33
+if$ -- 2637
 int.to.chr$ -- 0
-int.to.str$ -- 34
-missing$ -- 233
-newline$ -- 191
-num.names$ -- 27
-pop$ -- 762
+int.to.str$ -- 35
+missing$ -- 240
+newline$ -- 196
+num.names$ -- 28
+pop$ -- 786
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 873
+skip$ -- 897
 stack$ -- 0
-substring$ -- 41
-swap$ -- 535
+substring$ -- 42
+swap$ -- 549
 text.length$ -- 2
 text.prefix$ -- 0
 top$ -- 5
-type$ -- 34
+type$ -- 35
 warning$ -- 4
-while$ -- 28
-width$ -- 36
-write$ -- 340
+while$ -- 29
+width$ -- 37
+write$ -- 349
 (There were 4 warnings)

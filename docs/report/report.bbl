@@ -66,6 +66,12 @@ Microsoft, ``Microsoft visual studio 2022.'' [Online]. Available:
 ``Git version control system.'' [Online]. Available: \url{https://git-scm.com/}
 \BIBentrySTDinterwordspacing
 
+\bibitem{visualstudioassistx}
+\BIBentryALTinterwordspacing
+Embarcadero, ``{Visual Studio Assist X}.'' [Online]. Available:
+  \url{https://www.wholetomato.com/}
+\BIBentrySTDinterwordspacing
+
 \bibitem{renderdoc}
 \BIBentryALTinterwordspacing
 B.~Karlsson, ``Renderdoc.'' [Online]. Available: \url{https://renderdoc.org/}

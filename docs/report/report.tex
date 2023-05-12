@@ -445,40 +445,31 @@ respectively.
 
 
 \subsection{Version Control}
-A \gls*{vcs} is a tool used for backing up and/or collaborating with developers
-on a project. The use of a \gls*{vcs} was an obvious choice as this would
-provide a platform on which the project source code could be hosted.
-Furthermore, if for some reason a local copy of the project is lost or corrupted
-then another copy is safely hosted on the servers managed by the \gls*{vcs}.
+A version control system is a software tool that helps developers manage and
+track changes to source code or other documents over time and will be used in
+this project. For a more in-depth explanation of what a \gls*{vcs} is visit the
+appendix section \ref{version_control}. There are two main types of systems,
+which are SVN and Git.
 
-Another key feature of a \gls*{vcs} is project management. These types of
-systems provide various tools that greatly benefit developers. One such feature
-is known as a ``commit'' which records any changes made to a particular
-repository at that moment in time. Developers use commits to view changes that
-occur at each stage but also, provide means of reverting to previous versions of
-particular sections, files or even an entire repository. Due to the length and
-complexity of this project, tools such as this provided by a \gls*{vcs} are
-invaluable throughout the development process. There are two main types of
-systems, which are SVN and Git. 
+\subsubsection{Apache Subversion}
+\gls*{svn} was originally developed in 2000 by Apache and is centralised and
+open-source \gls*{vcs} which means that the repository is stored on a remote
+server which developers all connect to.
 
-
-\gls*{svn} was originally developed in 2000 by Apache and is a centralised
-\gls*{vcs} which means that the repository is stored on a remote server which
-developers all connect to.
-
+\subsubsection{Git}
 On the other hand, Git is the most widely-used, free and open-source \gls*{vcs}
 developed in 2005. It is a distributed system meaning that developers have
 copies of a repository that they work off. Git is generally considered to be
 faster and more efficient than \gls*{svn} as a result of its distributed
-structure. Furthermore, Git is more flexible regarding how it can be
-installed such as onto a server manually or by using existing platforms that are
-built on top of Git. A few examples include \href{http://github.com}{GitHub},
+structure. Furthermore, Git is more flexible regarding how it can be installed
+such as onto a server manually or by using existing platforms that are built on
+top of Git. A few examples include \href{http://github.com}{GitHub},
 \href{http://gitlab.com}{GitLab} and \href{https://bitbucket.org/}{Bitbucket}. 
 
-
-According to the StackOverflow Developer Survey, in 2022 Git was the most widely used \gls*{vcs}
-with an adoption percentage of 93.9\% as seen in figure \ref{tab:vcs_comparison}.
-This shows how popular Git is compared to other similar systems \cite{vcs_survey}.
+According to the StackOverflow Developer Survey, in 2022 Git was the most widely
+used \gls*{vcs} with an adoption percentage of 93.9\% as seen in figure
+\ref{tab:vcs_comparison}. This shows how popular Git is compared to other
+similar systems \cite{vcs_survey}.
 
 \begin{table}[H]
 \begin{center}
@@ -493,6 +484,8 @@ This shows how popular Git is compared to other similar systems \cite{vcs_survey
 \caption{Version control usage comparison}
 \label{tab:vcs_comparison}
 \end{table}
+
+
 
 \subsection{Development Environment}
 
@@ -643,27 +636,20 @@ type of project. Appendix section \ref{github} provides additional information
 regarding the technical details of how the repository is hosted on GitHub.
 
 \subsubsection{GitHub Projects}
-Having evaluated the pros and cons of both Trello and GitHub Projects, the
-decision was made to use GitHub as the platform for task management/tracking.
-``posts'' are created that would track outstanding tasks including the priority,
-current progress and the expected deadline. Figure \ref{fig:kanban_design} shows
-a preview of the Kanban board. It consists of three main columns used to
-categorise an issue including backlog, in progress and done.
-
-When an idea for a new feature is formed or a bug within the application is
-discovered a GitHub issue is created and moved to the ``Backlog'' board. This is
-used to document a particular task that needs to be worked on within a desired
-timeframe.
-
-Then, once a specific issue is ready to be worked on/resolved, it's moved to the
-``In Progress'' board. As the issue is being addressed, key points of discussion
-are added as comments to the issue for documentation purposes and to be referred
-back to within commits or merges.
-
-Lastly, once the task has been completed, the GitHub commit that includes the
-specific fix is referenced in the issue and is then finally marked as complete
-by being moved to the ``Done'' board. This subsequently marks a GitHub issue as
-closed.
+After weighing the pros and cons of Trello and GitHub Projects, it was decided
+to use GitHub for task management and tracking. To track outstanding tasks,
+``posts'' are created on GitHub that includes the task's priority, current
+progress, and expected deadline. Figure \ref{fig:kanban_design} provides a
+preview of the Kanban board, which consists of three main columns: backlog, in
+progress, and done, used to categorise issues. When a new feature idea or
+application bug is discovered, a GitHub issue is created and moved to the
+``Backlog'' board to document the task within a specific timeframe. When ready to
+address an issue, it is moved to the ``In Progress'' board. Throughout the issue
+resolution process, comments are added to the issue to capture key discussion
+points for documentation purposes and reference in commits or merges. Finally,
+when the task is complete, the GitHub commit containing the specific fix is
+referenced in the issue and marked as complete by moving it to the ``Done'' board,
+thereby closing the GitHub issue.
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/kanban_design.png}
@@ -680,7 +666,7 @@ Out of the proposed development environments, Microsoft Visual Studio 2022 was
 chosen. This is primarily because of the vast amount of features and
 functionality that it provides compared to the other tools. Additionally, in
 conjunction with Visual Studio, Visual Studio Assist X will be used to further
-improve the ease of development cite{visualstudioassistx}. This is an extension
+improve the ease of development \cite{visualstudioassistx}. This is an extension
 that provides many useful features that the base \gls*{ide} does not provide
 such as reliable symbol renaming, file symbol outlining and quick file
 searching.
@@ -711,18 +697,16 @@ fences and semaphores between frames and also validates \gls*{api} usage.
 
 
 \subsubsection{C++ 23}
-The language chosen for this project was C++ and more specifically version 23.
-There were two main reasons why this specific programming language was chosen
-instead of C or Rust. Firstly, it's the language that as a programmer I have the
-most experience with which will significantly help during the implementation
-stages of the project. Secondly, the \gls*{stl} was one of the key reasons why
-C++ was chosen. It provides many prebuilt data structures, containers and
-algorithms such as ``std::vector'', ``std::string'' and ``std::find'' to name a
-few. Furthermore, it saves time as it eliminates the need to implement a custom
-solution in the limited time frame for this project. Other language features
-that confirmed the programming language was suitable included function
-overloading, templates, compile-time expressions, direct memory access and
-generally faster performance compared to other languages.
+C++ 23 was chosen as the programming language for this project due to two
+primary reasons over C or Rust. Firstly, as the language I am most experienced
+with, it significantly facilitates the implementation stage. Secondly, the
+\gls*{stl} was a key factor. The \gls*{stl} provides prebuilt data structures,
+containers, and algorithms such as ``std::vector'', ``std::string'' and
+``std::find'', saving time by eliminating the need to develop a custom solution
+within the limited timeframe of the project. Other language features, including
+function overloading, templates, compile-time expressions, direct memory access,
+and generally faster performance compared to other languages, confirmed the
+suitability of the chosen language. 
 
 \subsubsection{Vulkan} \label{rendering_api}
 Having evaluated the potential use of the different \glspl*{api} covered in
@@ -2092,45 +2076,19 @@ be measured which are compilation and runtime performance.
   its effects on the end users.
 \end{description}
 
-% \subsubsection{Compilation Performance}
-A full clean build of \gls*{vmve} takes an average of 53.260 seconds using
-Microsoft Visual Studio and the \gls*{cl} compiler. This includes the compilation
-of the source code and precompiled headers. As the codebase for \gls*{vmve} grew
-in both size and complexity, ensuring that compilation times were reasonable was
-a vital aspect that had to be taken into consideration.
-
-The main technique used for reducing compilation times was making use of a
-\gls*{pch}. This is a header file (pch.h) that includes various header files such
-as those from the standard library as well as external dependencies that are not
-indented to change often. This is because a change to any of the included header
-files will require a full precompiled header rebuild. The compiler compiles this
-file once and is reused across compilations. This significantly reduces the
-amount of work the compiler needs to perform since it does not have to recompile
-the same sets of files needlessly each time.
-
-This technique is done by including the ``pch.h'' header file at the top of each
-translation unit (.cpp file) and before any other header file. This ensures that
-the necessary types can be found for both header files and their corresponding
-source files.
-
-% \subsubsection{Runtime Performance}
-\gls*{cpu} timing is primarily measured by calculating the difference in time at
-two specific sections of the source code. Using C++ this can be easily achieved
-by using the ``chrono'' library that allows for the duration to be calculated in
-different time units such as nanoseconds, milliseconds, seconds and more. The
-timing will be measured using milliseconds as that is the typical timescale for
-applications such as \gls*{vmve}.
-
-Using the aforementioned ``chrono'' library, the startup time for \gls*{vmve}
-averages around 300ms in the distribution version of the application which is
-calculated by taking away the time at the start of the initialisation from the
-end of the initialisation.
-
-The Microsoft Visual Studio \gls*{ide} allows us to further analyse this by
-taking advantage of the built-in profiler which can be accessed by going to
-\lstinline{Debug > Performance Profiler}. Figure
-\ref{fig:vmve_startup_profiling} shows the ``flame graph'' that takes a snapshot
-of the internal state of the application at runtime.
+\gls*{vmve} takes an average of 53 seconds to build using \gls*{msvc}. This
+includes compiling the source code and precompiled headers. To keep compilation
+times reasonable as the codebase grew in size and complexity, a Precompiled
+Header (PCH) technique was used. This involves including a header file (pch.h)
+that itself includes various \gls*{stl} libraries and external dependency
+headers that don't change often, reducing the compiler's workload by compiling
+it once and reusing it. The timing is measured in milliseconds  using the
+``chrono'' library. The startup time for \gls*{vmve} is around 300ms in the
+distribution version, calculated by taking the time difference from the start of
+initialization to the end. The built-in profiler in Microsoft Visual Studio
+allows further analysis by using a tool called a ``flame graph'' (accessed
+through \lstinline{Debug > Performance Profiler}) that takes a snapshot of the
+application's internal state at runtime.
 
 \begin{figure}[H]
   \centering
@@ -2369,6 +2327,8 @@ information or access to important documents.
     Project proposal document for milestone 2.
   \item[\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}]
     Mid-term project review document for milestone 3.
+  \item[\textattachfile{attached_documents/milestone_3_4_presentation.pptx}{\textcolor{skyblue}{Milestone 3 Presentation}}]
+    A PowerPoint presentation as part of the mid-term project review.
   \item[\textattachfile{attached_documents/meetings.docx}{\textcolor{skyblue}{Meetings}}]
     A complete log of all meetings held during the project.
   \item[\textattachfile{report.tex}{\textcolor{skyblue}{Source}}]
@@ -2382,6 +2342,21 @@ information or access to important documents.
   \caption{Project proposal sign-off}
   \label{fig:project_signoff}
 \end{figure}
+
+\subsection{Version Control} \label{version_control}
+A \gls*{vcs} is a tool used for backing up and/or collaborating with developers
+on a project. The use of a \gls*{vcs} was an obvious choice as this would
+provide a platform on which the project source code could be hosted.
+Furthermore, if for some reason a local copy of the project is lost or corrupted
+then another copy is safely hosted on the servers managed by the \gls*{vcs}.
+
+Another key feature of a \gls*{vcs} is project management. These types of
+systems provide various tools that greatly benefit developers. One such feature
+is known as a ``commit'' which records any changes made to a particular
+repository at that moment in time. Developers use commits to view changes that
+occur at each stage but also, provide means of reverting to previous versions of
+particular sections, files or even an entire repository.
+
 
 \subsection{GitHub} \label{github}
 The \gls*{vmve} project is hosted on GitHub as a private repository (accessible
