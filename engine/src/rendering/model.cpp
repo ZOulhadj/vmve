@@ -278,7 +278,7 @@ namespace engine {
         return true;
     }
 
-    bool create_model(Model_Old& model, const char* data, std::size_t len, bool flipUVs /*= true*/)
+    bool create_model(Model_Old& model, const std::filesystem::path& path, const char* data, std::size_t len, bool flipUVs /*= true*/)
     {
         info("Creating mesh.");
 
@@ -304,8 +304,8 @@ namespace engine {
 
         // TEMP: Set model original path so that textures know where
         // they should load the files from
-        model.path = "";
-        model.name = std::string(scene->mName.C_Str());
+        model.path = path.string();
+        model.name = path.filename().string();
 
         // Start processing from the root scene node
         process_node(model, scene->mRootNode, scene);

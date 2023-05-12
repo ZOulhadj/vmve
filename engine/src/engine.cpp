@@ -468,12 +468,9 @@ namespace engine {
         const float startup_duration = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - g_engine->start_time).count();
         info("Successfully initialized engine in {:.2f}ms", startup_duration);
 
-
+#if 0
         model test;
         test.create("C:/Users/zakar/Downloads/container.glb");
-#if 0
-        //model test_model;
-        //test_model.create("C:/Users/zakar/Downloads/container.glb");
 
         struct transform_component
         {
@@ -747,11 +744,11 @@ namespace engine {
         g_engine->models.push_back(model);
     }
 
-    void add_model(const char* data, int size, bool flipUVs)
+    void add_model(const char* path, const char* data, int size, bool flipUVs)
     {
         Model_Old model;
 
-        bool model_created = create_model(model, data, size, flipUVs);
+        bool model_created = create_model(model, path, data, size, flipUVs);
         if (!model_created) {
             error("Failed to create model from memory.");
             return;

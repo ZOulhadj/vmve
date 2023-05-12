@@ -148,7 +148,7 @@ namespace engine {
     //
     void load_model(const char* path, bool flipUVs);
 
-    void add_model(const char* data, int size, bool flipUVs);
+    void add_model(const char* path, const char* data, int size, bool flipUVs);
 
 
     //

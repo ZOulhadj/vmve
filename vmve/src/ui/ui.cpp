@@ -531,7 +531,7 @@ static void load_model_window(bool* open)
                 encryption_keys base16_keys = base16_to_bytes({ key_input, iv_input });
                 const auto file = vmve_read_from_file(model_path, base16_keys);
                 if (file)
-                    engine::add_model(file->c_str(), static_cast<int>(file->size()), flip_uv);
+                    engine::add_model(model_path.c_str(), file->c_str(), static_cast<int>(file->size()), flip_uv);
                 else if (file == std::unexpected(decrypt_error::no_file))
                     ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Failed to open %s file", model_path.c_str());
                 else if (file == std::unexpected(decrypt_error::key_mismatch))

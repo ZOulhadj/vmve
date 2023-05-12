@@ -125,7 +125,7 @@ namespace engine {
 
 
     bool load_model(Model_Old& model, const std::filesystem::path& path, bool flipUVs = true);
-    bool create_model(Model_Old& model, const char* data, std::size_t len, bool flipUVs = true);
+    bool create_model(Model_Old& model, const std::filesystem::path& path, const char* data, std::size_t len, bool flipUVs = true);
     void destroy_model(Model_Old& model);
 
     void upload_model_to_gpu(Model_Old& model, VkDescriptorSetLayout layout, std::vector<VkDescriptorSetLayoutBinding> bindings);
