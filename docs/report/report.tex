@@ -306,19 +306,20 @@ required for the design and implementation stages.
 
 
 \subsubsection{Objectives} \label{objectives} 
+
 Fulfilling these aims requires a set of objectives that need to be implemented
 to achieve the aims outlined in section \ref{aims}. It provides a more concrete
-definition in regard to what the project must achieve.
+definition of what the project must achieve.
 
 \begin{description}
   \item[1. Virtual environment rendering] 
-    The project will be built to run as a desktop application that renders a user
-    interface editor as well as a virtual environment. The \gls*{ui} must be
-    designed intuitively to reduce the amount of friction between the application
-    and the user's goal. This means common related tasks and functionality must be
-    grouped. Furthermore, the language used throughout the user interface must
-    reduce if not eliminate jargon. Doing so will make the application easier to
-    understand.
+    The project will be built to run as a desktop application that renders a
+    user interface editor as well as a virtual environment. The \gls*{ui} must
+    be designed intuitively to reduce the amount of friction between the
+    application and the user's goal. This means common related tasks and
+    functionality must be grouped. Furthermore, the language used throughout the
+    user interface must reduce if not eliminate jargon. Doing so ensures the
+    application is easier to understand.
 
   \item[2. Lower system requirements]
     This can be achieved through the use of efficient technologies, algorithms
@@ -346,27 +347,23 @@ With these aims and objectives fully defined, the project proposal document was
 signed off as part of the requirements for milestone 2 which can be seen in
 appendix section \ref{project_proposal}.
 
-
-
 \subsection{Considerations}
-With the aims and objectives fully defined, important considerations must be
-taken into account before commencing work on the application. These include
-legal and ethical considerations.
+Important deliberations must be taken into account before commencing work on the
+application which includes legal and ethical considerations.
 
 \subsubsection{Legal}
 The legality of \gls*{vmve} is one of the most important considerations that
 must be taken into account. As the application is intended to be distributed to
 users around the world, local laws and regulations must be adhered to. As a
 relatively basic application that serves a specific user base, there is a small
-set of features and functionality that require legal clarification.
+set of features and functionality that require clarification.
 
 \begin{description}
   \item[Encryption]
     Firstly, \gls*{vmve} will include the ability to secure critical assets such
     as 3D models. This will be achieved using encryption by making use of a
     secret key and initialisation vector. This information is not stored and is
-    only generated once for a user to save in order to encrypt and decrypt a
-    model.
+    only generated once for a user to save to encrypt and decrypt a model.
 
   \item[Asset modification] 
     Secondly, \gls*{vmve} will not modify any of the raw data being imported and
@@ -375,10 +372,10 @@ set of features and functionality that require legal clarification.
 
   \item[Personal information] 
     Finally, the application does not store or process any personal information
-    and will also not contain any networking functionality. This means that all
+    and also does not contain any networking functionality. This means that all
     data remains local to the application and the user's device. Therefore,
-    \gls*{gdpr} will not need to be take into account. In the future, however,
-    if the use of data and information changes then this will be revisited to
+    \gls*{gdpr} will not need to be taken into account. In the future, however,
+    if the use of data and/or information changes then this will be revisited to
     ensure that all laws are adhered to. 
 \end{description}
 
@@ -796,28 +793,29 @@ Several other external libraries were used which are shown in figure
 \end{table}
 
 \subsection{Branding}
-The branding i.e. the look of the application was an important factor during the
-design as it will be presented to users and can directly influence the user
-experience. Additionally, Being recognisable results in an increase in brand
-recognition that may also increase user traffic as found in a 2013 paper titled
-\textit{The role of logos in building brand awareness and performance:
+The branding which is the look of the application was an important factor during
+the design as it's marketed towards end users and can directly influence the
+user experience. Additionally, being recognisable results in an increase in
+brand recognition that may also increase user traffic as found in a 2013 paper
+titled \textit{The role of logos in building brand awareness and performance:
 implications for entrepreneurs} \cite{girard2013role}.
 
 \subsubsection{Project Name}
-VMVE stands for ``Vulkan Model Viewer and Exporter''. The name is made up of two
-parts. The first is ``Vulkan'' the other is ``Model Viewer and Exporter''. The
-rendering \gls*{api} used to render 3D digital assets is \gls*{vulkan} and hence
-the first part of the name. The second part is because the application will
-include functionality such as importing and exporting models into a custom file
-format as mentioned in section \ref{custom_file_format}. The combination of
-these two allows a user to have a basic understanding of what the application
-does without having used it before which is also known as a descriptive logo.
+VMVE stands for ``Vulkan Model Viewer and Exporter''. The name is a combination
+of two parts. The first is ``Vulkan'' the other is ``Model Viewer and
+Exporter''. The rendering \gls*{api} used to render 3D digital assets is
+\gls*{vulkan} and therefore, is a key part of the application. The second part
+is because the application will include functionality such as importing and
+exporting models into a custom file format as mentioned in section
+\ref{custom_file_format}. The combination of these two allows a user to have a
+basic understanding of what the application does without having used it before
+which is also known as a descriptive logo.
 
 \subsubsection{Logo}
 There are two versions of the \gls*{vmve} logo that was designed and intended to
 be used in different scenarios. The first is the complete logo as seen below in
-figure \ref{fig:project_logo_large} which is referred to as the ``large logo''.
-It contains the icon and the name of the application to the right of that.
+figure \ref{fig:project_logo_large} which is referred to as the ``large logo''
+and contains the icon and the name of the application.
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/project_logo.png}
@@ -841,9 +839,9 @@ locations where there is a minimal amount of space such as the Windows taskbar.
 \subsection{Project Architecture}
 
 \subsubsection{Development Life Cycle}
-Agile will be the development life cycle of choice through the project's
+Agile is the development life cycle of choice throughout the project's
 development. This is a software development methodology which is an iterative
-process occurs for key stages of a project. This allows for continuous
+process that occurs for key stages of a project. This allows for continuous
 designing, implementation and evaluation that ensures requirements are being
 adhered to.
 
@@ -856,17 +854,17 @@ adhered to.
 
 \subsubsection{Version Control}
 As the only developer for this final-year project, the design and architecture
-of the \gls*{vcs} will remain as simple as possible while still providing the
-core requirements. Figure \ref{fig:brancharch} shows the proposed \gls*{vcs}
+of the \gls*{vcs} is kept simple as possible while still providing the core
+requirements. Figure \ref{fig:brancharch} shows the proposed \gls*{vcs}
 architecture and includes two branches named ``main'' and ``develop''. Develop
-branch will be the primary branch used throughout the implementation stages. In
-other words, when changes occur throughout the source code, all commits will be
+branch is the primary branch used throughout the implementation stages. In other
+words, when changes occur throughout the source code, all commits will be
 published to the development branch.
 
-On the other hand, ``Main'' will be used as a stable branch that is only updated
-for each official release. This would occur for each project milestone such that
-for ``Sprint 1'' a pull request will be made from develop to main and this will
-be tagged as v0.0.1 and likewise ``Sprint 2'' will be tagged as v0.0.2.
+``Main'' is known as a stable branch that is only updated for each official
+release. This would occur for each project milestone such that for ``Sprint 1''
+a pull request will be made from develop to main and this will be tagged as
+v0.0.1 and likewise ``Sprint 2'' will be tagged as v0.0.2.
 
 \begin{figure}[H]
   \centering
@@ -875,16 +873,16 @@ be tagged as v0.0.1 and likewise ``Sprint 2'' will be tagged as v0.0.2.
   \label{fig:brancharch}
 \end{figure}
 
-This architecture ensures that as the sole developer of the project, changes can
-be made consistently while ensuring that users are provided stable versions of
-the application.
+Overall, this architecture ensures that as the sole developer of the project,
+changes can be made consistently while ensuring that users are provided with
+stable versions of the application for increased stability and usability.
 
 \subsubsection{Source Code}
 The source code for the application and overall architecture are to adhere to
 the C++ core guidelines \cite{cpp-guidelines} to ensure that the project follows
 best practices. Section
 \href{http://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#nl10-prefer-underscore_style-names}{NL.10}
-of the core guidelines recommend using the snake case style as it follows the
+of the core guidelines recommends using the snake case style as it follows the
 standard libraries naming convention. Since the project has no existing code
 base and therefore, no existing convention to follow, the project will make use
 of the underscore style for types, functions and variables. 
@@ -911,9 +909,9 @@ can be seen in figure \ref{fig:convention}.
   void bar(int a)
   {
       if (a) {
-          printf("This is a example.\n");
+          function_call();
       } else {
-          printf("This is another example.\n");
+          function_call();
       }
   }
 \end{lstlisting}
@@ -921,23 +919,23 @@ can be seen in figure \ref{fig:convention}.
 \label{fig:convention}
 \end{figure}
 
-\gls*{vmve} will also be developed in a functional style and by using ``structs``
-instead of an object-oriented one with ``classes''. This is primarily related to
+\gls*{vmve} is also developed in a functional style and by using ``structs``
+rather than object-oriented with ``classes''. This is primarily related to
 the ease of use in terms of development since data can be more easily accessed
 and manipulated. Furthermore, this will eliminate the need for getter and setter
 functions that needlessly take up source code space and is redundant when member
 variables are accessible.
 
 \subsubsection{Architecture}
-\gls*{vmve} will be a combination of two projects. The ``Engine'' project also
-known as the core of \gls*{vmve} will contain the fundamental implementation
-details. This includes the Window, Renderer, UI and Audio. This project will be
-distributed as a library file (.lib) that other projects can import for specific
-use cases. The ``VMVE'' project will include the ``Engine'' project by importing
-the library (.lib file). A high-level overview of the project architecture can
-be seen in figure \ref{fig:projarch}. Furthermore, by making this distinction
-between the core and \gls*{vmve}, it will allow for the same sets of tools and
-technologies to be used in the future for other similar projects.
+Architecturally, \gls*{vmve} is a combination of two projects in one. The
+``Engine'' project also known as the core contains the fundamental
+implementation details. This includes the Window, Renderer, UI and Audio. This
+project will be distributed as a library file (.lib). Making this distinction
+between the core and \gls*{vmve} allows for the same sets of tools and
+technologies to be used in the future for other similar projects. For this
+project, \gls*{vmve} includes the ``Engine'' project by importing the library
+(.lib file). A high-level overview of the project architecture can be seen in
+figure \ref{fig:projarch}.
 
 \begin{figure}[H]
   \centering
@@ -945,12 +943,6 @@ technologies to be used in the future for other similar projects.
   \caption{Project Architecture}
   \label{fig:projarch}
 \end{figure}
-
-\subsubsection{Platform Architecture}
-The application will be developed to take advantage of the 64-bit platform. This
-would allow for the application to go beyond the 4GB limit posed by 32bit
-programs. In addition to this, 64-bit provides better performance and security
-as a result of the larger address space.
 
 \subsubsection{Renderer Architecture} \label{renderer_architecture}
 As mentioned in section \ref{rendering_api}. Vulkan will be the rendering API of
@@ -981,8 +973,9 @@ deferred rendering can significantly improve performance when large numbers of
 light sources are present compared to forward rendering. This is because
 deferred rendering defers all lighting calculations to a second pass and only
 needs to perform those calculations once. It also allows for important data to
-be accessed within shaders such as normals, world positions, colours etc. 
-Figure \ref{fig:forward_vs_deferred} compares the different techniques.
+be accessed within shaders (\gls*{gpu} programs) such as normals, world
+positions, colours etc. Figure \ref{fig:forward_vs_deferred} provides a
+visualisation of the two techniques.
 
 \begin{figure}[H]
   \centering
@@ -992,16 +985,17 @@ Figure \ref{fig:forward_vs_deferred} compares the different techniques.
 \end{figure}
 
 \gls*{vmve} will make use of the deferred rendering pipeline as that is more
-widely used in the industry and provides various benefits.
-
+widely used in the industry and primarily provides increased performance.
 
 \subsection{User Interface}
 Designing the user interface was the next step as part of the design stage of
 the project. Figure \ref{fig:ui_design} shows the initial user interface
 wireframe that includes four main elements titled ``Global Controls'', ``Logs'',
 ``Model Controls'' and ``Main Viewport''. Each of these UI elements is located
-in their respective windows which are designed in such a way that common
-controls are grouped and located appropriately if not within the same panel.
+in their respective windows and is designed in such a way that common controls
+are grouped and located appropriately if not within the same panel. The purpose
+of this is to provide an easy-to-use interface for interacting with \gls*{vmve}
+and primarily the main viewport located in the center of the application.
 
 \begin{figure}[H]
   \centering
@@ -1010,35 +1004,32 @@ controls are grouped and located appropriately if not within the same panel.
   \label{fig:ui_design}
 \end{figure}
 
-The purpose of the user interface is to provide an easy-to-use platform for
-interacting with \gls*{vmve} and more specifically the main viewport located in
-the center of the application.
-
 \subsubsection{Main Viewport}
 The main viewport is located in the center of the window and is the main window
 of the user interface. The main viewport renders and displays the virtual
-environment.
+environment. The size of the window is purposely designed to fill the majority
+of the screen space as it focuses the user's attention on that window but also
+increases visibility whilst interacting with the environment.
 
 \subsubsection{Global Panel}
-Located on the left side of the application, the global controls panel will
-contain user interface elements that apply globally such as general application
-information and camera controls.
+Located on the left side of the application, the global controls panel contains
+elements that apply globally throughout the application such as general
+information and camera controls allowing users to manipulate the view of the
+environment.
 
 \subsubsection{Model/Entity Panel}
 The right side panel called model controls will display model and entity
 specific information and will be the primary control surface for interacting
-with objects in the virtual environment.
-
+with objects in the virtual environment which includes adding and removing
+entities.
 
 \subsubsection{Logs Panel}
 The logs panel is designed to contain all internal messages that the application
 prints out. These messages will then be displayed within the logs panel. Each
-log message will be categorised as either log, warning or error. Depending on
-which log type the message is, it will be shown in a different color such as
-white, orange or red respectively.
-
-This is designed so that the user will have a clear understanding of the internal state
-of the application.
+log message is one of three categories such as log, warning or error. Depending
+on which log type the message is, it will be shown in a different color such as
+white, orange or red respectively. This is designed so that the user will have a
+clear understanding of the internal state of the application.
 
 \subsection{Custom File Format and Encryption}
 

@@ -43,8 +43,7 @@
 \contentsline {subsubsection}{\numberline {3.4.2}Version Control}{19}{subsubsection.3.4.2}%
 \contentsline {subsubsection}{\numberline {3.4.3}Source Code}{19}{subsubsection.3.4.3}%
 \contentsline {subsubsection}{\numberline {3.4.4}Architecture}{20}{subsubsection.3.4.4}%
-\contentsline {subsubsection}{\numberline {3.4.5}Platform Architecture}{21}{subsubsection.3.4.5}%
-\contentsline {subsubsection}{\numberline {3.4.6}Renderer Architecture}{21}{subsubsection.3.4.6}%
+\contentsline {subsubsection}{\numberline {3.4.5}Renderer Architecture}{21}{subsubsection.3.4.5}%
 \contentsline {subsection}{\numberline {3.5}User Interface}{23}{subsection.3.5}%
 \contentsline {subsubsection}{\numberline {3.5.1}Main Viewport}{24}{subsubsection.3.5.1}%
 \contentsline {subsubsection}{\numberline {3.5.2}Global Panel}{24}{subsubsection.3.5.2}%
