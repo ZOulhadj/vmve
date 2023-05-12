@@ -1051,11 +1051,11 @@ application determine how and if the main data should be decrypted.
   vector. If these match then the application will then decrypt and load the data.
 \end{description}
 
-The second item in the \gls*{vmve} header is the encryption mode. This allows for
-\gls*{vmve} to know which algorithm must be used to decrypt the data.
+The second element in the \gls*{vmve} header is the encryption mode. This allows
+for \gls*{vmve} to know which algorithm must be used to decrypt the data.
 
-The remaining section of the file consists of the encrypted data which includes
-the raw model data.
+The remaining section of the file consists of the actual encrypted geometry data
+which must be loaded and displayed in the virtual environment.
 
 \begin{figure}[H]
   \centering
@@ -1068,16 +1068,16 @@ the raw model data.
 \subsubsection{Encryption and Decryption}
 When dealing with encryption there are two primary stages, encrypting and
 decrypting. The term ``encryption'' means taking some data and running it
-through an algorithm making the data unreadable. ``Decryption'' is the opposite
-of that which takes the unreadable data and turns it back to the original data.
+through an algorithm making the data secure and unreadable. ``Decryption'' is
+the opposite of that which takes the unreadable data and turns it back to the
+original data.
 
 Designing such a system requires careful consideration and extra care to ensure
 that the data being managed is not negatively affected such as information being
-lost when converting from one stage to another.
-
-The primary encryption algorithm that will be used is AES and the key length can
-be two different values (128 or 256 bits) that the user will choose based on the
-level of security they want for their assets.
+lost when converting from one stage to another. The primary encryption algorithm
+that will be used is AES and the key length can be two different values (128 or
+256 bits) that the user will choose based on the level of security they want for
+their assets.
 
 Figure \ref{fig:load_model_flowchart} shows a flowchart describing the general
 process of how a model will be loaded into \gls*{vmve}.
@@ -1089,8 +1089,8 @@ process of how a model will be loaded into \gls*{vmve}.
   \label{fig:load_model_flowchart}
 \end{figure}
 
-Likewise encrypting a model will consist of three main stages which are loading, encrypting
-and exporting as show in figure \ref{fig:export_model_flowchart}.
+Likewise encrypting a model will consist of three main stages which are loading,
+encrypting and exporting as show in figure \ref{fig:export_model_flowchart}.
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.5\textwidth]{images/export_model_flowchart.png}
@@ -1101,9 +1101,9 @@ and exporting as show in figure \ref{fig:export_model_flowchart}.
 \clearpage
 \section{Implementation} \label{implementation}
 
-This section of the report presents the technical implementation details of
-\gls*{vmve} and is structured in order of initialisation i.e starting at the
-core of the application and discussing each subsequent system. 
+The implementation section of this report presents the technical details of
+\gls*{vmve} and is structured in order of initialisation for all subsystems of
+the application.
 
 \begin{figure}[H]
   \centering
@@ -1121,10 +1121,10 @@ core of the application and discussing each subsequent system.
 
 
 \subsection{Overview}
-Figure \ref{fig:overview_pseudo_code} shows the general overview of the
-application and the various stages that occur during initialisation, runtime and
-shutting down. The application is a complex system that consists of various
-subsystems that work together.
+Internally, the application consists of several key stages that depend on each
+other. Figure \ref{fig:overview_pseudo_code} shows the general pseudo-code
+overview of the various stages that occur during initialisation, runtime and
+shutting down.
 
 
 \begin{figure}[H]
@@ -1166,36 +1166,28 @@ int main()
 \label{fig:overview_pseudo_code}
 \end{figure}
 
-  
-
 \subsection{Window System}
-The first system within \gls*{vmve} that gets initialised is the window. This system is
-responsible for creating a desktop window based on a series of configuration
-options specified at the start of the application. These options include the
-window width, height and name. Internally, \gls*{vmve} uses the lightweight GLFW
-library to handle window creation. The purpose of this library is to provide an
-API which is cross-platform and allows applications to easily create windows on
-different operating systems. 
-
-Under the hood, on Windows, GLFW uses the Win32 API provided by Microsoft.
-
-In addition to the window creation, various function callbacks are created
-which allows \gls*{vmve} to handle specific events such as window resizing, input,
-cursor position etc.
+The first subsystem within \gls*{vmve} that initialises is the platform window.
+This system is responsible for creating a desktop window based on a series of
+configuration options specified at the start of the application. These options
+include the window width, height and name. Internally, \gls*{vmve} uses the
+lightweight GLFW library to handle window creation. Under the hood, on Windows,
+the library uses the Win32 API provided by Microsoft to construct the window.
+The purpose of this library is to provide an API that is cross-platform and
+allows applications to easily create windows on different operating systems. In
+addition to the window creation, various function callbacks are created to
+handle specific events such as window resizing, input, cursor position etc.
 
 \subsection{Rendering System}
-The implementation of the rendering system was one of the key areas worked on
-throughout the project. This system is responsible for communicating with the
-\gls*{gpu} and rendering objects onto the screen. As discussed in the
-\ref{technology_review}, Vulkan was the renderer API of choice. 
-
-    
+The next subsystem that initialises is the Vulkan renderer which is the primary
+feature that was implemented throughout the project. This system is responsible
+for communicating with the \gls*{gpu} and rendering geometry data onto the
+screen via the window created previously.
 
 \subsubsection{Renderer Context}
-The first step in creating the renderer is initialising an object called
-``vk\_context''. This object is created within the application that groups
-Vulkan handles that is responsible for initialising resources. In other words,
-the ``vk\_context'' structure is used to allocate \gls*{gpu} resources. The
+The first step in creating the renderer is initialising a structure called
+``vk\_context''. This object is designed  within the application that groups key
+Vulkan handles which are responsible for creating \gls*{gpu} resources. The
 handles within the context structure can be seen in the code snippet below and a
 diagram can be seen in figure \ref{fig:rendererarch}.
 
@@ -1229,21 +1221,21 @@ rendering.
 
 \subsubsection{Swapchain}
 A swapchain is a series of images also known as framebuffers used by
-\gls*{vulkan} that allocates a region of memory that stores frame data i.e pixel
-colors. As the name suggests, a ``swapchain'' is a chain of these images. The
-most common number of images is two or three which is called
+\gls*{vulkan} that allocates a region of memory that stores frame data i.e.
+pixel colours. As the name suggests, a ``swapchain'' is a chain of these images.
+The most common number of images is two or three which is called
 ``double-buffering'' and ``triple-buffering'' respectively. The renderer within
-\gls*{vmve} is configured to use two images, one for the front buffer that is shown
-on a monitor and a back buffer that is used for rendering.
+\gls*{vmve} is configured to use two images, one for the front buffer that is
+shown on a monitor and a back buffer that is used for rendering.
 
 In addition to buffers, a swapchain is also responsible for handling vertical
 refresh rate also known as vsync. This is the rate at which new images are
 rendered and then presented on a user's screen. There are two main types of
 vsync modes used within \gls*{vulkan} which are
 \lstinline{VK_PRESENT_MODE_FIFO_KHR} and
-\lstinline{VK_PRESENT_MODE_IMMEDIATE_KHR}. The ``fifo'' mode indicates to the 
-swapchain and subsequently, the presentation engine that images are to wait 
-for the monitor's refresh rate before being present whereas ``immediate'' simply
+\lstinline{VK_PRESENT_MODE_IMMEDIATE_KHR}. The ``fifo'' mode indicates to the
+swapchain and subsequently, the presentation engine that images are to wait for
+the monitor's refresh rate before being present whereas ``immediate'' simply
 renders images as fast as possible.
 
 \begin{figure}[H]
@@ -1296,7 +1288,6 @@ Semaphores}] \cite{vulkan-spec}. For the application, this means that rendering
 operations can occur simultaneously for multiple frames while ensuring that
 frames ``in-flight'' are not interrupted.
 
-
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/frame_sync.png}
@@ -1319,7 +1310,6 @@ the data from the five framebuffers and performs the lighting calculations.
   \caption{G-Buffer Pipeline}
   \label{fig:g_buffer}
 \end{figure}
-
 
 
 \subsubsection{Dynamic Uniform Buffers}
@@ -1538,8 +1528,8 @@ graphics and increases the realism.
 The lighting model that was implemented is called Blinn-Phong which derives from
 the original Phong model was developed by Bui Tuong Phong in a paper titled
 \textit{``Illumination for Computer Generated Pictures''} published in 1975
-\cite{blinn}. It describes three main elements including ambient, diffuse and
-specular lighting that works together to produce the final result.
+\cite{blinn}. It describes three main elements ambient, diffuse and specular
+lighting that work together to produce the final result.
 
 \begin{description}
   \item[Ambient] Ambient is a constant value that is used instead of global illumination
@@ -1550,7 +1540,7 @@ specular lighting that works together to produce the final result.
   \item[Diffuse] The next step is implementing diffuse lighting. This takes into
     account the light direction $\lightdir$ and the normal $\normal$ for a
     surface at a particular pixel. The formula below calculates the intensity at
-    which light reflects off of an object based on the angle off a particular
+    which light reflects off of an object based on the angle of a particular
     surface.
     
     The dot product of the light direction and surface normal returns a value
@@ -1872,9 +1862,6 @@ successful, the application will then proceed to decrypt the data section and
 then load the file. If however, this check fails, then the application will
 throw an error and prevent the file from begin decrypted.
 
-
-
-
 \subsection{Distribution}
 The distribution is an important final step during the development of the
 application which compiles and optimises the source code and makes the
@@ -1895,8 +1882,8 @@ phase which maximises speed such as frame-pointer omission, inline function
 expansion, string deduplication, function-level linking and much more.
 
 \subsubsection{Executable}
-These optimations ensure that the resulting application has a small executable size
-and performs efficiently. The resulting executable is named ``vmve.exe''.
+These optimations ensure that the resulting application has a small executable
+size and performs efficiently. The resulting executable is named ``vmve.exe''.
 
 \begin{figure}[H]
   \centering
