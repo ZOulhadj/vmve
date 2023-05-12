@@ -21,6 +21,8 @@
 \usepackage{attachfile}
 \usepackage[super]{natbib}
 \usepackage{float}
+\usepackage{embedfile}
+\usepackage{hypgotoe}
 %\usepackage[czech]{babel}
 
 %\hypersetup{colorlinks=true, pdfstartview=FitV, linkcolor=blue, citecolor=black, plainpages=false, pdfpagelabels=true, urlcolor=blue}
@@ -227,22 +229,23 @@ compatibility and storage when using these complex applications.
 
 % todo: back this up with data/from a paper
 
-To address these issues, I introduce my final year project, \gls*{vmve}. A
-standalone application developed in the domain of computer graphics that
-provides an easy-to-use, efficient platform for 3D graphics rendering and asset
-encryption. It will also serve as an important tool and as a stepping stone that
-aims to bridge to gap between new users and industry-leading rendering engines.
+To address these issues, this report presents my final year project,
+\gls*{vmve}. A standalone application developed in the domain of computer
+graphics that provides an easy-to-use, efficient platform for 3D graphics
+rendering and asset encryption. It serves as an important tool and as a stepping
+stone that aims to bridge to gap between new users and industry-leading
+rendering engines.
 
-To achieve this, \gls*{vmve} will provide a small but specific subset of
-features that are designed from the ground up to be easy to use and understand
-for rapid graphics prototyping such as constructing virtual environments,
-simulating the effect of light on 3D geometry and securing digital assets
-through the use of encryption.
+To achieve this, \gls*{vmve} provides a small but specific subset of features
+that are designed from the ground up to be easy to use and understand for rapid
+graphics prototyping such as constructing virtual environments, simulating the
+effect of light on 3D geometry and securing digital assets through the use of
+encryption.
 
 \subsection{Stakeholders} \label{stakeholders}
 Stakeholders are individuals or groups who have an interest or "stake" in
 \gls*{vmve} which can include decisions made throughout the development or the
-end product. Each stakeholder group may have different goals, priorities, and
+end product. Each stakeholder group may have different goals, priorities, and/or
 expectations, which can sometimes lead to conflicts and challenges in
 decision-making and implementation. It is important to identify the different
 groups to ensure their requirements and concerns are being taken into account so
@@ -250,7 +253,7 @@ that informed decisions can be made.
 
 \subsubsection{Students and trainees}
 Students and trainees are the key stakeholder groups for the project which the
-application will be designed to accommodate by providing the necessary tools and
+application is designed to accommodate by providing the necessary tools and
 functionality. This includes providing a suite of easy-to-use tools for graphics
 rendering that students and trainees could use to learn about basic rendering
 concepts and to use this knowledge to construct virtual environments for
@@ -272,7 +275,7 @@ stakeholders mentioned in section \ref{stakeholders}.
 \subsubsection{Aims} \label{aims} 
 
 \gls*{vmve} has several aims which outline the general goals that the
-application wishes to achieve throughout this project. These aims will go on to
+application wishes to achieve throughout this project. These aims go on to
 define concrete objectives that provide a clear and concise set of instructions
 required for the design and implementation stages.
 
@@ -302,9 +305,10 @@ required for the design and implementation stages.
 \end{description}
 
 
-\subsubsection{Objectives} \label{objectives}
-Fulfilling these aims requires a set of objectives i.e. requirements that need
-to be implemented to achieve the aims outlined in section \ref{aims}.
+\subsubsection{Objectives} \label{objectives} 
+Fulfilling these aims requires a set of objectives that need to be implemented
+to achieve the aims outlined in section \ref{aims}. It provides a more concrete
+definition in regard to what the project must achieve.
 
 \begin{description}
   \item[1. Virtual environment rendering] 
@@ -447,14 +451,15 @@ respectively.
 \subsection{Version Control}
 A version control system is a software tool that helps developers manage and
 track changes to source code or other documents over time and will be used in
-this project. For a more in-depth explanation of what a \gls*{vcs} is visit the
+this project. For a more in-depth explanation of what a \gls*{vcs} is, visit the
 appendix section \ref{version_control}. There are two main types of systems,
 which are SVN and Git.
 
 \subsubsection{Apache Subversion}
-\gls*{svn} was originally developed in 2000 by Apache and is centralised and
+\gls*{svn} was originally developed in 2000 by Apache and is a centralised and
 open-source \gls*{vcs} which means that the repository is stored on a remote
-server which developers all connect to.
+server which developers all connect to. In the past, this was far more popular
+amongst developers.
 
 \subsubsection{Git}
 On the other hand, Git is the most widely-used, free and open-source \gls*{vcs}
@@ -497,13 +502,13 @@ debugging, formatting, source code analyses, profiling and much more.
   \item[Microsoft Visual Studio 2022] This application is a fully-fledged
     \gls*{ide} that contains many different features that are dedicated to
     application development. In addition to the application, it comes with the
-    \gls*{msvc} compiler which is Microsoft's own C/C++ compiler and linker.
-    This is a program that parses source code and generates assembly
-    instructions that the \gls*{cpu} will be able to understand and therefore,
-    execute. The \gls*{ide} together with \gls*{msvc} create a solid ecosystem
-    for development. The \gls*{ide} also provides debugging functionality that
-    will be used extensively to fix crashes, and bugs and generally ensure that
-    the application runs as expected \cite{visualstudio}. 
+    \gls*{msvc} which is Microsoft's own C/C++ compiler and linker. This is a
+    program that parses source code and generates assembly instructions that the
+    \gls*{cpu} will be able to understand and therefore, execute. The \gls*{ide}
+    together with \gls*{msvc} create a solid ecosystem for development. The
+    \gls*{ide} also provides debugging functionality that will be used
+    extensively to fix crashes, and bugs and generally ensure that the
+    application runs as expected \cite{visualstudio}. 
 
     The main downside to this option, however, is that it is only supported on
     the Windows operating system. Therefore, it's not available on macOS or
@@ -748,7 +753,8 @@ will have to interact with the \gls*{gpu}. To reduce the development time of
 this particular aspect of the application, the decision was made to make use of
 an existing library. This library is called Dear ImGui \cite{imgui}. This is an
 immediate-mode user interface library that provides an \gls*{api} to render UI
-elements. It's easy to use and popular which is what makes is an ideal choice.
+elements. It's easy to use and popular which is what makes it an ideal choice
+compared to the QT library.
 
 \subsubsection{Crypto++ v8.7} \label{custom_file_format}
 \gls*{vmve} will include its own model file format. This is a custom format that
@@ -2134,12 +2140,12 @@ a result improving the startup time.
   \label{fig:visual_studio}
 \end{figure}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{images/renderdoc.png}
-  \caption{RenderDoc}
-  \label{fig:renderdoc}
-\end{figure}
+% \begin{figure}[H]
+%   \centering
+%   \includegraphics[width=\textwidth]{images/renderdoc.png}
+%   \caption{RenderDoc}
+%   \label{fig:renderdoc}
+% \end{figure}
 
 \subsubsection{User Feedback}
 Having conducted the evaluation, it is equally important to obtain feedback from
@@ -2229,6 +2235,26 @@ To fully understand how well the project went, it must be evaluated as part of
 the reflection stage. This consists analysing the design, implementation and 
 management surrounding the project.
 
+
+\subsubsection{VMVE Model Loading}
+The completion of the application exposed a requirement that was not fully met
+based on one of the initial aims. When loading an encrypted ``.vmve'' model, due
+to a limitation in the library used for loading model data (Assimp), textures
+were not being loaded as expected as seen in figure \ref{fig:missing_textures}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/missing_textures.png}
+  \caption{Missing encrypted textures}
+  \label{fig:missing_textures}
+\end{figure}
+
+This will have to be addressed by further evaluating the usage of Assimp to
+better understand which features it does and does not support. Additionally,
+\gls*{vmve} should transition to use a newer asset file format such as glTF
+which supports packing texture data into a single file.
+
+
 \subsubsection{Design}
 Having concluded the project, it has shown how important the requirements
 gathering and design stages are. During the implementation of the rendering
@@ -2316,24 +2342,38 @@ appendix.
 
 \clearpage
 \section{Appendices}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
 The appendices may be referenced throughout the report which provides additional
 information or access to important documents.
 
 \subsection{Supporting Documents} \label{supporting_documents}
+
+\embedfile{attached_documents/milestone_1.pdf}
+\embedfile{attached_documents/milestone_2_signed.pdf}
+\embedfile{attached_documents/mid_project_review.pdf}
+\embedfile{attached_documents/milestone_3_4_presentation.pptx}
+\embedfile{attached_documents/meetings.docx}
+\embedfile{report.tex}
+
 \begin{description}
-  \item[\textattachfile{attached_documents/milestone_1.pdf}{\textcolor{skyblue}{Milestone 1}}] 
+  \item[\href{gotoe:embedded=attached_documents/milestone_1.pdf}{Milestone 1}]
     Project initiation document for milestone 1.
-  \item[\textattachfile{attached_documents/milestone_2_signed.pdf}{\textcolor{skyblue}{Milestone 2}}]
+  \item[\href{gotoe:embedded=attached_documents/milestone_2_signed.pdf}{Milestone 2}]
     Project proposal document for milestone 2.
-  \item[\textattachfile{attached_documents/mid_project_review.pdf}{\textcolor{skyblue}{Milestone 3}}]
+  \item[\href{gotoe:embedded=attached_documents/mid_project_review.pdf}{Milestone 3}]
     Mid-term project review document for milestone 3.
-  \item[\textattachfile{attached_documents/milestone_3_4_presentation.pptx}{\textcolor{skyblue}{Milestone 3 Presentation}}]
+  \item[\href{gotoe:embedded=attached_documents/milestone_3_4_presentation.pptx}{Milestone 3 Presentation}]
     A PowerPoint presentation as part of the mid-term project review.
-  \item[\textattachfile{attached_documents/meetings.docx}{\textcolor{skyblue}{Meetings}}]
+  \item[\href{gotoe:embedded=attached_documents/meetings.docx}{Meetings}]
     A complete log of all meetings held during the project.
-  \item[\textattachfile{report.tex}{\textcolor{skyblue}{Source}}]
+  \item[\href{gotoe:embedded=report.tex}{Source}]
     The source code to this latex document.
 \end{description}
+
+Note that in the event of your PDF viewer not supporting the attached files, the
+documents can be downloaded directly
+\href{https://drive.google.com/file/d/16w75WCNzETuBmHsmCkJ6aGGZjDIwFHcV/view?usp=share_link}{here}
 
 \subsection{Project Proposal Sign-Off} \label{project_proposal}
 \begin{figure}[H]
@@ -2359,16 +2399,17 @@ particular sections, files or even an entire repository.
 
 
 \subsection{GitHub} \label{github}
+
 The \gls*{vmve} project is hosted on GitHub as a private repository (accessible
 to supervisors) which can be found at the following link:
-\url{https://github.com/ZOulhadj/vmve/}. The repository also contains a guide on
-how to download and build the project.
+\href{https://github.com/ZOulhadj/vmve/}{https://github.com/ZOulhadj/vmve/}. The
+repository also contains a guide on how to download and build the project.
 
 \subsection{Development Logs}
 At key stages of the project's development, development logs i.e. videos were
 recorded showcasing the state of development at that specific point in time. All
 videos were uploaded and are hosted on the Zakariya Oulhadj YouTube channel
-\url{https://www.youtube.com/@ZOulhadj}
+\href{https://www.youtube.com/@ZOulhadj}{https://www.youtube.com/@ZOulhadj}
 
 \subsection{Camera Transformation}
 \begin{figure}[H]
@@ -2396,7 +2437,7 @@ videos were uploaded and are hosted on the Zakariya Oulhadj YouTube channel
 
 \subsection{Detailed Future Work} \label{detailed_future_work}
 
-\subsubsection{Multiple rendering APIs}
+\subsubsection*{Multiple rendering APIs}
 \gls*{vmve} currently only supports one rendering API which is Vulkan. As
 discussed in the technology review section, Vulkan is officially supported on
 Windows, Linux and macOS (through MoltenVK). However, to support additional
@@ -2411,7 +2452,7 @@ APIs such as OpenGL and DirectX11 for increased compatibility.
   \label{fig:api_abstraction}
 \end{figure}
 
-\subsubsection{Frustum Culling}
+\subsubsection*{Frustum Culling}
 Currently, VMVE sends all object data to the \gls*{gpu} to be processed and
 rendered. The \gls*{gpu} then subsequently traverses each vertex to figure out if
 it needs to be ``discarded''. This process is part of the graphics pipeline and
@@ -2448,7 +2489,7 @@ needing to perform thousands of checks for all the vertices of an object.
 \end{figure}
 
 
-\subsubsection{Spatial Acceleration Structures}
+\subsubsection*{Spatial Acceleration Structures}
 \gls*{vmve} only supports loading basic models however, in the future many other
 features need to be implemented. One such feature is large-scale terrain as seen
 in figure \ref{fig:quad_tree_terrain}.
@@ -2489,14 +2530,14 @@ The benefit of using this technique is that the number of vertices is
 significantly reduced saving on performance and memory usage.
 
 
-\subsubsection{glTF Support}
+\subsubsection*{glTF Support}
 Currently, the engine only really supports the \gls*{vmve} and OBJ model formats for
 importing. The main issue with the OBJ file format is its size since the data is
 stored in a text format which subsequently increases the assets file size. glTF
 \cite{gltf} is a new model format by The Khronos Group that has many useful
 features such as compression, binary representation, scene hierarchy and more.
 
-\subsubsection{Cross Platform}
+\subsubsection*{Cross Platform}
 In contrast to the project's initial proposal which was the support multiple
 \glspl*{os}, Windows is the only \gls*{os} that \gls*{vmve} officially supports due
 to the time constraints for this project. 
@@ -2510,7 +2551,7 @@ opaque types for structures that have different implementations depending on the
 \gls*{os} being used. Additionally, a different build system would have to be
 used that is cross-platform such as CMake \cite{cmake} or Premake \cite{premake}.
 
-\subsubsection{Networking Support}
+\subsubsection*{Networking Support}
 \gls*{vmve} is a virtual environment editor and as such can be significantly
 improved by adding support for networking. The idea is that there would be a
 server running which would keep track of the virtual world and multiple clients
@@ -2522,7 +2563,7 @@ multiple users could work together to construct a virtual environment in
 preparation for scientific research which would otherwise have taken much longer
 had only one user worked on it.
 
-\subsubsection{File Format/Encryption}
+\subsubsection*{File Format/Encryption}
 \gls*{vmve} supports both the AES encryption standard by default. The application
 should also include additional encryption algorithms such as Diffie-Helm and
 RC6. This would provide users with greater flexibility in terms of how their
@@ -2542,7 +2583,7 @@ the glTF model format supports the ``.glb'' binary file. This would
 significantly increase the user's experience since assets files would become
 easier to manage.
 
-\subsubsection{Runtime memory protection}
+\subsubsection*{Runtime memory protection}
 One of the major flaws present is the lack of security that prevents a user from
 maliciously altering the memory of the application during runtime so that
 encrypted models can be accessed without the need for a valid key or iv.
@@ -2558,7 +2599,7 @@ assets remain secure for all users. A possible alternative implementation would
 involve the use of symmetric and asymmetric encryption as well as techniques
 designed specially to prevent runtime memory manipulation.
 
-\subsubsection{Version Control}
+\subsubsection*{Version Control}
 In regards to the \gls*{vcs} architecture, a potential change that can be done is
 to add a third branch called ``Beta''. The purpose of this branch would be to
 release relatively stable yet unfinished features to users. This would allow
@@ -2575,7 +2616,7 @@ with the addition of a ``Beta'' branch.
   \label{fig:futurebrancharch}
 \end{figure}
 
-\subsubsection{Reduce Library Dependencies}
+\subsubsection*{Reduce Library Dependencies}
 \gls*{vmve} makes use of several libraries which allows specific functionality to
 be added quickly. This is ideal given the project's time constraints and
 requirements. However, going forward the aim will be to reduce the number of
@@ -2586,19 +2627,19 @@ faster compilation times as only functionality that is required will be
 implemented and generally finer control of the code that \gls*{vmve} is built on
 top of.
 
-\subsubsection{Accessibility}
+\subsubsection*{Accessibility}
 Another aspect that needs to be addressed soon is improved accessibility. The
 application includes some features that address this such as icons, a tutorial,
 documentation as well as additional information. However, some of the features
 that \gls*{vmve} does not include is taking into account color blindness and
 text-to-speech. The reason for this is that these are more complex topics and
-required additional time and research to ensure a proper implementation is
+require additional time and research to ensure a proper implementation is
 released.
 
-Another task that must be considered is localisation. \gls*{vmve} only supports
-the English language and has no way of adapting to other languages. Therefore,
-the internal structure of the application must be redesigned to allow for
-other languages to be added and thus, improving accessibility.
+\gls*{vmve} should also support localisation. Currently, only the English
+language is supported with no way of adapting to other languages. Therefore, the
+internal structure of the application must be redesigned to allow for other
+languages to be added and thus, improving accessibility.
 
 
 \end{document}

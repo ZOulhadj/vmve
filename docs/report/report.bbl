@@ -125,10 +125,8 @@ B.~Stroustrup, ``C++ core guidelines,'' 4 2023. [Online]. Available:
 \BIBentrySTDinterwordspacing
 
 \bibitem{indentation}
-\BIBentryALTinterwordspacing
-``K\&r indentation style.'' [Online]. Available:
-  \url{https://en.wikipedia.org/wiki/Indentation_style}
-\BIBentrySTDinterwordspacing
+D.~Straker, \emph{\BIBforeignlanguage{en}{C. Style}}.\hskip 1em plus 0.5em
+  minus 0.4em\relax London, England: Prentice-Hall, Nov. 1991.
 
 \bibitem{volk}
 \BIBentryALTinterwordspacing
@@ -145,9 +143,9 @@ A.~Kapoulkine, ``Vulkan loader,'' 4 2018. [Online]. Available:
 
 \bibitem{moire_pattern}
 \BIBentryALTinterwordspacing
-{Wikipedia contributors}, ``Moire pattern --- {Wikipedia}{,} the free
-  encyclopedia,'' 2023, [accessed 21-April-2023]. [Online]. Available:
-  \url{https://en.wikipedia.org/wiki/Moir%C3%A9_pattern}
+G.~Oster and Y.~Nishijima, ``MoirÉ patterns,'' \emph{Scientific American},
+  vol. 208, no.~5, pp. 54--63, 1963. [Online]. Available:
+  \url{http://www.jstor.org/stable/24936147}
 \BIBentrySTDinterwordspacing
 
 \bibitem{texture_mipmaps}
@@ -158,9 +156,9 @@ J.~de~Vries, ``Texture mipmapping,'' 6 2014. [Online]. Available:
 
 \bibitem{3d_projection}
 \BIBentryALTinterwordspacing
-{Wikipedia contributors}, ``3d projection --- {Wikipedia}{,} the free
-  encyclopedia,'' 2023, [accessed 6-April-2023]. [Online]. Available:
-  \url{https://en.wikipedia.org/w/index.php?title=3D_projection&oldid=1148285432}
+D.~Salomon, \emph{Transformations and Projections in Computer Graphics}.\hskip
+  1em plus 0.5em minus 0.4em\relax Springer London, 2007. [Online]. Available:
+  \url{https://books.google.co.uk/books?id=6CzuydFlMpwC}
 \BIBentrySTDinterwordspacing
 
 \bibitem{coordinate_systems}

@@ -90,30 +90,20 @@
 \contentsline {subsubsection}{\numberline {4.8.1}Distribution}{59}{subsubsection.4.8.1}%
 \contentsline {subsubsection}{\numberline {4.8.2}Time Management}{60}{subsubsection.4.8.2}%
 \contentsline {subsubsection}{\numberline {4.8.3}Performance}{62}{subsubsection.4.8.3}%
-\contentsline {subsubsection}{\numberline {4.8.4}User Feedback}{66}{subsubsection.4.8.4}%
-\contentsline {section}{\numberline {5}Conclusion}{69}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Reflection}{69}{subsection.5.1}%
-\contentsline {subsubsection}{\numberline {5.1.1}Design}{69}{subsubsection.5.1.1}%
-\contentsline {subsubsection}{\numberline {5.1.2}Time Management}{69}{subsubsection.5.1.2}%
-\contentsline {subsubsection}{\numberline {5.1.3}Alternative Rendering API}{70}{subsubsection.5.1.3}%
+\contentsline {subsubsection}{\numberline {4.8.4}User Feedback}{65}{subsubsection.4.8.4}%
+\contentsline {section}{\numberline {5}Conclusion}{68}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Reflection}{68}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}VMVE Model Loading}{68}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}Design}{69}{subsubsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.3}Time Management}{69}{subsubsection.5.1.3}%
+\contentsline {subsubsection}{\numberline {5.1.4}Alternative Rendering API}{70}{subsubsection.5.1.4}%
 \contentsline {subsection}{\numberline {5.2}Future Work}{70}{subsection.5.2}%
-\contentsline {section}{\numberline {6}References}{72}{section.6}%
-\contentsline {section}{\numberline {7}Appendices}{75}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Supporting Documents}{75}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Project Proposal Sign-Off}{75}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Version Control}{76}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}GitHub}{76}{subsection.7.4}%
-\contentsline {subsection}{\numberline {7.5}Development Logs}{76}{subsection.7.5}%
-\contentsline {subsection}{\numberline {7.6}Camera Transformation}{77}{subsection.7.6}%
-\contentsline {subsection}{\numberline {7.7}Detailed Future Work}{77}{subsection.7.7}%
-\contentsline {subsubsection}{\numberline {7.7.1}Multiple rendering APIs}{77}{subsubsection.7.7.1}%
-\contentsline {subsubsection}{\numberline {7.7.2}Frustum Culling}{78}{subsubsection.7.7.2}%
-\contentsline {subsubsection}{\numberline {7.7.3}Spatial Acceleration Structures}{80}{subsubsection.7.7.3}%
-\contentsline {subsubsection}{\numberline {7.7.4}glTF Support}{82}{subsubsection.7.7.4}%
-\contentsline {subsubsection}{\numberline {7.7.5}Cross Platform}{83}{subsubsection.7.7.5}%
-\contentsline {subsubsection}{\numberline {7.7.6}Networking Support}{83}{subsubsection.7.7.6}%
-\contentsline {subsubsection}{\numberline {7.7.7}File Format/Encryption}{83}{subsubsection.7.7.7}%
-\contentsline {subsubsection}{\numberline {7.7.8}Runtime memory protection}{84}{subsubsection.7.7.8}%
-\contentsline {subsubsection}{\numberline {7.7.9}Version Control}{84}{subsubsection.7.7.9}%
-\contentsline {subsubsection}{\numberline {7.7.10}Reduce Library Dependencies}{85}{subsubsection.7.7.10}%
-\contentsline {subsubsection}{\numberline {7.7.11}Accessibility}{85}{subsubsection.7.7.11}%
+\contentsline {section}{\numberline {6}References}{73}{section.6}%
+\contentsline {section}{\numberline {7}Appendices}{76}{section.7}%
+\contentsline {subsection}{\numberline {A}Supporting Documents}{76}{subsection.7.1}%
+\contentsline {subsection}{\numberline {B}Project Proposal Sign-Off}{76}{subsection.7.2}%
+\contentsline {subsection}{\numberline {C}Version Control}{77}{subsection.7.3}%
+\contentsline {subsection}{\numberline {D}GitHub}{77}{subsection.7.4}%
+\contentsline {subsection}{\numberline {E}Development Logs}{77}{subsection.7.5}%
+\contentsline {subsection}{\numberline {F}Camera Transformation}{78}{subsection.7.6}%
+\contentsline {subsection}{\numberline {G}Detailed Future Work}{78}{subsection.7.7}%
