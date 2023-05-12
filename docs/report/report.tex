@@ -23,6 +23,7 @@
 \usepackage{float}
 \usepackage{embedfile}
 \usepackage{hypgotoe}
+\usepackage{dirtree}
 %\usepackage[czech]{babel}
 
 %\hypersetup{colorlinks=true, pdfstartview=FitV, linkcolor=blue, citecolor=black, plainpages=false, pdfpagelabels=true, urlcolor=blue}
@@ -403,7 +404,7 @@ use of a user interface, however, during the design and implementation stages
 extra effort will be spent on ensuring that no such design pattern is
 introduced. This will greatly benefit users and their overall user experience.
 
-\subsection{BSc Justification}
+\subsection{Background}
 This project is ambitious and challenging that requires a strong understanding
 of computer graphics, programming, and software architecture. It is a large
 undertaking that uses the skills and knowledge gained through the BSc (Bachelor
@@ -944,6 +945,9 @@ figure \ref{fig:projarch}.
   \label{fig:projarch}
 \end{figure}
 
+For a complete list of the directories that are part of the project
+architecture, visit appendix section \ref{project_directories}
+
 \subsubsection{Renderer Architecture} \label{renderer_architecture}
 As mentioned in section \ref{rendering_api}. Vulkan will be the rendering API of
 choice for \gls*{vmve}. The API is extremely verbose giving the programmer the
@@ -995,13 +999,30 @@ wireframe that includes four main elements titled ``Global Controls'', ``Logs'',
 in their respective windows and is designed in such a way that common controls
 are grouped and located appropriately if not within the same panel. The purpose
 of this is to provide an easy-to-use interface for interacting with \gls*{vmve}
-and primarily the main viewport located in the center of the application.
+and primarily the main viewport located in the center of the application. Figure
+\ref{fig:load_model_wireframe} and \ref{fig:export_model_wireframe} shows the
+initial proposed design for the windows that will allow for a user to load and
+export models within the application.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/ui_design.png}
-  \caption{UI Design}
+  \caption{User Interface Wireframe}
   \label{fig:ui_design}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{images/load_model_wireframe.png}
+  \caption{Load Model Wireframe}
+  \label{fig:load_model_wireframe}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\textwidth]{images/export_model_wireframe.png}
+  \caption{Export Model Wireframe}
+  \label{fig:export_model_wireframe}
 \end{figure}
 
 \subsubsection{Main Viewport}
@@ -2199,14 +2220,15 @@ and that \gls*{vmve} meets the demands and requirements of its users.
 \gls*{vmve} has been designed to be a platform in which users are provided with
 3D graphics tools without needing to know the complex implementation details of
 the underlying technology. This allows users to focus on their needs and
-requirements. The project has been developed in line with the original aims and
-objectives and has been fulfilled with the primary aim of targeting students
-and trainees as an education tool for the digital graphics industry.
-
+requirements when developing virtual environments. The project has been
+developed in line with the original aims and objectives and has been fulfilled
+with the primary aim of targeting students and trainees as an education tool for
+the digital graphics industry.
 
 Although many of the original requirements have been met, the project as a whole
-must be evaluated to analyse the various strengths and weaknesses at key stages
-including requirements gathering, design, implementation and user feedback.
+must be evaluated to better understand the various strengths and weaknesses at
+key stages including requirements gathering, design, implementation and user
+feedback.
 
 \subsection{Reflection}
 To fully understand how well the project went, it must be evaluated as part of
@@ -2360,6 +2382,32 @@ documents can be downloaded directly
   \caption{Project proposal sign-off}
   \label{fig:project_signoff}
 \end{figure}
+
+
+\subsection{Project Directory Structure} \label{project_directories}
+
+\dirtree{%
+.1 /.
+.2 engine/\DTcomment{Engine project directory}.
+.3 include/\DTcomment{Engine public interface}.
+.3 src/.\DTcomment{Engine source directory}.
+.4 core/.\DTcomment{Window and Input systems}.
+.4 events/.\DTcomment{Event system}.
+.4 filesystem/.\DTcomment{Virtual file system}.
+.4 rendering/.\DTcomment{Rendering}.
+.5 api/\DTcomment{GPU APIs}.
+.5 shaders/\DTcomment{GPU programs}.
+.5 ui/\DTcomment{User Interface implementation}.
+.4 utils/\DTcomment{Helper functionaility}.
+.3 vendor/\DTcomment{Engine external libraries}.
+.2 vmve/.\DTcomment{VMVE project directory}.
+.3 assets/\DTcomment{Model Assets}.
+.3 src/.\DTcomment{VMVE source directory}.
+.4 ui/.\DTcomment{User Interface}.
+.5 panels/.\DTcomment{User Interface components}.
+.3 vendor/.\DTcomment{VMVE external libraries}.
+}
+
 
 \subsection{Version Control} \label{version_control}
 A \gls*{vcs} is a tool used for backing up and/or collaborating with developers
