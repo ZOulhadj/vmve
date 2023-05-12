@@ -29,21 +29,15 @@ rendering and encryption for digital assets.
 git clone https://github.com/ZOulhadj/vmve.git
 ```
 
-1. Update path to Vulkan SDK
-
-> Right click the visual solution and click on the Properties option. The head to 
+1. Update path to Vulkan SDK: Right-click the visual solution and click on the Properties option. Then head to 
 ```Configuration Properties > C/C++ > General > Additional Include Directories```. Ensure that the Vulkan include path points to the SDK you just installed.
 
-2. Copy libraries to the correct locations
-
-> The ```vmve_external_libraries``` folder contains two folders called ```vmve``` and ```engine```. Each has its own respective
+2. Copy libraries to the correct locations: The ```vmve_external_libraries``` folder contains two folders called ```vmve``` and ```engine```. Each has its own respective
 ```vendor``` folder. This folder needs to be copied into each sub-project folder
 ```
 - vmve
-  |
   |- vendor
 - engine
-  |
   |- vendor
 ```
 
