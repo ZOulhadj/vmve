@@ -445,6 +445,7 @@ namespace engine {
     }
 
 
+    // Main entry point of the engine
     bool initialize(const char* name, int width, int height)
     {
         g_engine = new My_Engine();
@@ -580,20 +581,6 @@ namespace engine {
 
         }
         end_command_buffer(cmd_buffer);
-
-#if 0
-        //////////////////////////////////////////////////////////////////////////
-
-        begin_command_buffer(composite_cmd_buffer);
-        {
-
-
-
-        }
-        end_command_buffer(composite_cmd_buffer);
-
-#endif
-
     }
 
     void present()
@@ -947,13 +934,13 @@ namespace engine {
             camera.position += glm::normalize(glm::cross(camera.up_vector, camera.front_vector)) * speed;
         if (key_pressed(GLFW_KEY_SPACE))
             camera.position += camera.up_vector * speed;
-        if (key_pressed(GLFW_KEY_LEFT_CONTROL) || key_pressed(GLFW_KEY_CAPS_LOCK))
+        if (key_pressed(GLFW_KEY_LEFT_SHIFT) || key_pressed(GLFW_KEY_CAPS_LOCK))
             camera.position -= camera.up_vector * speed;
 
-        /*if (is_key_down(GLFW_KEY_Q))
-            camera.roll -= camera.roll_speed * deltaTime;
-        if (is_key_down(GLFW_KEY_E))
-            camera.roll += camera.roll_speed * deltaTime;*/
+        if (key_pressed(GLFW_KEY_Q))
+            camera.roll -= camera.roll_speed * g_engine->timer.get_delta_time();
+        if (key_pressed(GLFW_KEY_E))
+            camera.roll += camera.roll_speed * g_engine->timer.get_delta_time();
     }
 
     void update_camera_view()

@@ -76,7 +76,7 @@ namespace engine {
         //
         // This code snippet below locks the yaw to world coordinates.
         const glm::quat pitch = glm::angleAxis(glm::radians(yoffset), glm::vec3(1.0f, 0.0f, 0.0f));
-#define LOCK_YAW
+//#define LOCK_YAW
 #if defined(LOCK_YAW)
         const glm::quat yaw = glm::angleAxis(glm::radians(xoffset), camera.orientation * glm::vec3(0.0f, 1.0f, 0.0f));
 #else

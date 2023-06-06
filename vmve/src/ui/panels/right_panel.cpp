@@ -21,6 +21,7 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
 
         ImGui::Combo("Model", &modelID, modelNames.data(), modelNames.size());
 
+#if 0
         ImGui::Text("Models");
         ImGui::SameLine();
         ImGui::Button(ICON_FA_PLUS);
@@ -29,7 +30,7 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
         if (ImGui::Button(ICON_FA_MINUS))
             engine::remove_model(modelID);
         ImGui::EndDisabled();
-
+#endif
 
         // TODO: Add different entity types
         // TODO: Using only an icon for a button does not seem to register
@@ -58,14 +59,6 @@ void right_panel(const std::string& title, bool* is_open, ImGuiWindowFlags flags
         ImGui::EndDisabled();
 
         ImGui::Separator();
-
-#if 0
-        ImGui::Button("Add light");
-        ImGui::SameLine();
-        ImGui::Button("Remove light");
-        ImGui::Separator();
-#endif
-
 
         // Options
         static ImGuiTableFlags flags =

@@ -24,7 +24,7 @@ static void display_renderer_stats(bool* open)
     if (ImGui::Begin("Renderer Stats", open, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
     {
         ImGui::Text("Frame time: %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::Text("Delta time: %.4f ms/frame", engine::get_frame_delta());
+        ImGui::Text("Delta time: %.4f ms", engine::get_frame_delta());
 
         static const char* gpu_name = engine::get_gpu_name();
         ImGui::Text("GPU: %s", gpu_name);
