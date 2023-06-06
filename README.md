@@ -16,6 +16,7 @@ rendering and encryption for digital assets.
 * User Interface
 * Internal logging
 
+*Please note that the quality of the code is far from ideal, but this project has taught me a lot for future projects*
 
 ## Getting started
 ### Requirements
