@@ -1,4 +1,4 @@
-# ![logo](.git_assets/logo.svg)
+<!-- ![logo](.git_assets/logo.svg) -->
 
 # VMVE (Vulkan Model Viewer and Exporter)
 An application that provides an easy-to-use, efficient platform for 3D graphics
